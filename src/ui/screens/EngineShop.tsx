@@ -20,13 +20,14 @@ const EngineRow = memo(function EngineRow({ row }: { row: Row }) {
       {...tipProps(`eng-${row.id}`, 'left', row.name, (
         <>
           <span>{row.blurb}</span>
-          <span className="tip-line">{row.each}</span>
+          <span className="tip-line">{row.each} each</span>
           <span className="tip-line">{row.msNext}</span>
         </>
       ))}
     >
       <span className="tile chunk" style={tint(row.color)}>
         <Icon name={row.icon} />
+        {row.rank && <span className="rank-pip" style={{ background: row.rank }} title={row.rankName} />}
       </span>
       <span className="nm">{row.name}</span>
       <Num value={row.owned} className="own" />
@@ -36,7 +37,7 @@ const EngineRow = memo(function EngineRow({ row }: { row: Row }) {
           {row.cost}
           {row.count && <small>{row.count}</small>}
         </span>
-        <span className="each">{row.each}</span>
+        <span className="each" title="Stardust per second from each one">{row.each}</span>
         <span className="ms" title={row.msNext}>
           <i style={{ width: `${row.msPct}%` }} />
         </span>

@@ -17,7 +17,7 @@ const AUTOSAVES = [5, 15, 30, 60];
 export const HOTKEYS: Array<[string, string]> = [
   ['T', 'Tap the star'],
   ['E', 'Evolve'],
-  ['1 to 5', 'Buy x1, x10, x100, x1K, Max'],
+  ['1 to 6', 'Buy x1, x10, x100, x1K, Max, Next'],
   ['C', 'Catch the comet'],
   ['M', 'Mute or unmute'],
   ['Esc', 'Close a panel'],

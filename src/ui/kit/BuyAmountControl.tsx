@@ -8,10 +8,11 @@ const OPTIONS: Array<{ v: BuyAmount; label: string }> = [
   { v: 100, label: 'x100' },
   { v: 1000, label: 'x1K' },
   { v: 'max', label: 'Max' },
+  { v: 'next', label: 'Next' },
   { v: 'custom', label: '#' },
 ];
 
-/** One control for every repeatable purchase: x1, x10, x100, x1,000, Max or a typed amount. */
+/** One control for every repeatable purchase: x1, x10, x100, x1,000, Max, up to the next x2, or a typed amount. */
 export function BuyAmountControl({ compact }: { compact?: boolean }) {
   const amount = useSnap((s) => s.buyAmount);
   const custom = useSnap((s) => s.customBuyAmount);
@@ -24,7 +25,7 @@ export function BuyAmountControl({ compact }: { compact?: boolean }) {
           type="button"
           className="chunk pop"
           aria-pressed={amount === o.v}
-          title={o.v === 'custom' ? 'Buy a typed amount' : `Buy ${o.label}`}
+          title={o.v === 'custom' ? 'Buy a typed amount' : o.v === 'next' ? 'Buy up to the next x2 milestone' : `Buy ${o.label}`}
           onClick={() => commands.setBuyAmount(o.v)}
         >
           {o.label}

@@ -17,6 +17,7 @@ import { StarStage } from './screens/StarStage';
 import { StatsPanel } from './screens/StatsPanel';
 import { UpgradesPanel } from './screens/UpgradesPanel';
 import { WelcomePanel } from './screens/WelcomePanel';
+import { ConstantsPanel, MasteryPanel, OrbitalsPanel, QuestsPanel } from './screens/EarlyPanels';
 import { useUi } from './store';
 
 /** Shown while time away is being simulated; fades in only if that takes a moment. */
@@ -62,6 +63,10 @@ export function App() {
       <MedalsPanel />
       <StatsPanel />
       <WelcomePanel />
+      <ConstantsPanel />
+      <QuestsPanel />
+      <OrbitalsPanel />
+      <MasteryPanel />
       <SettingsPanel />
       <PanelHost />
       <ToastHost />

@@ -30,6 +30,9 @@ export const plainSaveSchema = z.looseObject({
   buffs: z.record(z.string(), finite).optional(),
   comet: z.looseObject({ nextAt: finite, until: finite }).optional(),
   lastBackupAt: finite.optional(),
+  constants: z.record(z.string(), z.number().min(0).refine(Number.isFinite, 'must be finite')).optional(),
+  planets: z.record(z.string(), z.looseObject({ type: z.string(), level: z.number().int().min(1) })).optional(),
+  quests: z.array(z.looseObject({ kind: z.string(), start: finite, need: finite })).optional(),
   settings: z.looseObject({
     notation: z.enum(['suffix', 'scientific', 'engineering']),
     autosaveSeconds: finite,

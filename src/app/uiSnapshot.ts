@@ -23,6 +23,12 @@ import { BUFF_KINDS, buffLeft, cometOnScreen } from '../engine/systems/comets';
 import { availableUpgrades } from '../engine/systems/upgrades';
 import { MEDALS } from '../content/medals';
 import { whenItApplies } from '../content/upgrades';
+import { CONSTANTS } from '../content/constants';
+import { MASTERY_RANKS, ORBITALS } from '../content/early';
+import { constantOpen, constantPlan } from '../engine/systems/constants';
+import { masteryOpen, masteryRank } from '../engine/systems/mastery';
+import { orbitalsOpen, planetPrice } from '../engine/systems/orbitals';
+import { questProgress } from '../engine/systems/quests';
 import { format, formatCount, formatMult, formatRate, formatTime } from '../ui/format';
 import { game } from './game';
 
@@ -45,6 +51,9 @@ export interface EngineRow {
   can: boolean;
   msPct: number;
   msNext: string;
+  /** Mastery rank colour, or '' before the first rank. */
+  rank: string;
+  rankName: string;
 }
 
 export interface UpgradeTile {
@@ -75,6 +84,8 @@ export interface RailItem {
   state: RailState;
   req: string;
   pct: number;
+  /** Something here can be bought or claimed right now. */
+  alert: boolean;
 }
 
 export interface Snapshot {
@@ -102,6 +113,9 @@ export interface Snapshot {
   /** Non-zero while a comet is on screen; changes for every new comet. */
   cometKey: number;
   medalsLabel: string;
+  /** "ring.slot:type:level|..." for the renderer, and how many rings are open. */
+  planets: string;
+  ringsOpen: number;
   tierIndex: number;
   tierName: string;
   tierColor: string;
@@ -148,8 +162,9 @@ function engineRows(s: GameState, n: Notation, prev: EngineRow[] | undefined): {
       break;
     }
     const own = owned(s, e.id);
-    const plan = planPurchase(engineCurve(e.id), own, money, s.settings.buyAmount, s.settings.customBuyAmount, costMult);
     const span = milestoneSpan(own);
+    const plan = planPurchase(engineCurve(e.id), own, money, s.settings.buyAmount, s.settings.customBuyAmount, costMult, span?.to);
+    const rank = masteryOpen(s) ? masteryRank(s, e.id) : 0;
     rows.push({
       id: e.id,
       name: e.name,
@@ -157,12 +172,14 @@ function engineRows(s: GameState, n: Notation, prev: EngineRow[] | undefined): {
       color: e.color,
       blurb: e.blurb,
       owned: formatCount(own, n),
-      each: `${format(engineEach(s, e.id), n)}/s each`,
+      each: `${format(engineEach(s, e.id), n)}/s`,
       cost: format(plan.cost, n),
       count: s.settings.buyAmount === 1 ? '' : `x${formatCount(plan.count, n)}`,
       can: plan.canAfford,
       msPct: span ? Math.round(((own - span.from) / (span.to - span.from)) * 100) : 100,
       msNext: span ? `Output x2 at ${formatCount(span.to, n)} owned` : 'Every milestone reached',
+      rank: rank > 0 ? MASTERY_RANKS[rank - 1]!.color : '',
+      rankName: rank > 0 ? `${MASTERY_RANKS[rank - 1]!.name} mastery` : '',
     });
   }
   return { rows: stableList(prev, rows), mystery };
@@ -201,6 +218,27 @@ function buffChips(s: GameState, prev: BuffChip[] | undefined): BuffChip[] {
   return stableList(prev, chips);
 }
 
+/** "!" on a rail button: something there can be bought or claimed now. */
+function railAlert(s: GameState, id: string): boolean {
+  const money = cur(s, 'stardust');
+  switch (id) {
+    case 'upgrades':
+      return availableUpgrades(s).some((u) => money.gte(u.cost));
+    case 'quests':
+      return s.quests.some((q) => questProgress(s, q) >= 1);
+    case 'constants':
+      return CONSTANTS.some((c) => constantOpen(s, c) && constantPlan(s, c, 1).canAfford);
+    case 'orbitals':
+      return orbitalsOpen(s) && money.gte(planetPrice(s)) && Object.keys(s.planets).length < totalSlots(s);
+    default:
+      return false;
+  }
+}
+
+function totalSlots(s: GameState): number {
+  return ORBITALS.rings.reduce((a, r) => a + (s.tier >= r.tier ? r.slots : 0), 0);
+}
+
 const RAIL_DETAILS = { left: 3, right: 2 } as const;
 
 function railItems(s: GameState, rail: 'left' | 'right', prev: RailItem[] | undefined): RailItem[] {
@@ -223,6 +261,7 @@ function railItems(s: GameState, rail: 'left' | 'right', prev: RailItem[] | unde
       state,
       req: state === 'soon' ? 'Arrives in a later update' : reqText(x.req),
       pct: Math.floor(reqProgress(s, x.req) * 100),
+      alert: (state === 'open' || state === 'new') && railAlert(s, x.id),
     };
   });
   return stableList(prev, items);
@@ -275,6 +314,10 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     buffChips: buffChips(s, prev?.buffChips),
     cometKey: cometOnScreen(s) ? s.comet.until : 0,
     medalsLabel: `${s.achievements.length} / ${MEDALS.length}`,
+    planets: Object.entries(s.planets)
+      .map(([slot, p]) => `${slot}:${p.type}:${p.level}`)
+      .join('|'),
+    ringsOpen: ORBITALS.rings.filter((r) => s.tier >= r.tier).length,
     tierIndex: s.tier,
     tierName: tier.name,
     tierColor: tier.color,

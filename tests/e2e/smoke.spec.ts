@@ -227,3 +227,53 @@ test('buy an upgrade from its tile, then see it in Upgrades and Stats', async ({
   await expect.poll(() => page.evaluate(() => (window as unknown as Sf).sf.game.state.upgrades)).toContain('tap.warm');
   await page.evaluate(() => (document.querySelector('[data-rail="stats"]') as HTMLButtonElement | null)?.click());
 });
+
+type Sf3 = {
+  sf: {
+    game: { state: { tier: number; constants: Record<string, number>; planets: Record<string, unknown>; quests: Array<{ kind: string }>; stats: Record<string, number> } };
+    commands: { devAdd(c: string, n: number): void; buyEngine(id: string): boolean; setBuyAmount(a: unknown): void };
+  };
+};
+
+test('Phase 3: buy constants, place a planet, claim a quest', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf3).sf;
+    commands.devAdd('stardust', 1e12);
+    for (let i = 0; i < 20; i++) commands.buyEngine('mote');
+    game.state.tier = 3;
+  });
+  // Constants: the rail opens the panel, "Next" buys up to the first doubling
+  await page.locator('[data-rail="constants"]').first().click();
+  const panel = page.locator('[data-panel="constants"]');
+  await expect(panel).toHaveClass(/open/);
+  await panel.getByRole('button', { name: 'Next', exact: true }).click();
+  await panel.locator('[data-constant="stellar.gravity"] .const-buy').click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf3).sf.game.state.constants['stellar.gravity'])).toBe(25);
+  await expect(panel.locator('[data-constant="stellar.gravity"]')).toContainText('Lv 25');
+  await page.keyboard.press('Escape');
+
+  // Orbitals: pick an empty slot, choose a type
+  await page.locator('[data-rail="orbitals"]').first().click();
+  const orb = page.locator('[data-panel="orbitals"]');
+  await orb.locator('[data-slot="0.0"]').click();
+  await orb.locator('.planet-type[data-type="ice"]').click();
+  await expect(orb.locator('[data-slot="0.0"]')).toHaveClass(/filled/);
+  await expect(orb).toContainText('Ice planet');
+  await page.keyboard.press('Escape');
+
+  // Quests: three on the board; finish one and claim it
+  await page.locator('[data-rail="quests"]').first().click();
+  const quests = page.locator('[data-panel="quests"]');
+  await expect(quests.locator('.quest')).toHaveCount(3);
+  await page.evaluate(() => {
+    const s = (window as unknown as Sf3).sf.game.state;
+    s.quests[0] = { kind: 'taps', start: s.stats.taps ?? 0, need: 1 } as never;
+    s.stats.taps = (s.stats.taps ?? 0) + 1;
+  });
+  await quests.locator('[data-quest="0"]').getByRole('button', { name: 'Claim' }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf3).sf.game.state.stats.questsDone)).toBe(1);
+  await expect(quests.locator('.quest')).toHaveCount(3);
+  expect(errors).toEqual([]);
+});

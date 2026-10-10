@@ -73,6 +73,11 @@ export const RailButton = memo(function RailButton({ item, side, small }: { item
       )}
       {item.state === 'soon' && <span className="badge soon">Soon</span>}
       {item.state === 'new' && <span className="badge new">New</span>}
+      {item.alert && item.state !== 'new' && (
+        <span className="alert-badge" aria-label="Something to buy or claim">
+          !
+        </span>
+      )}
     </button>
   );
 });

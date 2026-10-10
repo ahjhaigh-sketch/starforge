@@ -21,7 +21,14 @@ export function planPurchase(
   custom: number,
   /** Discounts (a Wish comet halves engine prices) scale every price the same way. */
   costMult: Decimal = ONE,
+  /** The next milestone level, for the 'next' amount (buys up to it). */
+  nextAt?: number,
 ): PurchasePlan {
+  if (amount === 'next') {
+    const count = Math.max(1, (nextAt ?? owned + 1) - owned);
+    const cost = bulkCost(curve, owned, count).mul(costMult);
+    return { count, cost, canAfford: cost.lte(money) };
+  }
   if (amount === 'max') {
     let n = maxBuy(curve, owned, money.div(costMult));
     // dividing by the discount can round by a hair: never let Max claim more than the money covers

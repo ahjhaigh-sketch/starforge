@@ -4,6 +4,7 @@ import { snapshotStore } from '../app/uiSnapshot';
 import { TIERS } from '../content/tiers';
 import { events } from '../engine/events';
 import { burst, initParticles, setParticlesEnabled, updateParticles } from './particles';
+import { OrbitalsView } from './orbitals';
 import { StarCore } from './star';
 import { initStarfield, resizeStarfield, updateStarfield } from './starfield';
 
@@ -14,6 +15,7 @@ import { initStarfield, resizeStarfield, updateStarfield } from './starfield';
  */
 let app: Application | null = null;
 let star: StarCore | null = null;
+let orbitals: OrbitalsView | null = null;
 let anchor: Element | null = null;
 let still = false;
 let flashScale = 1;
@@ -59,7 +61,8 @@ export async function initRender(): Promise<boolean> {
   app.stage.addChild(sky, mid, fx);
   initStarfield(sky);
   star = new StarCore();
-  mid.addChild(star.root);
+  orbitals = new OrbitalsView();
+  mid.addChild(orbitals.behind, star.root, orbitals.infront);
   initParticles(fx);
 
   const apply = () => {
@@ -68,6 +71,7 @@ export async function initRender(): Promise<boolean> {
     flashScale = s.reduceFlashing ? 0.35 : 1;
     setParticlesEnabled(!still);
     star!.setMotes(s.moteCount);
+    orbitals!.set(s.planets, s.ringsOpen);
     star!.setTier(s.tierIndex, false);
   };
   star.setTier(snapshotStore.getState().tierIndex, true);
@@ -90,7 +94,10 @@ export async function initRender(): Promise<boolean> {
     resizeStarfield(width, height);
     updateStarfield(dt, still);
     const r = anchorRect();
-    if (r && r.width > 0) star.update(dt, r.left + r.width / 2, r.top + r.height / 2, r.width, still);
+    if (r && r.width > 0) {
+      star.update(dt, r.left + r.width / 2, r.top + r.height / 2, r.width, still);
+      orbitals?.update(dt, r.left + r.width / 2, r.top + r.height / 2, star.lastRadius, still);
+    }
     updateParticles(dt);
     app.render();
     renderMs = renderMs * 0.95 + (performance.now() - t0) * 0.05;

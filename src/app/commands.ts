@@ -1,15 +1,19 @@
 import { BALANCE } from '../content/balance';
 import { planPurchase } from '../engine/buy';
+import { events } from '../engine/events';
 import { saveToSlots } from '../engine/save/store';
 import { catchComet, type CometKind } from '../engine/systems/comets';
 import { buyUpgrade } from '../engine/systems/upgrades';
+import { buyConstant } from '../engine/systems/constants';
+import { buyPlanet, levelPlanet, setPlanetType } from '../engine/systems/orbitals';
+import { claimQuest } from '../engine/systems/quests';
 import { backupNow, readBackup } from './backups';
 import { D } from '../engine/decimal';
 import { simulateElapsed } from '../engine/offline';
 import { exportSave, importSave } from '../engine/save/store';
 import { type BuyAmount, createInitialState, cur, gain, type Notation } from '../engine/state';
 import { invalidateStats, stat } from '../engine/stats';
-import { buyEngine, createTapRuntime, engineCurve, evolve, owned, tapStar } from '../engine/systems/stardust';
+import { buyEngine, createTapRuntime, engineCurve, evolve, milestoneSpan, owned, tapStar } from '../engine/systems/stardust';
 import { checkUnlocks } from '../engine/systems/unlocks';
 import { requestPersistentStorage, webStore } from '../platform/web';
 import { format } from '../ui/format';
@@ -40,7 +44,7 @@ export const commands = {
   /** Buys an engine with the current buy amount (x1, x10, x100, x1,000, Max or typed). */
   buyEngine(id: string): boolean {
     const s = game.state;
-    const plan = planPurchase(engineCurve(id), owned(s, id), cur(s, 'stardust'), s.settings.buyAmount, s.settings.customBuyAmount, stat(s, 'engineCostMult'));
+    const plan = planPurchase(engineCurve(id), owned(s, id), cur(s, 'stardust'), s.settings.buyAmount, s.settings.customBuyAmount, stat(s, 'engineCostMult'), milestoneSpan(owned(s, id))?.to);
     const ok = plan.canAfford && buyEngine(s, id, plan.count);
     if (ok && !askedToKeepData) {
       askedToKeepData = true;
@@ -51,6 +55,33 @@ export const commands = {
   },
   evolve(): boolean {
     const ok = evolve(game.state);
+    done();
+    return ok;
+  },
+  buyConstant(id: string): boolean {
+    const ok = buyConstant(game.state, id);
+    done();
+    return ok;
+  },
+  /** Claims a finished quest; a new one takes its place at once. */
+  claimQuest(index: number): boolean {
+    const r = claimQuest(game.state, index);
+    done();
+    if (r) events.emit({ t: 'toast', title: 'Quest complete', body: `+${format(r, game.state.settings.notation)} Stardust and +1% production.`, icon: 'quests' });
+    return !!r;
+  },
+  buyPlanet(slot: string, type: string): boolean {
+    const ok = buyPlanet(game.state, slot, type);
+    done();
+    return ok;
+  },
+  levelPlanet(slot: string): boolean {
+    const ok = levelPlanet(game.state, slot);
+    done();
+    return ok;
+  },
+  setPlanetType(slot: string, type: string): boolean {
+    const ok = setPlanetType(game.state, slot, type);
     done();
     return ok;
   },

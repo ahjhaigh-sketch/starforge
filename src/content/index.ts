@@ -1,4 +1,8 @@
 import { registerComets } from '../engine/systems/comets';
+import { registerConstants } from '../engine/systems/constants';
+import { registerMastery } from '../engine/systems/mastery';
+import { registerOrbitals } from '../engine/systems/orbitals';
+import { registerQuests } from '../engine/systems/quests';
 import { registerMedals } from '../engine/systems/medals';
 import { registerStardust } from '../engine/systems/stardust';
 import { registerUnlocks } from '../engine/systems/unlocks';
@@ -12,5 +16,9 @@ export function registerContent(): void {
   registerComets();
   registerUpgrades();
   registerMedals();
+  registerConstants();
+  registerMastery();
+  registerOrbitals();
+  registerQuests();
   registerUnlocks();
 }

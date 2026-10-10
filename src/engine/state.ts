@@ -2,10 +2,21 @@ import { D, type Decimal } from './decimal';
 import { seedRng, type RngState } from './rng';
 
 /** Bump with every change to the save's shape, and add a migration + an old-save fixture test. */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 export type Notation = 'suffix' | 'scientific' | 'engineering';
-export type BuyAmount = 1 | 10 | 100 | 1000 | 'max' | 'custom';
+/** 'next' buys up to the next milestone (an engine's next x2, a constant's next doubling). */
+export type BuyAmount = 1 | 10 | 100 | 1000 | 'max' | 'custom' | 'next';
+
+/** A Star Quest on the board (see engine/systems/quests.ts). */
+export interface QuestState {
+  kind: 'taps' | 'engines' | 'comets' | 'stardust' | 'crits' | 'own' | 'upgrades' | 'evolve';
+  engine?: string;
+  start: number;
+  need: number;
+  startD?: Decimal;
+  needD?: Decimal;
+}
 
 export interface Settings {
   notation: Notation;
@@ -62,6 +73,12 @@ export interface GameState {
   comet: { nextAt: number; until: number };
   /** Playtime of the last rolling backup. */
   lastBackupAt: number;
+  /** Cosmic Constant levels, by ID. */
+  constants: Record<string, number>;
+  /** Planets by slot ("ring.slot"). */
+  planets: Record<string, { type: string; level: number }>;
+  /** The Star Quest board. */
+  quests: QuestState[];
   settings: Settings;
 }
 
@@ -96,7 +113,7 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
       run: { stardust: D(0) },
       all: { stardust: D(0) },
     },
-    stats: { taps: 0, crits: 0, enginesBought: 0, evolves: 0, comets: 0, maxCombo: 0 },
+    stats: { taps: 0, crits: 0, enginesBought: 0, evolves: 0, comets: 0, maxCombo: 0, questsDone: 0 },
     tier: 0,
     engines: {},
     enginesEver: {},
@@ -108,6 +125,9 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     buffs: {},
     comet: { nextAt: 90, until: 0 },
     lastBackupAt: 0,
+    constants: {},
+    planets: {},
+    quests: [],
     settings: defaultSettings(),
   };
 }

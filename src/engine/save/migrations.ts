@@ -23,6 +23,8 @@ const migrations: Record<number, (d: PlainSave) => void> = {
   // 3 (Phase 2): upgrades, medals, goals, buffs and comets, all with defaults. Medals earned
   // before medals existed are granted by the first achievement check after loading.
   3: () => {},
+  // 4 (Phase 3): Cosmic Constants, planets and the quest board, all with defaults.
+  4: () => {},
 };
 
 export function migrate(version: number, data: PlainSave): PlainSave {

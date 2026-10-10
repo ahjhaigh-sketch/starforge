@@ -1,5 +1,28 @@
 # Changelog
 
+## Phase 3: Early depth
+- Cosmic Constants: one reusable infinite-upgrade module.
+  - No level cap. Cost is base x g^L, with growth stepping to g^1.1 after Lv 1,000 and g^1.2 after Lv 100,000.
+  - Effects are (1 + a x L), doubled every 25 levels to 1,000, then every 100 to 100,000, then every 1,000 (1,930 doublings at a million levels).
+  - Bulk cost and Max are closed-form per bracket, so buying a million levels takes under 20 ms.
+  - The first set (Stellar) opens at Golden Sun: Gravity (engines), Light (taps), Heat (Lucky comets and buff length), and Orbit (planets) from Blue Giant.
+  - The panel previews each effect now and after the purchase.
+- A new "Next" buy amount everywhere: up to an engine's next x2 milestone, or a constant's next doubling. Hotkey 6.
+- Engine Mastery from Red Supergiant: Bronze, Silver, Gold, Platinum and Cosmic ranks per engine from engines ever bought, each x1.5 for that engine and never lost. Rank pips show on the shop tiles.
+- Star Quests from Golden Sun: a board of 3 seeded quests (taps, engines, Stardust, owning more of your best engine, comets, crits, an upgrade, evolving). Each is scaled to your progress and measured from when it appeared. Claiming pays 3 minutes of production, adds +1% production forever, and a new quest takes its place at once.
+- Orbitals from Blue Giant:
+  - 4 rings (Blue Giant, Red Supergiant, Magnetar, Blazar) with 4, 6, 8 and 10 slots.
+  - 5 planet types, each boosting 3 engines by +25% a level, plus +20% for each neighbour of a different type.
+  - Changing a planet's type is free.
+  - The rings and planets are drawn around the star, passing in front of and behind it.
+- A red "!" on rail buttons when something there can be bought or claimed.
+- Save version 4, with a migration test that loads a real version 3 save.
+- Tests:
+  - A million levels cost exactly the three-bracket series sum.
+  - Max never overspends across every bracket (property test).
+  - The doubling schedule; Mastery surviving a run wipe and reload; quest scaling, claiming and refilling; planet prices, neighbours and free type changes.
+  - A browser test that buys a constant, places a planet and claims a quest.
+
 ## Phase 2: Saves, offline earnings and variety
 - Welcome back: any time away over a minute is simulated in at most 2,000 steps. A progress bar shows if that takes a moment, then a "Welcome back" screen shows time away, time counted, efficiency and gains. Offline starts at 2 hours and 50%.
 - Backups: a rolling backup in the browser database every 5 minutes of play and before catching up after 10+ minutes away (10 kept). Settings lists them with a two-step Restore. If both save slots are unreadable, the newest readable backup loads.

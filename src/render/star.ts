@@ -277,6 +277,9 @@ export class StarCore {
     return stageWidth * this.current().size;
   }
 
+  /** Radius drawn last frame, in pixels (other layers orbit around it). */
+  lastRadius = 0;
+
   update(dt: number, cx: number, cy: number, stageWidth: number, still: boolean): void {
     this.time += still ? 0 : dt;
     if (this.blend < 1) this.blend = Math.min(1, this.blend + dt / 0.8);
@@ -290,6 +293,7 @@ export class StarCore {
 
     const look = this.current();
     const R = stageWidth * look.size * this.squash;
+    this.lastRadius = stageWidth * look.size;
     const extent = this.feature === 1 || this.feature === 2 ? 3.2 : look.rayLength + 0.45;
     this.mesh.position.set(cx, cy);
     this.mesh.scale.set(R * extent);

@@ -3,7 +3,7 @@ import { snapshotStore } from '../app/uiSnapshot';
 import type { BuyAmount } from '../engine/state';
 import { useUi } from './store';
 
-const AMOUNTS: Record<string, BuyAmount> = { '1': 1, '2': 10, '3': 100, '4': 1000, '5': 'max' };
+const AMOUNTS: Record<string, BuyAmount> = { '1': 1, '2': 10, '3': 100, '4': 1000, '5': 'max', '6': 'next' };
 
 /** Keyboard shortcuts (listed in Settings, switchable off). Never fire while typing in a field. */
 export function installHotkeys(): () => void {

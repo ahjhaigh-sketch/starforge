@@ -71,6 +71,46 @@ export const BALANCE = {
     afterAwaySeconds: 600,
     keep: 10,
   },
+  mastery: {
+    /** Ranks from engines EVER bought; each is x1.5 output for that engine. Opens at Red Supergiant. */
+    tier: 4,
+    mult: 1.5,
+    ranks: [
+      { id: 'bronze', name: 'Bronze', at: 25, color: '#C2783A' },
+      { id: 'silver', name: 'Silver', at: 100, color: '#B8C1D9' },
+      { id: 'gold', name: 'Gold', at: 250, color: '#FFC83D' },
+      { id: 'platinum', name: 'Platinum', at: 600, color: '#9FE7FF' },
+      { id: 'cosmic', name: 'Cosmic', at: 1500, color: '#FF4FC1' },
+    ],
+  },
+  quests: {
+    /** Quests open at Golden Sun (tier index 2). */
+    tier: 2,
+    slots: 3,
+    /** Reward: this many seconds of production (at least `minTaps` taps' worth). */
+    rewardSeconds: 180,
+    minTaps: 150,
+    /** Each completed quest: +1% production, forever. */
+    bonusPerQuest: 0.01,
+  },
+  orbitals: {
+    /** Rings and the tier (index) each opens at: Blue Giant, Red Supergiant, Magnetar, Blazar. */
+    rings: [
+      { tier: 3, slots: 4 },
+      { tier: 4, slots: 6 },
+      { tier: 7, slots: 8 },
+      { tier: 10, slots: 10 },
+    ],
+    /** Price of the n-th planet (0-based): base x growth^n. */
+    planetBase: 2e6,
+    planetGrowth: 4,
+    /** Level-up price: planet price x levelGrowth^level. */
+    levelGrowth: 1.9,
+    /** Each level: +25% to the engines this planet boosts. */
+    perLevel: 0.25,
+    /** Each neighbour of a DIFFERENT type adds this share to the planet's bonus. */
+    neighbourBonus: 0.2,
+  },
   supernova: {
     /** Blue Giant (tier index 3) and this much Stardust gathered in the run. */
     tier: 3,
