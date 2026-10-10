@@ -6,6 +6,7 @@ import './ui/layout.css';
 import './ui/game.css';
 import './ui/panels.css';
 import './ui/early.css';
+import './ui/nova.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

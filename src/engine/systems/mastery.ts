@@ -2,7 +2,7 @@ import { ENGINES } from '../../content/engines';
 import { MASTERY_MULT, MASTERY_RANKS, MASTERY_TIER } from '../../content/early';
 import { D } from '../decimal';
 import type { GameState } from '../state';
-import { registerSources } from '../stats';
+import { defineStat, registerSources, stat } from '../stats';
 
 /**
  * Engine Mastery: bronze to cosmic ranks per engine from how many were EVER bought
@@ -21,13 +21,14 @@ export function masteryOpen(s: GameState): boolean {
 }
 
 export function registerMastery(): void {
+  defineStat({ id: 'masteryMult', label: 'Mastery per rank', base: () => D(MASTERY_MULT) });
   registerSources(
     ...ENGINES.map((e) => ({
       id: `mastery.${e.id}`,
       stat: `engineMult.${e.id}`,
       op: 'mul' as const,
       label: 'Mastery',
-      value: (s: GameState) => D(MASTERY_MULT).pow(masteryRank(s, e.id)),
+      value: (s: GameState) => stat(s, 'masteryMult').pow(masteryRank(s, e.id)),
       active: (s: GameState) => masteryOpen(s) && masteryRank(s, e.id) > 0,
     })),
   );

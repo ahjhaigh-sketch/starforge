@@ -2,6 +2,10 @@ import { GOAL_BY_ID, MEDAL_BY_ID } from '../content/medals';
 import { SYSTEM_BY_ID } from '../content/systems';
 import { TIERS } from '../content/tiers';
 import { events } from '../engine/events';
+import { layer, resetsDone } from '../engine/layers';
+import { format } from '../ui/format';
+import { game } from './game';
+import { snapshotStore } from './uiSnapshot';
 
 /**
  * Turns engine events into player-facing toasts. The engine itself never writes UI copy.
@@ -45,6 +49,13 @@ export function installNotifications(): void {
     } else if (e.t === 'unlock') {
       const sys = SYSTEM_BY_ID.get(e.feature);
       if (sys) events.emit({ t: 'toast', title: `Unlocked: ${sys.name}`, body: sys.blurb, icon: sys.icon });
+    } else if (e.t === 'reset') {
+      const def = layer(e.layer);
+      if (!def) return;
+      events.emit({ t: 'toast', title: `${def.name}!`, body: `+${format(e.gain, snapshotStore.getState().notation)} ${def.currency === 'shards' ? 'Nova Shards' : def.currency}.`, icon: 'shard' });
+      const done = resetsDone(game.state, def);
+      const m = def.milestones.find((x) => x.at === done);
+      if (m) events.emit({ t: 'toast', title: `Milestone: ${m.at} ${def.name}${m.at === 1 ? '' : 's'}`, body: `${m.text}.`, icon: 'trophy' });
     } else if (e.t === 'achievement') {
       medals.push(e.id);
       timer ??= setTimeout(flushMedals, MEDAL_BATCH_MS);

@@ -54,6 +54,7 @@ export function statsReport(): { sections: StatSection[]; counters: StatLine[] }
     section('stardustPerSec', 'Stardust per second'),
     section('productionMult', 'Production multiplier', 'mult'),
     section('tapPower', 'Tap power'),
+    section('tapSpsShare', 'Share of Stardust/s added to each tap', 'pct'),
     section('critChance', 'Crit chance', 'pct'),
     section('critMult', 'Crit multiplier', 'mult'),
     section('cometRate', 'Comet rate', 'mult'),

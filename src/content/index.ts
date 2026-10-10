@@ -1,4 +1,7 @@
+import { registerAutomation } from '../engine/systems/automation';
 import { registerComets } from '../engine/systems/comets';
+import { registerNovaTree } from '../engine/systems/novaTree';
+import { registerSupernova } from '../engine/systems/supernova';
 import { registerConstants } from '../engine/systems/constants';
 import { registerMastery } from '../engine/systems/mastery';
 import { registerOrbitals } from '../engine/systems/orbitals';
@@ -20,5 +23,8 @@ export function registerContent(): void {
   registerMastery();
   registerOrbitals();
   registerQuests();
+  registerSupernova();
+  registerNovaTree();
+  registerAutomation();
   registerUnlocks();
 }

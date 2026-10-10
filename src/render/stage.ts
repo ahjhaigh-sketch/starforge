@@ -79,6 +79,18 @@ export async function initRender(): Promise<boolean> {
   snapshotStore.subscribe(apply);
 
   events.on((e) => {
+    if (e.t === 'reset' && star) {
+      const r = anchorRect();
+      star.collapse();
+      star.flashWhite(1 * flashScale);
+      if (r) {
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        burst(cx, cy, 80, 0xff4fc1, r.width * 0.6, 16);
+        burst(cx, cy, 60, 0xff7a2e, r.width * 0.45, 14);
+      }
+      return;
+    }
     if (e.t !== 'tierUp' || !star) return;
     const r = anchorRect();
     if (!r) return;

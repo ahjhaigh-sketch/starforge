@@ -5,8 +5,9 @@ import { D, type Decimal } from '../decimal';
 import { events } from '../events';
 import { nextFloat } from '../rng';
 import { gain, type GameState, type QuestState } from '../state';
-import { registerSources, stat } from '../stats';
+import { defineStat, registerSources, stat } from '../stats';
 import { registerSystem } from '../tick';
+import { tapValue } from './stardust';
 
 /**
  * Star Quests: 3 goals at a time, scaled to progress when they appear, measured from that moment,
@@ -108,7 +109,9 @@ export function questProgress(s: GameState, q: Quest): number {
 }
 
 export function questReward(s: GameState): Decimal {
-  return stat(s, 'stardustPerSec').mul(QUESTS.rewardSeconds).max(stat(s, 'tapPower').mul(QUESTS.minTaps));
+  const r = stat(s, 'stardustPerSec').mul(QUESTS.rewardSeconds).max(tapValue(s).mul(QUESTS.minTaps)).mul(stat(s, 'questRewardMult'));
+  const cap = (s.totals.run.stardust ?? D(0)).mul(QUESTS.maxRunShare).max(100);
+  return r.min(cap);
 }
 
 /** Fills empty slots. Called when the board first opens and after every claim. */
@@ -129,12 +132,14 @@ export function claimQuest(s: GameState, index: number): Decimal | null {
 }
 
 export function registerQuests(): void {
+  defineStat({ id: 'questRewardMult', label: 'Quest rewards', base: () => D(1) });
+  defineStat({ id: 'questBonus', label: 'Quest bonus multiplier', base: () => D(1) });
   registerSources({
     id: 'quests.prod',
     stat: 'productionMult',
     op: 'mul',
     label: 'Star Quests',
-    value: (s) => D(1 + QUESTS.bonusPerQuest * (s.stats.questsDone ?? 0)),
+    value: (s) => D(1 + QUESTS.bonusPerQuest * stat(s, 'questBonus').toNumber() * (s.stats.questsDone ?? 0)),
     active: (s) => (s.stats.questsDone ?? 0) > 0,
   });
   registerSystem({ id: 'quests', order: 85, tick: (s) => s.quests.length < QUESTS.slots && fillQuests(s) });

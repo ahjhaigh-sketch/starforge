@@ -5,6 +5,7 @@ import { nextFloat } from '../rng';
 import { cur, gain, type GameState } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
+import { tapValue } from './stardust';
 
 /**
  * Comets: a random event every 60 to 120 s (divided by the comet rate), never a gate. Catch one
@@ -52,7 +53,7 @@ export function luckyAmount(s: GameState): Decimal {
   const l = BALANCE.comets.lucky;
   const byShare = cur(s, 'stardust').mul(l.share);
   const byTime = stat(s, 'stardustPerSec').mul(l.maxSeconds);
-  const floor = stat(s, 'tapPower').mul(l.minTaps);
+  const floor = tapValue(s).mul(l.minTaps);
   return (byShare.lt(byTime) ? byShare : byTime).max(floor).mul(stat(s, 'luckyMult'));
 }
 
@@ -89,9 +90,11 @@ export function registerComets(): void {
   defineStat({ id: 'buffDuration', label: 'Comet buff length', base: () => D(1) });
   defineStat({ id: 'luckyMult', label: 'Lucky comet size', base: () => D(1) });
   defineStat({ id: 'wishChance', label: 'Wish comet chance', base: () => D(0.01) });
+  defineStat({ id: 'frenzyMult', label: 'Frenzy multiplier', base: () => D(c.frenzy.mult) });
+  defineStat({ id: 'tapstormMult', label: 'Tapstorm multiplier', base: () => D(c.tapstorm.mult) });
   registerSources(
-    { id: 'buff.frenzy', stat: 'productionMult', op: 'mul', label: 'Frenzy comet', value: () => D(c.frenzy.mult), active: (s) => buffActive(s, 'frenzy') },
-    { id: 'buff.tapstorm', stat: 'tapPower', op: 'mul', label: 'Tapstorm comet', value: () => D(c.tapstorm.mult), active: (s) => buffActive(s, 'tapstorm') },
+    { id: 'buff.frenzy', stat: 'productionMult', op: 'mul', label: 'Frenzy comet', value: (s) => stat(s, 'frenzyMult'), active: (s) => buffActive(s, 'frenzy') },
+    { id: 'buff.tapstorm', stat: 'tapPower', op: 'mul', label: 'Tapstorm comet', value: (s) => stat(s, 'tapstormMult'), active: (s) => buffActive(s, 'tapstorm') },
     { id: 'buff.wish', stat: 'engineCostMult', op: 'mul', label: 'Wish comet', value: () => D(c.wish.costMult), active: (s) => buffActive(s, 'wish') },
   );
   registerSystem({

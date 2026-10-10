@@ -17,6 +17,7 @@ import {
   milestoneSpan,
   nextTierCost,
   owned,
+  tapValue,
 } from '../engine/systems/stardust';
 import { reqProgress, reqText } from '../engine/systems/unlocks';
 import { BUFF_KINDS, buffLeft, cometOnScreen } from '../engine/systems/comets';
@@ -29,6 +30,7 @@ import { constantOpen, constantPlan } from '../engine/systems/constants';
 import { masteryOpen, masteryRank } from '../engine/systems/mastery';
 import { orbitalsOpen, planetPrice } from '../engine/systems/orbitals';
 import { questProgress } from '../engine/systems/quests';
+import { nextShardAt, supernovaGain, supernovaReady } from '../engine/systems/supernova';
 import { format, formatCount, formatMult, formatRate, formatTime } from '../ui/format';
 import { game } from './game';
 
@@ -135,6 +137,11 @@ export interface Snapshot {
   railRight: RailItem[];
   novaPct: number;
   novaReq: string;
+  novaReady: boolean;
+  novaGain: string;
+  shards: string;
+  shardsVisible: boolean;
+  supernovas: number;
 }
 
 /** Reuses the previous object when every field is the same, so React skips the re-render. */
@@ -278,8 +285,10 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
   const comboX = comboMult(combo, stat(s, 'comboPower').toNumber());
   const { rows, mystery } = engineRows(s, n, prev?.engineRows);
   const nova = BALANCE.supernova;
+  const novaReady = supernovaReady(s);
   const novaTier = reqProgress(s, { kind: 'tier', tier: nova.tier });
-  const novaDust = Math.min(1, (s.totals.run.stardust ?? D(0)).div(nova.runStardust).toNumber());
+  const run = (s.totals.run.stardust ?? D(0)).toNumber();
+  const novaDust = Math.min(1, Math.log10(1 + run) / Math.log10(1 + nova.runStardust));
   let enginesOwned = 0;
   for (const e of ENGINES) enginesOwned += owned(s, e.id);
   return {
@@ -326,7 +335,7 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     evolveCost: nextCost ? format(nextCost, n) : '',
     canEvolve: !!nextCost && money.gte(nextCost),
     evolvePct: nextCost ? Math.floor(Math.min(1, money.div(nextCost).toNumber()) * 100) : 100,
-    tapLabel: `+${format(stat(s, 'tapPower'), n)} stardust per tap`,
+    tapLabel: `+${format(tapValue(s), n)} stardust per tap`,
     moteCount: owned(s, 'mote'),
     combo: Math.floor(combo),
     comboMult: comboX > 1 ? formatMult(comboX, n) : '',
@@ -335,8 +344,15 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     enginesOwned: formatCount(enginesOwned, n),
     railLeft: railItems(s, 'left', prev?.railLeft),
     railRight: railItems(s, 'right', prev?.railRight),
-    novaPct: Math.floor((s.tier >= nova.tier ? 0.5 + novaDust * 0.5 : novaTier * 0.5) * 100),
-    novaReq: `Reach ${TIERS[nova.tier]!.name} and gather ${format(nova.runStardust, n)} Stardust this run`,
+    novaPct: novaReady ? 100 : Math.floor((s.tier >= nova.tier ? 0.5 + novaDust * 0.5 : novaTier * 0.5) * 100),
+    novaReq: novaReady
+      ? `Next shard at ${format(nextShardAt(s), n)} Stardust`
+      : `Reach ${TIERS[nova.tier]!.name} and gather ${format(nova.runStardust, n)} Stardust this run`,
+    novaReady,
+    novaGain: novaReady ? `+${format(supernovaGain(s), n)}` : '',
+    shards: format(cur(s, 'shards'), n),
+    shardsVisible: (s.stats.supernovas ?? 0) > 0 || novaReady,
+    supernovas: s.stats.supernovas ?? 0,
   };
 }
 

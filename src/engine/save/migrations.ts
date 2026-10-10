@@ -25,6 +25,8 @@ const migrations: Record<number, (d: PlainSave) => void> = {
   3: () => {},
   // 4 (Phase 3): Cosmic Constants, planets and the quest board, all with defaults.
   4: () => {},
+  // 5 (Phase 4): Supernova, the Nova Tree and auto-buyers, all with defaults.
+  5: () => {},
 };
 
 export function migrate(version: number, data: PlainSave): PlainSave {

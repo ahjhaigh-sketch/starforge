@@ -187,6 +187,7 @@ export class StarCore {
   private squashVel = 0;
   private flash = 0;
   private motes = 0;
+  private collapseT = -1;
 
   constructor() {
     const geometry = new Geometry({
@@ -255,6 +256,11 @@ export class StarCore {
     this.squashVel = 0;
   }
 
+  /** Supernova: the star swells, then collapses to nothing and is reborn small. */
+  collapse(): void {
+    this.collapseT = 0;
+  }
+
   flashWhite(strength: number): void {
     this.flash = Math.max(this.flash, strength);
   }
@@ -292,7 +298,15 @@ export class StarCore {
     this.flash = Math.max(0, this.flash - dt * 2);
 
     const look = this.current();
-    const R = stageWidth * look.size * this.squash;
+    let pulse = 1;
+    if (this.collapseT >= 0) {
+      this.collapseT += dt;
+      const t = this.collapseT;
+      // 0-0.35 s swell, 0.35-0.8 s collapse to a point, 0.8-1.6 s reborn
+      pulse = t < 0.35 ? 1 + (t / 0.35) * 0.35 : t < 0.8 ? 1.35 * (1 - (t - 0.35) / 0.45) : Math.min(1, (t - 0.8) / 0.8);
+      if (t >= 1.6) this.collapseT = -1;
+    }
+    const R = stageWidth * look.size * this.squash * Math.max(0.001, pulse);
     this.lastRadius = stageWidth * look.size;
     const extent = this.feature === 1 || this.feature === 2 ? 3.2 : look.rayLength + 0.45;
     this.mesh.position.set(cx, cy);

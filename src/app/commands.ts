@@ -7,6 +7,9 @@ import { buyUpgrade } from '../engine/systems/upgrades';
 import { buyConstant } from '../engine/systems/constants';
 import { buyPlanet, levelPlanet, setPlanetType } from '../engine/systems/orbitals';
 import { claimQuest } from '../engine/systems/quests';
+import { performReset } from '../engine/layers';
+import { setAuto } from '../engine/systems/automation';
+import { buyNode } from '../engine/systems/novaTree';
 import { backupNow, readBackup } from './backups';
 import { D } from '../engine/decimal';
 import { simulateElapsed } from '../engine/offline';
@@ -57,6 +60,25 @@ export const commands = {
     const ok = evolve(game.state);
     done();
     return ok;
+  },
+  /** The one way to reset a layer from the UI: performs it, then saves straight away. */
+  reset(layerId: string): boolean {
+    const g = performReset(game.state, layerId);
+    if (!g) return false;
+    game.tapRuntime = createTapRuntime();
+    saveNow();
+    void backupNow();
+    done();
+    return true;
+  },
+  buyNode(id: string): boolean {
+    const ok = buyNode(game.state, id);
+    done();
+    return ok;
+  },
+  setAuto(id: string, change: { on?: boolean; spend?: number }) {
+    setAuto(game.state, id, change);
+    done();
   },
   buyConstant(id: string): boolean {
     const ok = buyConstant(game.state, id);

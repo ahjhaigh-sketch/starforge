@@ -24,6 +24,7 @@ export interface SystemDef {
 
 export const SYSTEMS: readonly SystemDef[] = [
   // ---- left rail: the Stardust stage ----
+  { id: 'ascent', name: 'Ascent', icon: 'ascent', color: '#4C3BC4', rail: 'left', req: { kind: 'none' }, panel: 'ascent', built: true, blurb: 'Every system in the game on one star map, with what each needs.' },
   { id: 'upgrades', name: 'Upgrades', icon: 'upgrade', color: '#2E9C78', rail: 'left', req: { kind: 'engine', id: 'catcher', count: 1 }, panel: 'upgrades', built: true, blurb: 'One-off boosts for taps and engines.' },
   { id: 'medals', name: 'Medals', icon: 'trophy', color: '#C99A1E', rail: 'left', req: { kind: 'engine', id: 'mote', count: 1 }, panel: 'medals', built: true, blurb: 'Achievements and Goals, each a permanent boost.' },
   { id: 'stats', name: 'Stats', icon: 'stats', color: '#4A6FC4', rail: 'left', req: { kind: 'engine', id: 'mote', count: 5 }, panel: 'stats', built: true, blurb: 'Where every multiplier comes from.' },
@@ -34,8 +35,8 @@ export const SYSTEMS: readonly SystemDef[] = [
   { id: 'orbitals', name: 'Orbitals', icon: 'orbit', color: '#1A9DB8', rail: 'left', req: { kind: 'tier', tier: 3 }, panel: 'orbitals', built: true, blurb: 'Planets in rings around your star.' },
   { id: 'mastery', name: 'Mastery', icon: 'mastery', color: '#B23A8E', rail: 'left', req: { kind: 'tier', tier: 4 }, panel: 'mastery', built: true, blurb: 'Ranks for every engine, kept through every reset.' },
   // ---- right stack: upcoming shops and layers ----
-  { id: 'novatree', name: 'Nova Tree', icon: 'tree', color: '#C23FA0', rail: 'right', req: { kind: 'count', stat: 'supernovas', count: 1, noun: 'Supernova' }, built: false, blurb: 'Spend Nova Shards on an 80-node spiral.' },
-  { id: 'automation', name: 'Automation', icon: 'auto', color: '#4A4F7A', rail: 'right', req: { kind: 'count', stat: 'supernovas', count: 2, noun: 'Supernova' }, built: false, blurb: 'Every auto-buyer you earn, in one place.' },
+  { id: 'novatree', name: 'Nova Tree', icon: 'tree', color: '#C23FA0', rail: 'right', req: { kind: 'count', stat: 'supernovas', count: 1, noun: 'Supernova' }, panel: 'novatree', built: true, blurb: 'Spend Nova Shards on an 80-node spiral.' },
+  { id: 'automation', name: 'Automation', icon: 'auto', color: '#4A4F7A', rail: 'right', req: { kind: 'count', stat: 'supernovas', count: 2, noun: 'Supernova' }, panel: 'automation', built: true, blurb: 'Every auto-buyer you earn, in one place.' },
   { id: 'starforge', name: 'Starforge', icon: 'forge', color: '#8A5CD8', rail: 'right', req: { kind: 'count', stat: 'supernovas', count: 3, noun: 'Supernova' }, built: false, blurb: 'Smelt ore into alloy, forge relics, fill the Codex.' },
   { id: 'drill', name: 'Deep Core', icon: 'drill', color: '#C2561E', rail: 'right', req: { kind: 'count', stat: 'supernovas', count: 5, noun: 'Supernova' }, built: false, blurb: 'Drill giant asteroids layer by layer.' },
   { id: 'fusion', name: 'Fusion', icon: 'comet', color: '#1A9DB8', rail: 'right', req: { kind: 'count', stat: 'supernovas', count: 6, noun: 'Supernova' }, built: false, blurb: 'Merge three comets into a stronger one.' },

@@ -2,12 +2,17 @@ import { useEffect } from 'react';
 import { game } from '../app/game';
 import { useSnap } from '../app/uiSnapshot';
 import { DevPanel } from '../dev/DevPanel';
+import { TreeBench } from '../dev/TreeBench';
+
+/** Dev-only tree bench size from ?dev=1&treebench=N (read at render: boot sets devMode first). */
+const benchSize = () => (game.devMode ? Number(new URLSearchParams(location.search).get('treebench')) || 0 : 0);
 import { FloatTipHost } from './kit/FloatTip';
 import { PanelHost } from './kit/Panel';
 import { ProgressBar } from './kit/ProgressBar';
 import { ToastHost } from './kit/Toasts';
 import { BottomBar } from './screens/BottomBar';
 import { CometLayer } from './screens/Comet';
+import { ResetFx } from './screens/ResetFx';
 import { EngineShop } from './screens/EngineShop';
 import { Hud } from './screens/Hud';
 import { MedalsPanel } from './screens/MedalsPanel';
@@ -18,6 +23,7 @@ import { StatsPanel } from './screens/StatsPanel';
 import { UpgradesPanel } from './screens/UpgradesPanel';
 import { WelcomePanel } from './screens/WelcomePanel';
 import { ConstantsPanel, MasteryPanel, OrbitalsPanel, QuestsPanel } from './screens/EarlyPanels';
+import { AscentPanel, AutomationPanel, NovaTreePanel, SupernovaPanel } from './screens/NovaPanels';
 import { useUi } from './store';
 
 /** Shown while time away is being simulated; fades in only if that takes a moment. */
@@ -35,6 +41,8 @@ function CatchUpOverlay() {
 }
 
 export function App() {
+  const bench = benchSize();
+  if (bench > 0) return <TreeBench count={bench} />;
   const reducedMotion = useSnap((s) => s.reducedMotion);
   const drawer = useUi((s) => s.drawer);
   const setDrawer = useUi((s) => s.setDrawer);
@@ -59,6 +67,7 @@ export function App() {
       </div>
 
       <CometLayer />
+      <ResetFx />
       <UpgradesPanel />
       <MedalsPanel />
       <StatsPanel />
@@ -67,6 +76,10 @@ export function App() {
       <QuestsPanel />
       <OrbitalsPanel />
       <MasteryPanel />
+      <SupernovaPanel />
+      <NovaTreePanel />
+      <AutomationPanel />
+      <AscentPanel />
       <SettingsPanel />
       <PanelHost />
       <ToastHost />

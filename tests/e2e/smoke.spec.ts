@@ -277,3 +277,122 @@ test('Phase 3: buy constants, place a planet, claim a quest', async ({ page }) =
   await expect(quests.locator('.quest')).toHaveCount(3);
   expect(errors).toEqual([]);
 });
+
+type Sf4 = {
+  sf: {
+    game: { state: { tier: number; stats: Record<string, number>; novaTree: Record<string, number>; auto: Record<string, { on: boolean }>; engines: Record<string, number> } };
+    commands: { devAdd(c: string, n: number): void; buyEngine(id: string): boolean; setBuyAmount(a: unknown): void };
+  };
+};
+
+test('a first Supernova with nothing but the buttons on screen, then the Nova Tree', async ({ page }) => {
+  const errors = watchErrors(page);
+  const phone = (page.viewportSize()?.width ?? 1400) < 900;
+  await page.goto('/?dev=1');
+  // a run's worth of Stardust; the rest is the player's own clicks
+  await page.evaluate(() => (window as unknown as Sf4).sf.commands.devAdd('stardust', 3e7));
+  for (const tier of ['Red Dwarf', 'Golden Sun', 'Blue Giant']) await page.getByRole('button', { name: new RegExp(`Evolve to ${tier}`) }).click();
+  const nova = page.getByTestId('supernova');
+  await expect(nova).toBeEnabled();
+  await nova.click();
+  const confirm = page.locator('[data-panel="supernova"]');
+  await expect(confirm).toHaveClass(/open/);
+  await expect(confirm).toContainText('Resets');
+  await expect(confirm).toContainText('Kept');
+  await confirm.getByRole('button', { name: 'Go Supernova' }).click();
+  await expect(confirm).not.toHaveClass(/open/);
+  await expect(page.locator('.pill', { hasText: '3' }).first()).toBeVisible();
+  await expect(page.locator('.tier-pill')).toContainText('Protostar');
+  // the Nova Tree: pick the root, buy it
+  await page.locator('[data-rail="novatree"]:visible').click();
+  const tree = page.locator('[data-panel="novatree"]');
+  await expect(tree).toHaveClass(/open/);
+  await tree.locator('[data-node="root"]').click();
+  await tree.locator('.tree-card').getByRole('button', { name: /Buy/ }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf4).sf.game.state.novaTree.root)).toBe(1);
+  await expect(tree.locator('[data-node="forge.1"]')).not.toHaveClass(/fog/);
+  if (!phone) {
+    // keyboard: arrows move between nodes, Enter buys
+    await tree.locator('.tree-view').focus();
+    await page.keyboard.press('ArrowUp');
+    await expect(tree.locator('.tree-card')).toBeVisible();
+  }
+  expect(errors).toEqual([]);
+});
+
+test('the tree view stays usable at 200 nodes: drag, zoom, keyboard, touch', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1&treebench=200');
+  const view = page.locator('.tree-view');
+  await expect(view).toBeVisible();
+  await expect(page.locator('[data-node]')).toHaveCount(200);
+  const box = (await view.boundingBox())!;
+  const fps = await page.evaluate(async () => {
+    const times: number[] = [];
+    let last = performance.now();
+    let on = true;
+    const loop = (t: number) => {
+      times.push(t - last);
+      last = t;
+      if (on) requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+    await new Promise((r) => setTimeout(r, 30));
+    (window as unknown as { __stop: () => number }).__stop = () => {
+      on = false;
+      const f = times.slice(2);
+      return f.reduce((a, b) => a + b, 0) / Math.max(1, f.length);
+    };
+    return 0;
+  });
+  expect(fps).toBe(0);
+  // drag to pan
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  for (let i = 0; i < 20; i++) await page.mouse.move(box.x + box.width / 2 + i * 8, box.y + box.height / 2 + i * 4);
+  await page.mouse.up();
+  // wheel to zoom
+  await page.mouse.wheel(0, -300);
+  const avgFrame = await page.evaluate(() => (window as unknown as { __stop: () => number }).__stop());
+  expect(avgFrame).toBeLessThan(50);
+  // keyboard: select and buy with Enter
+  await view.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('.tree-card')).toBeVisible();
+  const before = Number(await page.locator('.tree-bench-count').getAttribute('data-owned'));
+  // click the root's child via search to make sure it's affordable, then Enter
+  await page.getByLabel('Search nodes by name').fill('Node 1');
+  await page.getByLabel('Search nodes by name').press('Enter');
+  await view.focus();
+  await page.keyboard.press('Enter');
+  await expect.poll(async () => Number(await page.locator('.tree-bench-count').getAttribute('data-owned'))).toBeGreaterThan(before);
+  // touch: a tap selects a node
+  const node = page.locator('[data-node="n2"]');
+  await node.dispatchEvent('pointerdown', { pointerId: 9, pointerType: 'touch', isPrimary: true, bubbles: true });
+  await view.dispatchEvent('pointerup', { pointerId: 9, pointerType: 'touch', isPrimary: true, bubbles: true });
+  await expect(page.locator('.tree-card')).toContainText('Node 2');
+  expect(errors).toEqual([]);
+});
+
+test('auto-buyers have working switches in the Automation hub', async ({ page }) => {
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf4).sf;
+    game.state.stats.supernovas = 3;
+    commands.devAdd('stardust', 100);
+  });
+  await page.locator('[data-rail="automation"]:visible').click();
+  const hub = page.locator('[data-panel="automation"]');
+  await expect(hub).toHaveClass(/open/);
+  const mote = hub.locator('[data-auto="auto.mote"]');
+  await mote.getByRole('button', { name: 'On' }).click();
+  await expect(mote.getByRole('button', { name: 'Off' })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf4).sf.game.state.auto['auto.mote']?.on)).toBe(false);
+  // switched off: no more purchases, even with money in the bank
+  const owned = await page.evaluate(() => (window as unknown as Sf4).sf.game.state.engines.mote ?? 0);
+  await page.evaluate(() => (window as unknown as Sf4).sf.commands.devAdd('stardust', 1e5));
+  await page.waitForTimeout(1500);
+  expect(await page.evaluate(() => (window as unknown as Sf4).sf.game.state.engines.mote ?? 0)).toBe(owned);
+  await mote.getByRole('button', { name: 'Off' }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf4).sf.game.state.engines.mote ?? 0), { timeout: 5000 }).toBeGreaterThan(owned);
+});

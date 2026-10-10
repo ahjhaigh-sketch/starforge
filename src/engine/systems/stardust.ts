@@ -78,7 +78,7 @@ export function buyEngine(s: GameState, id: string, count: number): boolean {
 export const MAX_TIER = TIERS.length - 1;
 
 export function nextTierCost(s: GameState): Decimal | null {
-  return s.tier >= MAX_TIER ? null : D(tierCost(s.tier + 1));
+  return s.tier >= MAX_TIER ? null : D(tierCost(s.tier + 1)).mul(stat(s, 'tierCostMult'));
 }
 
 export function evolve(s: GameState): boolean {
@@ -117,6 +117,14 @@ export function comboMult(combo: number, power = 1): number {
   return 1 + (m - 1) * power;
 }
 
+/**
+ * What one tap gives before combo and crit: tap power ((1 + additions) x tier x multipliers),
+ * plus a share of Stardust per second added AFTER the multipliers (Starstrike and friends).
+ */
+export function tapValue(s: GameState): Decimal {
+  return stat(s, 'tapPower').add(stat(s, 'stardustPerSec').mul(stat(s, 'tapSpsShare')));
+}
+
 export interface TapResult {
   amount: Decimal;
   crit: boolean;
@@ -135,7 +143,7 @@ export function tapStar(s: GameState, rt: TapRuntime, nowMs: number): TapResult 
   if (rt.combo > (s.stats.maxCombo ?? 0)) s.stats.maxCombo = Math.floor(rt.combo);
 
   const crit = nextFloat(s.rng) < stat(s, 'critChance').toNumber();
-  let amount = stat(s, 'tapPower').mul(comboMult(rt.combo, stat(s, 'comboPower').toNumber()));
+  let amount = tapValue(s).mul(comboMult(rt.combo, stat(s, 'comboPower').toNumber()));
   if (crit) amount = amount.mul(stat(s, 'critMult'));
   gain(s, 'stardust', amount);
   s.stats.taps = (s.stats.taps ?? 0) + 1;
@@ -150,10 +158,13 @@ const tierMult = (s: GameState): Decimal => D(BALANCE.tiers.mult).pow(s.tier);
 
 export function registerStardust(): void {
   defineStat({ id: 'tapPower', label: 'Tap power', base: () => D(BALANCE.tap.base) });
+  defineStat({ id: 'tapSpsShare', label: 'Share of Stardust per second added to each tap', base: () => ZERO });
   defineStat({ id: 'critChance', label: 'Crit chance', base: () => ZERO });
   defineStat({ id: 'critMult', label: 'Crit multiplier', base: () => D(BALANCE.tap.critMult) });
   defineStat({ id: 'productionMult', label: 'Production multiplier', base: () => D(1) });
   defineStat({ id: 'engineCostMult', label: 'Engine prices', base: () => D(1) });
+  defineStat({ id: 'milestoneBase', label: 'Engine milestone multiplier', base: () => D(2) });
+  defineStat({ id: 'tierCostMult', label: 'Evolve prices', base: () => D(1) });
   defineStat({ id: 'comboPower', label: 'Combo bonus', base: () => D(1) });
   defineStat({ id: 'comboDrain', label: 'Combo drain speed', base: () => D(1) });
   // stardustPerSec itself is defined in core.ts; its base is the sum of the engines.
@@ -191,7 +202,7 @@ export function registerStardust(): void {
       stat: `engineMult.${e.id}`,
       op: 'mul',
       label: 'Milestones',
-      value: (s) => D(2).pow(milestonesReached(owned(s, e.id))),
+      value: (s) => stat(s, 'milestoneBase').pow(milestonesReached(owned(s, e.id))),
     });
   }
   registerSystem({

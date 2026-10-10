@@ -43,7 +43,7 @@ function sourceFor(u: UpgradeDef): StatSource {
   const e = u.effect;
   const active = (s: GameState) => hasUpgrade(s, u.id);
   const base = { id: `upgrade.${u.id}`, stat: e.stat, label: u.name, active };
-  if ('spsShare' in e) return { ...base, op: 'add', value: (s) => stat(s, 'stardustPerSec').mul(e.spsShare) };
+  if ('spsShare' in e) return { ...base, op: 'add', value: () => D(e.spsShare) };
   if ('perEngine' in e) {
     return e.op === 'add'
       ? { ...base, op: 'add', value: (s) => D(e.each * (s.engines[e.perEngine] ?? 0)) }

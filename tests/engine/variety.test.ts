@@ -15,7 +15,7 @@ import { createInitialState, cur, gain, type GameState, SAVE_VERSION } from '../
 import { invalidateStats, resetStatRegistry, stat } from '../../src/engine/stats';
 import { buffActive, catchComet, rollCometKind } from '../../src/engine/systems/comets';
 import { checkMedals } from '../../src/engine/systems/medals';
-import { buyEngine } from '../../src/engine/systems/stardust';
+import { buyEngine, tapValue } from '../../src/engine/systems/stardust';
 import { availableUpgrades, buyUpgrade } from '../../src/engine/systems/upgrades';
 import { tick } from '../../src/engine/tick';
 
@@ -93,8 +93,8 @@ describe('upgrades', () => {
     const s = midGame();
     const sps = stat(s, 'stardustPerSec');
     expect(s.upgrades).toContain('tap.strike1');
-    const lines = stat(s, 'tapPower');
-    expect(lines.gt(sps.mul(0.01))).toBe(true);
+    expect(stat(s, 'tapSpsShare').toNumber()).toBeGreaterThanOrEqual(0.01);
+    expect(tapValue(s).sub(stat(s, 'tapPower')).div(sps).toNumber()).toBeCloseTo(stat(s, 'tapSpsShare').toNumber(), 9);
   });
 });
 
@@ -107,7 +107,7 @@ describe('medals and goals', () => {
       s.engines[e.id] = 100;
       s.enginesEver[e.id] = 100;
     }
-    s.stats = { taps: 2e9, crits: 2e8, comets: 20_000, enginesBought: 1e8, evolves: 11, maxCombo: 60 };
+    s.stats = { taps: 2e9, crits: 2e8, comets: 20_000, enginesBought: 1e8, evolves: 11, maxCombo: 60, supernovas: 30 };
     s.upgrades = UPGRADES.map((u) => u.id);
     invalidateStats();
     const seen: string[] = [];

@@ -13,7 +13,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
-    "e2e": "vite build && playwright test"
+    "e2e": "vite build && playwright test",
+    "sim": "vitest run --config vitest.sim.config.ts --reporter=verbose --silent=false"
   },
   "dependencies": {
     "@fontsource-variable/baloo-2": "5.3.0",

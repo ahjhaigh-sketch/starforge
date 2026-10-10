@@ -87,9 +87,11 @@ export const BALANCE = {
     /** Quests open at Golden Sun (tier index 2). */
     tier: 2,
     slots: 3,
-    /** Reward: this many seconds of production (at least `minTaps` taps' worth). */
-    rewardSeconds: 180,
-    minTaps: 150,
+    /** Reward: this many seconds of production (at least `minTaps` taps' worth), capped by maxRunShare. */
+    rewardSeconds: 30,
+    minTaps: 20,
+    /** A reward never exceeds this share of the Stardust gathered this run (no chain-claiming a new run up). */
+    maxRunShare: 0.5,
     /** Each completed quest: +1% production, forever. */
     bonusPerQuest: 0.01,
   },
@@ -115,5 +117,32 @@ export const BALANCE = {
     /** Blue Giant (tier index 3) and this much Stardust gathered in the run. */
     tier: 3,
     runStardust: 1e7,
+    /** Shards = floor((S / 1e7)^0.4), softcapped above 10,000 to 1e4 x (raw / 1e4)^0.6. (Plan: 0.5; the simulator chose 0.4.) */
+    gainPow: 0.4,
+    softcapAt: 1e4,
+    softcapPow: 0.6,
+    /** The first Supernova always gives exactly this many. */
+    firstGain: 3,
+    /** Every Stardust gain is x(1 + lifetime shards)^0.3. (Plan: 0.5; the simulator chose 0.3.) */
+    passivePow: 0.3,
+    /** Milestone 20: this share of the Supernova gain every second, without resetting. */
+    passiveShare: 0.01,
+    /** Quick Burn: x(this / run seconds), between x1 and x3. */
+    quickBurnSeconds: 900,
+  },
+  /** Cost growth per level of each Stellar Constant (between 1.05 and 2, Math and balance tab). */
+  constants: { gravity: 1.3, light: 1.3, heat: 1.35, orbit: 1.35 },
+  novaTree: {
+    /** Node price along an arm: armBase x armGrowth^depth (depth 0 to 22). */
+    armBase: 3,
+    armGrowth: 7,
+    capCost: 1e15,
+    echoCost: 1e14,
+  },
+  automation: {
+    /** Auto-buyers act once a second, faster with Nova Tree nodes. */
+    perSecond: 1,
+    /** The share of your Stardust an auto-buyer may spend: all, half, a tenth. */
+    spendChoices: [1, 0.5, 0.1],
   },
 } as const;

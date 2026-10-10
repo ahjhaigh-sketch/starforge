@@ -2,7 +2,7 @@ import { D, type Decimal } from './decimal';
 import { seedRng, type RngState } from './rng';
 
 /** Bump with every change to the save's shape, and add a migration + an old-save fixture test. */
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 export type Notation = 'suffix' | 'scientific' | 'engineering';
 /** 'next' buys up to the next milestone (an engine's next x2, a constant's next doubling). */
@@ -79,6 +79,12 @@ export interface GameState {
   planets: Record<string, { type: string; level: number }>;
   /** The Star Quest board. */
   quests: QuestState[];
+  /** Playtime of each layer's last reset (run length, Quick Burn). */
+  lastResetAt: Record<string, number>;
+  /** Nova Tree nodes owned, by ID, with their level (repeatable nodes go past 1). */
+  novaTree: Record<string, number>;
+  /** Auto-buyer switches and how much of your Stardust each may spend (1, 0.5, 0.1). */
+  auto: Record<string, { on: boolean; spend: number }>;
   settings: Settings;
 }
 
@@ -108,12 +114,12 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     lastSave: 0,
     playtime: 0,
     rng: seedRng(seed),
-    currencies: { stardust: D(0) },
+    currencies: { stardust: D(0), shards: D(0) },
     totals: {
-      run: { stardust: D(0) },
-      all: { stardust: D(0) },
+      run: { stardust: D(0), shards: D(0) },
+      all: { stardust: D(0), shards: D(0) },
     },
-    stats: { taps: 0, crits: 0, enginesBought: 0, evolves: 0, comets: 0, maxCombo: 0, questsDone: 0 },
+    stats: { taps: 0, crits: 0, enginesBought: 0, evolves: 0, comets: 0, maxCombo: 0, questsDone: 0, supernovas: 0, bestTier: 0 },
     tier: 0,
     engines: {},
     enginesEver: {},
@@ -128,6 +134,9 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     constants: {},
     planets: {},
     quests: [],
+    lastResetAt: {},
+    novaTree: {},
+    auto: {},
     settings: defaultSettings(),
   };
 }

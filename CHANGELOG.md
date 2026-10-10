@@ -1,5 +1,51 @@
 # Changelog
 
+## Phase 4: Supernova (the version for friends)
+- One generic reset system (`engine/layers.ts`).
+  - A layer is data: currency, readiness, gain, the parts it resets (each with what can keep it), what is always kept, and milestones.
+  - One function performs every reset. It is deterministic, decides what is kept before changing anything, and clears every cached stat.
+- Supernova, the first layer.
+  - Needs a Blue Giant and 10M Stardust gathered this run. The first gives exactly 3 shards; after that floor((S / 1e7)^0.4), softcapped above 10,000.
+  - Lifetime shards boost every Stardust gain, so spending them never weakens you.
+  - The bottom bar comes alive when ready, showing "+N" and "next shard at X".
+  - A confirm screen (switchable in Settings) lists what resets and what is kept, straight from the reset function.
+  - The cinematic: a flash in the layer colour, a shockwave ring, screen shake, 140 particles and the star collapsing and being reborn. Reduced motion and reduced flashing are respected.
+  - The run saves straight away.
+- Milestones:
+  - 1: the Nova Tree.
+  - 2: Auto-Evolve.
+  - 3: the Starforge (built in Phase 6) and the Spark Mote auto-buyer.
+  - 5: auto-buyers for engines 2 to 5.
+  - 8: start 2 tiers below your best.
+  - 12: auto-buyers for everything.
+  - 20: 1% of your Supernova gain every second.
+  - 30: the Nebula appears.
+- The Nova Tree: 79 nodes on a three-arm spiral.
+  - Arms: Forge-heart (engines), Starstrike (taps and comets), Dreaming (offline, shards, automation).
+  - Capstones where arms meet, and six repeatable outer nodes with no cap.
+  - The first node of each arm is an escalating pick.
+  - Colours mean something (unlock, add, multiply, exponent, change a rule, pick).
+- A reusable tree view built for big trees.
+  - Drag to pan, wheel or pinch to zoom, + and -, arrow keys between nodes, Enter to buy.
+  - A minimap you can click, search by name, "Next to buy", and reveal-as-you-buy with fog one step ahead.
+  - Pan and zoom never re-render React. Tested at 200 nodes.
+- The Automation hub: every auto-buyer with an on/off switch and a spending limit (all, half, a tenth). They run in the normal tick, so they keep working offline.
+- The Ascent: every system as a deck on a vertical star map, Protostar at the bottom, with what the next ones need. Ascent sits at the top of the left rail.
+- Balance simulator (`npm run sim`). Its findings:
+  - Fixed: the stat cache wasn't cleared by resets.
+  - Fixed: "% of Stardust/s per tap" was being multiplied by every tap multiplier. It's now added after them, as the plan says.
+  - Fixed: Star Quests could be chain-claimed for 3 minutes of production each right after a reset. Now 30 s, capped at half the run's Stardust.
+  - Tuned: shard gain ^0.4, glow ^0.3, constant growth 1.3 to 1.35, tree prices 3 x 7^depth.
+  - Result: Nebula at 30 Supernovas, with about 73% of the tree bought.
+- Save version 5, with a migration test that loads a real version 4 save.
+- Tests:
+  - Resets are deterministic.
+  - The confirm screen's kept list matches what is kept.
+  - The first Supernova gives exactly 3; "next shard at" is exact; the lifetime glow works.
+  - Tree prices, picks, repeatables and capstones.
+  - Auto-buyers obey their switches, including offline.
+  - Browser tests: reaching a first Supernova with only the on-screen buttons (on phone too), the tree at 200 nodes with mouse, keyboard and touch, and the automation switches.
+
 ## Phase 3: Early depth
 - Cosmic Constants: one reusable infinite-upgrade module.
   - No level cap. Cost is base x g^L, with growth stepping to g^1.1 after Lv 1,000 and g^1.2 after Lv 100,000.

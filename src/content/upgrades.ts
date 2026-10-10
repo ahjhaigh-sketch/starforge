@@ -13,8 +13,8 @@ export type UpgradeEffect =
   | { stat: string; op: 'mul'; perEngine: string; each: number }
   /** Adds (each x owned of an engine) to a stat: e.g. +0.1 tap power per Spark Mote. */
   | { stat: string; op: 'add'; perEngine: string; each: number }
-  /** Adds a share of Stardust per second to tap power. */
-  | { stat: 'tapPower'; op: 'add'; spsShare: number };
+  /** Adds a share of Stardust per second to every tap, after all multipliers. */
+  | { stat: 'tapSpsShare'; op: 'add'; spsShare: number };
 
 export interface UpgradeDef {
   id: string;
@@ -60,9 +60,9 @@ const tap: UpgradeDef[] = [
   { id: 'tap.warm', name: 'Warm Fingers', icon: 'stardust', color: '#C99A1E', cost: 100, req: { kind: 'count', stat: 'taps', count: 25, noun: 'tap' }, effect: { stat: 'tapPower', op: 'add', value: 1 }, desc: 'Taps give +1 Stardust before multipliers.' },
   { id: 'tap.motes', name: 'Mote Tapping', icon: 'mote', color: '#C99A1E', cost: 5000, req: { kind: 'engine', id: 'mote', count: 25 }, effect: { stat: 'tapPower', op: 'add', perEngine: 'mote', each: 0.1 }, desc: 'Taps give +0.1 Stardust for every Spark Mote you own.' },
   { id: 'tap.touch', name: 'Stellar Touch', icon: 'stardust', color: '#FF9E5E', cost: 2000, req: { kind: 'count', stat: 'taps', count: 250, noun: 'tap' }, effect: { stat: 'tapPower', op: 'mul', value: 2 }, desc: 'Taps are twice as strong.' },
-  { id: 'tap.strike1', name: 'Starstrike', icon: 'stardust', color: '#FF7A2E', cost: 10_000, req: { kind: 'tier', tier: 1 }, effect: { stat: 'tapPower', op: 'add', spsShare: 0.01 }, desc: 'Each tap also gives 1% of your Stardust per second.' },
-  { id: 'tap.strike2', name: 'Solar Strike', icon: 'stardust', color: '#FF7A2E', cost: 500_000, req: { kind: 'tier', tier: 2 }, effect: { stat: 'tapPower', op: 'add', spsShare: 0.02 }, desc: 'Each tap gives another 2% of your Stardust per second.' },
-  { id: 'tap.strike3', name: 'Nova Strike', icon: 'stardust', color: '#FF4FC1', cost: 1e9, req: { kind: 'tier', tier: 4 }, effect: { stat: 'tapPower', op: 'add', spsShare: 0.05 }, desc: 'Each tap gives another 5% of your Stardust per second.' },
+  { id: 'tap.strike1', name: 'Starstrike', icon: 'stardust', color: '#FF7A2E', cost: 10_000, req: { kind: 'tier', tier: 1 }, effect: { stat: 'tapSpsShare', op: 'add', spsShare: 0.01 }, desc: 'Each tap also gives 1% of your Stardust per second.' },
+  { id: 'tap.strike2', name: 'Solar Strike', icon: 'stardust', color: '#FF7A2E', cost: 500_000, req: { kind: 'tier', tier: 2 }, effect: { stat: 'tapSpsShare', op: 'add', spsShare: 0.02 }, desc: 'Each tap gives another 2% of your Stardust per second.' },
+  { id: 'tap.strike3', name: 'Nova Strike', icon: 'stardust', color: '#FF4FC1', cost: 1e9, req: { kind: 'tier', tier: 4 }, effect: { stat: 'tapSpsShare', op: 'add', spsShare: 0.05 }, desc: 'Each tap gives another 5% of your Stardust per second.' },
   { id: 'tap.crit1', name: 'Lucky Strikes', icon: 'stardust', color: '#2E9C78', cost: 250_000, req: { kind: 'count', stat: 'crits', count: 25, noun: 'crit' }, effect: { stat: 'critChance', op: 'add', value: 0.02 }, desc: '+2% crit chance.' },
   { id: 'tap.crit2', name: 'Supercritical', icon: 'stardust', color: '#2E9C78', cost: 50e6, req: { kind: 'count', stat: 'crits', count: 400, noun: 'crit' }, effect: { stat: 'critMult', op: 'add', value: 5 }, desc: 'Crits give x15 instead of x10.' },
   { id: 'tap.combo1', name: 'Burning Combo', icon: 'pulse', color: '#C23F6A', cost: 20_000, req: { kind: 'count', stat: 'taps', count: 1000, noun: 'tap' }, effect: { stat: 'comboDrain', op: 'mul', value: 0.5 }, desc: 'The combo meter drains half as fast.' },
@@ -107,7 +107,7 @@ export const UPGRADE_BY_ID: ReadonlyMap<string, UpgradeDef> = new Map(UPGRADES.m
 
 /** Plain words for when an effect applies, as Upgradex's tooltips do. */
 export function whenItApplies(e: UpgradeEffect): string {
-  if ('spsShare' in e) return 'Added to tap power before multipliers';
+  if ('spsShare' in e) return 'Added to each tap after all multipliers';
   if ('perEngine' in e) return e.op === 'add' ? 'Added to tap power before multipliers' : 'Multiplies that engine after its milestones';
   return e.op === 'add' ? 'Added before multipliers' : 'Multiplies after additions';
 }

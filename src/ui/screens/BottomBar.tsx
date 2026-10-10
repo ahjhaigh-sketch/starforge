@@ -1,11 +1,17 @@
 import { commands } from '../../app/commands';
-import { useSnap } from '../../app/uiSnapshot';
+import { snapshotStore, useSnap } from '../../app/uiSnapshot';
 import { cx, tint } from '../kit/Chunk';
 import { tipProps } from '../kit/FloatTip';
 import { Icon } from '../kit/Icon';
 import { useUi } from '../store';
 
-/** Under the star: Evolve, the phone Engines button, and the reset bar (Supernova arrives in Phase 4). */
+/** Starts a Supernova: through the confirm screen when "Ask before resets" is on. */
+export function startSupernova(open: (id: string) => void): void {
+  if (snapshotStore.getState().confirmResets) open('supernova');
+  else commands.reset('supernova');
+}
+
+/** Under the star: Evolve, the phone Engines button, and the reset bar. */
 export function BottomBar() {
   const next = useSnap((s) => s.nextTierName);
   const cost = useSnap((s) => s.evolveCost);
@@ -13,8 +19,10 @@ export function BottomBar() {
   const pct = useSnap((s) => s.evolvePct);
   const novaPct = useSnap((s) => s.novaPct);
   const novaReq = useSnap((s) => s.novaReq);
+  const ready = useSnap((s) => s.novaReady);
+  const gain = useSnap((s) => s.novaGain);
   const setDrawer = useUi((s) => s.setDrawer);
-  const novaMet = novaPct >= 100;
+  const open = useUi((s) => s.open);
   return (
     <div className="bottom">
       <div className="bottom-row">
@@ -39,23 +47,28 @@ export function BottomBar() {
           <span className="ol-sm">Engines</span>
         </button>
       </div>
-      <div
-        className="nova chunk locked"
-        role="progressbar"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={novaPct}
-        aria-label={`Supernova. ${novaMet ? 'Arrives in a later update' : novaReq}`}
-        tabIndex={0}
-        {...tipProps('nova', 'above', 'Supernova', <span>{novaMet ? 'Ready when the next update lands: reset engines for Nova Shards.' : novaReq}.</span>)}
+      <button
+        type="button"
+        className={cx('nova chunk pop', ready ? 'ready' : 'locked')}
+        disabled={!ready}
+        onClick={() => startSupernova(open)}
+        aria-label={ready ? `Go Supernova for ${gain} Nova Shards. ${novaReq}.` : `Supernova. ${novaReq}.`}
+        data-testid="supernova"
+        {...tipProps('nova', 'above', 'Supernova', <span>{ready ? 'Reset engines, Stardust and your star for Nova Shards. Shards buy the Nova Tree and boost all Stardust.' : novaReq}.</span>)}
       >
         <span className="fill" style={{ width: `${novaPct}%` }} />
         <span className="inner">
-          <Icon name="lock" className="nova-lock" />
+          {!ready && <Icon name="lock" className="nova-lock" />}
           <span className="title ol">SUPERNOVA</span>
-          <span className="req ol-sm">{novaMet ? 'Arrives in a later update' : novaReq}</span>
+          {ready && (
+            <span className="gain ol">
+              {gain}
+              <Icon name="shard" />
+            </span>
+          )}
+          <span className="req ol-sm">{novaReq}</span>
         </span>
-      </div>
+      </button>
     </div>
   );
 }

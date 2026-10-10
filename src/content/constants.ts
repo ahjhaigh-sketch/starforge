@@ -1,3 +1,4 @@
+import { BALANCE } from './balance';
 import type { Requirement } from './requirements';
 
 /**
@@ -52,7 +53,7 @@ export const CONSTANTS: readonly ConstantDef[] = [
     color: '#7B3FD6',
     currency: 'stardust',
     base: 50_000,
-    growth: 1.18,
+    growth: BALANCE.constants.gravity,
     effects: [{ stat: 'productionMult', a: 0.05, doubles: true, what: 'Engine output' }],
     desc: 'Pulls more stardust into every engine.',
   },
@@ -64,7 +65,7 @@ export const CONSTANTS: readonly ConstantDef[] = [
     color: '#C99A1E',
     currency: 'stardust',
     base: 20_000,
-    growth: 1.2,
+    growth: BALANCE.constants.light,
     effects: [{ stat: 'tapPower', a: 0.1, doubles: true, what: 'Tap power' }],
     desc: 'Every tap shines brighter.',
   },
@@ -76,7 +77,7 @@ export const CONSTANTS: readonly ConstantDef[] = [
     color: '#C2561E',
     currency: 'stardust',
     base: 100_000,
-    growth: 1.22,
+    growth: BALANCE.constants.heat,
     effects: [
       { stat: 'luckyMult', a: 0.1, doubles: true, what: 'Lucky comets' },
       { stat: 'buffDuration', a: 0.01, doubles: false, what: 'Comet buff length' },
@@ -91,7 +92,7 @@ export const CONSTANTS: readonly ConstantDef[] = [
     color: '#1A9DB8',
     currency: 'stardust',
     base: 5e6,
-    growth: 1.2,
+    growth: BALANCE.constants.orbit,
     effects: [{ stat: 'planetPower', a: 0.05, doubles: true, what: 'Planet bonuses' }],
     req: { kind: 'tier', tier: 3 },
     desc: 'Tightens every orbit: planets give more.',

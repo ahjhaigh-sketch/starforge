@@ -33,6 +33,9 @@ export const plainSaveSchema = z.looseObject({
   constants: z.record(z.string(), z.number().min(0).refine(Number.isFinite, 'must be finite')).optional(),
   planets: z.record(z.string(), z.looseObject({ type: z.string(), level: z.number().int().min(1) })).optional(),
   quests: z.array(z.looseObject({ kind: z.string(), start: finite, need: finite })).optional(),
+  lastResetAt: z.record(z.string(), finite).optional(),
+  novaTree: z.record(z.string(), z.number().int().min(0)).optional(),
+  auto: z.record(z.string(), z.looseObject({ on: z.boolean(), spend: finite })).optional(),
   settings: z.looseObject({
     notation: z.enum(['suffix', 'scientific', 'engineering']),
     autosaveSeconds: finite,

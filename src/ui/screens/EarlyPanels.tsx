@@ -82,7 +82,7 @@ export function QuestsPanel() {
   return (
     <Panel id="quests" title="Star Quests" color="#C2561E" size="small">
       <p>
-        Finish a quest and claim it for <b className="num">{r?.reward}</b> Stardust (3 minutes of production). Every quest done is +1% production forever:{' '}
+        Finish a quest and claim it for <b className="num">{r?.reward}</b> Stardust (30 seconds of production, at most half of this run's Stardust). Every quest done is +1% production forever:{' '}
         <b className="num">{r?.done}</b> done, <b className="num">{r?.bonus}</b>.
       </p>
       <div className="quests">
