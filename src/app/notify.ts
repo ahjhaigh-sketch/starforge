@@ -31,8 +31,11 @@ export function installNotifications(): void {
     const [sys] = opened;
     if (sys) {
       const names = opened.map((x) => x.name);
-      const title = names.length === 1 ? `Unlocked: ${sys.name}` : `Unlocked: ${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
-      events.emit({ t: 'toast', title, body: names.length === 1 ? sys.blurb : 'New on the rails. Open them from there.', icon: sys.icon });
+      const list = `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+      // a long list goes in the body, so the title stays one line
+      const title = names.length === 1 ? `Unlocked: ${sys.name}` : names.length <= 3 ? `Unlocked: ${list}` : `${names.length} systems unlocked`;
+      const body = names.length === 1 ? sys.blurb : names.length <= 3 ? 'New on the rails. Open them from there.' : `${list}. Open them from the rails.`;
+      events.emit({ t: 'toast', title, body, icon: sys.icon });
     }
     if (level > 0) {
       events.emit({ t: 'toast', title: `Starsmith Level ${level}`, body: 'A perk point to spend in the Level panel.', icon: 'level' });
@@ -68,7 +71,7 @@ export function installNotifications(): void {
   events.on((e) => {
     if (e.t === 'tierUp') {
       const tier = TIERS[e.tier];
-      if (tier) events.emit({ t: 'toast', title: `${tier.name}!`, body: `Everything x2. New: ${tier.unlocks}.`, icon: 'stardust' });
+      if (tier) events.emit({ t: 'toast', title: `${tier.name}!`, body: `Everything x2. New: ${tier.unlocks}.`, icon: 'stardust', priority: true });
       tierNews = { tier: e.tier, at: performance.now() };
     } else if (e.t === 'unlock') {
       const req = SYSTEM_BY_ID.get(e.feature)?.req;
@@ -78,7 +81,7 @@ export function installNotifications(): void {
     } else if (e.t === 'reset') {
       const def = layer(e.layer);
       if (!def) return;
-      events.emit({ t: 'toast', title: `${def.name}!`, body: `+${format(e.gain, snapshotStore.getState().notation)} ${def.currency === 'shards' ? 'Nova Shards' : def.currency}.`, icon: 'shard' });
+      events.emit({ t: 'toast', title: `${def.name}!`, body: `+${format(e.gain, snapshotStore.getState().notation)} ${def.currency === 'shards' ? 'Nova Shards' : def.currency}.`, icon: 'shard', priority: true });
       const done = resetsDone(game.state, def);
       const m = def.milestones.find((x) => x.at === done);
       if (m) events.emit({ t: 'toast', title: `Milestone: ${m.at} ${def.name}${m.at === 1 ? '' : 's'}`, body: `${m.text}.`, icon: 'trophy' });
@@ -98,6 +101,11 @@ export function installNotifications(): void {
       const depth = Number(e.id.slice(5));
       const reached = DEPTH_LAYERS.find((l) => l.from === depth && depth > 0);
       if (reached) events.emit({ t: 'toast', title: `Reached the ${reached.name}`, body: `Tougher cores, richer ore, and a new mastery: ${reached.oreName}.`, icon: 'drill' });
+    } else if (e.t === 'milestone' && e.id.startsWith('codex.')) {
+      const fresh = Number(e.id.slice(6));
+      events.emit({ t: 'toast', title: `${fresh} new element${fresh === 1 ? '' : 's'}`, body: 'Added to the Codex in the Starforge.', icon: 'atom' });
+    } else if (e.t === 'milestone' && e.id.startsWith('codexRow.')) {
+      events.emit({ t: 'toast', title: 'Codex row complete', body: 'Every element in a row of the table: a x1.5 bonus.', icon: 'atom' });
     } else if (e.t === 'milestone' && e.id.startsWith('goal.')) {
       goals.push(e.id);
       timer ??= setTimeout(flushMedals, MEDAL_BATCH_MS);

@@ -11,7 +11,7 @@ export function ToastHost() {
   useEffect(
     () =>
       events.on((e) => {
-        if (e.t === 'toast' && snapshotStore.getState().showToasts) push({ title: e.title, body: e.body, icon: e.icon ?? 'trophy' });
+        if (e.t === 'toast' && snapshotStore.getState().showToasts) push({ title: e.title, body: e.body, icon: e.icon ?? 'trophy', priority: e.priority });
         if (e.t === 'saveError') push({ title: 'Save skipped', body: e.message, icon: 'gear' });
       }),
     [push],

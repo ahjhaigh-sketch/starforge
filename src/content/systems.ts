@@ -37,7 +37,7 @@ export const SYSTEMS: readonly SystemDef[] = [
   // ---- right stack: upcoming shops and layers ----
   { id: 'novatree', name: 'Nova Tree', icon: 'tree', color: '#C23FA0', rail: 'right', req: { kind: 'count', stat: 'supernovas', count: 1, noun: 'Supernova' }, panel: 'novatree', built: true, blurb: 'Spend Nova Shards on an 80-node spiral.' },
   { id: 'automation', name: 'Automation', icon: 'auto', color: '#4A4F7A', rail: 'right', req: { kind: 'count', stat: 'supernovas', count: 2, noun: 'Supernova' }, panel: 'automation', built: true, blurb: 'Every auto-buyer you earn, in one place.' },
-  { id: 'starforge', name: 'Starforge', icon: 'forge', color: '#8A5CD8', rail: 'right', req: { kind: 'count', stat: 'supernovas', count: 3, noun: 'Supernova' }, built: false, blurb: 'Smelt ore into alloy, forge relics, fill the Codex.' },
+  { id: 'starforge', name: 'Starforge', icon: 'forge', color: '#8A5CD8', rail: 'right', req: { kind: 'count', stat: 'supernovas', count: 3, noun: 'Supernova' }, panel: 'starforge', built: true, blurb: 'Smelt ore into alloy, forge relics, fill the Codex.' },
   { id: 'drill', name: 'Deep Core', icon: 'drill', color: '#C2561E', rail: 'right', req: { kind: 'count', stat: 'supernovas', count: 5, noun: 'Supernova' }, panel: 'drill', built: true, blurb: 'Drill giant asteroids layer by layer.' },
   { id: 'fusion', name: 'Fusion', icon: 'comet', color: '#1A9DB8', rail: 'right', req: { kind: 'count', stat: 'supernovas', count: 6, noun: 'Supernova' }, built: false, blurb: 'Merge three comets into a stronger one.' },
   { id: 'attune', name: 'Attune', icon: 'pulse', color: '#C23F6A', rail: 'right', req: { kind: 'count', stat: 'supernovas', count: 8, noun: 'Supernova' }, built: false, blurb: 'Change how tapping works.' },

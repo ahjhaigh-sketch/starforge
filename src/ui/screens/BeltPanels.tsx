@@ -4,6 +4,7 @@ import { beltReport, drillReport, starsmithReport } from '../../app/beltReports'
 import { snapshotStore, useSnap } from '../../app/uiSnapshot';
 import type { BeltUpgradeId } from '../../content/belt';
 import { BeltField } from '../../render/beltField';
+import { BuyAmountControl } from '../kit/BuyAmountControl';
 import { Button, cx, tint } from '../kit/Chunk';
 import { Icon } from '../kit/Icon';
 import { Panel } from '../kit/Panel';
@@ -142,6 +143,7 @@ export function BeltPanel() {
       {r && (
         <div className="belt-cols">
           <div className="belt-ups">
+            <BuyAmountControl compact />
             {r.upgrades.map((u) => (
               <div key={u.id} className="belt-up chunk" style={tint('#2B1F6E')} data-belt-up={u.id}>
                 <span className="tile chunk" style={tint('#6E7BAE')}>
@@ -158,15 +160,18 @@ export function BeltPanel() {
                   color={u.can ? 'var(--lime)' : '#5A5F8F'}
                   disabled={!u.can}
                   onClick={() => commands.buyBeltUpgrade(u.id as BeltUpgradeId)}
-                  aria-label={u.maxed ? `${u.name} is maxed` : `Buy ${u.name} for ${u.cost} ore`}
+                  aria-label={u.maxed ? `${u.name} is maxed` : `Buy ${u.count} ${u.name} for ${u.cost} ore`}
                 >
                   {u.maxed ? (
                     'Max'
                   ) : (
-                    <span className="cost-chip">
-                      <Icon name="belt" />
-                      {r.free ? 'Free' : u.cost}
-                    </span>
+                    <>
+                      {u.count > 1 && <span className="num buy-n">+{u.count}</span>}
+                      <span className="cost-chip">
+                        <Icon name="belt" />
+                        {r.free ? 'Free' : u.cost}
+                      </span>
+                    </>
                   )}
                 </Button>
               </div>
@@ -250,26 +255,31 @@ export function DrillPanel() {
                 Drilling <b className="num">{r.dps}</b> a second. Breaking it pays <b className="num">{r.reward}</b> ore.
               </small>
             </div>
+            <BuyAmountControl compact />
             <div className="drill-buys">
-              <Button color={r.canDrone ? 'var(--lime)' : '#5A5F8F'} disabled={!r.canDrone} onClick={() => commands.buyDrillDrone()} aria-label={`Buy a drill drone for ${r.droneCost} ore`}>
+              <Button color={r.canDrone ? 'var(--lime)' : '#5A5F8F'} disabled={!r.canDrone} onClick={() => commands.buyDrillDrone()} aria-label={`Buy ${r.droneCount} drill drone${r.droneCount === 1 ? '' : 's'} for ${r.droneCost} ore`}>
                 <span>
                   Drill drone <span className="num">({r.drones})</span>
+                  {r.droneCount > 1 && <span className="num buy-n"> +{r.droneCount}</span>}
                 </span>
                 <span className="cost-chip">
                   <Icon name="belt" />
                   {r.droneCost}
                 </span>
               </Button>
-              <Button color={r.canBit ? 'var(--lime)' : '#5A5F8F'} disabled={!r.canBit} onClick={() => commands.buyDrillBit()} aria-label={`Buy a drill bit for ${r.bitCost} ore`}>
+              <Button color={r.canBit ? 'var(--lime)' : '#5A5F8F'} disabled={!r.canBit} onClick={() => commands.buyDrillBit()} aria-label={`Craft ${r.bitCount} drill bit${r.bitCount === 1 ? '' : 's'} for ${r.bitCost} Iron alloy`}>
                 <span>
                   Drill bit <span className="num">({r.bits})</span>
+                  {r.bitCount > 1 && <span className="num buy-n"> +{r.bitCount}</span>}
                 </span>
                 <span className="cost-chip">
-                  <Icon name="belt" />
+                  <Icon name="ingot" />
                   {r.bitCost}
                 </span>
               </Button>
-              <small>A drone adds 2 drilling a second; a bit multiplies drilling by 1.5.</small>
+              <small>
+                A drone adds 2 drilling a second; a bit, crafted from Iron alloy (you have <span className="num">{r.alloy}</span>), multiplies drilling by 1.5.
+              </small>
             </div>
             <div className="drill-mastery">
               {r.mastery.map((m) => (

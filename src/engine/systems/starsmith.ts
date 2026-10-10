@@ -59,7 +59,10 @@ export function addXp(s: GameState, amount: Decimal): void {
   const before = levelInfo(s).level;
   gain(s, 'xp', amount);
   const after = levelInfo(s).level;
-  if (after > before) events.emit({ t: 'milestone', id: `level.${after}` });
+  if (after > before) {
+    s.stats.level = after;
+    events.emit({ t: 'milestone', id: `level.${after}` });
+  }
 }
 
 /** XP for something the player did (taps, purchases, resets, quests), scaled by XP gain. */

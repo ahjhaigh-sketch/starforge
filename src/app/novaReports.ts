@@ -9,6 +9,8 @@ import { reqProgress, reqText } from '../engine/systems/unlocks';
 import type { TreeNodeView } from '../ui/tree/TreeView';
 import { format, formatTime } from '../ui/format';
 import { game } from './game';
+import { codexPreviewText } from './forgeReports';
+import { forgeOpen } from '../engine/systems/forge';
 
 /** Read-outs for the Supernova confirm screen, the Nova Tree, Automation and the Ascent map. */
 const n = () => game.state.settings.notation;
@@ -39,6 +41,8 @@ export interface SupernovaReport {
   done: number;
   run: string;
   milestones: Array<{ at: number; text: string; reached: boolean }>;
+  /** What the Codex would get, once the Starforge is open. */
+  codex: string;
 }
 
 export function supernovaReport(): SupernovaReport | null {
@@ -55,6 +59,7 @@ export function supernovaReport(): SupernovaReport | null {
     done,
     run: formatTime(runSeconds(s)),
     milestones: def.milestones.map((m) => ({ at: m.at, text: m.text, reached: done >= m.at })),
+    codex: forgeOpen(s) ? codexPreviewText() : '',
   };
 }
 

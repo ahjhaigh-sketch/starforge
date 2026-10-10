@@ -494,6 +494,7 @@ test('Deep Core: clicking drills, drones buy, the core breaks into ore', async (
   await page.evaluate(() => {
     const { game, commands } = (window as unknown as Sf5).sf;
     game.state.stats.supernovas = 5;
+    (game.state as unknown as { forge: { on: boolean } }).forge.on = false; // keep the ore for the drone
     commands.devAdd('ore', 600);
   });
   await page.locator('[data-rail="drill"]:visible').click();
@@ -502,7 +503,7 @@ test('Deep Core: clicking drills, drones buy, the core breaks into ore', async (
   const core = panel.getByTestId('drill-core');
   for (let i = 0; i < 5; i++) await core.click();
   await expect.poll(() => page.evaluate(() => (window as unknown as Sf5).sf.game.state.drill.damage.toNumber())).toBeGreaterThanOrEqual(10);
-  await panel.getByRole('button', { name: /Buy a drill drone/ }).click();
+  await panel.getByRole('button', { name: /Buy 1 drill drone/ }).click();
   await expect.poll(() => page.evaluate(() => (window as unknown as Sf5).sf.game.state.drill.drones)).toBe(1);
   // keep drilling until the first core breaks
   for (let i = 0; i < 40; i++) await core.click();
@@ -530,4 +531,143 @@ test('Starsmith perks: the HUD chip opens the panel, points spend and reset', as
   await expect(panel).toContainText('1 perk point to spend');
   await panel.getByRole('button', { name: 'Reset perks (free)' }).click();
   await expect(panel).toContainText('3 perk points to spend');
+});
+
+// ---------- Phase 6: the Starforge (furnace, relics, Codex) ----------
+
+/** Opens a rail's panel. With ?dev=1 the dev panel can sit over the right rail, so click through the DOM. */
+async function openRail(page: Page, id: string): Promise<void> {
+  await page.evaluate((x) => {
+    const btn = [...document.querySelectorAll<HTMLButtonElement>(`[data-rail="${x}"]`)].find((b) => b.offsetParent !== null);
+    btn?.click();
+  }, id);
+  await expect(page.locator(`[data-panel="${id}"]`)).toHaveClass(/open/);
+}
+
+type Sf6 = {
+  sf: {
+    game: {
+      state: {
+        tier: number;
+        unlocked: string[];
+        engines: Record<string, number>;
+        stats: Record<string, number>;
+        forge: { upgrades: Record<string, number>; lanes: Array<{ t: number; ore: { toNumber(): number } }> };
+        relics: { levels: Record<string, number>; equipped: string[] };
+        belt: { upgrades: Record<string, number> };
+        codex: Record<string, number>;
+        currencies: Record<string, { toNumber(): number }>;
+      };
+    };
+    commands: { devAdd(c: string, n: number): void; setBuyAmount(a: unknown): void };
+    saveNow(): boolean;
+  };
+};
+
+test('the furnace smelts ore into alloy, and a reload mid-smelt keeps the batch', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf6).sf;
+    game.state.stats.supernovas = 3;
+    commands.devAdd('ore', 1000);
+  });
+  await openRail(page, 'starforge');
+  const panel = page.locator('[data-panel="starforge"]');
+  await expect(panel).toHaveClass(/open/);
+  await expect(panel.getByTestId('furnace-status')).toHaveText('Smelting Iron ore');
+  await expect(panel.locator('.forge-scene canvas')).toBeVisible();
+  // a batch is in the crucible: save and reload partway through
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf6).sf.game.state.forge.lanes[0]?.t ?? 0)).toBeGreaterThan(2);
+  const before = await page.evaluate(() => {
+    const { game, saveNow } = (window as unknown as Sf6).sf;
+    saveNow();
+    return { t: game.state.forge.lanes[0]!.t, ore: game.state.currencies.ore!.toNumber() };
+  });
+  await page.reload();
+  const after = await page.evaluate(() => {
+    const s = (window as unknown as Sf6).sf.game.state;
+    return { lanes: s.forge.lanes.length, ore: s.forge.lanes[0]?.ore.toNumber() ?? 0, t: s.forge.lanes[0]?.t ?? 0, left: s.currencies.ore!.toNumber() };
+  });
+  expect(after.lanes).toBe(1);
+  expect(after.ore).toBe(100);
+  expect(after.t).toBeGreaterThanOrEqual(before.t);
+  expect(after.left).toBe(before.ore);
+  // and it finishes into an ingot of Iron alloy
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf6).sf.game.state.currencies['alloy.iron']?.toNumber() ?? 0), { timeout: 15_000 }).toBeGreaterThanOrEqual(1);
+  expect(errors).toEqual([]);
+});
+
+test('relics: craft one, it equips itself, and it shows in the Stats breakdown', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf6).sf;
+    game.state.stats.supernovas = 3;
+    game.state.unlocked.push('stats');
+    commands.devAdd('alloy.iron', 100);
+  });
+  await openRail(page, 'starforge');
+  const panel = page.locator('[data-panel="starforge"]');
+  await panel.getByRole('tab', { name: 'Relics' }).click();
+  const anvil = panel.locator('[data-relic="anvil"]');
+  await anvil.getByRole('button', { name: /Craft Anvil of Dawn/ }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf6).sf.game.state.relics.levels.anvil)).toBe(1);
+  await expect(anvil.getByRole('button', { name: 'Equipped' })).toBeVisible();
+  // level it with the buy amount: x10 needs 10 levels' worth of alloy
+  await page.evaluate(() => (window as unknown as Sf6).sf.commands.devAdd('alloy.iron', 5000));
+  await panel.getByRole('button', { name: 'x10', exact: true }).click();
+  await anvil.getByRole('button', { name: /Level Anvil of Dawn up 10/ }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf6).sf.game.state.relics.levels.anvil)).toBe(11);
+  await page.keyboard.press('Escape');
+  await openRail(page, 'stats');
+  await expect(page.locator('[data-panel="stats"]')).toContainText('Anvil of Dawn (relic)');
+  expect(errors).toEqual([]);
+});
+
+test('the Codex: the Supernova screen previews the elements, then the table shows them', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf6).sf;
+    game.state.stats.supernovas = 3;
+    game.state.tier = 3;
+    commands.devAdd('stardust', 3e7);
+  });
+  await page.getByTestId('supernova').click();
+  const confirm = page.locator('[data-panel="supernova"]');
+  await expect(confirm.getByTestId('codex-preview')).toContainText('Hydrogen to Oxygen');
+  await confirm.getByRole('button', { name: 'Go Supernova' }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf6).sf.game.state.codex.o ?? 0)).toBeGreaterThan(0);
+  await openRail(page, 'starforge');
+  const panel = page.locator('[data-panel="starforge"]');
+  await panel.getByRole('tab', { name: 'Codex' }).click();
+  await expect(panel.locator('[data-el="o"]')).toHaveClass(/found/);
+  await expect(panel.locator('[data-el="f"]')).not.toHaveClass(/found/);
+  await panel.locator('[data-el="fe"]').click();
+  await expect(panel.getByTestId('element-card')).toContainText('Iron');
+  await expect(panel.getByTestId('element-card')).toContainText('One more relic slot');
+  expect(errors).toEqual([]);
+});
+
+test('Belt and furnace purchases follow the buy amount', async ({ page }) => {
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf6).sf;
+    game.state.tier = 1;
+    game.state.stats.supernovas = 3;
+    commands.devAdd('ore', 1e9);
+  });
+  await page.locator('[data-rail="belt"]:visible').click();
+  const belt = page.locator('[data-panel="belt"]');
+  await belt.getByRole('button', { name: 'x10', exact: true }).click();
+  await belt.locator('[data-belt-up="value"]').getByRole('button', { name: /Buy 10 Value/ }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf6).sf.game.state.belt.upgrades.value)).toBe(10);
+  await page.keyboard.press('Escape');
+  await openRail(page, 'starforge');
+  const forge = page.locator('[data-panel="starforge"]');
+  await forge.getByRole('button', { name: 'Max', exact: true }).click();
+  await forge.locator('[data-forge-up="crucibles"]').getByRole('button').click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf6).sf.game.state.forge.upgrades.crucibles)).toBe(5);
+  await expect(forge.locator('[data-forge-up="crucibles"]').getByRole('button', { name: /maxed/ })).toBeVisible();
 });

@@ -262,11 +262,13 @@ describe('Deep Core Drilling', () => {
     const s = beltRun();
     s.stats.supernovas = 5;
     gain(s, 'ore', D(1e5));
+    gain(s, 'alloy.iron', D(10));
     expect(buyDrillDrone(s)).toBe(true);
     expect(drillDps(s).toNumber()).toBe(3);
     expect(buyDrillBit(s)).toBe(true);
     expect(drillDps(s).toNumber()).toBeCloseTo(4.5, 9);
-    expect(cur(s, 'ore').toNumber()).toBe(1e5 - 500 - 1000);
+    expect(cur(s, 'ore').toNumber()).toBe(1e5 - 500);
+    expect(cur(s, 'alloy.iron').toNumber()).toBe(10 - 5);
   });
 
   it('drills on its own, offline too', () => {
@@ -329,7 +331,6 @@ describe('save version 6', () => {
   it('loads and migrates a real version 5 save', () => {
     const { state } = importSave(readFileSync('tests/fixtures/save-v5.txt', 'utf8').trim());
     expect(state.version).toBe(SAVE_VERSION);
-    expect(SAVE_VERSION).toBe(6);
     const { rng, ...belt } = state.belt;
     expect(belt).toEqual({ upgrades: {}, tier: 0, field: [], nextId: 1, spawnAcc: 0, droneAcc: 0, oreThisTier: D(0) });
     expect(rng).toHaveLength(4);

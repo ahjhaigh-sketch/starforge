@@ -40,3 +40,22 @@ export function planPurchase(
   const cost = bulkCost(curve, owned, count).mul(costMult);
   return { count, cost, canAfford: cost.lte(money) };
 }
+
+/**
+ * The same plan for a purchase with a level cap (a beam that stops at 8 levels, six crucibles).
+ * Fixed amounts shrink to what's left; at the cap the plan is for nothing (count 0).
+ */
+export function planLimited(curve: CostCurve, owned: number, money: Decimal, amount: BuyAmount, custom: number, limit: number, nextAt?: number): PurchasePlan {
+  const left = Math.max(0, Math.floor(limit - owned));
+  if (left === 0) return { count: 0, cost: bulkCost(curve, owned, 1), canAfford: false };
+  if (amount === 'max') {
+    let n = maxBuy(curve, owned, money, left);
+    while (n > 0 && bulkCost(curve, owned, n).gt(money)) n--;
+    if (n === 0) return { count: 1, cost: bulkCost(curve, owned, 1), canAfford: false };
+    return { count: n, cost: bulkCost(curve, owned, n), canAfford: true };
+  }
+  const want = amount === 'next' ? Math.max(1, (nextAt ?? owned + 1) - owned) : amount === 'custom' ? Math.max(1, Math.floor(custom) || 1) : amount;
+  const count = Math.min(want, left);
+  const cost = bulkCost(curve, owned, count);
+  return { count, cost, canAfford: cost.lte(money) };
+}

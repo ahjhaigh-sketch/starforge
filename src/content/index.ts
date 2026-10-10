@@ -1,5 +1,7 @@
 import { registerAutomation } from '../engine/systems/automation';
 import { registerBelt } from '../engine/systems/belt';
+import { registerCodex } from '../engine/systems/codex';
+import { registerForge } from '../engine/systems/forge';
 import { registerStarsmith } from '../engine/systems/starsmith';
 import { registerComets } from '../engine/systems/comets';
 import { registerNovaTree } from '../engine/systems/novaTree';
@@ -30,5 +32,7 @@ export function registerContent(): void {
   registerNovaTree();
   registerAutomation();
   registerBelt();
+  registerForge();
+  registerCodex();
   registerUnlocks();
 }

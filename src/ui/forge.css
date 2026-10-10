@@ -1,0 +1,100 @@
+/* =====================================================================
+   Phase 6: the Starforge (furnace, relics, Element Codex) and the
+   Supernova Codex preview. Buy counts on chunky buttons.
+   ===================================================================== */
+
+.buy-n { margin-right: 0.35rem; color: #fff; text-shadow: var(--outline-sm); }
+
+/* ---------- tabs ---------- */
+.forge-tabs { display: flex; gap: 0.5rem; margin-bottom: 0.7rem; flex-wrap: wrap; }
+.forge-tab { height: 2.6rem; padding: 0 1rem; border-radius: 999px; --stroke: 2.5px; display: flex; align-items: center; gap: 0.45rem; font: inherit; font-weight: 700; color: var(--text); cursor: pointer; text-shadow: var(--outline-sm); }
+.forge-tab .icon { width: 1.5rem; height: 1.5rem; }
+.forge-tab:not(.on) { opacity: 0.85; }
+
+/* ---------- furnace ---------- */
+.furnace > p { margin-top: 0; }
+.forge-scene { position: relative; height: min(12rem, 26vh); overflow: hidden;
+  background: radial-gradient(ellipse at 72% 60%, rgba(255, 122, 46, 0.18), transparent 55%), var(--panel-deep); }
+.forge-scene canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.furnace-status { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; margin: 0.6rem 0 0.5rem; }
+.furnace-state { font-weight: 700; color: var(--text-dim); }
+.furnace-state.hot { color: var(--flare); text-shadow: var(--outline-sm); }
+.grades { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.45rem; }
+.grade { border-radius: 14px; --stroke: 2.5px; padding: 0.4rem 0.3rem; display: flex; flex-direction: column; align-items: center; gap: 0.1rem; font: inherit; color: var(--text); cursor: pointer; min-width: 0; }
+.grade b { font-weight: 700; text-shadow: var(--outline-sm); }
+.grade small { font-size: 0.75rem; font-weight: 600; color: var(--text); opacity: 0.9; white-space: nowrap; }
+.grade-alloy { display: flex; align-items: center; gap: 0.2rem; }
+.grade-alloy .icon { width: 1rem; height: 1rem; }
+.grade:not(.on) small { color: var(--text-dim); }
+.hopper-share { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.6rem; font-weight: 600; font-size: 0.88rem; color: var(--text-dim); }
+.crucibles { display: grid; grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr)); gap: 0.4rem; margin: 0.6rem 0 0.3rem; }
+.furnace-batch { margin: 0.3rem 0 0.6rem; font-weight: 600; font-size: 0.88rem; color: var(--text-dim); }
+.furnace-batch b { color: var(--lime); }
+.furnace-ups { display: grid; gap: 0.5rem; }
+.furnace-ups-head { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.pill-mini { display: inline-flex; align-items: center; gap: 0.3rem; font-weight: 700; }
+.pill-mini .icon { width: 1.3rem; height: 1.3rem; }
+
+/* ---------- relics ---------- */
+.relics > p { margin-top: 0; }
+.relic-slots { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+.relic-slot { width: 3.2rem; height: 3.2rem; border-radius: 12px; --stroke: 2.5px; display: grid; place-items: center; cursor: pointer; }
+.relic-slot .icon { width: 2.2rem; height: 2.2rem; }
+.relic-slot.empty { border: 3px dashed rgba(255, 255, 255, 0.18); background: rgba(0, 0, 0, 0.2); cursor: default; }
+.relic-grade { margin-top: 0.8rem; }
+.relic-grade h4 { margin: 0 0 0.45rem; font-family: var(--font-display); font-weight: 400; font-size: 1.15rem; text-shadow: var(--outline-sm); display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; }
+.relic-grade h4 small { font-family: var(--font-ui); font-size: 0.8rem; font-weight: 700; color: var(--text-dim); display: inline-flex; align-items: center; gap: 0.25rem; text-shadow: none; }
+.relic-grade h4 small .icon { width: 1rem; height: 1rem; }
+.relic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr)); gap: 0.5rem; }
+.relic { display: grid; grid-template-columns: 2.8rem 1fr auto; gap: 0.55rem; align-items: center; padding: 0.45rem 0.6rem; border-radius: 14px; --stroke: 2.5px; }
+.relic .tile { width: 2.8rem; height: 2.8rem; border-radius: 10px; --stroke: 2.5px; display: grid; place-items: center; }
+.relic .tile .icon { width: 2rem; height: 2rem; }
+.relic.uncrafted .tile .icon { opacity: 0.55; }
+.relic.equipped { box-shadow: 0 0 0 2px var(--lime) inset, 0 4px 0 rgba(0, 0, 0, 0.35); }
+.relic-next { color: var(--lime) !important; }
+.relic-acts { display: flex; flex-direction: column; gap: 0.3rem; align-items: stretch; }
+.relic-acts .btn { min-width: 6rem; }
+.relic-acts .cost-chip .icon { width: 1rem; height: 1rem; }
+
+/* ---------- Codex ---------- */
+.codex > p { margin-top: 0; }
+.ptable-wrap { overflow-x: auto; padding-bottom: 0.3rem; }
+.ptable { display: grid; grid-template-columns: repeat(18, minmax(2.1rem, 1fr)); grid-template-rows: repeat(7, auto) 0.5rem repeat(2, auto); gap: 0.18rem; min-width: 40rem; }
+.el { position: relative; aspect-ratio: 1; border-radius: 7px; --stroke: 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; font: inherit; color: var(--text); cursor: pointer; padding: 0; line-height: 1; }
+.el small { position: absolute; top: 2px; left: 3px; font-size: 0.5rem; opacity: 0.8; }
+.el b { font-weight: 800; font-size: 0.85rem; text-shadow: var(--outline-sm); }
+.el i { position: absolute; bottom: 1px; right: 3px; font-style: normal; font-size: 0.55rem; color: var(--gold); }
+.el:not(.found) b { color: var(--text-dim); text-shadow: none; }
+.el.far { opacity: 0.45; }
+.el.sel { outline: 3px solid #fff; outline-offset: 1px; z-index: 1; }
+.element-card { display: flex; gap: 0.8rem; align-items: center; padding: 0.6rem 0.8rem; margin: 0.6rem 0; }
+.element-big { width: 4.2rem; height: 4.2rem; border-radius: 14px; --stroke: 3px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: none; }
+.element-big small { font-size: 0.75rem; font-weight: 700; }
+.element-big b { font-size: 1.6rem; text-shadow: var(--outline); }
+.element-card h4 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1.2rem; text-shadow: var(--outline-sm); }
+.element-card h4 small { font-family: var(--font-ui); font-size: 0.8rem; color: var(--text-dim); text-shadow: none; }
+.element-card p { margin: 0.15rem 0 0; font-size: 0.85rem; font-weight: 600; }
+.element-perk { color: var(--cyan); }
+.element-perk.special { color: var(--gold); }
+.codex-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.codex-list { padding: 0.55rem 0.8rem; }
+.codex-list h4 { margin: 0 0 0.3rem; font-family: var(--font-display); font-weight: 400; font-size: 1.05rem; text-shadow: var(--outline-sm); }
+.codex-list ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.25rem; font-size: 0.8rem; font-weight: 600; }
+.codex-list li { display: grid; grid-template-columns: auto 1fr auto; gap: 0.4rem; align-items: center; color: var(--text-dim); }
+.codex-list li i { width: 0.75rem; height: 0.75rem; border-radius: 50%; border: 2px solid var(--ink); }
+.codex-list li b { color: var(--text); }
+.codex-list li:has(i) { grid-template-columns: 0.75rem auto 1fr auto; }
+.codex-list li.done b, .codex-list li.done .now { color: var(--lime); }
+.codex-list .now { color: var(--lime); }
+
+/* Supernova confirm screen */
+.codex-preview { display: flex; align-items: center; justify-content: center; gap: 0.4rem; font-weight: 700; color: var(--cyan); }
+.codex-preview .icon { width: 1.4rem; height: 1.4rem; }
+
+@media (max-width: 900px) {
+  .grades { grid-template-columns: repeat(3, 1fr); }
+  .codex-cols { grid-template-columns: 1fr; }
+  .forge-scene { height: 9.5rem; }
+  .relic-grid { grid-template-columns: 1fr; }
+}
+.ptable-hint { display: block; color: var(--text-dim); font-weight: 600; margin-bottom: 0.3rem; }

@@ -50,6 +50,19 @@ export const plainSaveSchema = z.looseObject({
     .optional(),
   drill: z.looseObject({ depth: z.number().int().min(0), damage: dec, drones: z.number().int().min(0), bits: z.number().int().min(0), mastery: z.record(z.string(), finite) }).optional(),
   starsmith: z.looseObject({ perks: z.record(z.string(), z.number().int().min(0)) }).optional(),
+  forge: z
+    .looseObject({
+      grade: z.string(),
+      on: z.boolean(),
+      upgrades: z.record(z.string(), z.number().int().min(0)),
+      lanes: z.array(z.looseObject({ grade: z.string(), ore: dec, alloy: dec, t: finite })),
+      share: finite,
+      allowance: dec,
+      seen: dec,
+    })
+    .optional(),
+  relics: z.looseObject({ levels: z.record(z.string(), z.number().int().min(0)), equipped: z.array(z.string()) }).optional(),
+  codex: z.record(z.string(), z.number().int().min(0)).optional(),
   settings: z.looseObject({
     notation: z.enum(['suffix', 'scientific', 'engineering']),
     autosaveSeconds: finite,

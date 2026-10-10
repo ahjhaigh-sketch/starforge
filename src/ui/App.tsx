@@ -25,6 +25,7 @@ import { WelcomePanel } from './screens/WelcomePanel';
 import { ConstantsPanel, MasteryPanel, OrbitalsPanel, QuestsPanel } from './screens/EarlyPanels';
 import { AscentPanel, AutomationPanel, NovaTreePanel, SupernovaPanel } from './screens/NovaPanels';
 import { BeltPanel, DrillPanel, StarsmithPanel } from './screens/BeltPanels';
+import { StarforgePanel } from './screens/ForgePanels';
 import { useUi } from './store';
 
 /** Shown while time away is being simulated; fades in only if that takes a moment. */
@@ -84,6 +85,7 @@ export function App() {
       <BeltPanel />
       <DrillPanel />
       <StarsmithPanel />
+      <StarforgePanel />
       <SettingsPanel />
       <PanelHost />
       <ToastHost />

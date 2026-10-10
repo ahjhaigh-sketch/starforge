@@ -22,6 +22,11 @@ export function SupernovaPanel() {
             <span className="num">+{r.gain}</span>
           </div>
           <p className="center">Nova Shards from this run ({r.run}). Lifetime shards boost every bit of Stardust, so spending them never weakens you.</p>
+          {r.codex && (
+            <p className="center codex-preview" data-testid="codex-preview">
+              <Icon name="atom" /> {r.codex}
+            </p>
+          )}
           <div className="confirm-cols">
             <div className="well">
               <h4>Resets</h4>

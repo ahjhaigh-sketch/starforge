@@ -5,16 +5,16 @@ import { stat } from '../engine/stats';
 import {
   beltLevel,
   beltOpen,
+  beltPlan,
   beltTierNeed,
-  beltUpgradeCost,
   beltUpgradeMaxed,
-  bitCost,
+  bitPlan,
   coreHp,
   coreReward,
   drillDps,
   drillOpen,
-  droneCost,
   droneCount,
+  dronePlan,
   droneSpeed,
   freeUpgrades,
   layerAt,
@@ -38,7 +38,7 @@ export interface BeltReport {
   nextReward: string;
   rewards: Array<{ text: string; got: boolean }>;
   drones: string;
-  upgrades: Array<{ id: string; name: string; desc: string; icon: string; level: string; cost: string; can: boolean; maxed: boolean }>;
+  upgrades: Array<{ id: string; name: string; desc: string; icon: string; level: string; count: number; cost: string; can: boolean; maxed: boolean }>;
   free: boolean;
   stats: Array<{ label: string; value: string }>;
   odds: Array<{ name: string; color: string; odds: string; mult: string }>;
@@ -61,9 +61,9 @@ export function beltReport(): BeltReport {
     rewards: BELT_TIER_REWARDS.map((text, i) => ({ text, got: s.belt.tier > i })),
     drones: droneCount(s) > 0 ? `${droneCount(s)} drone${droneCount(s) === 1 ? '' : 's'}, ${formatCount(droneCount(s) * droneSpeed(s), n())} asteroids a second` : 'No drones yet: Belt Tier 1 brings the first',
     upgrades: BELT_UPGRADES.map((u) => {
-      const cost = beltUpgradeCost(s, u.id);
+      const plan = beltPlan(s, u.id);
       const maxed = beltUpgradeMaxed(s, u.id);
-      return { id: u.id, name: u.name, desc: u.desc, icon: u.icon, level: `Lv ${beltLevel(s, u.id)}`, cost: format(cost, n()), can: !maxed && ore.gte(cost), maxed };
+      return { id: u.id, name: u.name, desc: u.desc, icon: u.icon, level: `Lv ${beltLevel(s, u.id)}`, count: plan.count, cost: format(plan.cost, n()), can: !maxed && plan.canAfford, maxed };
     }),
     free: freeUpgrades(s),
     stats: [
@@ -86,11 +86,14 @@ export interface DrillReport {
   dps: string;
   reward: string;
   drones: number;
+  droneCount: number;
   droneCost: string;
   canDrone: boolean;
   bits: number;
+  bitCount: number;
   bitCost: string;
   canBit: boolean;
+  alloy: string;
   mastery: Array<{ name: string; level: number; color: string }>;
 }
 
@@ -98,6 +101,8 @@ export function drillReport(): DrillReport {
   const s = game.state;
   const ore = cur(s, 'ore');
   const hp = coreHp(s.drill.depth);
+  const drone = dronePlan(s);
+  const bit = bitPlan(s);
   const layer = layerAt(s.drill.depth);
   return {
     open: drillOpen(s),
@@ -109,11 +114,14 @@ export function drillReport(): DrillReport {
     dps: format(drillDps(s), n()),
     reward: format(coreReward(s, s.drill.depth), n()),
     drones: s.drill.drones,
-    droneCost: format(droneCost(s), n()),
-    canDrone: ore.gte(droneCost(s)),
+    droneCount: drone.count,
+    droneCost: format(drone.cost, n()),
+    canDrone: drone.canAfford,
     bits: s.drill.bits,
-    bitCost: format(bitCost(s), n()),
-    canBit: ore.gte(bitCost(s)),
+    bitCount: bit.count,
+    bitCost: format(bit.cost, n()),
+    canBit: bit.canAfford,
+    alloy: format(cur(s, 'alloy.iron'), n()),
     mastery: DEPTH_LAYERS.map((l) => ({ name: l.oreName, level: oreMastery(s, l.ore), color: l.color })),
   };
 }

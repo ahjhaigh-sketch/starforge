@@ -1,5 +1,37 @@
 # Changelog
 
+## Phase 6: Starforge
+- The Starforge opens at 3 Supernovas, in one panel with three tabs: Furnace, Relics and Codex.
+- Ore grades: common ore makes Iron alloy. A rare asteroid also drops as much of its own grade's ore (Gold, Crystal, Prismatic, Void) as its common ore, so every grade arrives at about a tenth of iron's rate.
+- The furnace, drawn in PixiJS: ore fills the hopper, lumps ride the Mag-Belt into the glowing Stellar Furnace, and ingots slide out onto a stack.
+  - 100 ore makes 1 alloy, with a 10 s base batch.
+  - Upgrades (all with buy amounts): Mag-Belt speed (x1.1), Bulk smelting (+1 batch) and Crucibles (up to 6 batches at once).
+  - Pick a grade; switch it on or off.
+  - The hopper takes all, half (the default) or a tenth of newly mined common ore, so Belt upgrades and drones keep the rest.
+  - Each batch keeps the ore it took and the alloy it will give, so reloading mid-smelt loses nothing.
+  - Away, it runs at the offline efficiency, and one long catch-up step gives what short ticks would.
+- 50 relics, 10 per alloy grade.
+  - Crafting costs 10 alloy; level L costs 10 x 1.6^L, with buy amounts.
+  - Effect = base x 1.25^(level - 1), through the stat pipeline, so relics show in every stat breakdown.
+  - 6 equip slots, plus 1 from iron in the Codex. Crafting every relic of a grade doubles that alloy. Relics on capped stats stop at level 10.
+- The Element Codex: all 118 elements on a periodic table.
+  - Each Supernova grants floor(1 + log10(S / 1e7)) samples of every element the star could fuse at the tier it reached: Blue Giant up to oxygen, Neutron Star up to iron, Quasar barium, Blazar uranium, White Hole everything.
+  - Element level is floor(log2(samples)) + 1. Each family gives a perk per level, and a completed row gives x1.5.
+  - Helium adds an engine milestone, iron a relic slot, gold doubles Gold alloy, and uranium raises shard gain.
+  - The Supernova confirm screen previews the samples you'll get, and toasts announce new elements and completed rows.
+- Drill bits are crafted from Iron alloy, as the plan says.
+- Fixed from Phase 5: Belt upgrades and drill drones and bits now follow the buy amount (x1 to Max, Next, typed), as rule 8 requires.
+- 24 new medals: the Belt, Deep Core, Starsmith Level, smelting, relics and elements.
+- The Stats screen shows shard, ore, XP and alloy gain, smelting speed and drilling, plus counters for the new systems. The welcome-back screen names every ore and alloy.
+- Toasts:
+  - A new tier and a Supernova are priority toasts: smaller news can no longer push them off the screen.
+  - Five or more unlocks at once get a short title.
+- Offline efficiency is capped at 100%, however many relics and nodes stack up.
+- Balance simulator:
+  - The bot now sweeps the Belt, tiers up, spends perks, smelts and crafts relics every 5 seconds.
+  - It found the Codex halving early runs, so samples start when the Starforge opens and helium's milestone sits at 1,250 owned.
+- Save version 7, with a migration test that loads a real version 6 save.
+
 ## Phase 5: Asteroid Belt
 - The Asteroid Belt opens at Red Dwarf.
   - A PixiJS harvest field: asteroids drift in up to the field's cap. A tractor-beam circle follows the mouse, a dragging finger, or the arrow keys.

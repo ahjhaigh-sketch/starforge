@@ -11,6 +11,7 @@ import { reqProgress, reqText } from '../engine/systems/unlocks';
 import { format, formatCount, formatMult, formatTime } from '../ui/format';
 import { saveSummary } from './backups';
 import { game } from './game';
+import { GRADES, RELICS } from '../content/forge';
 
 /**
  * Formatted read-outs for the bigger panels (Stats, Medals, Upgrades, Welcome back, import
@@ -61,6 +62,12 @@ export function statsReport(): { sections: StatSection[]; counters: StatLine[] }
     section('buffDuration', 'Comet buff length', 'mult'),
     section('offlineCap', 'Offline cap', 'time'),
     section('offlineEfficiency', 'Offline efficiency', 'pct'),
+    section('shardGain', 'Shard gain', 'mult'),
+    section('oreGain', 'Ore gain', 'mult'),
+    section('xpGain', 'Starsmith XP gain', 'mult'),
+    section('alloyGain', 'Alloy gain', 'mult'),
+    section('forgeSpeed', 'Smelting speed', 'mult'),
+    section('drillPower', 'Drilling power', 'mult'),
     section('runeLuck', 'Rune Luck (from Goals)', 'mult'),
     section('runeBulk', 'Rune Bulk (from Goals)', 'mult'),
   ];
@@ -78,6 +85,11 @@ export function statsReport(): { sections: StatSection[]; counters: StatLine[] }
     { label: 'Times evolved', value: formatCount(c.evolves ?? 0, n()) },
     { label: 'Upgrades bought', value: `${s.upgrades.length} / ${UPGRADES.length}` },
     { label: 'Medals', value: `${s.achievements.length} / ${MEDALS.length}` },
+    { label: 'Asteroids harvested', value: formatCount(c.harvested ?? 0, n()) },
+    { label: 'Cores broken', value: formatCount(c.cores ?? 0, n()) },
+    { label: 'Batches smelted', value: formatCount(c.smelts ?? 0, n()) },
+    { label: 'Relics crafted', value: `${c.relics ?? 0} / ${RELICS.length}` },
+    { label: 'Elements found', value: `${c.elements ?? 0} / 118` },
   ];
   return { sections, counters };
 }
@@ -175,7 +187,13 @@ export interface WelcomeReport {
 }
 
 /** Names for the currencies a welcome-back report can list. */
-const GAIN_LABELS: Record<string, string> = { stardust: 'Stardust', shards: 'Nova Shards', ore: 'Ore', xp: 'Starsmith XP' };
+const GAIN_LABELS: Record<string, string> = {
+  stardust: 'Stardust',
+  shards: 'Nova Shards',
+  ore: 'Ore',
+  xp: 'Starsmith XP',
+  ...Object.fromEntries(GRADES.flatMap((g) => [[g.alloy, `${g.name} alloy`], ...(g.id === 'iron' ? [] : [[g.ore, `${g.name} ore`]])])),
+};
 
 export function welcomeReport(): WelcomeReport | null {
   const r = game.bootReport;

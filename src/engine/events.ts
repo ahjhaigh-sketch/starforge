@@ -12,7 +12,10 @@ export type GameEvent =
   | { t: 'comet'; kind: string }
   /** `hand`: swept by the player (drones harvest quietly). */
   | { t: 'harvest'; rarity: string; hand: boolean }
-  | { t: 'toast'; title: string; body: string; icon?: string }
+  /** A batch (or several) of this alloy grade came out of the furnace. */
+  | { t: 'smelt'; grade: string }
+  /** `priority`: big news (a new tier, a reset) that smaller toasts must never push out. */
+  | { t: 'toast'; title: string; body: string; icon?: string; priority?: boolean }
   | { t: 'saved'; slot: string }
   | { t: 'saveError'; message: string }
   | { t: 'loaded'; source: string };

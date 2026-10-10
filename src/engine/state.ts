@@ -2,7 +2,7 @@ import { D, type Decimal } from './decimal';
 import { seedRng, type RngState } from './rng';
 
 /** Bump with every change to the save's shape, and add a migration + an old-save fixture test. */
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 export type Notation = 'suffix' | 'scientific' | 'engineering';
 /** 'next' buys up to the next milestone (an engine's next x2, a constant's next doubling). */
@@ -101,6 +101,25 @@ export interface GameState {
   drill: { depth: number; damage: Decimal; drones: number; bits: number; mastery: Record<string, number> };
   /** Starsmith perk points spent, by perk ID. */
   starsmith: { perks: Record<string, number> };
+  /**
+   * The Starforge furnace: the grade it smelts, whether it's running, upgrade levels, and every
+   * batch in a crucible with the ore it took and the alloy it will give (so a reload loses nothing).
+   */
+  forge: {
+    grade: string;
+    on: boolean;
+    upgrades: Record<string, number>;
+    lanes: Array<{ grade: string; ore: Decimal; alloy: Decimal; t: number }>;
+    /** Share of newly mined common ore the hopper takes (1, 0.5, 0.1), so Belt upgrades keep the rest. */
+    share: number;
+    /** Common ore the hopper may still take, and all-time ore last counted. */
+    allowance: Decimal;
+    seen: Decimal;
+  };
+  /** Relic levels (0 = not crafted) and which are equipped. */
+  relics: { levels: Record<string, number>; equipped: string[] };
+  /** Element Codex: samples of each element, by element ID. */
+  codex: Record<string, number>;
   settings: Settings;
 }
 
@@ -156,6 +175,9 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     belt: { upgrades: {}, tier: 0, field: [], nextId: 1, spawnAcc: 0, droneAcc: 0, oreThisTier: D(0), rng: seedRng(seed ^ 0x5eed_be17) },
     drill: { depth: 0, damage: D(0), drones: 0, bits: 0, mastery: {} },
     starsmith: { perks: {} },
+    forge: { grade: 'iron', on: true, upgrades: {}, lanes: [], share: 0.5, allowance: D(0), seen: D(0) },
+    relics: { levels: {}, equipped: [] },
+    codex: {},
     settings: defaultSettings(),
   };
 }

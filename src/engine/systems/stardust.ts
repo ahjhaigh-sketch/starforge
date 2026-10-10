@@ -33,16 +33,21 @@ export function engineCurve(id: string): CostCurve {
 
 export const owned = (s: GameState, id: string): number => s.engines[id] ?? 0;
 
+const WITH_HELIUM = [...BALANCE.engines.milestones, BALANCE.codex.heliumMilestone].sort((a, b) => a - b);
+
+/** Engine milestone counts: helium in the Codex adds one more. */
+export const engineMilestones = (s?: GameState): readonly number[] => (s && (s.codex.he ?? 0) > 0 ? WITH_HELIUM : BALANCE.engines.milestones);
+
 /** How many output doublings an engine has at `n` owned. */
-export function milestonesReached(n: number): number {
+export function milestonesReached(n: number, s?: GameState): number {
   let m = 0;
-  for (const at of BALANCE.engines.milestones) if (n >= at) m++;
+  for (const at of engineMilestones(s)) if (n >= at) m++;
   return m;
 }
 
 /** The next milestone above `n`, and the one before it (for the progress bar). Null past the last. */
-export function milestoneSpan(n: number): { from: number; to: number } | null {
-  const ms = BALANCE.engines.milestones;
+export function milestoneSpan(n: number, s?: GameState): { from: number; to: number } | null {
+  const ms = engineMilestones(s);
   for (let i = 0; i < ms.length; i++) if (n < ms[i]!) return { from: i === 0 ? 0 : ms[i - 1]!, to: ms[i]! };
   return null;
 }
@@ -206,7 +211,7 @@ export function registerStardust(): void {
       stat: `engineMult.${e.id}`,
       op: 'mul',
       label: 'Milestones',
-      value: (s) => stat(s, 'milestoneBase').pow(milestonesReached(owned(s, e.id))),
+      value: (s) => stat(s, 'milestoneBase').pow(milestonesReached(owned(s, e.id), s)),
     });
   }
   registerSystem({

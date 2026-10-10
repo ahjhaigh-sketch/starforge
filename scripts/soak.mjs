@@ -6,7 +6,7 @@ import { chromium } from '@playwright/test';
 
 const seconds = Number(process.argv[2] ?? 120);
 const base = process.argv[3] ?? 'http://localhost:4173';
-const PANELS = ['upgrades', 'medals', 'stats', 'constants', 'quests', 'orbitals', 'mastery', 'novatree', 'automation', 'ascent', 'belt', 'level', 'drill'];
+const PANELS = ['upgrades', 'medals', 'stats', 'constants', 'quests', 'orbitals', 'mastery', 'novatree', 'automation', 'ascent', 'belt', 'level', 'drill', 'starforge'];
 
 const browser = await chromium.launch();
 let failed = false;
@@ -32,6 +32,8 @@ for (const view of [
     commands.devAdd('shards', 50);
     commands.devAdd('ore', 1e4);
     commands.devAdd('xp', 3000);
+    commands.devAdd('alloy.iron', 500);
+    commands.devAdd('ore.gold', 2000);
   });
   const end = Date.now() + seconds * 1000;
   let round = 0;
@@ -46,9 +48,13 @@ for (const view of [
       void game;
     });
     const panel = PANELS[round % PANELS.length];
-    const rail = page.locator(`[data-rail="${panel}"]:visible`).first();
-    if (await rail.count()) {
-      await rail.click({ force: true });
+    // click through the DOM: with ?dev=1 the dev panel can sit over the right rail
+    const opened = await page.evaluate((id) => {
+      const btn = [...document.querySelectorAll(`[data-rail="${id}"]`)].find((b) => b.offsetParent !== null);
+      btn?.click();
+      return !!btn;
+    }, panel);
+    if (opened) {
       await page.waitForTimeout(300);
       if (panel === 'belt') {
         const field = page.getByTestId('belt-field');
@@ -65,6 +71,15 @@ for (const view of [
         }
       }
       if (panel === 'drill') for (let i = 0; i < 5; i++) await page.getByTestId('drill-core').click({ force: true });
+      if (panel === 'starforge') {
+        await page.locator('[data-grade="gold"]').click();
+        await page.getByRole('tab', { name: 'Relics' }).click();
+        await page.locator('[data-relic="anvil"] button').first().click({ force: true });
+        await page.getByRole('tab', { name: 'Codex' }).click();
+        await page.locator('[data-el="c"]').click();
+        await page.getByRole('tab', { name: 'Furnace' }).click();
+        await page.waitForTimeout(1500);
+      }
       if (panel === 'level') {
         await page.locator('[data-perk="ore"] button').click({ force: true });
         if (round % 3 === 0) await page.getByRole('button', { name: 'Reset perks (free)' }).click({ force: true });

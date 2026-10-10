@@ -33,6 +33,8 @@ import { questProgress } from '../engine/systems/quests';
 import { nextShardAt, supernovaGain, supernovaReady } from '../engine/systems/supernova';
 import { beltOpen, beltTierNeed, beltUpgradeCost, beltUpgradeMaxed, bitCost, drillOpen, droneCost } from '../engine/systems/belt';
 import { BELT_UPGRADES } from '../content/belt';
+import { GRADE_BY_ID, RELICS } from '../content/forge';
+import { forgeOpen, relicLevel } from '../engine/systems/forge';
 import { levelInfo, perksFree, starsmithOpen } from '../engine/systems/starsmith';
 import { format, formatCount, formatMult, formatRate, formatTime } from '../ui/format';
 import { game } from './game';
@@ -182,7 +184,7 @@ function engineRows(s: GameState, n: Notation, prev: EngineRow[] | undefined): {
       break;
     }
     const own = owned(s, e.id);
-    const span = milestoneSpan(own);
+    const span = milestoneSpan(own, s);
     const plan = planPurchase(engineCurve(e.id), own, money, s.settings.buyAmount, s.settings.customBuyAmount, costMult, span?.to);
     const rank = masteryOpen(s) ? masteryRank(s, e.id) : 0;
     rows.push({
@@ -255,7 +257,10 @@ function railAlert(s: GameState, id: string): boolean {
     case 'level':
       return perksFree(s) > 0;
     case 'drill':
-      return drillOpen(s) && (cur(s, 'ore').gte(droneCost(s)) || cur(s, 'ore').gte(bitCost(s)));
+      return drillOpen(s) && (cur(s, 'ore').gte(droneCost(s)) || cur(s, 'alloy.iron').gte(bitCost(s)));
+    case 'starforge':
+      // a relic waiting to be crafted (levelling is always possible, so it doesn't count)
+      return forgeOpen(s) && RELICS.some((r) => relicLevel(s, r.id) === 0 && cur(s, GRADE_BY_ID.get(r.grade)!.alloy).gte(BALANCE.relics.costBase));
     default:
       return false;
   }

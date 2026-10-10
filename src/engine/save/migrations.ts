@@ -29,6 +29,8 @@ const migrations: Record<number, (d: PlainSave) => void> = {
   5: () => {},
   // 6 (Phase 5): the Asteroid Belt, Deep Core Drilling and Starsmith perks, all with defaults.
   6: () => {},
+  // 7 (Phase 6): the Starforge furnace, relics and the Element Codex, all with defaults.
+  7: () => {},
 };
 
 export function migrate(version: number, data: PlainSave): PlainSave {

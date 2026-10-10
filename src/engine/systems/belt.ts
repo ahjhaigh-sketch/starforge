@@ -1,6 +1,8 @@
 import { BALANCE } from '../../content/balance';
 import { type BeltUpgradeId, DEPTH_LAYERS, RARITIES } from '../../content/belt';
-import { bulkCost, type CostCurve } from '../cost';
+import { GRADES } from '../../content/forge';
+import { planLimited, type PurchasePlan } from '../buy';
+import { bulkCost, type CostCurve, priceAt } from '../cost';
 import { D, type Decimal, ZERO } from '../decimal';
 import { events } from '../events';
 import { nextFloat } from '../rng';
@@ -63,6 +65,8 @@ export function harvest(s: GameState, ids: readonly number[], scale = 1, hand = 
   let ore = ZERO;
   let xp = ZERO;
   let dust = ZERO;
+  /** Rare asteroids also give their own grade of ore for the Starforge: as much as their common ore. */
+  const rare = new Map<number, Decimal>();
   const sps = stat(s, 'stardustPerSec');
   const keep = s.belt.field.filter((a) => {
     if (!want.has(a.id)) return true;
@@ -70,8 +74,11 @@ export function harvest(s: GameState, ids: readonly number[], scale = 1, hand = 
     ore = ore.add(oreFor(s, a.r));
     xp = xp.add(xpFor(s, a.r));
     dust = dust.add(sps.mul(B.stardustSeconds * Math.sqrt(RARITIES[a.r]!.mult)));
-    // TODO(Phase 6+): Crystal asteroids also give Crystals, Void ones Dark Matter (Game design: Rarities).
-    if (a.r > 0) events.emit({ t: 'harvest', rarity: RARITIES[a.r]!.id, hand });
+    // TODO(later phases): Crystal asteroids also give Crystals, Void ones Dark Matter (Game design: Rarities).
+    if (a.r > 0) {
+      rare.set(a.r, (rare.get(a.r) ?? ZERO).add(oreFor(s, a.r)));
+      events.emit({ t: 'harvest', rarity: RARITIES[a.r]!.id, hand });
+    }
     return false;
   });
   if (n === 0) return 0;
@@ -82,6 +89,7 @@ export function harvest(s: GameState, ids: readonly number[], scale = 1, hand = 
     dust = dust.mul(scale);
   }
   gain(s, 'ore', ore);
+  for (const [r, amount] of rare) gain(s, GRADES[r]!.ore, amount.mul(scale));
   s.belt.oreThisTier = s.belt.oreThisTier.add(ore);
   addXp(s, xp);
   gain(s, 'stardust', dust);
@@ -94,22 +102,35 @@ export function beltUpgradeCost(s: GameState, id: BeltUpgradeId, count = 1): Dec
   return bulkCost(beltCurve(id), beltLevel(s, id), count);
 }
 
-export function beltUpgradeMaxed(s: GameState, id: BeltUpgradeId): boolean {
-  if (id === 'beam') return beltLevel(s, id) >= B.beamMaxLevel;
-  if (id === 'amount') return stat(s, 'beltCap').toNumber() >= B.maxCap;
-  return false;
+/** Highest level an upgrade can reach: the beam stops at 8 levels, the field at 400 asteroids. */
+export function beltLimit(s: GameState, id: BeltUpgradeId): number {
+  if (id === 'beam') return B.beamMaxLevel;
+  if (id === 'amount') return beltLevel(s, id) + Math.max(0, B.maxCap - Math.floor(stat(s, 'beltCap').toNumber()));
+  return Infinity;
+}
+
+export const beltUpgradeMaxed = (s: GameState, id: BeltUpgradeId) => beltLevel(s, id) >= beltLimit(s, id);
+
+/** Value and XP double every 25 levels, so "Next" buys up to the next doubling. */
+const nextDoubling = (level: number) => (Math.floor(level / 25) + 1) * 25;
+
+export function beltPlan(s: GameState, id: BeltUpgradeId): PurchasePlan {
+  const level = beltLevel(s, id);
+  const next = id === 'value' || id === 'xp' ? nextDoubling(level) : undefined;
+  return planLimited(beltCurve(id), level, cur(s, 'ore'), s.settings.buyAmount, s.settings.customBuyAmount, beltLimit(s, id), next);
 }
 
 /** From Belt Tier 4 upgrades no longer cost ore (you still need that much). */
 export const freeUpgrades = (s: GameState) => s.belt.tier >= 4;
 
+/** Buys the current buy amount (x1 to Max, or typed). From Belt Tier 4 you need the ore but keep it. */
 export function buyBeltUpgrade(s: GameState, id: BeltUpgradeId): boolean {
-  if (!beltOpen(s) || beltUpgradeMaxed(s, id)) return false;
-  const cost = beltUpgradeCost(s, id);
-  if (cur(s, 'ore').lt(cost)) return false;
-  if (!freeUpgrades(s)) spend(s, 'ore', cost);
-  s.belt.upgrades[id] = beltLevel(s, id) + 1;
-  events.emit({ t: 'purchase', kind: 'belt', id, amount: 1 });
+  if (!beltOpen(s)) return false;
+  const plan = beltPlan(s, id);
+  if (plan.count <= 0 || !plan.canAfford) return false;
+  if (!freeUpgrades(s)) spend(s, 'ore', plan.cost);
+  s.belt.upgrades[id] = beltLevel(s, id) + plan.count;
+  events.emit({ t: 'purchase', kind: 'belt', id, amount: plan.count });
   return true;
 }
 
@@ -123,6 +144,7 @@ export function beltTierUp(s: GameState): boolean {
   const need = beltTierNeed(s.belt.tier + 1);
   if (s.belt.oreThisTier.lt(need)) return false;
   s.belt.tier += 1;
+  s.stats.beltTier = Math.max(s.stats.beltTier ?? 0, s.belt.tier);
   s.belt.upgrades = {};
   s.belt.oreThisTier = ZERO;
   s.currencies.ore = ZERO;
@@ -143,13 +165,19 @@ export const coreHp = (depth: number): Decimal => D(DR.hpBase).mul(D(DR.hpGrowth
 /** Mastery level of an ore from how many cores of that layer you have broken. */
 export const oreMastery = (s: GameState, ore: string) => Math.floor(Math.sqrt(s.drill.mastery[ore] ?? 0));
 
-export const droneCost = (s: GameState) => D(DR.droneBase).mul(D(DR.droneGrowth).pow(s.drill.drones));
-export const bitCost = (s: GameState) => D(DR.bitBase).mul(D(DR.bitGrowth).pow(s.drill.bits));
+const droneCurve: CostCurve = { base: DR.droneBase, brackets: [{ from: 0, ratio: DR.droneGrowth }] };
+const bitCurve: CostCurve = { base: DR.bitBase, brackets: [{ from: 0, ratio: DR.bitGrowth }] };
+export const droneCost = (s: GameState) => priceAt(droneCurve, s.drill.drones);
+/** Drill bits are crafted at the Starforge from Iron alloy. */
+export const bitCost = (s: GameState) => priceAt(bitCurve, s.drill.bits);
+export const dronePlan = (s: GameState): PurchasePlan => planLimited(droneCurve, s.drill.drones, cur(s, 'ore'), s.settings.buyAmount, s.settings.customBuyAmount, Infinity);
+export const bitPlan = (s: GameState): PurchasePlan => planLimited(bitCurve, s.drill.bits, cur(s, 'alloy.iron'), s.settings.buyAmount, s.settings.customBuyAmount, Infinity);
 
 export function drillDps(s: GameState): Decimal {
   const layer = layerAt(s.drill.depth);
   return D(DR.baseDps + DR.droneDps * s.drill.drones)
     .mul(D(DR.bitMult).pow(s.drill.bits))
+    .mul(stat(s, 'drillPower'))
     .mul(1 + DR.masteryPerLevel * oreMastery(s, layer.ore));
 }
 
@@ -170,6 +198,7 @@ export function drillDamage(s: GameState, amount: Decimal): number {
     s.belt.oreThisTier = s.belt.oreThisTier.add(ore);
     s.drill.mastery[layer.ore] = (s.drill.mastery[layer.ore] ?? 0) + 1;
     s.drill.depth += 1;
+    s.stats.cores = (s.stats.cores ?? 0) + 1;
     broken++;
     events.emit({ t: 'milestone', id: `core.${s.drill.depth}` });
   }
@@ -181,15 +210,18 @@ export function drillDamage(s: GameState, amount: Decimal): number {
 export const tapCore = (s: GameState) => drillDamage(s, drillDps(s).mul(DR.tapSeconds));
 
 export function buyDrillDrone(s: GameState): boolean {
-  if (!drillOpen(s) || !spend(s, 'ore', droneCost(s))) return false;
-  s.drill.drones += 1;
+  const plan = dronePlan(s);
+  if (!drillOpen(s) || plan.count <= 0 || !plan.canAfford || !spend(s, 'ore', plan.cost)) return false;
+  s.drill.drones += plan.count;
+  events.emit({ t: 'purchase', kind: 'drill', id: 'drone', amount: plan.count });
   return true;
 }
 
-// TODO(Phase 6): drill bits are crafted at the Starforge from alloy; until then they cost ore.
 export function buyDrillBit(s: GameState): boolean {
-  if (!drillOpen(s) || !spend(s, 'ore', bitCost(s))) return false;
-  s.drill.bits += 1;
+  const plan = bitPlan(s);
+  if (!drillOpen(s) || plan.count <= 0 || !plan.canAfford || !spend(s, 'alloy.iron', plan.cost)) return false;
+  s.drill.bits += plan.count;
+  events.emit({ t: 'purchase', kind: 'drill', id: 'bit', amount: plan.count });
   return true;
 }
 
@@ -201,6 +233,7 @@ export function registerBelt(): void {
   defineStat({ id: 'beltSpawn', label: 'Asteroid arrival speed', base: () => D(1) });
   defineStat({ id: 'beamRadius', label: 'Tractor beam radius (px)', base: () => D(B.beamBase) });
   defineStat({ id: 'beltLuck', label: 'Asteroid luck', base: () => D(1) });
+  defineStat({ id: 'drillPower', label: 'Drilling power', base: () => D(1) });
   registerSources(
     { id: 'belt.value', stat: 'oreValue', op: 'mul', label: 'Value upgrade', value: (s) => D(doublingShape(beltLevel(s, 'value'))) },
     { id: 'belt.oreGain', stat: 'oreValue', op: 'mul', label: 'Ore gain', value: (s) => stat(s, 'oreGain') },

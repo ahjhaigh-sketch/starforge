@@ -13,6 +13,8 @@ import { buyNode } from '../engine/systems/novaTree';
 import { type BeltUpgradeId } from '../content/belt';
 import { beltTierUp, buyBeltUpgrade, buyDrillBit, buyDrillDrone, harvest, tapCore } from '../engine/systems/belt';
 import { addPerk, resetPerks } from '../engine/systems/starsmith';
+import type { ForgeUpgradeId } from '../content/forge';
+import { buyForgeUpgrade, buyRelic, equipRelic, setForgeGrade, setForgeOn, setForgeShare, unequipRelic } from '../engine/systems/forge';
 import { backupNow, readBackup } from './backups';
 import { D } from '../engine/decimal';
 import { simulateElapsed } from '../engine/offline';
@@ -50,7 +52,7 @@ export const commands = {
   /** Buys an engine with the current buy amount (x1, x10, x100, x1,000, Max or typed). */
   buyEngine(id: string): boolean {
     const s = game.state;
-    const plan = planPurchase(engineCurve(id), owned(s, id), cur(s, 'stardust'), s.settings.buyAmount, s.settings.customBuyAmount, stat(s, 'engineCostMult'), milestoneSpan(owned(s, id))?.to);
+    const plan = planPurchase(engineCurve(id), owned(s, id), cur(s, 'stardust'), s.settings.buyAmount, s.settings.customBuyAmount, stat(s, 'engineCostMult'), milestoneSpan(owned(s, id), s)?.to);
     const ok = plan.canAfford && buyEngine(s, id, plan.count);
     if (ok && !askedToKeepData) {
       askedToKeepData = true;
@@ -114,6 +116,39 @@ export const commands = {
   resetPerks() {
     resetPerks(game.state);
     done();
+  },
+  setForgeGrade(grade: string) {
+    setForgeGrade(game.state, grade);
+    done();
+  },
+  setForgeOn(on: boolean) {
+    setForgeOn(game.state, on);
+    done();
+  },
+  setForgeShare(share: number) {
+    setForgeShare(game.state, share);
+    done();
+  },
+  buyForgeUpgrade(id: ForgeUpgradeId): boolean {
+    const ok = buyForgeUpgrade(game.state, id);
+    done();
+    return ok;
+  },
+  /** Crafts a relic, or levels it by the buy amount. */
+  buyRelic(id: string): boolean {
+    const ok = buyRelic(game.state, id);
+    done();
+    return ok;
+  },
+  equipRelic(id: string): boolean {
+    const ok = equipRelic(game.state, id);
+    done();
+    return ok;
+  },
+  unequipRelic(id: string): boolean {
+    const ok = unequipRelic(game.state, id);
+    done();
+    return ok;
   },
   buyNode(id: string): boolean {
     const ok = buyNode(game.state, id);

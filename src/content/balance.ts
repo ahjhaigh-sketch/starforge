@@ -6,6 +6,8 @@ export const BALANCE = {
   offline: {
     baseCapSeconds: 2 * 3600,
     baseEfficiency: 0.5,
+    /** Relics and the tree can't push time away past full value. */
+    maxEfficiency: 1,
   },
   tap: {
     base: 1,
@@ -153,7 +155,8 @@ export const BALANCE = {
     droneDps: 2,
     droneBase: 500,
     droneGrowth: 1.6,
-    bitBase: 1000,
+    /** Drill bits are crafted at the Starforge from Iron alloy. */
+    bitBase: 5,
     bitGrowth: 2.2,
     /** Each drill bit: x1.5 drilling. Each ore mastery level: +10%. */
     bitMult: 1.5,
@@ -163,6 +166,61 @@ export const BALANCE = {
     rewardGrowth: 6,
     /** A click on the core is this many seconds of drilling. */
     tapSeconds: 2,
+  },
+  forge: {
+    /** The Starforge opens at 3 Supernovas (the rail's requirement). 100 ore smelts into 1 alloy. */
+    supernovas: 3,
+    orePerBatch: 100,
+    alloyPerBatch: 1,
+    batchSeconds: 10,
+    /** Mag-Belt speed: each level smelts 10% faster. */
+    speedPerLevel: 1.1,
+    /** Upgrades cost common ore. */
+    upgrades: {
+      speed: { base: 200, growth: 1.45 },
+      bulk: { base: 500, growth: 1.6 },
+      crucibles: { base: 2500, growth: 4 },
+    },
+    /** One crucible to start, up to six. */
+    maxCrucibles: 6,
+    /** How much newly mined common ore the hopper may take: all, half (the default) or a tenth. */
+    shareChoices: [1, 0.5, 0.1],
+  },
+  relics: {
+    /** Crafting costs 10 alloy; level L to L+1 costs 10 x 1.6^L of its alloy. Effect = base x 1.25^(level - 1). */
+    costBase: 10,
+    costGrowth: 1.6,
+    effectGrowth: 1.25,
+    slots: 6,
+    /** Crafting every relic of a grade multiplies that alloy. */
+    collectorMult: 2,
+  },
+  codex: {
+    /** The heaviest element (atomic number) each Star Tier can fuse: Blue Giant to oxygen, Neutron Star to iron. */
+    tierMaxZ: [2, 2, 6, 8, 14, 20, 26, 38, 47, 56, 92, 118],
+    /** Samples of each element per Supernova = floor(1 + log10(S / 1e7)), S = Stardust this run. */
+    samplesAt: 1e7,
+    /** Each family's perk per element level (a level is floor(log2(samples)) + 1). */
+    families: {
+      nonmetal: { stat: 'productionMult', kind: 'mul', per: 0.04 },
+      noble: { stat: 'offlineCap', kind: 'add', per: 600 },
+      alkali: { stat: 'tapPower', kind: 'mul', per: 0.05 },
+      alkaline: { stat: 'engineCostMult', kind: 'reduce', per: 0.02 },
+      transition: { stat: 'alloyGain', kind: 'mul', per: 0.02 },
+      post: { stat: 'cometRate', kind: 'mul', per: 0.01 },
+      metalloid: { stat: 'xpGain', kind: 'mul', per: 0.05 },
+      halogen: { stat: 'critMult', kind: 'mul', per: 0.03 },
+      lanthanide: { stat: 'oreGain', kind: 'mul', per: 0.03 },
+      actinide: { stat: 'shardGain', kind: 'mul', per: 0.02 },
+    },
+    /** A completed row of the table: x1.5 to these stats. */
+    rowMult: 1.5,
+    rowStats: [['productionMult'], ['tapPower'], ['oreGain'], ['alloyGain'], ['xpGain'], ['shardGain'], ['productionMult', 'tapPower']],
+    /** Helium: an extra engine milestone at this many owned (past the last regular one). */
+    heliumMilestone: 1250,
+    /** Uranium: shard gain + this much per level. */
+    uraniumPerLevel: 0.1,
+    goldAlloyMult: 2,
   },
   starsmith: {
     /** Opens at Red Dwarf. Level L needs 50 x 2.7^(L^0.75) more XP. */

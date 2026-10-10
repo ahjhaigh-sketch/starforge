@@ -1,4 +1,4 @@
-import type { Decimal } from './decimal';
+import { D, type Decimal } from './decimal';
 import { events } from './events';
 import { gain, type GameState } from './state';
 import { invalidateStats } from './stats';
@@ -24,6 +24,12 @@ export interface LayerMilestone {
   text: string;
 }
 
+/** The run as it stood just before a reset. */
+export interface ResetBefore {
+  tier: number;
+  runStardust: Decimal;
+}
+
 export interface LayerDef {
   id: string;
   name: string;
@@ -39,8 +45,11 @@ export interface LayerDef {
   /** Always kept, listed on the confirm screen so nobody fears losing them. */
   alwaysKept: readonly string[];
   milestones: readonly LayerMilestone[];
-  /** Runs after the reset (rewards that aren't the layer's currency, like Starsmith XP). */
-  onReset?: (s: GameState) => void;
+  /**
+   * Runs after the reset: rewards that aren't the layer's currency (Starsmith XP, Codex samples).
+   * `before` is what the run reached, since the reset has already cleared it.
+   */
+  onReset?: (s: GameState, before: ResetBefore) => void;
 }
 
 const layers = new Map<string, LayerDef>();
@@ -89,13 +98,14 @@ export function performReset(s: GameState, id: string): Decimal | null {
   const amount = def.gain(s);
   // decide what is kept BEFORE anything changes, so parts can't affect each other's rules
   const keep = def.parts.map((p) => !!p.keptBy?.(s));
+  const before: ResetBefore = { tier: s.tier, runStardust: s.totals.run.stardust ?? D(0) };
   gain(s, def.currency, amount);
   s.stats[def.counter] = resetsDone(s, def) + 1;
   def.parts.forEach((p, i) => {
     if (!keep[i]) p.reset(s);
   });
   s.lastResetAt[id] = s.playtime;
-  def.onReset?.(s);
+  def.onReset?.(s, before);
   // every stat depends on what was just reset: nothing may read a cached value from the old run
   invalidateStats();
   events.emit({ t: 'reset', layer: id, gain: amount });

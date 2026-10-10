@@ -8,6 +8,7 @@ import './ui/panels.css';
 import './ui/early.css';
 import './ui/nova.css';
 import './ui/belt.css';
+import './ui/forge.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -89,7 +90,7 @@ async function boot(): Promise<void> {
     game.bootReport = await simulateElapsedAsync(
       s,
       away,
-      { cap: stat(s, 'offlineCap').toNumber(), efficiency: stat(s, 'offlineEfficiency').toNumber(), offline: true },
+      { cap: stat(s, 'offlineCap').toNumber(), efficiency: Math.min(BALANCE.offline.maxEfficiency, stat(s, 'offlineEfficiency').toNumber()), offline: true },
       (share) => ui.setCatchUp(share),
     );
     ui.setCatchUp(null);

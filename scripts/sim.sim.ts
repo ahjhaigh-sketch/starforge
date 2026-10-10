@@ -2,7 +2,9 @@
  * The balance simulator (npm run sim). A bot plays Starforge the way an engaged player would:
  * taps a few times a second, catches every comet, claims quests, buys the best-value engine,
  * evolves when it can, buys upgrades, constants and planets, and goes Supernova when the gain is
- * worth it, then spends shards on the cheapest Nova Tree node. It reports purchases and resets
+ * worth it, then spends shards on the cheapest Nova Tree node. Every few seconds it also sweeps the
+ * Asteroid Belt, buys Belt upgrades and tiers, spends perk points, runs the furnace on the grade it
+ * has most of, and crafts or levels the cheapest relic. It reports purchases and resets
  * per milestone (amounts, not minutes) to compare with the Math and balance tab's targets.
  */
 import { it } from 'vitest';
@@ -53,6 +55,29 @@ let buyUpgrade: (typeof import('../src/engine/systems/upgrades'))['buyUpgrade'];
 let tick: (typeof import('../src/engine/tick'))['tick'];
 let bulkCost: (typeof import('../src/engine/cost'))['bulkCost'];
 let ORBITALS: (typeof import('../src/content/early'))['ORBITALS'];
+let BELT_UPGRADES: (typeof import('../src/content/belt'))['BELT_UPGRADES'];
+let PERKS: (typeof import('../src/content/belt'))['PERKS'];
+let GRADES: (typeof import('../src/content/forge'))['GRADES'];
+let RELICS: (typeof import('../src/content/forge'))['RELICS'];
+let FORGE_UPGRADES: (typeof import('../src/content/forge'))['FORGE_UPGRADES'];
+let harvest: (typeof import('../src/engine/systems/belt'))['harvest'];
+let beltPlan: (typeof import('../src/engine/systems/belt'))['beltPlan'];
+let buyBeltUpgrade: (typeof import('../src/engine/systems/belt'))['buyBeltUpgrade'];
+let beltTierUp: (typeof import('../src/engine/systems/belt'))['beltTierUp'];
+let beltOpen: (typeof import('../src/engine/systems/belt'))['beltOpen'];
+let dronePlan: (typeof import('../src/engine/systems/belt'))['dronePlan'];
+let bitPlan: (typeof import('../src/engine/systems/belt'))['bitPlan'];
+let buyDrillDrone: (typeof import('../src/engine/systems/belt'))['buyDrillDrone'];
+let buyDrillBit: (typeof import('../src/engine/systems/belt'))['buyDrillBit'];
+let addPerk: (typeof import('../src/engine/systems/starsmith'))['addPerk'];
+let perksFree: (typeof import('../src/engine/systems/starsmith'))['perksFree'];
+let forgeOpen: (typeof import('../src/engine/systems/forge'))['forgeOpen'];
+let forgePlan: (typeof import('../src/engine/systems/forge'))['forgePlan'];
+let buyForgeUpgrade: (typeof import('../src/engine/systems/forge'))['buyForgeUpgrade'];
+let setForgeGrade: (typeof import('../src/engine/systems/forge'))['setForgeGrade'];
+let batchOre: (typeof import('../src/engine/systems/forge'))['batchOre'];
+let relicPlan: (typeof import('../src/engine/systems/forge'))['relicPlan'];
+let buyRelic: (typeof import('../src/engine/systems/forge'))['buyRelic'];
 let PLANET_TYPES: (typeof import('../src/content/early'))['PLANET_TYPES'];
 
 async function loadGame(): Promise<void> {
@@ -75,11 +100,18 @@ async function loadGame(): Promise<void> {
   ({ tick } = await import('../src/engine/tick'));
   ({ bulkCost } = await import('../src/engine/cost'));
   ({ ORBITALS, PLANET_TYPES } = await import('../src/content/early'));
+  ({ BELT_UPGRADES, PERKS } = await import('../src/content/belt'));
+  ({ GRADES, RELICS, FORGE_UPGRADES } = await import('../src/content/forge'));
+  ({ harvest, beltPlan, buyBeltUpgrade, beltTierUp, beltOpen, dronePlan, bitPlan, buyDrillDrone, buyDrillBit } = await import('../src/engine/systems/belt'));
+  ({ addPerk, perksFree } = await import('../src/engine/systems/starsmith'));
+  ({ forgeOpen, forgePlan, buyForgeUpgrade, setForgeGrade, batchOre, relicPlan, buyRelic } = await import('../src/engine/systems/forge'));
 }
 
 const TAPS_PER_SECOND = 4;
 const MAX_HOURS = 120;
 const STOP_AT_SUPERNOVAS = 30;
+/** How often (game seconds) the bot looks after the Belt and the Starforge. */
+const SIDE_EVERY = 5;
 
 interface Row {
   milestone: string;
@@ -139,6 +171,40 @@ function shop(s: GameState): void {
   });
 }
 
+/** The Belt, the furnace and relics: what a player does when they check those panels. */
+function sideSystems(s: GameState): void {
+  if (!beltOpen(s) || process.env.SIM_NO_SIDE) return;
+  invalidateStats();
+  if (s.belt.field.length > 0) harvest(s, s.belt.field.map((a) => a.id));
+  beltTierUp(s);
+  for (let i = 0; i < 100; i++) {
+    const next = BELT_UPGRADES.map((u) => ({ id: u.id, p: beltPlan(s, u.id) }))
+      .filter((x) => x.p.count > 0 && x.p.canAfford)
+      .sort((a, b) => a.p.cost.cmp(b.p.cost))[0];
+    if (!next || !buyBeltUpgrade(s, next.id)) break;
+  }
+  for (let i = 0; perksFree(s) > 0 && i < 1000; i++) addPerk(s, PERKS[(s.stats.level ?? i) % PERKS.length]!.id);
+  if (forgeOpen(s)) {
+    // the rarest grade with a few batches waiting, else iron
+    const grade = [...GRADES].reverse().find((g) => cur(s, g.ore).gte(batchOre(s).mul(3))) ?? GRADES[0]!;
+    setForgeGrade(s, grade.id);
+    for (const u of FORGE_UPGRADES) {
+      const p = forgePlan(s, u.id);
+      if (p.count > 0 && p.cost.lt(cur(s, 'ore').mul(0.3))) buyForgeUpgrade(s, u.id);
+    }
+    for (let i = 0; i < 200; i++) {
+      const next = RELICS.map((r) => ({ id: r.id, p: relicPlan(s, r.id) }))
+        .filter((x) => x.p.count > 0 && x.p.canAfford)
+        .sort((a, b) => a.p.cost.cmp(b.p.cost))[0];
+      if (!next || !buyRelic(s, next.id)) break;
+    }
+  }
+  const drone = dronePlan(s);
+  if (drone.canAfford && drone.cost.lt(cur(s, 'ore').mul(0.3))) buyDrillDrone(s);
+  if (bitPlan(s).canAfford) buyDrillBit(s);
+  invalidateStats();
+}
+
 function spendShards(s: GameState): void {
   for (let i = 0; i < 200; i++) {
     const options = NOVA_TREE.filter((n) => canBuyNode(s, n)).sort((a, b) => Number(!!a.repeat) - Number(!!b.repeat) || nodeCost(s, a).cmp(nodeCost(s, b)));
@@ -187,6 +253,7 @@ it('balance simulation', async () => {
     [30, 'Nebula appears (30)'],
   ]);
   let runStart = 0;
+  let lastSide = 0;
   /** Best shards-per-second this run: with passive shards, a player resets once that peaks. */
   let bestRate = D(0);
   const runLengths: number[] = [];
@@ -200,6 +267,10 @@ it('balance simulation', async () => {
     if (cometOnScreen(s)) catchComet(s);
     s.quests.forEach((q, i) => questProgress(s, q) >= 1 && claimQuest(s, i));
     shop(s);
+    if (s.playtime - lastSide >= SIDE_EVERY) {
+      sideSystems(s);
+      lastSide = s.playtime;
+    }
     if (supernovaReady(s)) {
       const g = supernovaGain(s);
       const lifetime = s.totals.all.shards ?? D(0);

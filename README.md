@@ -1,6 +1,6 @@
 # Starforge
 
-A space-fantasy incremental game: tap a dying star, build engines, evolve it through stellar tiers, sweep the Asteroid Belt for ore and go Supernova. Chunky Roblox-incremental style UI over a painted deep-space sky.
+A space-fantasy incremental game: tap a dying star, build engines, evolve it through stellar tiers, sweep the Asteroid Belt for ore, forge relics in the Starforge, fill the Element Codex and go Supernova. Chunky Roblox-incremental style UI over a painted deep-space sky.
 
 **Play:** https://ahjhaigh-sketch.github.io/starforge/
 
