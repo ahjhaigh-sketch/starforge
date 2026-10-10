@@ -1,12 +1,17 @@
+import { BALANCE } from '../content/balance';
 import { planPurchase } from '../engine/buy';
+import { saveToSlots } from '../engine/save/store';
+import { catchComet, type CometKind } from '../engine/systems/comets';
+import { buyUpgrade } from '../engine/systems/upgrades';
+import { backupNow, readBackup } from './backups';
 import { D } from '../engine/decimal';
 import { simulateElapsed } from '../engine/offline';
 import { exportSave, importSave } from '../engine/save/store';
 import { type BuyAmount, createInitialState, cur, gain, type Notation } from '../engine/state';
-import { invalidateStats } from '../engine/stats';
+import { invalidateStats, stat } from '../engine/stats';
 import { buyEngine, createTapRuntime, engineCurve, evolve, owned, tapStar } from '../engine/systems/stardust';
 import { checkUnlocks } from '../engine/systems/unlocks';
-import { requestPersistentStorage } from '../platform/web';
+import { requestPersistentStorage, webStore } from '../platform/web';
 import { format } from '../ui/format';
 import { game } from './game';
 import { saveNow, wipeSave } from './persistence';
@@ -35,7 +40,7 @@ export const commands = {
   /** Buys an engine with the current buy amount (x1, x10, x100, x1,000, Max or typed). */
   buyEngine(id: string): boolean {
     const s = game.state;
-    const plan = planPurchase(engineCurve(id), owned(s, id), cur(s, 'stardust'), s.settings.buyAmount, s.settings.customBuyAmount);
+    const plan = planPurchase(engineCurve(id), owned(s, id), cur(s, 'stardust'), s.settings.buyAmount, s.settings.customBuyAmount, stat(s, 'engineCostMult'));
     const ok = plan.canAfford && buyEngine(s, id, plan.count);
     if (ok && !askedToKeepData) {
       askedToKeepData = true;
@@ -48,6 +53,37 @@ export const commands = {
     const ok = evolve(game.state);
     done();
     return ok;
+  },
+  buyUpgrade(id: string): boolean {
+    const ok = buyUpgrade(game.state, id);
+    done();
+    return ok;
+  },
+  /** Catches the comet on screen. Returns the words to float where it was caught. */
+  catchComet(): { title: string; body: string } | null {
+    const r = catchComet(game.state);
+    done();
+    if (!r) return null;
+    const n = game.state.settings.notation;
+    const secs = r.seconds ? `${Math.round(r.seconds)} s` : '';
+    const text: Record<CometKind, { title: string; body: string }> = {
+      frenzy: { title: 'Frenzy!', body: `Engines x${BALANCE.comets.frenzy.mult} for ${secs}` },
+      lucky: { title: 'Lucky!', body: `+${format(r.amount ?? 0, n)} Stardust` },
+      tapstorm: { title: 'Tapstorm!', body: `Taps x${BALANCE.comets.tapstorm.mult} for ${secs}` },
+      wish: { title: 'A Wish!', body: `Engines half price for ${secs}` },
+    };
+    return text[r.kind];
+  },
+  toggleMute() {
+    game.state.settings.muted = !game.state.settings.muted;
+    done();
+  },
+  /** Loads a rolling backup (the live game is backed up first). Returns an error message or null. */
+  async restoreBackup(key: string): Promise<string | null> {
+    const code = await readBackup(key);
+    if (!code) return 'That backup could not be read.';
+    await backupNow();
+    return commands.importCode(code);
   },
   /** The player opened an unlocked system: its rail button stops pulsing. */
   markSeen(id: string) {
@@ -82,7 +118,8 @@ export const commands = {
   importCode(code: string): string | null {
     try {
       const r = importSave(code);
-      saveNow(); // back up the current game into the other slot first
+      void backupNow(); // a rolling backup of the current game first
+      saveNow(); // and it goes into the other slot
       game.state = r.state;
       game.state.lastTick = Date.now();
       saveNow();
@@ -107,6 +144,16 @@ export const commands = {
     const have = game.state.currencies[currency] ?? D(0);
     gain(game.state, currency, have.mul(factor - 1).max(D(factor)));
     done();
+  },
+  /** Saves the game as if it was closed `seconds` ago, then reloads: tests the welcome-back path. */
+  devSaveAway(seconds: number) {
+    const r = exportSave(game.state);
+    if (!r.ok) return;
+    const copy = importSave(r.code).state; // a real copy: structuredClone would strip the Decimals
+    copy.lastTick = game.state.lastTick - seconds * 1000;
+    game.saveBlocked = 'Reloading';
+    saveToSlots(webStore, copy);
+    location.reload();
   },
   devWarp(seconds: number) {
     simulateElapsed(game.state, seconds, { cap: Infinity, efficiency: 1, offline: false });

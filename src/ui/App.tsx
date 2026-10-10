@@ -4,14 +4,34 @@ import { useSnap } from '../app/uiSnapshot';
 import { DevPanel } from '../dev/DevPanel';
 import { FloatTipHost } from './kit/FloatTip';
 import { PanelHost } from './kit/Panel';
+import { ProgressBar } from './kit/ProgressBar';
 import { ToastHost } from './kit/Toasts';
 import { BottomBar } from './screens/BottomBar';
+import { CometLayer } from './screens/Comet';
 import { EngineShop } from './screens/EngineShop';
 import { Hud } from './screens/Hud';
+import { MedalsPanel } from './screens/MedalsPanel';
 import { LeftRail, TeaserStack } from './screens/Rails';
 import { SettingsPanel } from './screens/SettingsPanel';
 import { StarStage } from './screens/StarStage';
+import { StatsPanel } from './screens/StatsPanel';
+import { UpgradesPanel } from './screens/UpgradesPanel';
+import { WelcomePanel } from './screens/WelcomePanel';
 import { useUi } from './store';
+
+/** Shown while time away is being simulated; fades in only if that takes a moment. */
+function CatchUpOverlay() {
+  const share = useUi((s) => s.catchUp);
+  if (share === null) return null;
+  return (
+    <div className="catchup" role="status" aria-live="polite">
+      <div className="catchup-card chunk">
+        <b>Catching up on your time away</b>
+        <ProgressBar value={share} color="var(--cyan)" label="Catching up" />
+      </div>
+    </div>
+  );
+}
 
 export function App() {
   const reducedMotion = useSnap((s) => s.reducedMotion);
@@ -37,10 +57,16 @@ export function App() {
         {drawer && <div className="drawer-scrim phone-only" onClick={() => setDrawer(false)} aria-hidden="true" />}
       </div>
 
+      <CometLayer />
+      <UpgradesPanel />
+      <MedalsPanel />
+      <StatsPanel />
+      <WelcomePanel />
       <SettingsPanel />
       <PanelHost />
       <ToastHost />
       <FloatTipHost />
+      <CatchUpOverlay />
       {game.devMode && <DevPanel />}
     </>
   );

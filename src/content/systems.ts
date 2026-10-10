@@ -3,12 +3,9 @@
  * them. A system appears on its rail long before it unlocks, showing what unlocks it and a
  * progress ring. Requirements are always amounts, never timers. IDs never change.
  */
-export type Requirement =
-  | { kind: 'none' }
-  | { kind: 'tier'; tier: number }
-  | { kind: 'engine'; id: string; count: number }
-  /** A counter in state.stats (supernovas, nebulas...). */
-  | { kind: 'count'; stat: string; count: number; noun: string };
+import type { Requirement } from './requirements';
+
+export type { Requirement };
 
 export interface SystemDef {
   id: string;
@@ -27,9 +24,9 @@ export interface SystemDef {
 
 export const SYSTEMS: readonly SystemDef[] = [
   // ---- left rail: the Stardust stage ----
-  { id: 'upgrades', name: 'Upgrades', icon: 'upgrade', color: '#2E9C78', rail: 'left', req: { kind: 'engine', id: 'catcher', count: 1 }, built: false, blurb: 'One-off boosts for taps and engines.' },
-  { id: 'medals', name: 'Medals', icon: 'trophy', color: '#C99A1E', rail: 'left', req: { kind: 'engine', id: 'mote', count: 1 }, built: false, blurb: 'Achievements and Goals, each a permanent boost.' },
-  { id: 'stats', name: 'Stats', icon: 'stats', color: '#4A6FC4', rail: 'left', req: { kind: 'engine', id: 'mote', count: 5 }, built: false, blurb: 'Where every multiplier comes from.' },
+  { id: 'upgrades', name: 'Upgrades', icon: 'upgrade', color: '#2E9C78', rail: 'left', req: { kind: 'engine', id: 'catcher', count: 1 }, panel: 'upgrades', built: true, blurb: 'One-off boosts for taps and engines.' },
+  { id: 'medals', name: 'Medals', icon: 'trophy', color: '#C99A1E', rail: 'left', req: { kind: 'engine', id: 'mote', count: 1 }, panel: 'medals', built: true, blurb: 'Achievements and Goals, each a permanent boost.' },
+  { id: 'stats', name: 'Stats', icon: 'stats', color: '#4A6FC4', rail: 'left', req: { kind: 'engine', id: 'mote', count: 5 }, panel: 'stats', built: true, blurb: 'Where every multiplier comes from.' },
   { id: 'belt', name: 'Belt', icon: 'belt', color: '#6E7BAE', rail: 'left', req: { kind: 'tier', tier: 1 }, built: false, blurb: 'Sweep a tractor beam through drifting asteroids for ore.' },
   { id: 'level', name: 'Level', icon: 'level', color: '#2E8FD0', rail: 'left', req: { kind: 'tier', tier: 1 }, built: false, blurb: 'Starsmith Level: XP from everything, perk points to spend.' },
   { id: 'constants', name: 'Constants', icon: 'constants', color: '#7B3FD6', rail: 'left', req: { kind: 'tier', tier: 2 }, built: false, blurb: 'Infinite upgrades: Gravity, Light and Heat.' },

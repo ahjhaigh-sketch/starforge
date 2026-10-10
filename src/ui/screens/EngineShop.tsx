@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { commands } from '../../app/commands';
-import { type EngineRow as Row, useSnap } from '../../app/uiSnapshot';
+import { type EngineRow as Row, type UpgradeTile as Tile, useSnap } from '../../app/uiSnapshot';
 import { BuyAmountControl } from '../kit/BuyAmountControl';
 import { cx, tint } from '../kit/Chunk';
 import { tipProps } from '../kit/FloatTip';
@@ -45,6 +45,45 @@ const EngineRow = memo(function EngineRow({ row }: { row: Row }) {
   );
 });
 
+const UpgradeTileButton = memo(function UpgradeTileButton({ tile }: { tile: Tile }) {
+  return (
+    <button
+      type="button"
+      className={cx('upg-tile chunk gloss pop', tile.can ? 'can' : 'cant')}
+      style={tint(tile.color)}
+      onClick={() => commands.buyUpgrade(tile.id)}
+      aria-label={`${tile.name}: ${tile.desc} Costs ${tile.cost} Stardust.`}
+      data-upgrade={tile.id}
+      {...tipProps(`tile-${tile.id}`, 'left', tile.name, (
+        <>
+          <span>{tile.desc}</span>
+          <span className="tip-line">{tile.when}</span>
+          <span className="tip-line">Costs {tile.cost} Stardust</span>
+        </>
+      ))}
+    >
+      <Icon name={tile.icon} />
+    </button>
+  );
+});
+
+/** Upgrades you can buy right now, as icon tiles above the engines (cheapest first). */
+function UpgradeTiles() {
+  const tiles = useSnap((s) => s.upgradeTiles);
+  const open = useUi((s) => s.open);
+  if (tiles.length === 0) return null;
+  return (
+    <div className="upg-tiles" aria-label="Upgrades you can buy">
+      {tiles.map((t) => (
+        <UpgradeTileButton key={t.id} tile={t} />
+      ))}
+      <button type="button" className="upg-more chunk pop" style={tint('#4A3BA8')} onClick={() => open('upgrades')}>
+        All
+      </button>
+    </div>
+  );
+}
+
 /** The Cookie Clicker shop: 15 engines, buy amounts, milestone bars, and a "???" row for the next one. */
 export function EngineShop() {
   const rows = useSnap((s) => s.engineRows);
@@ -59,6 +98,7 @@ export function EngineShop() {
           <Icon name="x" />
         </button>
       </div>
+      <UpgradeTiles />
       <BuyAmountControl />
       <div className="eng-list">
         {rows.map((r) => (

@@ -1,5 +1,26 @@
 # Changelog
 
+## Phase 2: Saves, offline earnings and variety
+- Welcome back: any time away over a minute is simulated in at most 2,000 steps. A progress bar shows if that takes a moment, then a "Welcome back" screen shows time away, time counted, efficiency and gains. Offline starts at 2 hours and 50%.
+- Backups: a rolling backup in the browser database every 5 minutes of play and before catching up after 10+ minutes away (10 kept). Settings lists them with a two-step Restore. If both save slots are unreadable, the newest readable backup loads.
+- Import shows a preview (tier, Stardust, playtime, save date) before loading and refuses junk with the reason. Imports and restores back up the current game first.
+- Comets from Red Dwarf: one every 60 to 120 s (sooner with upgrades), catchable for 9 s by click or the C key. Frenzy (x7 engines, 30 s, 60%), Lucky (15% of your Stardust, at most 15 minutes of production, 30%), Tapstorm (x50 taps, 10 s, 9%), Wish (engines half price, 30 s, 1%). Buff chips in the top bar. Buffs run on game time, so offline and online agree, and no comets spawn during catch-up.
+- 60 upgrades:
+  - 30 engine doublers and 10 tap upgrades (+1, per-mote, x2, a share of Stardust/s, crits, combo).
+  - 6 production, 6 engine-synergy, 5 comet and 3 offline upgrades.
+  - Available ones sit as glowing tiles above the shop; the Upgrades panel shows every one, bought, available or locked with its requirement.
+  - Tooltips say when each effect applies.
+- 102 medals, each +1% Stardust. Five Goals of 10 tiers each (taps, comets, engines, crits, Stardust), each tier +2% Rune Luck, x1.05 Rune Bulk and +1% Stardust. Medal toasts arrive in batches.
+- Stats screen: every stat broken down by source in pipeline order, plus all-time totals.
+- Settings: autosave interval (5/15/30/60 s), mute, master and effects volume, ask before resets, pop-up messages, and hotkeys (T tap, E evolve, 1 to 5 buy amounts, C catch, M mute).
+- Sound effects made in code: taps (brighter on crits), purchases rising in pitch, tier-up chord, comet whoosh and catch, medal and unlock chimes.
+- Save version 3, with a migration test that loads a real version 2 save. Medals already earned are granted on first load.
+- Tests:
+  - Offline equivalence: 1 h offline matches 1 h played within 1%.
+  - Every medal unlocks exactly once.
+  - Comet odds, buffs, export/import identity, junk import and upgrade effects.
+  - Browser tests: welcome back after 2 hours (including the backup), a purchase surviving a closed tab, junk import, one panel at a time, catching a comet, and buying an upgrade tile.
+
 ## Phase 1: The Star, Engines and Tiers
 - The Star Core is a PixiJS shader: shaded sphere, churning plasma, corona rays, ink outline and gloss, with a look per tier (Pulsar beams, Quasar and Blazar jets, rainbow fringes on Magnetar and White Hole). It squashes on every tap and eases into each new tier.
 - Sky: three depths of drifting, twinkling stars. A pool of 400 particles drives every burst. Spark Motes orbit the star, passing in front of and behind it.

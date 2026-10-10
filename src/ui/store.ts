@@ -15,6 +15,9 @@ interface UiState {
   /** Phone only: the engine shop slides up as a drawer. */
   drawer: boolean;
   setDrawer: (open: boolean) => void;
+  /** Progress (0 to 1) of the catch-up after time away; null when not catching up. */
+  catchUp: number | null;
+  setCatchUp: (share: number | null) => void;
   open: (id: string) => void;
   close: () => void;
   toggle: (id: string) => void;
@@ -29,6 +32,8 @@ export const useUi = create<UiState>((set, get) => ({
   toasts: [],
   drawer: false,
   setDrawer: (drawer) => set({ drawer }),
+  catchUp: null,
+  setCatchUp: (catchUp) => set({ catchUp }),
   open: (id) => set({ panel: id, drawer: false }),
   close: () => set({ panel: null }),
   toggle: (id) => set({ panel: get().panel === id ? null : id }),

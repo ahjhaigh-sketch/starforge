@@ -105,3 +105,8 @@ export function tapFx(x: number, y: number, crit: boolean): void {
   const tier = TIERS[snapshotStore.getState().tierIndex] ?? TIERS[0]!;
   burst(x, y, crit ? 14 : 6, crit ? 0xffffff : colorNum(tier.color), crit ? 110 : 70, crit ? 12 : 9);
 }
+
+/** A burst anywhere on screen (comets, purchases). */
+export function burstAt(x: number, y: number, count: number, color: number): void {
+  burst(x, y, count, color, 120, 12);
+}

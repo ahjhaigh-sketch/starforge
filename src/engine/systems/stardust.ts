@@ -64,7 +64,7 @@ export function buyEngine(s: GameState, id: string, count: number): boolean {
   if (count < 1 || !ENGINE_BY_ID.has(id)) return false;
   const index = ENGINES.findIndex((e) => e.id === id);
   if (!engineRevealed(s, index)) return false;
-  const price = bulkCost(engineCurve(id), owned(s, id), count);
+  const price = bulkCost(engineCurve(id), owned(s, id), count).mul(stat(s, 'engineCostMult'));
   if (!spend(s, 'stardust', price)) return false;
   s.engines[id] = owned(s, id) + count;
   s.enginesEver[id] = (s.enginesEver[id] ?? 0) + count;
@@ -104,16 +104,17 @@ export function createTapRuntime(): TapRuntime {
 }
 
 /** The combo count right now, after draining for any pause since the last tap. */
-export function comboNow(rt: TapRuntime, nowMs: number): number {
+export function comboNow(rt: TapRuntime, nowMs: number, drainMult = 1): number {
   const t = BALANCE.tap;
   const idle = (nowMs - rt.lastTapMs) / 1000 - t.comboGraceSeconds;
-  return idle > 0 ? Math.max(0, rt.combo - idle * t.comboDrainPerSecond) : rt.combo;
+  return idle > 0 ? Math.max(0, rt.combo - idle * t.comboDrainPerSecond * drainMult) : rt.combo;
 }
 
-export function comboMult(combo: number): number {
+/** x1.5 / x2 / x3 at 10 / 25 / 50 taps; `power` scales the bonus part (Fever Pitch: x1.75 / x2.5 / x4). */
+export function comboMult(combo: number, power = 1): number {
   let m = 1;
   for (const step of BALANCE.tap.combo) if (combo >= step.taps) m = step.mult;
-  return m;
+  return 1 + (m - 1) * power;
 }
 
 export interface TapResult {
@@ -129,11 +130,12 @@ export function tapStar(s: GameState, rt: TapRuntime, nowMs: number): TapResult 
   if (rt.recent.length >= t.maxPerSecond) return null;
   rt.recent.push(nowMs);
 
-  rt.combo = comboNow(rt, nowMs) + 1;
+  rt.combo = comboNow(rt, nowMs, stat(s, 'comboDrain').toNumber()) + 1;
   rt.lastTapMs = nowMs;
+  if (rt.combo > (s.stats.maxCombo ?? 0)) s.stats.maxCombo = Math.floor(rt.combo);
 
   const crit = nextFloat(s.rng) < stat(s, 'critChance').toNumber();
-  let amount = stat(s, 'tapPower').mul(comboMult(rt.combo));
+  let amount = stat(s, 'tapPower').mul(comboMult(rt.combo, stat(s, 'comboPower').toNumber()));
   if (crit) amount = amount.mul(stat(s, 'critMult'));
   gain(s, 'stardust', amount);
   s.stats.taps = (s.stats.taps ?? 0) + 1;
@@ -151,6 +153,9 @@ export function registerStardust(): void {
   defineStat({ id: 'critChance', label: 'Crit chance', base: () => ZERO });
   defineStat({ id: 'critMult', label: 'Crit multiplier', base: () => D(BALANCE.tap.critMult) });
   defineStat({ id: 'productionMult', label: 'Production multiplier', base: () => D(1) });
+  defineStat({ id: 'engineCostMult', label: 'Engine prices', base: () => D(1) });
+  defineStat({ id: 'comboPower', label: 'Combo bonus', base: () => D(1) });
+  defineStat({ id: 'comboDrain', label: 'Combo drain speed', base: () => D(1) });
   // stardustPerSec itself is defined in core.ts; its base is the sum of the engines.
   registerSources(
     { id: 'tier.tap', stat: 'tapPower', op: 'mul', label: 'Star Tier', value: tierMult },

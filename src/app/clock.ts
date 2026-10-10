@@ -1,5 +1,6 @@
 import { simulateElapsed } from '../engine/offline';
 import { tick } from '../engine/tick';
+import { maybeBackup } from './backups';
 import { game } from './game';
 import { saveNow } from './persistence';
 import { publish } from './uiSnapshot';
@@ -57,6 +58,7 @@ function frame(nowMs: number): void {
   if (wall - lastSaveAt >= s.settings.autosaveSeconds * 1000) {
     lastSaveAt = wall;
     saveNow();
+    maybeBackup();
   }
 
   const dt = Math.min((nowMs - lastFrame) / 1000, 0.1);

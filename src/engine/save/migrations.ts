@@ -20,6 +20,9 @@ const migrations: Record<number, (d: PlainSave) => void> = {
   2: (d) => {
     if (typeof d.stats !== 'object' || d.stats === null) d.stats = {};
   },
+  // 3 (Phase 2): upgrades, medals, goals, buffs and comets, all with defaults. Medals earned
+  // before medals existed are granted by the first achievement check after loading.
+  3: () => {},
 };
 
 export function migrate(version: number, data: PlainSave): PlainSave {

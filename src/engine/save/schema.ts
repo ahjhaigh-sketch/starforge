@@ -24,6 +24,12 @@ export const plainSaveSchema = z.looseObject({
   enginesEver: z.record(z.string(), z.number().int().min(0)).optional(),
   unlocked: z.array(z.string()).optional(),
   seen: z.array(z.string()).optional(),
+  upgrades: z.array(z.string()).optional(),
+  achievements: z.array(z.string()).optional(),
+  goals: z.record(z.string(), z.number().int().min(0)).optional(),
+  buffs: z.record(z.string(), finite).optional(),
+  comet: z.looseObject({ nextAt: finite, until: finite }).optional(),
+  lastBackupAt: finite.optional(),
   settings: z.looseObject({
     notation: z.enum(['suffix', 'scientific', 'engineering']),
     autosaveSeconds: finite,

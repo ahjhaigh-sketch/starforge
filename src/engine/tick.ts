@@ -4,10 +4,13 @@ import type { GameState } from './state';
 /** Passed to every system each tick. Offline catch-up scales gains by the offline efficiency. */
 export interface TickContext {
   gainScale: number;
+  /** The tab was closed (offline cap and efficiency apply). */
   offline: boolean;
+  /** Any simulated gap (closed tab, sleep, hidden tab): nothing that needs a click happens. */
+  catchUp: boolean;
 }
 
-export const ONLINE: TickContext = { gainScale: 1, offline: false };
+export const ONLINE: TickContext = { gainScale: 1, offline: false, catchUp: false };
 
 export interface System {
   id: string;
@@ -26,6 +29,11 @@ export function registerSystem(sys: System): void {
 
 export function registeredSystems(): readonly System[] {
   return systems;
+}
+
+/** True when this tick crossed a 1/hz-second boundary of playtime: for checks that needn't run 20 times a second. */
+export function every(s: GameState, dt: number, hz: number): boolean {
+  return Math.floor(s.playtime * hz) !== Math.floor((s.playtime - dt) * hz);
 }
 
 /** The only place simulated time advances. */

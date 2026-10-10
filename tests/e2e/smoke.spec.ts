@@ -95,7 +95,7 @@ test('tap, buy an engine, reveal the next, evolve the star', async ({ page }) =>
   if ((page.viewportSize()?.width ?? 1400) < 900) await page.getByRole('button', { name: 'Close engines' }).click();
   await page.getByRole('button', { name: /Evolve to Red Dwarf/ }).click();
   await expect(page.locator('.tier-pill')).toContainText('Red Dwarf');
-  await expect(page.locator('.toast').first()).toContainText('Red Dwarf');
+  await expect(page.locator('.toast', { hasText: 'Red Dwarf!' })).toBeVisible();
   await expect(page.locator('[data-rail="belt"]').first()).toHaveClass(/soon/);
   expect(errors).toEqual([]);
 });
@@ -124,4 +124,106 @@ test('locked systems on the rails show what unlocks them', async ({ page }) => {
   await expect(page.locator('.float-tip')).toBeVisible();
   await expect(page.locator('.float-tip')).toContainText(/Own|Reach/);
   await expect(page.locator('.float-tip')).toContainText('%');
+});
+
+type Sf = {
+  sf: {
+    game: { state: { tier: number; playtime: number; comet: { nextAt: number }; stats: Record<string, number>; engines: Record<string, number>; upgrades: string[] } };
+    commands: { devAdd(c: string, n: number): void; buyEngine(id: string): boolean; devSaveAway(s: number): void; setSetting(k: string, v: unknown): void };
+  };
+};
+
+test('welcome back after two hours away, with a backup made first', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { commands } = (window as unknown as Sf).sf;
+    commands.devAdd('stardust', 5000);
+    for (let i = 0; i < 20; i++) commands.buyEngine('mote');
+  });
+  await page.evaluate(() => (window as unknown as Sf).sf.commands.devSaveAway(7200));
+  await page.waitForURL(/dev=1/);
+  const welcome = page.locator('[data-panel="welcome"]');
+  await expect(welcome).toHaveClass(/open/, { timeout: 15_000 });
+  await expect(welcome).toContainText('You were away for 2h');
+  await expect(welcome).toContainText('Counted time');
+  await expect(welcome.locator('.big-gain')).toContainText('+');
+  await welcome.getByRole('button', { name: 'Collect' }).click();
+  await expect(page.locator('.modal.open')).toHaveCount(0);
+  // the game as it was before catching up went into the backups
+  await page.getByRole('button', { name: 'Open settings and saves' }).click();
+  await expect(page.locator('.backups li').first()).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('closing the tab right after a purchase keeps it', async ({ page }) => {
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { commands } = (window as unknown as Sf).sf;
+    commands.devAdd('stardust', 100);
+    commands.buyEngine('mote');
+  });
+  await page.goto('about:blank'); // leaving the page saves (pagehide)
+  await page.goto('/?dev=1');
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf).sf.game.state.engines.mote)).toBe(1);
+});
+
+test('importing junk shows why and changes nothing', async ({ page }) => {
+  await page.goto('/?dev=1');
+  await page.getByRole('button', { name: '+1K dust' }).click();
+  await page.getByRole('button', { name: 'Open settings and saves' }).click();
+  await page.getByLabel('Save code').fill('STARFORGE1:not-a-real-save');
+  await expect(page.getByTestId('import-preview')).toContainText("Can't import");
+  await expect(page.getByRole('button', { name: 'Import', exact: true })).toBeDisabled();
+  await expect(page.locator('.pill .val').first()).toHaveText('1.00K');
+});
+
+test('one panel at a time: opening another closes the first', async ({ page }) => {
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { commands } = (window as unknown as Sf).sf;
+    commands.devAdd('stardust', 100);
+    commands.buyEngine('mote');
+  });
+  await page.locator('[data-rail="medals"]').first().click();
+  await expect(page.locator('[data-panel="medals"]')).toHaveClass(/open/);
+  await page.evaluate(() => (document.querySelector('.settings-btn') as HTMLButtonElement).click());
+  await expect(page.locator('[data-panel="settings"]')).toHaveClass(/open/);
+  await expect(page.locator('[data-panel="medals"]')).not.toHaveClass(/open/);
+  await expect(page.locator('.modal.open')).toHaveCount(1);
+});
+
+test('catch a comet', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf).sf;
+    commands.setSetting('reducedMotion', true); // the comet holds still, so the click can't miss
+    commands.devAdd('stardust', 5000);
+    for (let i = 0; i < 10; i++) commands.buyEngine('mote');
+    game.state.tier = 1;
+    game.state.comet.nextAt = game.state.playtime;
+  });
+  const comet = page.getByTestId('comet');
+  await expect(comet).toBeVisible();
+  await comet.click();
+  await expect(page.locator('.comet-pop')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf).sf.game.state.stats.comets)).toBe(1);
+  expect(errors).toEqual([]);
+});
+
+test('buy an upgrade from its tile, then see it in Upgrades and Stats', async ({ page }) => {
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf).sf;
+    commands.devAdd('stardust', 1000);
+    game.state.stats.taps = 30;
+  });
+  await openShop(page);
+  const tile = page.locator('[data-upgrade="tap.warm"]');
+  await expect(tile).toBeVisible();
+  await tile.click();
+  await expect(tile).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf).sf.game.state.upgrades)).toContain('tap.warm');
+  await page.evaluate(() => (document.querySelector('[data-rail="stats"]') as HTMLButtonElement | null)?.click());
 });

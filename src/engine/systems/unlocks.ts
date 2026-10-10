@@ -1,9 +1,19 @@
 import { ENGINE_BY_ID } from '../../content/engines';
-import { type Requirement, SYSTEMS } from '../../content/systems';
+import type { Requirement } from '../../content/requirements';
+import { SYSTEMS } from '../../content/systems';
 import { TIERS, tierCost } from '../../content/tiers';
+import { D } from '../decimal';
 import { events } from '../events';
 import { cur, type GameState } from '../state';
-import { registerSystem } from '../tick';
+import { stat } from '../stats';
+import { every, registerSystem } from '../tick';
+
+/** Amounts that span many orders of magnitude fill their ring on a log scale. */
+function logShare(have: number, need: number): number {
+  if (have >= need) return 1;
+  if (have <= 0) return 0;
+  return Math.min(0.999, Math.log10(1 + have) / Math.log10(1 + need));
+}
 
 /** How far along a requirement is, 0 to 1. Always an amount the player earns, never a clock. */
 export function reqProgress(s: GameState, req: Requirement): number {
@@ -20,6 +30,18 @@ export function reqProgress(s: GameState, req: Requirement): number {
       return Math.min(1, (s.engines[req.id] ?? 0) / req.count);
     case 'count':
       return Math.min(1, (s.stats[req.stat] ?? 0) / req.count);
+    case 'total': {
+      const have = s.totals.all[req.currency] ?? D(0);
+      return have.gte(req.amount) ? 1 : logShare(have.toNumber(), req.amount);
+    }
+    case 'rate': {
+      const have = stat(s, 'stardustPerSec');
+      return have.gte(req.amount) ? 1 : logShare(have.toNumber(), req.amount);
+    }
+    case 'upgrades':
+      return Math.min(1, s.upgrades.length / req.count);
+    case 'medals':
+      return Math.min(1, s.achievements.length / req.count);
   }
 }
 
@@ -27,8 +49,10 @@ export function reqMet(s: GameState, req: Requirement): boolean {
   return reqProgress(s, req) >= 1;
 }
 
+const big = (n: number) => (n >= 1000 ? D(n).toStringWithDecimalPlaces(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',') : String(n));
+
 /** Short plain text: "Reach Red Dwarf", "Own 10 Spark Motes", "3 Supernovas". */
-export function reqText(req: Requirement): string {
+export function reqText(req: Requirement, fmt: (n: number) => string = big): string {
   switch (req.kind) {
     case 'none':
       return 'Available now';
@@ -36,10 +60,18 @@ export function reqText(req: Requirement): string {
       return `Reach ${TIERS[req.tier]?.name ?? 'a higher tier'}`;
     case 'engine': {
       const name = ENGINE_BY_ID.get(req.id)?.name ?? req.id;
-      return req.count === 1 ? `Own a ${name.replace(/s$/, '')}` : `Own ${req.count} ${name}`;
+      return req.count === 1 ? `Own a ${name.replace(/s$/, '')}` : `Own ${fmt(req.count)} ${name}`;
     }
     case 'count':
-      return `${req.count} ${req.noun}${req.count === 1 ? '' : 's'}`;
+      return `${fmt(req.count)} ${req.noun}${req.count === 1 ? '' : 's'}`;
+    case 'total':
+      return `Gather ${fmt(req.amount)} ${req.currency === 'stardust' ? 'Stardust' : req.currency} in total`;
+    case 'rate':
+      return `Make ${fmt(req.amount)} Stardust a second`;
+    case 'upgrades':
+      return `Buy ${fmt(req.count)} upgrade${req.count === 1 ? '' : 's'}`;
+    case 'medals':
+      return `Earn ${fmt(req.count)} medal${req.count === 1 ? '' : 's'}`;
   }
 }
 
@@ -53,5 +85,5 @@ export function checkUnlocks(s: GameState): void {
 }
 
 export function registerUnlocks(): void {
-  registerSystem({ id: 'unlocks', order: 90, tick: (s) => checkUnlocks(s) });
+  registerSystem({ id: 'unlocks', order: 90, tick: (s, dt) => every(s, dt, 4) && checkUnlocks(s) });
 }

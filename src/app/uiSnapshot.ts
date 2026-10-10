@@ -19,6 +19,10 @@ import {
   owned,
 } from '../engine/systems/stardust';
 import { reqProgress, reqText } from '../engine/systems/unlocks';
+import { BUFF_KINDS, buffLeft, cometOnScreen } from '../engine/systems/comets';
+import { availableUpgrades } from '../engine/systems/upgrades';
+import { MEDALS } from '../content/medals';
+import { whenItApplies } from '../content/upgrades';
 import { format, formatCount, formatMult, formatRate, formatTime } from '../ui/format';
 import { game } from './game';
 
@@ -41,6 +45,23 @@ export interface EngineRow {
   can: boolean;
   msPct: number;
   msNext: string;
+}
+
+export interface UpgradeTile {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  desc: string;
+  when: string;
+  cost: string;
+  can: boolean;
+}
+
+export interface BuffChip {
+  kind: string;
+  label: string;
+  secs: string;
 }
 
 export type RailState = 'open' | 'new' | 'soon' | 'locked' | 'hidden';
@@ -68,7 +89,19 @@ export interface Snapshot {
   reducedMotion: boolean;
   reduceFlashing: boolean;
   showToasts: boolean;
+  muted: boolean;
+  volumeMaster: number;
+  volumeSfx: number;
+  autosaveSeconds: number;
+  confirmResets: boolean;
+  hotkeys: boolean;
   tickMs: string;
+  upgradeTiles: UpgradeTile[];
+  upgradesOwned: string;
+  buffChips: BuffChip[];
+  /** Non-zero while a comet is on screen; changes for every new comet. */
+  cometKey: number;
+  medalsLabel: string;
   tierIndex: number;
   tierName: string;
   tierColor: string;
@@ -107,6 +140,7 @@ function engineRows(s: GameState, n: Notation, prev: EngineRow[] | undefined): {
   const rows: EngineRow[] = [];
   let mystery = '';
   const money = cur(s, 'stardust');
+  const costMult = stat(s, 'engineCostMult');
   for (let i = 0; i < ENGINES.length; i++) {
     const e = ENGINES[i]!;
     if (!engineRevealed(s, i)) {
@@ -114,7 +148,7 @@ function engineRows(s: GameState, n: Notation, prev: EngineRow[] | undefined): {
       break;
     }
     const own = owned(s, e.id);
-    const plan = planPurchase(engineCurve(e.id), own, money, s.settings.buyAmount, s.settings.customBuyAmount);
+    const plan = planPurchase(engineCurve(e.id), own, money, s.settings.buyAmount, s.settings.customBuyAmount, costMult);
     const span = milestoneSpan(own);
     rows.push({
       id: e.id,
@@ -132,6 +166,39 @@ function engineRows(s: GameState, n: Notation, prev: EngineRow[] | undefined): {
     });
   }
   return { rows: stableList(prev, rows), mystery };
+}
+
+/** The tiles above the shop: available upgrades, cheapest first. */
+function upgradeTiles(s: GameState, n: Notation, prev: UpgradeTile[] | undefined): UpgradeTile[] {
+  const money = cur(s, 'stardust');
+  const tiles = availableUpgrades(s)
+    .slice(0, 24)
+    .map((u): UpgradeTile => ({
+      id: u.id,
+      name: u.name,
+      icon: u.icon,
+      color: u.color,
+      desc: u.desc,
+      when: whenItApplies(u.effect),
+      cost: format(u.cost, n),
+      can: money.gte(u.cost),
+    }));
+  return stableList(prev, tiles);
+}
+
+const BUFF_LABELS: Record<string, string> = {
+  frenzy: `Frenzy x${BALANCE.comets.frenzy.mult}`,
+  tapstorm: `Tapstorm x${BALANCE.comets.tapstorm.mult} taps`,
+  wish: 'Wish: engines half price',
+};
+
+function buffChips(s: GameState, prev: BuffChip[] | undefined): BuffChip[] {
+  const chips: BuffChip[] = [];
+  for (const k of BUFF_KINDS) {
+    const left = buffLeft(s, k);
+    if (left > 0) chips.push({ kind: k, label: BUFF_LABELS[k]!, secs: `${Math.ceil(left)}s` });
+  }
+  return stableList(prev, chips);
 }
 
 const RAIL_DETAILS = { left: 3, right: 2 } as const;
@@ -168,7 +235,8 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
   const tier = TIERS[s.tier] ?? TIERS[0]!;
   const nextCost = nextTierCost(s);
   const money = cur(s, 'stardust');
-  const combo = comboNow(game.tapRuntime, performance.now());
+  const combo = comboNow(game.tapRuntime, performance.now(), stat(s, 'comboDrain').toNumber());
+  const comboX = comboMult(combo, stat(s, 'comboPower').toNumber());
   const { rows, mystery } = engineRows(s, n, prev?.engineRows);
   const nova = BALANCE.supernova;
   const novaTier = reqProgress(s, { kind: 'tier', tier: nova.tier });
@@ -195,7 +263,18 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     reducedMotion: s.settings.reducedMotion,
     reduceFlashing: s.settings.reduceFlashing,
     showToasts: s.settings.showToasts,
+    muted: s.settings.muted,
+    volumeMaster: s.settings.volumeMaster,
+    volumeSfx: s.settings.volumeSfx,
+    autosaveSeconds: s.settings.autosaveSeconds,
+    confirmResets: s.settings.confirmResets,
+    hotkeys: s.settings.hotkeys,
     tickMs: game.tickMs.toFixed(2),
+    upgradeTiles: upgradeTiles(s, n, prev?.upgradeTiles),
+    upgradesOwned: formatCount(s.upgrades.length, n),
+    buffChips: buffChips(s, prev?.buffChips),
+    cometKey: cometOnScreen(s) ? s.comet.until : 0,
+    medalsLabel: `${s.achievements.length} / ${MEDALS.length}`,
     tierIndex: s.tier,
     tierName: tier.name,
     tierColor: tier.color,
@@ -207,7 +286,7 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     tapLabel: `+${format(stat(s, 'tapPower'), n)} stardust per tap`,
     moteCount: owned(s, 'mote'),
     combo: Math.floor(combo),
-    comboMult: comboMult(combo) > 1 ? formatMult(comboMult(combo), n) : '',
+    comboMult: comboX > 1 ? formatMult(comboX, n) : '',
     engineRows: rows,
     engineMystery: mystery,
     enginesOwned: formatCount(enginesOwned, n),

@@ -1,4 +1,4 @@
-import { type CSSProperties, type KeyboardEvent, type PointerEvent, useRef } from 'react';
+import { type CSSProperties, type KeyboardEvent, type PointerEvent, useEffect, useRef } from 'react';
 import { commands } from '../../app/commands';
 import { useSnap } from '../../app/uiSnapshot';
 import { tapFx } from '../../render/stage';
@@ -36,6 +36,13 @@ export function StarStage() {
     layer.appendChild(f);
     while (layer.children.length > MAX_FLOATERS) layer.firstElementChild?.remove();
   };
+
+  // the T hotkey taps the star
+  useEffect(() => {
+    const onTap = () => tapAt(null, null);
+    window.addEventListener('starforge:tap', onTap);
+    return () => window.removeEventListener('starforge:tap', onTap);
+  });
 
   const onPointerDown = (e: PointerEvent<HTMLButtonElement>) => {
     if (e.button !== 0) return;

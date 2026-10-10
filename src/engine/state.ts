@@ -2,7 +2,7 @@ import { D, type Decimal } from './decimal';
 import { seedRng, type RngState } from './rng';
 
 /** Bump with every change to the save's shape, and add a migration + an old-save fixture test. */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 export type Notation = 'suffix' | 'scientific' | 'engineering';
 export type BuyAmount = 1 | 10 | 100 | 1000 | 'max' | 'custom';
@@ -20,6 +20,7 @@ export interface Settings {
   buyAmount: BuyAmount;
   customBuyAmount: number;
   showToasts: boolean;
+  hotkeys: boolean;
 }
 
 export interface GameState {
@@ -49,6 +50,18 @@ export interface GameState {
   unlocked: string[];
   /** Unlocked systems the player has opened; the rest pulse on the rails. */
   seen: string[];
+  /** One-off upgrades bought (IDs). */
+  upgrades: string[];
+  /** Medals earned (achievement IDs). Never reset. */
+  achievements: string[];
+  /** Highest tier reached on each Goal. Never reset. */
+  goals: Record<string, number>;
+  /** Active buffs: the playtime second each one ends (simulated time, so offline stays consistent). */
+  buffs: Record<string, number>;
+  /** Playtime when the next comet streaks across, and until when the current one can be caught. */
+  comet: { nextAt: number; until: number };
+  /** Playtime of the last rolling backup. */
+  lastBackupAt: number;
   settings: Settings;
 }
 
@@ -66,6 +79,7 @@ export function defaultSettings(): Settings {
     buyAmount: 1,
     customBuyAmount: 25,
     showToasts: true,
+    hotkeys: true,
   };
 }
 
@@ -82,12 +96,18 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
       run: { stardust: D(0) },
       all: { stardust: D(0) },
     },
-    stats: { taps: 0, crits: 0, enginesBought: 0, evolves: 0 },
+    stats: { taps: 0, crits: 0, enginesBought: 0, evolves: 0, comets: 0, maxCombo: 0 },
     tier: 0,
     engines: {},
     enginesEver: {},
     unlocked: [],
     seen: [],
+    upgrades: [],
+    achievements: [],
+    goals: {},
+    buffs: {},
+    comet: { nextAt: 90, until: 0 },
+    lastBackupAt: 0,
     settings: defaultSettings(),
   };
 }
