@@ -1,0 +1,46 @@
+/* App layout: top bar, left rail, centre stage, right shop column, bottom reset row. */
+.app {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 6.5rem 1fr minmax(19rem, 24rem);
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    'hud hud hud'
+    'rail stage side'
+    'rail bottom side';
+  gap: 0.75rem;
+  padding: 0.9rem;
+}
+.hud { grid-area: hud; display: flex; gap: 0.7rem; align-items: center; flex-wrap: wrap; min-width: 0; padding-left: 0.6rem; }
+.hud-spacer { flex: 1; }
+.save-ind { font-size: 0.8rem; color: var(--text-dim); font-weight: 600; }
+.rail { grid-area: rail; display: flex; flex-direction: column; gap: 0.8rem; align-items: center; padding-top: 0.4rem; min-height: 0; overflow-y: auto; overflow-x: visible; scrollbar-width: none; }
+.stage { grid-area: stage; position: relative; display: grid; place-items: center; min-height: 0; }
+.bottom { grid-area: bottom; display: flex; flex-direction: column; gap: 0.6rem; align-items: center; padding-bottom: 0.2rem; }
+.side { grid-area: side; min-height: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+
+/* Icons default to 1.2em; containers that size their icon (pills, toasts, close buttons, tiles) fill it. */
+.icon { display: inline-block; line-height: 0; width: 1.2em; height: 1.2em; flex: none; }
+.icon svg { width: 100%; height: 100%; display: block; }
+.btn .icon { width: 1.3em; height: 1.3em; }
+.pill .ico .icon, .toast .ico .icon, .x-btn .icon, .fill-icon .icon, .fill-icon.icon { width: 100%; height: 100%; }
+
+.welcome { --c: var(--panel); border-radius: var(--r-panel); padding: 2rem; max-width: 30rem; text-align: center; }
+.welcome h1 { margin: 0 0 0.5rem; font-family: var(--font-display); font-weight: 400; font-size: 2.4rem; letter-spacing: 0.03em; text-shadow: var(--outline); }
+.welcome p { margin: 0 0 1.2rem; color: var(--text-dim); line-height: 1.45; }
+
+@media (max-width: 900px) {
+  html { font-size: 13px; }
+  .app {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto auto;
+    grid-template-areas: 'hud' 'stage' 'bottom' 'rail';
+    padding: 0.6rem 0.6rem calc(0.6rem + env(safe-area-inset-bottom));
+  }
+  .rail { flex-direction: row; justify-content: flex-start; padding: 0.3rem 0.4rem; gap: 0.6rem; overflow-x: auto; overflow-y: visible; }
+  .side { position: fixed; z-index: 30; left: 0.6rem; right: 0.6rem; bottom: 0.6rem; height: 64vh; transform: translateY(110%); transition: transform 0.3s var(--back-out); }
+  .side.open { transform: none; }
+  .pill { min-width: 0; }
+}

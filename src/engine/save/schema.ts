@@ -1,0 +1,33 @@
+import { z } from 'zod';
+
+/** Decimals are stored as "D:<number>" strings. */
+const dec = z.string().regex(/^D:/, 'Decimal values must start with D:');
+const decRecord = z.record(z.string(), dec);
+const finite = z.number().refine(Number.isFinite, 'must be a finite number');
+
+/**
+ * Structural check of a plain (Decimal-tagged) save, run before every write and after every load.
+ * Loose objects: newer optional fields pass through and get merged onto defaults.
+ */
+export const plainSaveSchema = z.looseObject({
+  version: z.number().int().positive(),
+  createdAt: finite,
+  lastTick: finite,
+  lastSave: finite,
+  playtime: finite.refine((n) => n >= 0, 'playtime must not be negative'),
+  rng: z.tuple([finite, finite, finite, finite]),
+  currencies: decRecord,
+  totals: z.looseObject({ run: decRecord, all: decRecord }),
+  stats: z.record(z.string(), finite),
+  settings: z.looseObject({
+    notation: z.enum(['suffix', 'scientific', 'engineering']),
+    autosaveSeconds: finite,
+  }),
+});
+
+export function validatePlainSave(plain: unknown): string | null {
+  const result = plainSaveSchema.safeParse(plain);
+  if (result.success) return null;
+  const first = result.error.issues[0];
+  return first ? `${first.path.join('.') || 'save'}: ${first.message}` : 'Save failed validation.';
+}
