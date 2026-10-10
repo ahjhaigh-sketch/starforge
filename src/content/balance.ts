@@ -113,6 +113,66 @@ export const BALANCE = {
     /** Each neighbour of a DIFFERENT type adds this share to the planet's bonus. */
     neighbourBonus: 0.2,
   },
+  belt: {
+    /** Opens at Red Dwarf (tier index 1). Formulas from the Grass Cutting Incremental remake. */
+    tier: 1,
+    baseCap: 10,
+    maxCap: 400,
+    /** One asteroid every 2.5 s at base; Growth adds 10% speed a level. */
+    spawnSeconds: 2.5,
+    growthPerLevel: 0.1,
+    beamBase: 48,
+    beamPerLevel: 10,
+    beamMaxLevel: 8,
+    oreBase: 1,
+    xpBase: 1,
+    /** Each asteroid also gives this many seconds of production x sqrt(rarity multiplier): a little Stardust. */
+    stardustSeconds: 0.25,
+    /** Belt Tier T needs 100 x 3^(T^1.2) ore gathered since the last tier. */
+    tierBase: 100,
+    tierRatio: 3,
+    tierPow: 1.2,
+    /** Asteroids a drone sweeps per second. */
+    droneRate: 1,
+    /** Belt Tier 3: this share of the field's ore every second. */
+    passiveShare: 0.1,
+    upgrades: {
+      value: { base: 10, growth: 1.2 },
+      amount: { base: 25, growth: 1.4 },
+      growth: { base: 100, growth: 1.75 },
+      beam: { base: 1e4, growth: 4 },
+      xp: { base: 1000, growth: 1.3 },
+    },
+  },
+  drill: {
+    /** Deep Core Drilling opens at 5 Supernovas. Core HP = 100 x 8^depth. */
+    supernovas: 5,
+    hpBase: 100,
+    hpGrowth: 8,
+    baseDps: 1,
+    droneDps: 2,
+    droneBase: 500,
+    droneGrowth: 1.6,
+    bitBase: 1000,
+    bitGrowth: 2.2,
+    /** Each drill bit: x1.5 drilling. Each ore mastery level: +10%. */
+    bitMult: 1.5,
+    masteryPerLevel: 0.1,
+    /** A broken core pays 50 x 6^depth ore. */
+    rewardBase: 50,
+    rewardGrowth: 6,
+    /** A click on the core is this many seconds of drilling. */
+    tapSeconds: 2,
+  },
+  starsmith: {
+    /** Opens at Red Dwarf. Level L needs 50 x 2.7^(L^0.75) more XP. */
+    tier: 1,
+    base: 50,
+    ratio: 2.7,
+    pow: 0.75,
+    /** XP for things the player does (asteroids give XP by their own formula). */
+    xp: { tap: 0.2, engine: 0.5, evolve: 5, quest: 10, supernova: 100 },
+  },
   supernova: {
     /** Blue Giant (tier index 3) and this much Stardust gathered in the run. */
     tier: 3,

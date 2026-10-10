@@ -31,6 +31,9 @@ import { masteryOpen, masteryRank } from '../engine/systems/mastery';
 import { orbitalsOpen, planetPrice } from '../engine/systems/orbitals';
 import { questProgress } from '../engine/systems/quests';
 import { nextShardAt, supernovaGain, supernovaReady } from '../engine/systems/supernova';
+import { beltOpen, beltTierNeed, beltUpgradeCost, beltUpgradeMaxed, bitCost, drillOpen, droneCost } from '../engine/systems/belt';
+import { BELT_UPGRADES } from '../content/belt';
+import { levelInfo, perksFree, starsmithOpen } from '../engine/systems/starsmith';
 import { format, formatCount, formatMult, formatRate, formatTime } from '../ui/format';
 import { game } from './game';
 
@@ -142,6 +145,16 @@ export interface Snapshot {
   shards: string;
   shardsVisible: boolean;
   supernovas: number;
+  /** The Belt field for the renderer ("id:rarity|..."), the beam radius, and ore. */
+  beltField: string;
+  beamRadius: number;
+  ore: string;
+  oreVisible: boolean;
+  /** Starsmith Level for the bar under the top bar. */
+  level: number;
+  levelPct: number;
+  levelVisible: boolean;
+  perksFree: number;
 }
 
 /** Reuses the previous object when every field is the same, so React skips the re-render. */
@@ -237,6 +250,12 @@ function railAlert(s: GameState, id: string): boolean {
       return CONSTANTS.some((c) => constantOpen(s, c) && constantPlan(s, c, 1).canAfford);
     case 'orbitals':
       return orbitalsOpen(s) && money.gte(planetPrice(s)) && Object.keys(s.planets).length < totalSlots(s);
+    case 'belt':
+      return BELT_UPGRADES.some((u) => !beltUpgradeMaxed(s, u.id) && cur(s, 'ore').gte(beltUpgradeCost(s, u.id))) || s.belt.oreThisTier.gte(beltTierNeed(s.belt.tier + 1));
+    case 'level':
+      return perksFree(s) > 0;
+    case 'drill':
+      return drillOpen(s) && (cur(s, 'ore').gte(droneCost(s)) || cur(s, 'ore').gte(bitCost(s)));
     default:
       return false;
   }
@@ -286,6 +305,7 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
   const { rows, mystery } = engineRows(s, n, prev?.engineRows);
   const nova = BALANCE.supernova;
   const novaReady = supernovaReady(s);
+  const lvl = levelInfo(s);
   const novaTier = reqProgress(s, { kind: 'tier', tier: nova.tier });
   const run = (s.totals.run.stardust ?? D(0)).toNumber();
   const novaDust = Math.min(1, Math.log10(1 + run) / Math.log10(1 + nova.runStardust));
@@ -353,6 +373,14 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     shards: format(cur(s, 'shards'), n),
     shardsVisible: (s.stats.supernovas ?? 0) > 0 || novaReady,
     supernovas: s.stats.supernovas ?? 0,
+    beltField: beltOpen(s) ? s.belt.field.map((a) => `${a.id}:${a.r}`).join('|') : '',
+    beamRadius: Math.round(stat(s, 'beamRadius').toNumber()),
+    ore: format(cur(s, 'ore'), n),
+    oreVisible: beltOpen(s),
+    level: lvl.level,
+    levelPct: Math.floor(Math.min(1, lvl.into.div(lvl.need).toNumber()) * 100),
+    levelVisible: starsmithOpen(s),
+    perksFree: starsmithOpen(s) ? perksFree(s) : 0,
   };
 }
 

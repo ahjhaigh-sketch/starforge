@@ -1,0 +1,252 @@
+import { BALANCE } from '../../content/balance';
+import { type BeltUpgradeId, DEPTH_LAYERS, RARITIES } from '../../content/belt';
+import { bulkCost, type CostCurve } from '../cost';
+import { D, type Decimal, ZERO } from '../decimal';
+import { events } from '../events';
+import { nextFloat } from '../rng';
+import { cur, gain, type GameState, spend } from '../state';
+import { defineStat, registerSources, stat } from '../stats';
+import { registerSystem, type TickContext } from '../tick';
+import { addXp } from './starsmith';
+
+/**
+ * The Asteroid Belt: asteroids drift into a field up to a cap; sweeping the tractor beam over them
+ * harvests ore, Starsmith XP and a little Stardust. The field lives in the save (ids and rarities,
+ * rolled with the seeded generator), so drones can keep harvesting offline and reloading never
+ * re-rolls a rare one. Positions are only drawn, never stored.
+ */
+const B = BALANCE.belt;
+
+export const beltOpen = (s: GameState) => s.tier >= B.tier || s.unlocked.includes('belt');
+export const beltLevel = (s: GameState, id: BeltUpgradeId) => s.belt.upgrades[id] ?? 0;
+
+const curves = new Map<string, CostCurve>();
+export function beltCurve(id: BeltUpgradeId): CostCurve {
+  let c = curves.get(id);
+  if (!c) {
+    const u = B.upgrades[id];
+    c = { base: u.base, brackets: [{ from: 0, ratio: u.growth }] };
+    curves.set(id, c);
+  }
+  return c;
+}
+
+/** Value and XP upgrades: (i + 1) x 2^floor(i / 25). */
+const doublingShape = (i: number) => (i + 1) * 2 ** Math.floor(i / 25);
+
+export const tierMult = (s: GameState): Decimal => D(2).pow(s.belt.tier);
+
+export function rollRarity(s: GameState): number {
+  const luck = stat(s, 'beltLuck').toNumber();
+  // rarest first; each check is luck / oneIn
+  for (let i = RARITIES.length - 1; i > 0; i--) if (nextFloat(s.belt.rng) < luck / RARITIES[i]!.oneIn) return i;
+  return 0;
+}
+
+/** Ore one asteroid of this rarity gives. */
+export function oreFor(s: GameState, rarity: number): Decimal {
+  return stat(s, 'oreValue').mul(RARITIES[rarity]!.mult);
+}
+
+export function xpFor(s: GameState, rarity: number): Decimal {
+  return stat(s, 'beltXp').mul(RARITIES[rarity]!.mult);
+}
+
+/**
+ * Harvests these asteroids (if still there). Returns how many were taken. Drones pass `scale`, the
+ * offline efficiency during catch-up, and `hand` false; a sweep by the player is always full value.
+ */
+export function harvest(s: GameState, ids: readonly number[], scale = 1, hand = true): number {
+  if (!beltOpen(s) || ids.length === 0) return 0;
+  const want = new Set(ids);
+  let n = 0;
+  let ore = ZERO;
+  let xp = ZERO;
+  let dust = ZERO;
+  const sps = stat(s, 'stardustPerSec');
+  const keep = s.belt.field.filter((a) => {
+    if (!want.has(a.id)) return true;
+    n++;
+    ore = ore.add(oreFor(s, a.r));
+    xp = xp.add(xpFor(s, a.r));
+    dust = dust.add(sps.mul(B.stardustSeconds * Math.sqrt(RARITIES[a.r]!.mult)));
+    // TODO(Phase 6+): Crystal asteroids also give Crystals, Void ones Dark Matter (Game design: Rarities).
+    if (a.r > 0) events.emit({ t: 'harvest', rarity: RARITIES[a.r]!.id, hand });
+    return false;
+  });
+  if (n === 0) return 0;
+  s.belt.field = keep;
+  if (scale !== 1) {
+    ore = ore.mul(scale);
+    xp = xp.mul(scale);
+    dust = dust.mul(scale);
+  }
+  gain(s, 'ore', ore);
+  s.belt.oreThisTier = s.belt.oreThisTier.add(ore);
+  addXp(s, xp);
+  gain(s, 'stardust', dust);
+  s.stats.harvested = (s.stats.harvested ?? 0) + n;
+  events.emit({ t: 'harvest', rarity: 'any', hand });
+  return n;
+}
+
+export function beltUpgradeCost(s: GameState, id: BeltUpgradeId, count = 1): Decimal {
+  return bulkCost(beltCurve(id), beltLevel(s, id), count);
+}
+
+export function beltUpgradeMaxed(s: GameState, id: BeltUpgradeId): boolean {
+  if (id === 'beam') return beltLevel(s, id) >= B.beamMaxLevel;
+  if (id === 'amount') return stat(s, 'beltCap').toNumber() >= B.maxCap;
+  return false;
+}
+
+/** From Belt Tier 4 upgrades no longer cost ore (you still need that much). */
+export const freeUpgrades = (s: GameState) => s.belt.tier >= 4;
+
+export function buyBeltUpgrade(s: GameState, id: BeltUpgradeId): boolean {
+  if (!beltOpen(s) || beltUpgradeMaxed(s, id)) return false;
+  const cost = beltUpgradeCost(s, id);
+  if (cur(s, 'ore').lt(cost)) return false;
+  if (!freeUpgrades(s)) spend(s, 'ore', cost);
+  s.belt.upgrades[id] = beltLevel(s, id) + 1;
+  events.emit({ t: 'purchase', kind: 'belt', id, amount: 1 });
+  return true;
+}
+
+/** Ore needed this tier to reach Belt Tier T: 100 x 3^(T^1.2). */
+export function beltTierNeed(T: number): Decimal {
+  return D(B.tierBase).mul(D(B.tierRatio).pow(T ** B.tierPow));
+}
+
+/** A mini-reset inside the Belt: ore and upgrades go, x2 ore and XP and one automation stay. */
+export function beltTierUp(s: GameState): boolean {
+  const need = beltTierNeed(s.belt.tier + 1);
+  if (s.belt.oreThisTier.lt(need)) return false;
+  s.belt.tier += 1;
+  s.belt.upgrades = {};
+  s.belt.oreThisTier = ZERO;
+  s.currencies.ore = ZERO;
+  events.emit({ t: 'milestone', id: `beltTier.${s.belt.tier}` });
+  return true;
+}
+
+export const droneCount = (s: GameState) => (s.belt.tier >= 5 ? 2 : s.belt.tier >= 1 ? 1 : 0);
+export const droneSpeed = (s: GameState) => (s.belt.tier >= 6 ? 4 : s.belt.tier >= 2 ? 2 : 1) * B.droneRate;
+
+// ---------- Deep Core Drilling ----------
+
+const DR = BALANCE.drill;
+export const drillOpen = (s: GameState) => (s.stats.supernovas ?? 0) >= DR.supernovas || s.unlocked.includes('drill');
+export const layerAt = (depth: number) => [...DEPTH_LAYERS].reverse().find((l) => depth >= l.from) ?? DEPTH_LAYERS[0]!;
+export const coreHp = (depth: number): Decimal => D(DR.hpBase).mul(D(DR.hpGrowth).pow(depth));
+
+/** Mastery level of an ore from how many cores of that layer you have broken. */
+export const oreMastery = (s: GameState, ore: string) => Math.floor(Math.sqrt(s.drill.mastery[ore] ?? 0));
+
+export const droneCost = (s: GameState) => D(DR.droneBase).mul(D(DR.droneGrowth).pow(s.drill.drones));
+export const bitCost = (s: GameState) => D(DR.bitBase).mul(D(DR.bitGrowth).pow(s.drill.bits));
+
+export function drillDps(s: GameState): Decimal {
+  const layer = layerAt(s.drill.depth);
+  return D(DR.baseDps + DR.droneDps * s.drill.drones)
+    .mul(D(DR.bitMult).pow(s.drill.bits))
+    .mul(1 + DR.masteryPerLevel * oreMastery(s, layer.ore));
+}
+
+export function coreReward(s: GameState, depth: number): Decimal {
+  return D(DR.rewardBase).mul(D(DR.rewardGrowth).pow(depth)).mul(stat(s, 'oreGain')).mul(tierMult(s));
+}
+
+/** Deals damage to the current core; breaking it pays ore and goes one layer deeper. */
+export function drillDamage(s: GameState, amount: Decimal): number {
+  if (!drillOpen(s)) return 0;
+  let broken = 0;
+  let dmg = s.drill.damage.add(amount);
+  while (dmg.gte(coreHp(s.drill.depth)) && broken < 50) {
+    dmg = dmg.sub(coreHp(s.drill.depth));
+    const layer = layerAt(s.drill.depth);
+    const ore = coreReward(s, s.drill.depth);
+    gain(s, 'ore', ore);
+    s.belt.oreThisTier = s.belt.oreThisTier.add(ore);
+    s.drill.mastery[layer.ore] = (s.drill.mastery[layer.ore] ?? 0) + 1;
+    s.drill.depth += 1;
+    broken++;
+    events.emit({ t: 'milestone', id: `core.${s.drill.depth}` });
+  }
+  s.drill.damage = dmg;
+  return broken;
+}
+
+/** A click on the core: two seconds of drilling. */
+export const tapCore = (s: GameState) => drillDamage(s, drillDps(s).mul(DR.tapSeconds));
+
+export function buyDrillDrone(s: GameState): boolean {
+  if (!drillOpen(s) || !spend(s, 'ore', droneCost(s))) return false;
+  s.drill.drones += 1;
+  return true;
+}
+
+// TODO(Phase 6): drill bits are crafted at the Starforge from alloy; until then they cost ore.
+export function buyDrillBit(s: GameState): boolean {
+  if (!drillOpen(s) || !spend(s, 'ore', bitCost(s))) return false;
+  s.drill.bits += 1;
+  return true;
+}
+
+export function registerBelt(): void {
+  defineStat({ id: 'oreValue', label: 'Ore per asteroid', base: () => D(B.oreBase) });
+  defineStat({ id: 'oreGain', label: 'Ore gain', base: () => D(1) });
+  defineStat({ id: 'beltXp', label: 'XP per asteroid', base: () => D(B.xpBase) });
+  defineStat({ id: 'beltCap', label: 'Asteroids in the field', base: () => D(B.baseCap) });
+  defineStat({ id: 'beltSpawn', label: 'Asteroid arrival speed', base: () => D(1) });
+  defineStat({ id: 'beamRadius', label: 'Tractor beam radius (px)', base: () => D(B.beamBase) });
+  defineStat({ id: 'beltLuck', label: 'Asteroid luck', base: () => D(1) });
+  registerSources(
+    { id: 'belt.value', stat: 'oreValue', op: 'mul', label: 'Value upgrade', value: (s) => D(doublingShape(beltLevel(s, 'value'))) },
+    { id: 'belt.oreGain', stat: 'oreValue', op: 'mul', label: 'Ore gain', value: (s) => stat(s, 'oreGain') },
+    { id: 'belt.tier', stat: 'oreValue', op: 'mul', label: 'Belt Tier', value: tierMult, active: (s) => s.belt.tier > 0 },
+    { id: 'belt.xp', stat: 'beltXp', op: 'mul', label: 'XP upgrade', value: (s) => D(doublingShape(beltLevel(s, 'xp'))) },
+    { id: 'belt.xpTier', stat: 'beltXp', op: 'mul', label: 'Belt Tier', value: tierMult, active: (s) => s.belt.tier > 0 },
+    { id: 'belt.xpGain', stat: 'beltXp', op: 'mul', label: 'XP gain', value: (s) => stat(s, 'xpGain') },
+    { id: 'belt.amount', stat: 'beltCap', op: 'add', label: 'Amount upgrade', value: (s) => D(beltLevel(s, 'amount')) },
+    { id: 'belt.growth', stat: 'beltSpawn', op: 'add', label: 'Growth upgrade', value: (s) => D(B.growthPerLevel * beltLevel(s, 'growth')) },
+    { id: 'belt.beam', stat: 'beamRadius', op: 'add', label: 'Beam upgrade', value: (s) => D(B.beamPerLevel * beltLevel(s, 'beam')) },
+  );
+
+  registerSystem({
+    id: 'belt',
+    order: 30,
+    tick: (s: GameState, dt: number, ctx: TickContext) => {
+      if (!beltOpen(s)) return;
+      // Works the same for one 50 ms tick or one 43 s catch-up step: arrivals may fill the room
+      // the drones free up within the step, then drones sweep the oldest asteroids.
+      const cap = Math.min(B.maxCap, Math.floor(stat(s, 'beltCap').toNumber()));
+      const rate = stat(s, 'beltSpawn').toNumber() / B.spawnSeconds;
+      const drones = droneCount(s);
+      s.belt.droneAcc += dt * drones * droneSpeed(s);
+      const take = Math.floor(s.belt.droneAcc);
+      s.belt.spawnAcc += dt * rate;
+      const room = Math.max(0, cap - s.belt.field.length + take);
+      const arrive = Math.min(Math.floor(s.belt.spawnAcc), room);
+      for (let i = 0; i < arrive; i++) s.belt.field.push({ id: s.belt.nextId++, r: rollRarity(s) });
+      s.belt.spawnAcc -= arrive;
+      s.stats.spawned = (s.stats.spawned ?? 0) + arrive;
+      // a full field doesn't bank arrivals; drones with nothing left to sweep don't bank sweeps
+      s.belt.spawnAcc = Math.min(s.belt.spawnAcc, 1);
+      if (take > 0) {
+        harvest(s, s.belt.field.slice(0, take).map((a) => a.id), ctx.gainScale, false);
+        s.belt.droneAcc -= take;
+      }
+      // passive ore from the whole field
+      if (s.belt.tier >= 3 && s.belt.field.length > 0) {
+        let sum = ZERO;
+        for (const a of s.belt.field) sum = sum.add(oreFor(s, a.r));
+        const ore = sum.mul(B.passiveShare * dt * ctx.gainScale);
+        gain(s, 'ore', ore);
+        s.belt.oreThisTier = s.belt.oreThisTier.add(ore);
+      }
+      // the drill works on its own once you have any power
+      if (drillOpen(s)) drillDamage(s, drillDps(s).mul(dt * ctx.gainScale));
+    },
+  });
+}

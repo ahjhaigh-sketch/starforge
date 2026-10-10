@@ -96,7 +96,12 @@ test('tap, buy an engine, reveal the next, evolve the star', async ({ page }) =>
   await page.getByRole('button', { name: /Evolve to Red Dwarf/ }).click();
   await expect(page.locator('.tier-pill')).toContainText('Red Dwarf');
   await expect(page.locator('.toast', { hasText: 'Red Dwarf!' })).toBeVisible();
-  await expect(page.locator('[data-rail="belt"]').first()).toHaveClass(/soon/);
+  // Phase 5: Red Dwarf opens the Belt and the Starsmith Level; its own toast says so, and stays
+  await expect(page.locator('[data-rail="belt"]').first()).toHaveClass(/new/);
+  await expect(page.locator('.toast', { hasText: 'Red Dwarf!' })).toContainText('Asteroid Belt');
+  await page.waitForTimeout(600);
+  await expect(page.locator('.toast', { hasText: 'Red Dwarf!' })).toBeVisible();
+  await expect(page.locator('.toast', { hasText: 'Unlocked: Belt' })).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
@@ -395,4 +400,134 @@ test('auto-buyers have working switches in the Automation hub', async ({ page })
   expect(await page.evaluate(() => (window as unknown as Sf4).sf.game.state.engines.mote ?? 0)).toBe(owned);
   await mote.getByRole('button', { name: 'Off' }).click();
   await expect.poll(() => page.evaluate(() => (window as unknown as Sf4).sf.game.state.engines.mote ?? 0), { timeout: 5000 }).toBeGreaterThan(owned);
+});
+
+// ---------- Phase 5: the Asteroid Belt, Deep Core and the Starsmith Level ----------
+
+type Sf5 = {
+  sf: {
+    game: {
+      state: {
+        tier: number;
+        unlocked: string[];
+        stats: Record<string, number>;
+        belt: { upgrades: Record<string, number>; field: Array<{ id: number; r: number }>; nextId: number };
+        drill: { depth: number; drones: number; damage: { toNumber(): number } };
+        starsmith: { perks: Record<string, number> };
+        currencies: Record<string, { toNumber(): number }>;
+      };
+    };
+    commands: { devAdd(c: string, n: number): void; harvest(ids: number[]): number };
+  };
+};
+
+test('100 asteroids harvested by hand in a few quick sweeps', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  // a Red Dwarf whose field holds 100 asteroids, all there already
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf5).sf;
+    const s = game.state;
+    s.tier = 1;
+    s.belt.upgrades.amount = 90;
+    s.belt.field = Array.from({ length: 100 }, (_, i) => ({ id: i + 1, r: i % 25 === 0 ? 1 : 0 }));
+    s.belt.nextId = 101;
+    commands.devAdd('ore', 0);
+  });
+  await page.locator('[data-rail="belt"]:visible').click();
+  const panel = page.locator('[data-panel="belt"]');
+  await expect(panel).toHaveClass(/open/);
+  const field = panel.getByTestId('belt-field');
+  await expect(field.locator('canvas')).toBeVisible();
+  await page.waitForTimeout(400); // asteroids grow in
+  const box = (await field.boundingBox())!;
+  const started = Date.now();
+  // zigzag sweeps, top to bottom and back
+  for (let pass = 0; pass < 3; pass++) {
+    for (let row = 0; row <= 4; row++) {
+      const y = box.y + 20 + ((box.height - 40) * (pass % 2 ? 4 - row : row)) / 4;
+      const [x0, x1] = row % 2 ? [box.x + box.width - 4, box.x + 4] : [box.x + 4, box.x + box.width - 4];
+      await page.mouse.move(x0, y);
+      await page.mouse.down();
+      await page.mouse.move(x1, y, { steps: 12 });
+      await page.mouse.up();
+    }
+    const done = await page.evaluate(() => (window as unknown as Sf5).sf.game.state.stats.harvested ?? 0);
+    if (done >= 100) break;
+  }
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf5).sf.game.state.stats.harvested ?? 0)).toBeGreaterThanOrEqual(100);
+  expect(Date.now() - started).toBeLessThan(15_000);
+  expect(await page.evaluate(() => (window as unknown as Sf5).sf.game.state.currencies.ore!.toNumber())).toBeGreaterThanOrEqual(100);
+  // the ore shows in the HUD and buys an upgrade
+  await expect(page.locator('.hud .pill[aria-label="Ore"]')).toBeVisible();
+  await panel.locator('[data-belt-up="value"]').getByRole('button').click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf5).sf.game.state.belt.upgrades.value)).toBe(1);
+  expect(errors).toEqual([]);
+});
+
+test('the arrow keys sweep the beam too', async ({ page }) => {
+  const phone = (page.viewportSize()?.width ?? 1400) < 900;
+  test.skip(phone, 'keyboard play is a desktop check');
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf5).sf;
+    game.state.tier = 1;
+    commands.devAdd('ore', 0);
+  });
+  await page.locator('[data-rail="belt"]:visible').click();
+  const field = page.locator('[data-panel="belt"]').getByTestId('belt-field');
+  await expect(field.locator('canvas')).toBeVisible();
+  // wait for a few asteroids, then sweep the whole field with the keys
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf5).sf.game.state.belt.field.length), { timeout: 10_000 }).toBeGreaterThanOrEqual(2);
+  await field.focus();
+  for (let row = 0; row < 6; row++) {
+    for (let i = 0; i < 16; i++) await page.keyboard.press(row % 2 ? 'ArrowLeft' : 'ArrowRight');
+    await page.keyboard.press(row < 3 ? 'ArrowUp' : 'ArrowDown');
+    await page.keyboard.press(row < 3 ? 'ArrowUp' : 'ArrowDown');
+  }
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf5).sf.game.state.stats.harvested ?? 0)).toBeGreaterThan(0);
+});
+
+test('Deep Core: clicking drills, drones buy, the core breaks into ore', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf5).sf;
+    game.state.stats.supernovas = 5;
+    commands.devAdd('ore', 600);
+  });
+  await page.locator('[data-rail="drill"]:visible').click();
+  const panel = page.locator('[data-panel="drill"]');
+  await expect(panel).toHaveClass(/open/);
+  const core = panel.getByTestId('drill-core');
+  for (let i = 0; i < 5; i++) await core.click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf5).sf.game.state.drill.damage.toNumber())).toBeGreaterThanOrEqual(10);
+  await panel.getByRole('button', { name: /Buy a drill drone/ }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf5).sf.game.state.drill.drones)).toBe(1);
+  // keep drilling until the first core breaks
+  for (let i = 0; i < 40; i++) await core.click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf5).sf.game.state.drill.depth), { timeout: 10_000 }).toBeGreaterThanOrEqual(1);
+  await expect(panel).toContainText('Depth 1');
+  expect(errors).toEqual([]);
+});
+
+test('Starsmith perks: the HUD chip opens the panel, points spend and reset', async ({ page }) => {
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf5).sf;
+    game.state.tier = 1;
+    commands.devAdd('xp', 500); // level 3 needs 50 + 135 + 266
+  });
+  const chip = page.getByTestId('level-chip');
+  await expect(chip).toContainText('Lv 3');
+  await chip.click();
+  const panel = page.locator('[data-panel="level"]');
+  await expect(panel).toHaveClass(/open/);
+  await expect(panel).toContainText('3 perk points to spend');
+  await panel.locator('[data-perk="cap"]').getByRole('button', { name: /Put a point/ }).click();
+  await panel.locator('[data-perk="cap"]').getByRole('button', { name: /Put a point/ }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf5).sf.game.state.starsmith.perks.cap)).toBe(2);
+  await expect(panel).toContainText('1 perk point to spend');
+  await panel.getByRole('button', { name: 'Reset perks (free)' }).click();
+  await expect(panel).toContainText('3 perk points to spend');
 });

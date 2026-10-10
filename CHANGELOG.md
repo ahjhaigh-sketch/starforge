@@ -1,5 +1,32 @@
 # Changelog
 
+## Phase 5: Asteroid Belt
+- The Asteroid Belt opens at Red Dwarf.
+  - A PixiJS harvest field: asteroids drift in up to the field's cap. A tractor-beam circle follows the mouse, a dragging finger, or the arrow keys.
+  - Sweeping harvests ore, Starsmith XP and a little Stardust. A quick flick sweeps everything along its path, not only where the beam lands each frame.
+  - Five rarities: Iron, Gold 1 in 50 (x10), Crystal 1 in 400 (x50), Prismatic 1 in 5,000 (x500), Void 1 in 100,000 (x10,000). Rare ones glow, burst and chime; Prismatic and Void get a toast.
+  - Rarities come from the Belt's own seeded random stream. The field is saved, so reloading never re-rolls an asteroid, and the Belt never shifts the rolls of comets or crits.
+- Belt upgrades: Value, Amount, Growth, Beam (8 levels) and XP, priced as on the Math and balance tab.
+- Belt Tiers: 100 x 3^(T^1.2) ore gathered this tier.
+  - Each tier is a mini-reset of ore and upgrades. It gives x2 ore and XP, plus one automation: a drone, faster drones, passive ore, free upgrades, a second drone, faster drones again.
+- The whole Belt, Deep Core and Starsmith Level are kept through Supernova.
+- Drones and passive ore keep working offline at the offline efficiency. The Belt settles correctly in one 43-second catch-up step, so a day away harvests what a day played would.
+- Deep Core Drilling opens at 5 Supernovas.
+  - Click the core for 2 seconds of drilling. Drill drones add drilling, drill bits multiply it, and it drills on its own (offline too).
+  - Cores have 100 x 8^depth HP and break into ore. Four depth layers (Crust, Mantle, Core, Singularity Seam), each with its own ore and mastery, which speeds up drilling there.
+- Starsmith Level: XP from taps, engines, evolving, quests, asteroids and Supernovas.
+  - Level L needs 50 x 2.7^(L^0.75) XP.
+  - Every level is a perk point: Prospector, Wide Belt, Gravity Lure, Scholar, Long Beam. Resetting perks is free, any time.
+  - A level chip with an XP bar sits in the top bar and opens the Level panel.
+- Ore pill in the top bar.
+- Unlocks that arrive together share one toast. Systems opened by a new Star Tier are already named in that tier's toast, so it no longer gets pushed off a phone screen.
+- The welcome-back screen names Ore, Starsmith XP and Nova Shards properly.
+- Balance simulator:
+  - The bot's old rule ("Supernova when it doubles lifetime shards") could stall for hours once passive shards arrive at 20 Supernovas. From 20 on it now resets when shards per second peak.
+  - A seed can be set (`SIM_SEED`).
+- Save version 6, with a migration test that loads a real version 5 save.
+- New script `scripts/soak.mjs`: plays the built game for 2 minutes at desktop and phone size and fails on any console error.
+
 ## Phase 4: Supernova (the version for friends)
 - One generic reset system (`engine/layers.ts`).
   - A layer is data: currency, readiness, gain, the parts it resets (each with what can keep it), what is always kept, and milestones.

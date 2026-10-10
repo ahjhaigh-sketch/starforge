@@ -7,6 +7,7 @@ import { gain, type GameState } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
 import { treeFlag } from './novaTree';
+import { giveXp } from './starsmith';
 
 /**
  * Supernova: the first reset layer (Game design: "Supernova and the Nova Tree"). Needs a Blue
@@ -125,7 +126,8 @@ export function registerSupernova(): void {
         },
       },
     ],
-    alwaysKept: ['Nova Shards and the Nova Tree', 'Medals and Goals', 'Engine Mastery', 'Star Quests and their bonus', 'Everything you have unlocked'],
+    onReset: (s) => giveXp(s, BALANCE.starsmith.xp.supernova),
+    alwaysKept: ['Nova Shards and the Nova Tree', 'Medals and Goals', 'Engine Mastery', 'Star Quests and their bonus', 'The Asteroid Belt, Deep Core and Starsmith Level', 'Everything you have unlocked'],
     milestones: [
       { at: 1, id: 'tree', text: 'The Nova Tree opens' },
       { at: 2, id: 'autoEvolve', text: 'Auto-Evolve: your star evolves by itself' },

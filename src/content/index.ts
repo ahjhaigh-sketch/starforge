@@ -1,4 +1,6 @@
 import { registerAutomation } from '../engine/systems/automation';
+import { registerBelt } from '../engine/systems/belt';
+import { registerStarsmith } from '../engine/systems/starsmith';
 import { registerComets } from '../engine/systems/comets';
 import { registerNovaTree } from '../engine/systems/novaTree';
 import { registerSupernova } from '../engine/systems/supernova';
@@ -15,6 +17,7 @@ import { registerCoreStats } from './core';
 /** Registers every stat, source and system. Called once at boot (and by tests and the simulator). */
 export function registerContent(): void {
   registerCoreStats();
+  registerStarsmith();
   registerStardust();
   registerComets();
   registerUpgrades();
@@ -26,5 +29,6 @@ export function registerContent(): void {
   registerSupernova();
   registerNovaTree();
   registerAutomation();
+  registerBelt();
   registerUnlocks();
 }

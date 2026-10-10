@@ -87,6 +87,8 @@ const semis = (n: number) => 2 ** (n / 12);
 let lastTap = 0;
 let buyStreak = 0;
 let lastBuy = 0;
+let lastHarvest = 0;
+const RARE_STEPS: Record<string, number> = { gold: 0, crystal: 3, prismatic: 5, void: 7 };
 
 export const sounds = {
   tap(crit: boolean) {
@@ -131,6 +133,21 @@ export const sounds = {
     const t = ctx.currentTime;
     [0, 5, 9].forEach((n, i) => tone(880 * semis(n), t + i * 0.06, 0.25, 'sine', 0.16));
   },
+  /** A soft pluck per harvest; rare asteroids add a sparkle that climbs with rarity. */
+  harvest(rarity: string) {
+    if (!ensure() || !ctx) return;
+    const t = ctx.currentTime;
+    const rare = RARE_STEPS[rarity];
+    if (rare !== undefined) {
+      [0, 4, 7, 12].forEach((n, i) => tone(1046 * semis(n + rare), t + i * 0.045, 0.3, 'sine', 0.16));
+      return;
+    }
+    if (t - lastHarvest < 0.06) return;
+    lastHarvest = t;
+    const f = 330 * semis(Math.floor(Math.random() * 5));
+    whoosh(t, 0.06, 3400, 1100, 0.09); // the crunch
+    tone(f, t, 0.08, 'triangle', 0.2, f * 1.5);
+  },
   toast() {
     if (!ensure() || !ctx) return;
     const t = ctx.currentTime;
@@ -167,6 +184,9 @@ export function installAudio(): void {
         break;
       case 'achievement':
         sounds.medal();
+        break;
+      case 'harvest':
+        if (e.hand) sounds.harvest(e.rarity);
         break;
       case 'unlock':
         sounds.toast();

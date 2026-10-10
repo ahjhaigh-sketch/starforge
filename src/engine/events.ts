@@ -10,6 +10,8 @@ export type GameEvent =
   | { t: 'achievement'; id: string }
   | { t: 'milestone'; id: string }
   | { t: 'comet'; kind: string }
+  /** `hand`: swept by the player (drones harvest quietly). */
+  | { t: 'harvest'; rarity: string; hand: boolean }
   | { t: 'toast'; title: string; body: string; icon?: string }
   | { t: 'saved'; slot: string }
   | { t: 'saveError'; message: string }

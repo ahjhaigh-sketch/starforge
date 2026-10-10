@@ -3,6 +3,7 @@ import { D } from '../../src/engine/decimal';
 import { decodeEnvelope, encodeEnvelope, SAVE_PREFIX } from '../../src/engine/save/codec';
 import { exportSave, importSave, KEYS, loadFromSlots, memoryStore, saveToSlots } from '../../src/engine/save/store';
 import { createInitialState, SAVE_VERSION } from '../../src/engine/state';
+import { toPlain } from '../../src/engine/save/serialize';
 
 function sample() {
   const s = createInitialState(1_700_000_000_000, 42);
@@ -53,7 +54,7 @@ describe('save codec', () => {
   it('fills in fields that older saves did not have', () => {
     const s = sample() as unknown as Record<string, unknown>;
     delete (s.settings as Record<string, unknown>).showToasts;
-    const code = encodeEnvelope({ v: SAVE_VERSION, t: 1, d: JSON.parse(JSON.stringify({ ...s, currencies: { stardust: 'D:5' }, totals: { run: {}, all: {} } })) });
+    const code = encodeEnvelope({ v: SAVE_VERSION, t: 1, d: JSON.parse(JSON.stringify({ ...(toPlain(s) as object), currencies: { stardust: 'D:5' }, totals: { run: {}, all: {} } })) });
     const back = importSave(code).state;
     expect(back.settings.showToasts).toBe(true);
     expect(back.currencies.stardust!.toNumber()).toBe(5);

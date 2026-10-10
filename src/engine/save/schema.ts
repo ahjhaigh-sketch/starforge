@@ -36,6 +36,20 @@ export const plainSaveSchema = z.looseObject({
   lastResetAt: z.record(z.string(), finite).optional(),
   novaTree: z.record(z.string(), z.number().int().min(0)).optional(),
   auto: z.record(z.string(), z.looseObject({ on: z.boolean(), spend: finite })).optional(),
+  belt: z
+    .looseObject({
+      upgrades: z.record(z.string(), z.number().int().min(0)),
+      tier: z.number().int().min(0),
+      field: z.array(z.looseObject({ id: finite, r: z.number().int().min(0) })),
+      nextId: finite,
+      spawnAcc: finite,
+      droneAcc: finite,
+      oreThisTier: dec,
+      rng: z.tuple([finite, finite, finite, finite]).optional(),
+    })
+    .optional(),
+  drill: z.looseObject({ depth: z.number().int().min(0), damage: dec, drones: z.number().int().min(0), bits: z.number().int().min(0), mastery: z.record(z.string(), finite) }).optional(),
+  starsmith: z.looseObject({ perks: z.record(z.string(), z.number().int().min(0)) }).optional(),
   settings: z.looseObject({
     notation: z.enum(['suffix', 'scientific', 'engineering']),
     autosaveSeconds: finite,

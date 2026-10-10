@@ -8,6 +8,8 @@ import { gain, type GameState, type QuestState } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
 import { registerSystem } from '../tick';
 import { tapValue } from './stardust';
+import { giveXp } from './starsmith';
+import { BALANCE } from '../../content/balance';
 
 /**
  * Star Quests: 3 goals at a time, scaled to progress when they appear, measured from that moment,
@@ -126,6 +128,7 @@ export function claimQuest(s: GameState, index: number): Decimal | null {
   const reward = questReward(s);
   gain(s, 'stardust', reward);
   s.stats.questsDone = (s.stats.questsDone ?? 0) + 1;
+  giveXp(s, BALANCE.starsmith.xp.quest);
   s.quests[index] = newQuest(s, s.quests.map((x) => x.kind));
   events.emit({ t: 'milestone', id: `quest.${q.kind}` });
   return reward;

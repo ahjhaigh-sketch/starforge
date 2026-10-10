@@ -164,7 +164,7 @@ it('balance simulation', async () => {
   if (process.env.SIM_BALANCE) applyOverrides(BALANCE as unknown as Record<string, unknown>, JSON.parse(process.env.SIM_BALANCE));
   await loadGame();
   registerContent();
-  const s = createInitialState(0, 2026);
+  const s = createInitialState(0, Number(process.env.SIM_SEED ?? 2026));
   const rt = createTapRuntime();
   const rows: Row[] = [];
   const record = (milestone: string) =>
@@ -187,6 +187,8 @@ it('balance simulation', async () => {
     [30, 'Nebula appears (30)'],
   ]);
   let runStart = 0;
+  /** Best shards-per-second this run: with passive shards, a player resets once that peaks. */
+  let bestRate = D(0);
   const runLengths: number[] = [];
   let firstSnPurchases = 0;
   let firstSnTiers = 0;
@@ -202,7 +204,11 @@ it('balance simulation', async () => {
       const g = supernovaGain(s);
       const lifetime = s.totals.all.shards ?? D(0);
       const tooLong = s.playtime - runStart > 4 * 3600;
-      if ((s.stats.supernovas ?? 0) === 0 || g.gte(lifetime.max(3)) || tooLong) {
+      const rate = g.div(Math.max(1, s.playtime - runStart));
+      if (rate.gt(bestRate)) bestRate = rate;
+      // once lifetime shards grow by themselves (20 Supernovas), doubling them can stall a run for hours
+      const peaked = (s.stats.supernovas ?? 0) >= 20 && s.playtime - runStart > 60 && rate.lt(bestRate.mul(0.9));
+      if ((s.stats.supernovas ?? 0) === 0 || g.gte(lifetime.max(3)) || peaked || tooLong) {
         if ((s.stats.supernovas ?? 0) === 0) {
           firstSnPurchases = s.stats.enginesBought ?? 0;
           firstSnTiers = s.tier;
@@ -213,6 +219,7 @@ it('balance simulation', async () => {
         }
         performReset(s, 'supernova');
         runStart = s.playtime;
+        bestRate = D(0);
         spendShards(s);
         const label = want.get(s.stats.supernovas ?? 0);
         if (label) record(label);
@@ -220,7 +227,7 @@ it('balance simulation', async () => {
     }
   }
   console.log('\n=== Starforge balance simulation ===');
-  console.log(`Bot: ${TAPS_PER_SECOND} taps/s, catches every comet, best-value engines, Supernova when it at least doubles lifetime shards.`);
+  console.log(`Bot: ${TAPS_PER_SECOND} taps/s, catches every comet, best-value engines, Supernova when it at least doubles lifetime shards (from 20 Supernovas: once shards per second peak).`);
   console.log(`First Supernova after ${firstSnPurchases} engine purchases and ${firstSnTiers} Star Tiers (target: about 60 and 3).`);
   console.table(rows);
   const avg = (a: number[]) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);

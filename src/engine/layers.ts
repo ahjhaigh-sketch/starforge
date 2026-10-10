@@ -39,6 +39,8 @@ export interface LayerDef {
   /** Always kept, listed on the confirm screen so nobody fears losing them. */
   alwaysKept: readonly string[];
   milestones: readonly LayerMilestone[];
+  /** Runs after the reset (rewards that aren't the layer's currency, like Starsmith XP). */
+  onReset?: (s: GameState) => void;
 }
 
 const layers = new Map<string, LayerDef>();
@@ -93,6 +95,7 @@ export function performReset(s: GameState, id: string): Decimal | null {
     if (!keep[i]) p.reset(s);
   });
   s.lastResetAt[id] = s.playtime;
+  def.onReset?.(s);
   // every stat depends on what was just reset: nothing may read a cached value from the old run
   invalidateStats();
   events.emit({ t: 'reset', layer: id, gain: amount });

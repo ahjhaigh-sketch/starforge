@@ -1,6 +1,6 @@
 # Starforge
 
-A space-fantasy incremental game: tap a dying star, build engines, evolve it through stellar tiers and go Supernova. Chunky Roblox-incremental style UI over a painted deep-space sky.
+A space-fantasy incremental game: tap a dying star, build engines, evolve it through stellar tiers, sweep the Asteroid Belt for ore and go Supernova. Chunky Roblox-incremental style UI over a painted deep-space sky.
 
 **Play:** https://ahjhaigh-sketch.github.io/starforge/
 
@@ -15,6 +15,8 @@ npm run typecheck
 npx vitest run       # engine tests
 npm run e2e          # browser smoke tests (needs: npx playwright install chromium)
 npm run build
+npm run sim          # balance bot (SIM_SEED=n for another seed)
+node scripts/soak.mjs 120   # 2-minute playtest of the build (run npx vite preview --port 4173 first)
 ```
 
 The full plan lives in the "Starforge — Game Plan" doc; `CLAUDE.md` has the rules for Claude Code. `ui-mockup/` holds the playable visual target and `research/` the notes on the games that inspired it.

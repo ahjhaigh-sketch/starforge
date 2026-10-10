@@ -24,6 +24,7 @@ import { UpgradesPanel } from './screens/UpgradesPanel';
 import { WelcomePanel } from './screens/WelcomePanel';
 import { ConstantsPanel, MasteryPanel, OrbitalsPanel, QuestsPanel } from './screens/EarlyPanels';
 import { AscentPanel, AutomationPanel, NovaTreePanel, SupernovaPanel } from './screens/NovaPanels';
+import { BeltPanel, DrillPanel, StarsmithPanel } from './screens/BeltPanels';
 import { useUi } from './store';
 
 /** Shown while time away is being simulated; fades in only if that takes a moment. */
@@ -80,6 +81,9 @@ export function App() {
       <NovaTreePanel />
       <AutomationPanel />
       <AscentPanel />
+      <BeltPanel />
+      <DrillPanel />
+      <StarsmithPanel />
       <SettingsPanel />
       <PanelHost />
       <ToastHost />

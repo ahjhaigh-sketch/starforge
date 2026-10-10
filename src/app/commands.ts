@@ -10,6 +10,9 @@ import { claimQuest } from '../engine/systems/quests';
 import { performReset } from '../engine/layers';
 import { setAuto } from '../engine/systems/automation';
 import { buyNode } from '../engine/systems/novaTree';
+import { type BeltUpgradeId } from '../content/belt';
+import { beltTierUp, buyBeltUpgrade, buyDrillBit, buyDrillDrone, harvest, tapCore } from '../engine/systems/belt';
+import { addPerk, resetPerks } from '../engine/systems/starsmith';
 import { backupNow, readBackup } from './backups';
 import { D } from '../engine/decimal';
 import { simulateElapsed } from '../engine/offline';
@@ -70,6 +73,47 @@ export const commands = {
     void backupNow();
     done();
     return true;
+  },
+  /** Asteroids the tractor beam touched. */
+  harvest(ids: number[]): number {
+    const n = harvest(game.state, ids);
+    if (n > 0) done();
+    return n;
+  },
+  buyBeltUpgrade(id: BeltUpgradeId): boolean {
+    const ok = buyBeltUpgrade(game.state, id);
+    done();
+    return ok;
+  },
+  beltTierUp(): boolean {
+    const ok = beltTierUp(game.state);
+    if (ok) saveNow();
+    done();
+    return ok;
+  },
+  tapCore(): number {
+    const n = tapCore(game.state);
+    done();
+    return n;
+  },
+  buyDrillDrone(): boolean {
+    const ok = buyDrillDrone(game.state);
+    done();
+    return ok;
+  },
+  buyDrillBit(): boolean {
+    const ok = buyDrillBit(game.state);
+    done();
+    return ok;
+  },
+  addPerk(id: string): boolean {
+    const ok = addPerk(game.state, id);
+    done();
+    return ok;
+  },
+  resetPerks() {
+    resetPerks(game.state);
+    done();
   },
   buyNode(id: string): boolean {
     const ok = buyNode(game.state, id);

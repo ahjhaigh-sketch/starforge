@@ -174,6 +174,9 @@ export interface WelcomeReport {
   notes: string[];
 }
 
+/** Names for the currencies a welcome-back report can list. */
+const GAIN_LABELS: Record<string, string> = { stardust: 'Stardust', shards: 'Nova Shards', ore: 'Ore', xp: 'Starsmith XP' };
+
 export function welcomeReport(): WelcomeReport | null {
   const r = game.bootReport;
   if (!r) return null;
@@ -183,7 +186,9 @@ export function welcomeReport(): WelcomeReport | null {
     counted: `${formatTime(r.secondsCounted)} of ${formatTime(stat(s, 'offlineCap').toNumber())} cap`,
     capped: r.capped,
     efficiency: `${Math.round(r.efficiency * 100)}%`,
-    gains: Object.entries(r.gains).map(([k, v]) => ({ label: k === 'stardust' ? 'Stardust' : k, value: `+${f(v)}` })),
+    gains: Object.entries(r.gains)
+      .sort(([a], [b]) => (b === 'stardust' ? 1 : 0) - (a === 'stardust' ? 1 : 0))
+      .map(([k, v]) => ({ label: GAIN_LABELS[k] ?? k, value: `+${f(v)}` })),
     notes: r.notes,
   };
 }

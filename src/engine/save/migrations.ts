@@ -27,6 +27,8 @@ const migrations: Record<number, (d: PlainSave) => void> = {
   4: () => {},
   // 5 (Phase 4): Supernova, the Nova Tree and auto-buyers, all with defaults.
   5: () => {},
+  // 6 (Phase 5): the Asteroid Belt, Deep Core Drilling and Starsmith perks, all with defaults.
+  6: () => {},
 };
 
 export function migrate(version: number, data: PlainSave): PlainSave {

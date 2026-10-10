@@ -8,6 +8,7 @@ import { nextFloat } from '../rng';
 import { cur, gain, type GameState, spend } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
+import { giveXp } from './starsmith';
 
 /**
  * Layer 0: the Star Core, the 15 engines and the 12 Star Tiers.
@@ -69,6 +70,7 @@ export function buyEngine(s: GameState, id: string, count: number): boolean {
   s.engines[id] = owned(s, id) + count;
   s.enginesEver[id] = (s.enginesEver[id] ?? 0) + count;
   s.stats.enginesBought = (s.stats.enginesBought ?? 0) + count;
+  giveXp(s, BALANCE.starsmith.xp.engine * count);
   events.emit({ t: 'purchase', kind: 'engine', id, amount: count });
   return true;
 }
@@ -86,6 +88,7 @@ export function evolve(s: GameState): boolean {
   if (!price || !spend(s, 'stardust', price)) return false;
   s.tier += 1;
   s.stats.evolves = (s.stats.evolves ?? 0) + 1;
+  giveXp(s, BALANCE.starsmith.xp.evolve);
   events.emit({ t: 'tierUp', tier: s.tier });
   return true;
 }
@@ -147,6 +150,7 @@ export function tapStar(s: GameState, rt: TapRuntime, nowMs: number): TapResult 
   if (crit) amount = amount.mul(stat(s, 'critMult'));
   gain(s, 'stardust', amount);
   s.stats.taps = (s.stats.taps ?? 0) + 1;
+  giveXp(s, BALANCE.starsmith.xp.tap);
   if (crit) s.stats.crits = (s.stats.crits ?? 0) + 1;
   events.emit({ t: 'tap', amount, crit });
   return { amount, crit, combo: rt.combo };
