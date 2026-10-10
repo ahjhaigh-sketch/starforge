@@ -15,7 +15,11 @@ type PlainSave = Record<string, unknown>;
  * merges the save onto a fresh default state.
  */
 const migrations: Record<number, (d: PlainSave) => void> = {
-  // 2: (d) => { ... },
+  // 2 (Phase 1): star tier, engines and unlocks. Every new field has a default, so nothing moves;
+  // this entry records the change and repairs a missing stats object.
+  2: (d) => {
+    if (typeof d.stats !== 'object' || d.stats === null) d.stats = {};
+  },
 };
 
 export function migrate(version: number, data: PlainSave): PlainSave {

@@ -1,16 +1,61 @@
 import { useStore } from 'zustand';
 import { createStore } from 'zustand/vanilla';
-import { cur } from '../engine/state';
+import { BALANCE } from '../content/balance';
+import { ENGINES } from '../content/engines';
+import { SYSTEMS, type SystemDef } from '../content/systems';
+import { TIERS } from '../content/tiers';
+import { planPurchase } from '../engine/buy';
+import { D } from '../engine/decimal';
+import { cur, type BuyAmount, type GameState, type Notation } from '../engine/state';
 import { stat } from '../engine/stats';
-import type { BuyAmount, Notation } from '../engine/state';
-import { format, formatRate, formatTime } from '../ui/format';
+import {
+  comboMult,
+  comboNow,
+  engineCurve,
+  engineEach,
+  engineRevealed,
+  milestoneSpan,
+  nextTierCost,
+  owned,
+} from '../engine/systems/stardust';
+import { reqProgress, reqText } from '../engine/systems/unlocks';
+import { format, formatCount, formatMult, formatRate, formatTime } from '../ui/format';
 import { game } from './game';
 
 /**
  * A flat object of pre-formatted strings and small values, rebuilt 10 times a second (and right
- * after every command). Components select single fields; strings compare cheaply, so nothing
- * re-renders unless what it shows changed. The UI never reads GameState directly.
+ * after every command). Components select single fields; rows and rail items keep the same
+ * object when nothing in them changed, so only what changed re-renders. The UI never reads
+ * GameState directly.
  */
+export interface EngineRow {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  blurb: string;
+  owned: string;
+  each: string;
+  cost: string;
+  count: string;
+  can: boolean;
+  msPct: number;
+  msNext: string;
+}
+
+export type RailState = 'open' | 'new' | 'soon' | 'locked' | 'hidden';
+
+export interface RailItem {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  blurb: string;
+  state: RailState;
+  req: string;
+  pct: number;
+}
+
 export interface Snapshot {
   notation: Notation;
   dust: string;
@@ -22,16 +67,117 @@ export interface Snapshot {
   customBuyAmount: number;
   reducedMotion: boolean;
   reduceFlashing: boolean;
+  showToasts: boolean;
   tickMs: string;
+  tierIndex: number;
+  tierName: string;
+  tierColor: string;
+  starSize: number;
+  nextTierName: string;
+  evolveCost: string;
+  canEvolve: boolean;
+  evolvePct: number;
+  tapLabel: string;
+  moteCount: number;
+  combo: number;
+  comboMult: string;
+  engineRows: EngineRow[];
+  engineMystery: string;
+  enginesOwned: string;
+  railLeft: RailItem[];
+  railRight: RailItem[];
+  novaPct: number;
+  novaReq: string;
 }
 
-export function buildSnapshot(): Snapshot {
+/** Reuses the previous object when every field is the same, so React skips the re-render. */
+function stable<T extends object>(prev: T | undefined, next: T): T {
+  if (!prev) return next;
+  for (const k in next) if (prev[k] !== next[k]) return next;
+  return prev;
+}
+
+function stableList<T extends object>(prev: T[] | undefined, next: T[]): T[] {
+  const out = next.map((item, i) => stable(prev?.[i], item));
+  if (prev && prev.length === out.length && out.every((x, i) => x === prev[i])) return prev;
+  return out;
+}
+
+function engineRows(s: GameState, n: Notation, prev: EngineRow[] | undefined): { rows: EngineRow[]; mystery: string } {
+  const rows: EngineRow[] = [];
+  let mystery = '';
+  const money = cur(s, 'stardust');
+  for (let i = 0; i < ENGINES.length; i++) {
+    const e = ENGINES[i]!;
+    if (!engineRevealed(s, i)) {
+      mystery = `Buy a ${ENGINES[i - 1]!.name.replace(/s$/, '')} to reveal`;
+      break;
+    }
+    const own = owned(s, e.id);
+    const plan = planPurchase(engineCurve(e.id), own, money, s.settings.buyAmount, s.settings.customBuyAmount);
+    const span = milestoneSpan(own);
+    rows.push({
+      id: e.id,
+      name: e.name,
+      icon: e.icon,
+      color: e.color,
+      blurb: e.blurb,
+      owned: formatCount(own, n),
+      each: `${format(engineEach(s, e.id), n)}/s each`,
+      cost: format(plan.cost, n),
+      count: s.settings.buyAmount === 1 ? '' : `x${formatCount(plan.count, n)}`,
+      can: plan.canAfford,
+      msPct: span ? Math.round(((own - span.from) / (span.to - span.from)) * 100) : 100,
+      msNext: span ? `Output x2 at ${formatCount(span.to, n)} owned` : 'Every milestone reached',
+    });
+  }
+  return { rows: stableList(prev, rows), mystery };
+}
+
+const RAIL_DETAILS = { left: 3, right: 2 } as const;
+
+function railItems(s: GameState, rail: 'left' | 'right', prev: RailItem[] | undefined): RailItem[] {
+  let details: number = RAIL_DETAILS[rail];
+  const items = SYSTEMS.filter((x: SystemDef) => x.rail === rail).map((x): RailItem => {
+    const met = s.unlocked.includes(x.id);
+    let state: RailState;
+    if (met && x.built) state = s.seen.includes(x.id) ? 'open' : 'new';
+    else if (met) state = 'soon';
+    else if (details > 0) {
+      state = 'locked';
+      details--;
+    } else state = 'hidden';
+    return {
+      id: x.id,
+      name: x.name,
+      icon: x.icon,
+      color: x.color,
+      blurb: x.blurb,
+      state,
+      req: state === 'soon' ? 'Arrives in a later update' : reqText(x.req),
+      pct: Math.floor(reqProgress(s, x.req) * 100),
+    };
+  });
+  return stableList(prev, items);
+}
+
+export function buildSnapshot(prev?: Snapshot): Snapshot {
   const s = game.state;
   const n = s.settings.notation;
   const since = s.lastSave ? (Date.now() - s.lastSave) / 1000 : -1;
+  const tier = TIERS[s.tier] ?? TIERS[0]!;
+  const nextCost = nextTierCost(s);
+  const money = cur(s, 'stardust');
+  const combo = comboNow(game.tapRuntime, performance.now());
+  const { rows, mystery } = engineRows(s, n, prev?.engineRows);
+  const nova = BALANCE.supernova;
+  const novaTier = reqProgress(s, { kind: 'tier', tier: nova.tier });
+  const novaDust = Math.min(1, (s.totals.run.stardust ?? D(0)).div(nova.runStardust).toNumber());
+  let enginesOwned = 0;
+  for (const e of ENGINES) enginesOwned += owned(s, e.id);
   return {
     notation: n,
-    dust: format(cur(s, 'stardust'), n),
+    dust: format(money, n),
     dustRate: formatRate(stat(s, 'stardustPerSec'), n),
     playtime: formatTime(s.playtime),
     saveLabel: game.saveBlocked
@@ -48,17 +194,37 @@ export function buildSnapshot(): Snapshot {
     customBuyAmount: s.settings.customBuyAmount,
     reducedMotion: s.settings.reducedMotion,
     reduceFlashing: s.settings.reduceFlashing,
+    showToasts: s.settings.showToasts,
     tickMs: game.tickMs.toFixed(2),
+    tierIndex: s.tier,
+    tierName: tier.name,
+    tierColor: tier.color,
+    starSize: tier.size,
+    nextTierName: TIERS[s.tier + 1]?.name ?? '',
+    evolveCost: nextCost ? format(nextCost, n) : '',
+    canEvolve: !!nextCost && money.gte(nextCost),
+    evolvePct: nextCost ? Math.floor(Math.min(1, money.div(nextCost).toNumber()) * 100) : 100,
+    tapLabel: `+${format(stat(s, 'tapPower'), n)} stardust per tap`,
+    moteCount: owned(s, 'mote'),
+    combo: Math.floor(combo),
+    comboMult: comboMult(combo) > 1 ? formatMult(comboMult(combo), n) : '',
+    engineRows: rows,
+    engineMystery: mystery,
+    enginesOwned: formatCount(enginesOwned, n),
+    railLeft: railItems(s, 'left', prev?.railLeft),
+    railRight: railItems(s, 'right', prev?.railRight),
+    novaPct: Math.floor((s.tier >= nova.tier ? 0.5 + novaDust * 0.5 : novaTier * 0.5) * 100),
+    novaReq: `Reach ${TIERS[nova.tier]!.name} and gather ${format(nova.runStardust, n)} Stardust this run`,
   };
 }
 
 export const snapshotStore = createStore<Snapshot>(() => buildSnapshot());
 
 export function publish(): void {
-  snapshotStore.setState(buildSnapshot());
+  snapshotStore.setState(buildSnapshot(snapshotStore.getState()));
 }
 
-/** Select ONE primitive field (or use useShallow): a new object per call loops forever. */
+/** Select ONE primitive field (or a stable row/list): a new object per call loops forever. */
 export function useSnap<T>(selector: (s: Snapshot) => T): T {
   return useStore(snapshotStore, selector);
 }

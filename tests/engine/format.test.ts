@@ -53,6 +53,10 @@ describe('format', () => {
     expect(format(-1234)).toBe('-1.23K');
     expect(formatRate(1234)).toBe('+1.23K/s');
     expect(formatMult(1.25)).toBe('x1.25');
+    expect(formatMult(3)).toBe('x3');
+    expect(formatMult(1.5)).toBe('x1.5');
+    expect(formatMult(10)).toBe('x10');
+    expect(formatMult(120)).toBe('x120');
     expect(formatMult(12345)).toBe('x12.3K');
     expect(formatCount(42)).toBe('42');
     expect(formatCount(1_230_000)).toBe('1.23M');

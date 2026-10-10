@@ -12,6 +12,9 @@ interface UiState {
   /** Only one panel is ever open. */
   panel: string | null;
   toasts: Toast[];
+  /** Phone only: the engine shop slides up as a drawer. */
+  drawer: boolean;
+  setDrawer: (open: boolean) => void;
   open: (id: string) => void;
   close: () => void;
   toggle: (id: string) => void;
@@ -24,7 +27,9 @@ let toastId = 1;
 export const useUi = create<UiState>((set, get) => ({
   panel: null,
   toasts: [],
-  open: (id) => set({ panel: id }),
+  drawer: false,
+  setDrawer: (drawer) => set({ drawer }),
+  open: (id) => set({ panel: id, drawer: false }),
   close: () => set({ panel: null }),
   toggle: (id) => set({ panel: get().panel === id ? null : id }),
   pushToast: (t) => {

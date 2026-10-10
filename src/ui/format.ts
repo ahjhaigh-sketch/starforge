@@ -72,7 +72,9 @@ export function formatMult(value: DecimalSource, notation: Notation = 'suffix'):
   const x = value instanceof Decimal ? value : D(value);
   if (x.lt(1000)) {
     const n = x.toNumber();
-    return `x${n >= 100 ? Math.floor(n) : n >= 10 ? n.toFixed(1) : n.toFixed(2)}`;
+    // x3 not x3.00, x1.5 not x1.50
+    const txt = n >= 100 ? String(Math.floor(n)) : n >= 10 ? n.toFixed(1) : n.toFixed(2);
+    return `x${txt.includes('.') ? txt.replace(/\.?0+$/, '') : txt}`;
   }
   return `x${format(x, notation)}`;
 }

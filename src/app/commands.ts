@@ -1,8 +1,13 @@
+import { planPurchase } from '../engine/buy';
 import { D } from '../engine/decimal';
 import { simulateElapsed } from '../engine/offline';
 import { exportSave, importSave } from '../engine/save/store';
-import { type BuyAmount, createInitialState, gain, type Notation } from '../engine/state';
+import { type BuyAmount, createInitialState, cur, gain, type Notation } from '../engine/state';
 import { invalidateStats } from '../engine/stats';
+import { buyEngine, createTapRuntime, engineCurve, evolve, owned, tapStar } from '../engine/systems/stardust';
+import { checkUnlocks } from '../engine/systems/unlocks';
+import { requestPersistentStorage } from '../platform/web';
+import { format } from '../ui/format';
 import { game } from './game';
 import { saveNow, wipeSave } from './persistence';
 import { publish } from './uiSnapshot';
@@ -13,10 +18,42 @@ import { publish } from './uiSnapshot';
  */
 function done(): void {
   invalidateStats();
+  checkUnlocks(game.state);
   publish();
 }
 
+let askedToKeepData = false;
+
 export const commands = {
+  /** One tap on the Star Core. Returns the floating text, or null if the 30-a-second cap dropped it. */
+  tap(): { text: string; crit: boolean } | null {
+    const r = tapStar(game.state, game.tapRuntime, performance.now());
+    if (!r) return null;
+    done();
+    return { text: `+${format(r.amount, game.state.settings.notation)}`, crit: r.crit };
+  },
+  /** Buys an engine with the current buy amount (x1, x10, x100, x1,000, Max or typed). */
+  buyEngine(id: string): boolean {
+    const s = game.state;
+    const plan = planPurchase(engineCurve(id), owned(s, id), cur(s, 'stardust'), s.settings.buyAmount, s.settings.customBuyAmount);
+    const ok = plan.canAfford && buyEngine(s, id, plan.count);
+    if (ok && !askedToKeepData) {
+      askedToKeepData = true;
+      requestPersistentStorage();
+    }
+    done();
+    return ok;
+  },
+  evolve(): boolean {
+    const ok = evolve(game.state);
+    done();
+    return ok;
+  },
+  /** The player opened an unlocked system: its rail button stops pulsing. */
+  markSeen(id: string) {
+    if (!game.state.seen.includes(id)) game.state.seen.push(id);
+    done();
+  },
   setNotation(n: Notation) {
     game.state.settings.notation = n;
     done();
@@ -58,6 +95,7 @@ export const commands = {
   wipe() {
     wipeSave();
     game.state = createInitialState();
+    game.tapRuntime = createTapRuntime();
     done();
   },
   // ---- dev tools (only reachable with ?dev=1) ----

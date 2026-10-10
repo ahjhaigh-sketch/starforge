@@ -43,10 +43,3 @@ export function BuyAmountControl({ compact }: { compact?: boolean }) {
     </div>
   );
 }
-
-/** Resolves the chosen buy amount into a count, given how many are affordable. */
-export function resolveBuyCount(amount: BuyAmount, custom: number, affordable: number): number {
-  if (amount === 'max') return Math.max(1, affordable);
-  if (amount === 'custom') return Math.max(1, custom);
-  return amount;
-}

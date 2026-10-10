@@ -2,7 +2,7 @@ import { D, type Decimal } from './decimal';
 import { seedRng, type RngState } from './rng';
 
 /** Bump with every change to the save's shape, and add a migration + an old-save fixture test. */
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 export type Notation = 'suffix' | 'scientific' | 'engineering';
 export type BuyAmount = 1 | 10 | 100 | 1000 | 'max' | 'custom';
@@ -39,6 +39,16 @@ export interface GameState {
   };
   /** Plain counters for the Stats screen (taps, purchases, comets caught...). */
   stats: Record<string, number>;
+  /** Star Tier, 0 = Protostar. */
+  tier: number;
+  /** Engines owned this run, by engine ID. */
+  engines: Record<string, number>;
+  /** Engines ever bought, by engine ID (Engine Mastery reads this; never reset). */
+  enginesEver: Record<string, number>;
+  /** Systems whose unlock requirement has been met at least once (unlocks are permanent). */
+  unlocked: string[];
+  /** Unlocked systems the player has opened; the rest pulse on the rails. */
+  seen: string[];
   settings: Settings;
 }
 
@@ -72,7 +82,12 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
       run: { stardust: D(0) },
       all: { stardust: D(0) },
     },
-    stats: { taps: 0 },
+    stats: { taps: 0, crits: 0, enginesBought: 0, evolves: 0 },
+    tier: 0,
+    engines: {},
+    enginesEver: {},
+    unlocked: [],
+    seen: [],
     settings: defaultSettings(),
   };
 }

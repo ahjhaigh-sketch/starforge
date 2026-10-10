@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { events } from '../../engine/events';
-import { game } from '../../app/game';
+import { snapshotStore } from '../../app/uiSnapshot';
 import { useUi } from '../store';
 import { Icon } from './Icon';
 
@@ -11,7 +11,7 @@ export function ToastHost() {
   useEffect(
     () =>
       events.on((e) => {
-        if (e.t === 'toast' && game.state.settings.showToasts) push({ title: e.title, body: e.body, icon: e.icon ?? 'trophy' });
+        if (e.t === 'toast' && snapshotStore.getState().showToasts) push({ title: e.title, body: e.body, icon: e.icon ?? 'trophy' });
         if (e.t === 'saveError') push({ title: 'Save skipped', body: e.message, icon: 'gear' });
       }),
     [push],

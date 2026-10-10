@@ -1,0 +1,190 @@
+/* =====================================================================
+   Phase 1 screens: sky canvas, Star Core stage, engine shop, teaser
+   rails, evolve and reset bar. Built from the chunk recipe in theme.css.
+   ===================================================================== */
+
+canvas.sky { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+
+/* ---------- top bar ---------- */
+.tier-pill { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.95rem; }
+.tier-dot { width: 1rem; height: 1rem; border-radius: 50%; border: 2px solid var(--ink); box-shadow: 0 0 10px currentColor; flex: none; }
+
+/* ---------- star stage ---------- */
+.star-wrap { position: relative; width: min(68vh, 100%); aspect-ratio: 1; max-width: 44rem; }
+.star-btn {
+  position: absolute; left: 50%; top: 50%; width: var(--hit); height: var(--hit); transform: translate(-50%, -50%);
+  border-radius: 50%; background: transparent; border: 0; padding: 0; cursor: pointer; touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.star-btn:focus-visible { outline-offset: -4px; }
+.floaters { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.float-num {
+  position: absolute; font-family: var(--font-display); font-size: 1.6rem; color: var(--gold); text-shadow: var(--outline);
+  transform: translate(-50%, -50%); animation: floatUp 0.9s var(--quad-out) forwards; white-space: nowrap; pointer-events: none;
+}
+.float-num.crit { color: #fff; font-size: 2.1rem; }
+@keyframes floatUp {
+  0% { opacity: 0; transform: translate(-50%, -30%) scale(0.6); }
+  15% { opacity: 1; transform: translate(-50%, -60%) scale(1.15); }
+  100% { opacity: 0; transform: translate(-50%, -260%) scale(0.9); }
+}
+.star-caption { position: absolute; left: 50%; bottom: 2%; transform: translateX(-50%); text-align: center; pointer-events: none; width: 100%; }
+.star-caption .name { font-family: var(--font-display); font-size: 2rem; letter-spacing: 0.03em; text-shadow: var(--outline); }
+.star-caption .sub { font-weight: 600; color: var(--text-dim); font-size: 0.9rem; text-shadow: var(--outline-sm); }
+.combo { display: inline-flex; align-items: center; gap: 0.45rem; margin-top: 0.35rem; opacity: 0; transform: scale(0.85); transition: opacity 0.2s, transform 0.2s var(--back-out); }
+.combo.on { opacity: 1; transform: none; }
+.combo-bar { width: 6.5rem; height: 0.55rem; border-radius: 999px; background: var(--panel-deep); border: 2px solid var(--ink); overflow: hidden; }
+.combo-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold), var(--flare), var(--magenta)); transition: width 0.12s linear; }
+.combo-lbl { font-weight: 700; font-size: 0.85rem; text-shadow: var(--outline-sm); min-width: 5.5rem; text-align: left; }
+/* No WebGL: a simple drawn star keeps the game playable. */
+.star-fallback { display: none; }
+.no-webgl .star-fallback {
+  display: block; position: absolute; left: 50%; top: 50%; width: calc(var(--hit) / 1.12); height: calc(var(--hit) / 1.12);
+  transform: translate(-50%, -50%); border-radius: 50%; border: 4px solid var(--ink);
+  background: radial-gradient(circle at 35% 30%, #fff, var(--gold) 45%, var(--flare));
+  box-shadow: 0 0 60px 20px rgba(255, 200, 61, 0.35);
+}
+
+/* ---------- evolve + reset bar ---------- */
+.bottom-row { display: flex; gap: 0.6rem; justify-content: center; }
+.evolve {
+  height: 3rem; border-radius: 999px; padding: 0 1.2rem; display: flex; align-items: center; gap: 0.6rem;
+  font-weight: 700; font-size: 1rem; overflow: hidden;
+}
+.evolve > * { position: relative; }
+.evolve .evolve-fill { position: absolute; left: 0; top: 0; bottom: 0; background: rgba(125, 255, 90, 0.22); transition: width 0.25s var(--quad-out); }
+.evolve.can { --c: #2f9e3a !important; animation: canPulse 1.6s ease-in-out infinite; }
+.evolve .cost { display: flex; align-items: center; gap: 0.3rem; font-family: var(--font-num); font-weight: 800; font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+.evolve .cost .icon { width: 1.25rem; height: 1.25rem; }
+.evolve:disabled { cursor: default; }
+@keyframes canPulse {
+  0%, 100% { box-shadow: 0 4px 0 #134018, 0 0 0 0 rgba(125, 255, 90, 0); }
+  50% { box-shadow: 0 4px 0 #134018, 0 0 26px 4px rgba(125, 255, 90, 0.5); }
+}
+.nova {
+  --c: var(--flare);
+  width: min(40rem, 100%); height: 4.2rem; border-radius: 20px; overflow: hidden; padding: 0;
+  background: linear-gradient(180deg, #5a2a6e, #2c1240); border-color: #1a0826; box-shadow: 0 4px 0 #3a1240, 0 8px 16px rgba(0, 0, 0, 0.35);
+}
+.nova .fill {
+  position: absolute; inset: 0 auto 0 0; z-index: -1;
+  background: linear-gradient(90deg, var(--flare), var(--magenta));
+  box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.18), inset 0 6px 0 rgba(255, 255, 255, 0.25);
+  transition: width 0.25s var(--quad-out);
+}
+.nova.locked .fill { opacity: 0.55; filter: saturate(0.7); }
+.nova .inner { position: relative; display: flex; align-items: center; justify-content: center; gap: 0.8rem; height: 100%; padding: 0 1rem; }
+.nova .title { font-family: var(--font-display); font-size: 1.8rem; letter-spacing: 0.06em; }
+.nova .req { font-weight: 600; font-size: 0.85rem; color: var(--text-dim); text-align: left; line-height: 1.15; }
+.nova .nova-lock { width: 1.8rem; height: 1.8rem; }
+
+/* ---------- engine shop ---------- */
+.side { grid-area: side; min-height: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+.store { flex: 1; min-height: 0; border-radius: var(--r-panel); display: flex; flex-direction: column; gap: 0.55rem; padding: 0.9rem 0.8rem 0.7rem; border-width: 4px; }
+.store-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.store-head h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1.8rem; letter-spacing: 0.04em; }
+.store .drawer-close { display: none; }
+.eng-list {
+  flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 0.55rem;
+  padding: 0.3rem 0.4rem 0.6rem 0.15rem; scrollbar-width: thin; scrollbar-color: #6a5ad8 transparent;
+}
+.eng {
+  display: grid; grid-template-columns: 3.4rem 1fr auto; grid-template-rows: auto auto; column-gap: 0.7rem; align-items: center;
+  padding: 0.45rem 0.7rem 0.5rem 0.45rem; text-align: left; border-radius: 16px; flex: none; color: #fff;
+}
+.eng .tile { grid-row: 1 / 3; width: 3.4rem; height: 3.4rem; border-radius: 12px; --stroke: 2.5px; display: grid; place-items: center; }
+.eng .tile .icon { width: 2.5rem; height: 2.5rem; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.35)); }
+.eng .nm { font-weight: 700; font-size: 1.02rem; text-shadow: var(--outline-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.eng .own { grid-row: 1 / 3; grid-column: 3; font-size: 1.9rem; color: rgba(255, 255, 255, 0.92); text-shadow: var(--outline); min-width: 1.4em; text-align: right; }
+.eng .meta { display: flex; align-items: center; gap: 0.45rem; font-size: 0.8rem; font-weight: 600; color: var(--text-dim); min-width: 0; }
+.eng .each { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.eng .cost-chip { flex: none; }
+.eng .cost-chip small { font-size: 0.72rem; margin-left: 0.2rem; opacity: 0.85; }
+.eng .cost-chip .icon { width: 1.05rem; height: 1.05rem; }
+.eng .ms { height: 0.4rem; border-radius: 999px; background: var(--panel-deep); border: 1.5px solid var(--ink); overflow: hidden; flex: 1; min-width: 2rem; }
+.eng .ms i { display: block; height: 100%; background: var(--gold); transition: width 0.2s; }
+.eng.cant { filter: saturate(0.55) brightness(0.86); }
+.eng.cant:hover { transform: scale(1.02); }
+.eng.mystery { cursor: default; filter: brightness(0.55); }
+.eng.mystery .nm { color: var(--text-dim); }
+.eng.mystery .meta { grid-column: 2; }
+.store-foot { font-size: 0.78rem; color: var(--text-dim); font-weight: 600; text-align: center; }
+
+/* ---------- teaser rails ---------- */
+.rail-btn {
+  --c: var(--panel);
+  width: 5.2rem; aspect-ratio: 1; display: block; padding: 0; flex: none; color: #fff;
+}
+.rail-btn.small { width: 4.3rem; }
+.rail-btn .rail-ico {
+  position: absolute; left: 50%; top: 40%; width: 68%; height: 68%; transform: translate(-50%, -50%);
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.4)); pointer-events: none;
+}
+.rail-btn .lbl { position: absolute; left: 0; right: 0; bottom: 0.25rem; font-weight: 700; font-size: 0.8rem; text-align: center; text-shadow: var(--outline-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 0.2rem; }
+.rail-btn.small .lbl { font-size: 0.64rem; letter-spacing: -0.01em; }
+.rail-btn.locked .rail-ico { filter: grayscale(1) brightness(0.75) drop-shadow(0 3px 0 rgba(0, 0, 0, 0.4)); }
+.rail-btn.locked .lbl { color: var(--text-dim); }
+.rail-btn.hidden { filter: brightness(0.7); }
+.rail-btn.hidden .rail-ico { opacity: 0.8; }
+.rail-btn .lock-badge { position: absolute; right: -0.55rem; top: -0.55rem; width: 2.1rem; height: 2.1rem; display: grid; place-items: center; }
+.rail-btn .lock-badge .ring { position: absolute; inset: 0; width: 100%; height: 100%; }
+.rail-btn .lock-badge .ring-bg { fill: var(--panel-deep); stroke: var(--ink); stroke-width: 5; }
+.rail-btn .lock-badge .ring-fg { fill: none; stroke: var(--lime); stroke-width: 3.2; stroke-linecap: round; transition: stroke-dasharray 0.3s; }
+.rail-btn .lock-badge .icon { width: 1.15rem; height: 1.15rem; position: relative; }
+.rail-btn .badge {
+  position: absolute; left: -0.4rem; top: -0.5rem; font-size: 0.7rem; font-weight: 700; padding: 0.08rem 0.4rem;
+  border-radius: 999px; border: 2px solid var(--ink); color: var(--ink); text-shadow: none;
+}
+.rail-btn .badge.soon { background: var(--slate); }
+.rail-btn .badge.new { background: var(--lime); }
+.rail-btn.new { animation: railNew 1.4s ease-in-out infinite; }
+@keyframes railNew {
+  0%, 100% { box-shadow: 0 4px 0 color-mix(in oklab, var(--c) 35%, black), 0 0 0 0 rgba(125, 255, 90, 0); }
+  50% { box-shadow: 0 4px 0 color-mix(in oklab, var(--c) 35%, black), 0 0 24px 6px rgba(125, 255, 90, 0.55); }
+}
+.rail .settings-btn { margin-top: auto; width: 4.2rem; }
+.teasers { flex: none; }
+.teasers-head { font-family: var(--font-display); font-size: 1.05rem; letter-spacing: 0.04em; margin: 0 0 0.45rem 0.3rem; }
+.teasers-grid { display: flex; flex-wrap: wrap; gap: 0.75rem 0.7rem; padding: 0.5rem 0.4rem 0.2rem; }
+
+/* ---------- floating tooltip (outside scrolling lists) ---------- */
+.float-tip {
+  --c: #2b1f6e; position: fixed; z-index: 70; width: 15rem; padding: 0.65rem 0.8rem; border-radius: 14px; pointer-events: none;
+  font-size: 0.85rem; font-weight: 500; color: var(--text-dim); line-height: 1.35; display: flex; flex-direction: column; gap: 0.25rem;
+  animation: tipIn 0.12s var(--quad-out);
+}
+.float-tip b { color: #fff; font-family: var(--font-display); font-weight: 400; font-size: 1.05rem; letter-spacing: 0.03em; text-shadow: var(--outline-sm); }
+.float-tip .tip-line { color: #fff; font-weight: 700; }
+@keyframes tipIn { from { opacity: 0; transform: scale(0.94); } }
+
+.phone-only { display: none !important; }
+.drawer-scrim { position: fixed; inset: 0; z-index: 25; background: rgba(6, 3, 26, 0.45); }
+
+/* ---------- phone ---------- */
+@media (max-width: 900px) {
+  .phone-only { display: revert !important; }
+  .rail .phone-only { display: contents !important; }
+  .rail { padding: 0.45rem 0.5rem 0.2rem; }
+  .rail-btn { width: 4.3rem; }
+  .rail-btn .lbl { font-size: 0.72rem; }
+  .rail .settings-btn { margin-top: 0; width: 4.3rem; }
+  .star-wrap { width: min(92vw, 50vh); }
+  .tier-num { display: none; }
+  .teasers { display: none; }
+  .side { z-index: 30; }
+  .store .drawer-close { display: grid; position: static; width: 2.4rem; height: 2.4rem; }
+  .store .drawer-close .icon { width: 1.1rem; height: 1.1rem; }
+  .nova { height: 3.6rem; }
+  .nova .title { font-size: 1.45rem; }
+  .nova .req { font-size: 0.75rem; }
+  .eng .own { font-size: 1.6rem; }
+}
+
+/* Reduced motion: no pulsing, floating or sliding. */
+.reduced-motion .float-num { animation-duration: 0.01ms; }
+.reduced-motion .rail-btn.new, .reduced-motion .evolve.can { animation: none; }
+
+/* Dev panel (?dev=1): out of the way of the bottom tab bar on phones. */
+@media (max-width: 900px) {
+  .dev { top: 3.8rem; bottom: auto; width: 13.5rem; padding: 0.4rem; font-size: 0.7rem; opacity: 0.92; }
+}

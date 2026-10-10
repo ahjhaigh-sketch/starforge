@@ -19,6 +19,11 @@ export const plainSaveSchema = z.looseObject({
   currencies: decRecord,
   totals: z.looseObject({ run: decRecord, all: decRecord }),
   stats: z.record(z.string(), finite),
+  tier: z.number().int().min(0).optional(),
+  engines: z.record(z.string(), z.number().int().min(0)).optional(),
+  enginesEver: z.record(z.string(), z.number().int().min(0)).optional(),
+  unlocked: z.array(z.string()).optional(),
+  seen: z.array(z.string()).optional(),
   settings: z.looseObject({
     notation: z.enum(['suffix', 'scientific', 'engineering']),
     autosaveSeconds: finite,

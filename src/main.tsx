@@ -3,11 +3,14 @@ import '@fontsource-variable/baloo-2';
 import '@fontsource/lilita-one';
 import './ui/theme.css';
 import './ui/layout.css';
+import './ui/game.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { startClock } from './app/clock';
+import { commands } from './app/commands';
 import { game } from './app/game';
+import { installNotifications } from './app/notify';
 import { installSaveHooks, saveNow } from './app/persistence';
 import { publish } from './app/uiSnapshot';
 import { registerContent } from './content';
@@ -16,6 +19,8 @@ import { simulateElapsed } from './engine/offline';
 import { loadFromSlots } from './engine/save/store';
 import { stat, breakdown } from './engine/stats';
 import { webStore } from './platform/web';
+import { burst, liveParticles } from './render/particles';
+import * as renderStage from './render/stage';
 import { App } from './ui/App';
 
 function boot(): void {
@@ -43,11 +48,12 @@ function boot(): void {
   game.state.lastTick = Date.now();
 
   publish();
+  installNotifications();
   installSaveHooks();
   startClock();
 
   if (game.devMode) {
-    Object.assign(window, { sf: { game, stat, breakdown, D, saveNow } });
+    Object.assign(window, { sf: { game, commands, stat, breakdown, D, saveNow, fx: { burst, liveParticles, renderMs: () => renderStage.renderMs } } });
   }
 
   createRoot(document.getElementById('root')!).render(
@@ -55,6 +61,7 @@ function boot(): void {
       <App />
     </StrictMode>,
   );
+  void renderStage.initRender();
 }
 
 boot();
