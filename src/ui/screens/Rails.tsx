@@ -1,6 +1,6 @@
-import { memo, type MouseEvent } from 'react';
+import { memo, type MouseEvent, useEffect, useRef, useState } from 'react';
 import { commands } from '../../app/commands';
-import { type RailItem, useSnap } from '../../app/uiSnapshot';
+import { type RailItem, snapshotStore, useSnap } from '../../app/uiSnapshot';
 import { cx, tint } from '../kit/Chunk';
 import { showTip, tipProps } from '../kit/FloatTip';
 import { Icon } from '../kit/Icon';
@@ -37,6 +37,13 @@ function tipBody(item: RailItem) {
 
 export const RailButton = memo(function RailButton({ item, side, small }: { item: RailItem; side: 'left' | 'right' | 'above'; small?: boolean }) {
   const open = useUi((s) => s.open);
+  // the moment a system unlocks, its padlock breaks off (then the button glows and pulses until opened)
+  const was = useRef(item.state);
+  const [breaking, setBreaking] = useState(false);
+  useEffect(() => {
+    if (was.current === 'locked' && item.state !== 'locked' && item.state !== 'hidden' && !snapshotStore.getState().reducedMotion) setBreaking(true);
+    was.current = item.state;
+  }, [item.state]);
   const hidden = item.state === 'hidden';
   const title = hidden ? '???' : item.name;
   const onClick = (e: MouseEvent<HTMLButtonElement>) => {
@@ -68,6 +75,11 @@ export const RailButton = memo(function RailButton({ item, side, small }: { item
       {item.state === 'locked' && (
         <span className="lock-badge">
           <ProgressRing pct={item.pct} />
+          <Icon name="lock" />
+        </span>
+      )}
+      {breaking && (
+        <span className="lock-break" aria-hidden="true" onAnimationEnd={() => setBreaking(false)}>
           <Icon name="lock" />
         </span>
       )}

@@ -2,10 +2,12 @@ import { BALANCE } from '../../content/balance';
 import { ENGINES } from '../../content/engines';
 import { maxBuy } from '../cost';
 import { D } from '../decimal';
+import { events } from '../events';
 import { milestoneReached } from '../layers';
 import { cur, type GameState } from '../state';
 import { defineStat, stat } from '../stats';
 import { registerSystem } from '../tick';
+import { automating } from './eternity';
 import { buyEngine, engineCurve, engineRevealed, evolve, nextTierCost, owned } from './stardust';
 import { availableUpgrades, buyUpgrade } from './upgrades';
 
@@ -31,7 +33,8 @@ export const AUTO_BUYERS: readonly AutoBuyerDef[] = [
   { id: 'auto.upgrades', name: 'Upgrades', milestone: 'autoAll', kind: 'upgrades' },
 ];
 
-export const autoUnlocked = (s: GameState, a: AutoBuyerDef) => milestoneReached(s, 'supernova', a.milestone);
+/** Unlocked by its Supernova milestone, or by Eternal Forge (Eternity) from the start of every run. */
+export const autoUnlocked = (s: GameState, a: AutoBuyerDef) => milestoneReached(s, 'supernova', a.milestone) || automating(s, 'stardust');
 
 /** Unlocked auto-buyers start switched on, spending everything. */
 export function autoSetting(s: GameState, id: string): { on: boolean; spend: number } {
@@ -77,7 +80,10 @@ export function registerAutomation(): void {
       const hz = BALANCE.automation.perSecond * stat(s, 'autoSpeed').toNumber();
       // several passes if a long catch-up step covers more than one interval
       const passes = Math.min(20, Math.floor(s.playtime * hz) - Math.floor((s.playtime - dt) * hz));
-      for (let i = 0; i < passes; i++) runAutomation(s);
+      // automated purchases make no sound (only the player's own clicks do)
+      if (passes > 0) events.automated(() => {
+        for (let i = 0; i < passes; i++) runAutomation(s);
+      });
     },
   });
 }

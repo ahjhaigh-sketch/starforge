@@ -1,0 +1,97 @@
+/* =====================================================================
+   Phase 17: the Big Crunch, Eternity, the Echo boards, slim reset bars
+   and the collapse cinematic.
+   ===================================================================== */
+
+.crunch-bar .title { letter-spacing: 0.05em; }
+
+/* a reset bar Eternity runs: its layer resets by itself, so the bar shrinks to a strip */
+.nova.slim { height: 1.75rem; margin-top: 0.25rem; }
+.nova.slim .title { font-size: 0.95rem; }
+.nova.slim .req, .nova.slim .nova-lock, .nova.slim .gain { display: none; }
+.auto-tag { font-size: 0.66rem; font-weight: 800; padding: 0.02rem 0.4rem; border-radius: 6px; border: 2px solid var(--ink); background: var(--lime); color: var(--ink); text-shadow: none; letter-spacing: 0.04em; }
+
+/* ---------- Eternity ---------- */
+.et-grid { margin-bottom: 0.6rem; }
+.et-cost { display: inline-flex; align-items: center; gap: 0.25rem; }
+.et-cost .icon { width: 1rem; height: 1rem; }
+.et-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: 0.45rem; }
+.et-auto-row { display: flex; flex-direction: column; gap: 0.35rem; padding: 0.55rem 0.7rem; font-weight: 600; }
+.et-auto-row > b { font-family: var(--font-display); font-weight: 400; font-size: 1.02rem; text-shadow: var(--outline-sm); }
+.et-auto-row.locked { opacity: 0.6; }
+.et-auto-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+.et-auto-ctl select { font: inherit; font-weight: 700; font-size: 0.8rem; background: var(--panel-deep); color: var(--text); border: 2px solid var(--ink); border-radius: 10px; padding: 0.25rem 0.35rem; max-width: 100%; }
+.et-at { display: inline-flex; gap: 0.3rem; align-items: center; }
+.et-at input { width: 7rem; height: 2rem; border-radius: 10px; border: 2.5px solid var(--ink); background: var(--panel-deep); color: #fff; font-family: var(--font-num); font-weight: 700; padding: 0 0.45rem; }
+.auto-off { font-size: 0.78rem; color: var(--text-dim); }
+
+/* ---------- the Echo boards ---------- */
+.echo-held { font-size: 0.8rem; color: var(--text-dim); }
+.echo-held b { color: #fff; }
+.am-row[data-echo] > .icon { transform: none; }
+.echo-side h4 { margin: 0.35rem 0 0; }
+.echo-star-box { position: relative; width: 7.5rem; height: 7.5rem; display: grid; place-items: center; }
+.echo-star { width: 6.4rem; height: 6.4rem; border-radius: 50%; border: 3px solid var(--ink); cursor: pointer; display: grid; place-items: center;
+  background: radial-gradient(circle at 38% 32%, #fff6c8, #ffc83d 38%, #b08a1a 72%, #5a3f0a);
+  box-shadow: 0 0 0 6px color-mix(in oklab, var(--gold) 25%, transparent), 0 0 26px 6px color-mix(in oklab, var(--gold) 45%, transparent);
+  transition: transform 140ms var(--back-out); }
+.echo-star .icon { width: 3.6rem; height: 3.6rem; }
+.echo-star:hover { transform: scale(1.06); }
+.echo-star:active { transform: scale(0.9); transition-duration: 50ms; }
+.echo-float { position: absolute; top: 0.4rem; transform: translateX(-50%); color: var(--gold); font-weight: 800; pointer-events: none; animation: echoFloat 0.9s ease-out forwards; white-space: nowrap; }
+@keyframes echoFloat { from { opacity: 1; transform: translate(-50%, 0); } to { opacity: 0; transform: translate(-50%, -2.6rem); } }
+.echo-ms { display: block; height: 0.32rem; border-radius: 99px; background: rgba(0, 0, 0, 0.35); overflow: hidden; margin-top: 0.15rem; }
+.echo-ms i { display: block; height: 100%; background: var(--gold); }
+.echo-boosts { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.15rem 0.6rem; font-size: 0.78rem; text-align: left; width: 100%; }
+.echo-boosts b { color: var(--lime); }
+
+/* ---------- every reset flashes in its layer's colour ---------- */
+.reset-fx .reset-flash {
+  background: radial-gradient(circle at 50% 45%, #fff 0%, color-mix(in oklab, var(--fx, #ff4fc1) 30%, #fff) 22%, color-mix(in oklab, var(--fx, #ff4fc1) 75%, transparent) 50%, transparent 80%);
+}
+.reset-fx .reset-ring { box-shadow: 0 0 30px 8px color-mix(in oklab, var(--fx, #ff4fc1) 60%, transparent); }
+
+/* ---------- the Big Crunch: everything falls into a point, a white flash, then it all comes back ---------- */
+.crunch-implode { position: absolute; left: 50%; top: 45%; width: 0; height: 0; border-radius: 50%; transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 160vmax #07031a, inset 0 0 6vmin 2vmin rgba(255, 138, 61, 0.55); opacity: 0;
+  animation: crunchImplode 2.6s ease-in forwards; }
+@keyframes crunchImplode {
+  0% { width: 125vmax; height: 125vmax; opacity: 1; }
+  40% { width: 0; height: 0; opacity: 1; }
+  52% { width: 0; height: 0; opacity: 1; }
+  60% { opacity: 0; }
+  100% { width: 0; height: 0; opacity: 0; }
+}
+.reset-fx.crunch .reset-flash { background: radial-gradient(circle at 50% 45%, #fff 0, #fff 35%, #ffe0c4 62%, rgba(255, 138, 61, 0) 92%); animation-delay: 1.15s; animation-duration: 1.6s; }
+.reset-fx.crunch .reset-ring { animation-delay: 1.3s; animation-duration: 1.5s; border-color: #fff; }
+.reset-fx.crunch.soft .reset-flash { animation-name: resetFlashSoft; }
+/* reduced motion: no implosion or ring, just a fade to dark and back */
+.reduced-motion .crunch-implode { width: 0; height: 0; animation: crunchFade 1.8s ease-in-out forwards; }
+@keyframes crunchFade { 0% { opacity: 0; } 40% { opacity: 1; } 100% { opacity: 0; } }
+
+@media (max-width: 900px) {
+  .echo-boosts { grid-template-columns: 1fr; }
+  .et-auto { grid-template-columns: 1fr; }
+}
+
+/* Settings: a note under a control row */
+.set-note { flex-basis: 100%; font-size: 0.74rem; font-weight: 600; color: var(--text-dim); }
+
+/* ---------- polish pass (POLISH.md) ---------- */
+/* a purchase: the row punches and its price flashes green */
+.bought-fx { animation: punch 0.18s var(--quad-out); }
+.bought-fx .cost-chip, .bought-fx > .btn { animation: chipFlash 0.4s ease-out; }
+@keyframes chipFlash { 0% { background: var(--lime); color: var(--ink); box-shadow: 0 0 14px 3px rgba(125, 255, 90, 0.7); } }
+.reduced-motion .bought-fx, .reduced-motion .bought-fx .cost-chip, .reduced-motion .bought-fx > .btn { animation: none; }
+/* an unlock: the padlock pops, spins and falls away */
+.rail-btn .lock-break { position: absolute; right: -0.55rem; top: -0.55rem; width: 2.1rem; height: 2.1rem; display: grid; place-items: center; pointer-events: none; z-index: 2;
+  animation: lockBreak 0.7s var(--quad-out) forwards; }
+.rail-btn .lock-break .icon { width: 1.15rem; height: 1.15rem; }
+@keyframes lockBreak {
+  0% { transform: scale(1); opacity: 1; }
+  25% { transform: scale(1.55) rotate(-14deg); opacity: 1; }
+  100% { transform: translate(0.7rem, 2.6rem) scale(0.55) rotate(80deg); opacity: 0; }
+}
+/* the rune reel: each step lands with a small drop */
+.roll-card.reel { animation: reelStep 0.08s ease-out; }
+@keyframes reelStep { from { transform: translateY(-8px); } }

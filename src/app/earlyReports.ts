@@ -33,7 +33,8 @@ export interface ConstantCard {
   currencyName: string;
 }
 
-const CURRENCY_ICONS: Record<string, string> = { stardust: 'stardust', essence: 'nebula', shards: 'shard' };
+const CURRENCY_ICONS: Record<string, string> = { stardust: 'stardust', essence: 'nebula', shards: 'shard', darkMatter: 'darkmatter', galaxyCores: 'galaxy', chronons: 'chronon' };
+const CURRENCY_NAMES: Record<string, string> = { stardust: 'Stardust', essence: 'Essence', shards: 'Nova Shards', darkMatter: 'Dark Matter', galaxyCores: 'Galaxy Cores', chronons: 'Chronons' };
 
 /** One set of Cosmic Constants (Stellar on the Constants panel, Nebula on the Nebula panel). */
 export function constantsReport(setId = 'stellar'): { title: string; cards: ConstantCard[] } {
@@ -58,7 +59,7 @@ export function constantsReport(setId = 'stellar'): { title: string; cards: Cons
       count: `+${formatCount(plan.count, n())}`,
       can: plan.canAfford && constantOpen(s, c),
       currencyIcon: CURRENCY_ICONS[c.currency] ?? 'stardust',
-      currencyName: c.currency === 'essence' ? 'Essence' : 'Stardust',
+      currencyName: CURRENCY_NAMES[c.currency] ?? 'Stardust',
     };
   });
   return { title: set.name, cards };

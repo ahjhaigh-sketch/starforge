@@ -6,6 +6,7 @@ import { planLimited, type PurchasePlan } from '../buy';
 import type { CostCurve } from '../cost';
 import { D, type Decimal } from '../decimal';
 import { events } from '../events';
+import { drawHits } from '../odds';
 import { nextFloat, nextInt } from '../rng';
 import { cur, gain, type GameState, spend } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
@@ -92,30 +93,49 @@ export function tripLoot(s: GameState, sec: SectorDef): { ore: Decimal; alloy: D
 
 export const rareChance = (s: GameState) => Math.min(0.9, 0.1 + S.crewPerLevel * shipLevel(s, 'crew'));
 
-/** A ship comes home: loot, and maybe a rare find (a relic level or Codex samples). */
-function deliver(s: GameState, sec: SectorDef, scale: number): void {
+/** Rare finds are shared out over at most this many picks, however many trips ended at once. */
+const RARE_PICKS = 12;
+
+/**
+ * `trips` trips to a sector come home at once: loot x trips, and rare finds (a relic level or
+ * Codex samples), each trip finding one at the crew's chance. One trip rolls exactly as it always
+ * did; many trips (late game, when a trip takes a fraction of a tick) are a single draw, so the work
+ * is the same at 1 trip a tick or a million (CLAUDE.md rule 10, the runes' rule).
+ */
+function deliver(s: GameState, sec: SectorDef, trips: number): void {
   const loot = tripLoot(s, sec);
-  gain(s, 'ore', loot.ore.mul(scale));
-  gain(s, GRADE_BY_ID.get(loot.grade)!.alloy, loot.alloy.mul(scale));
-  if (loot.shards.gt(0)) gain(s, 'shards', loot.shards.mul(scale));
-  if (nextFloat(s.ships.rng) < rareChance(s)) {
+  gain(s, 'ore', loot.ore.mul(trips));
+  gain(s, GRADE_BY_ID.get(loot.grade)!.alloy, loot.alloy.mul(trips));
+  if (loot.shards.gt(0)) gain(s, 'shards', loot.shards.mul(trips));
+  const p = rareChance(s);
+  let rares = 0;
+  if (trips <= 20) for (let i = 0; i < trips; i++) rares += nextFloat(s.ships.rng) < p ? 1 : 0;
+  else rares = Math.min(trips, drawHits(s.ships.rng, D(trips), Math.log10(p), 1000).toNumber());
+  if (rares > 0) {
     const relics = Object.keys(s.relics.levels).filter((id) => relicLevel(s, id) > 0);
     const found = ELEMENTS.filter((e) => (s.codex[e.id] ?? 0) > 0);
-    if (relics.length > 0 && nextFloat(s.ships.rng) < 0.5) {
-      const id = relics[nextInt(s.ships.rng, 0, relics.length - 1)]!;
-      addRelicLevels(s, id, 1);
-    } else if (found.length > 0) {
-      const e = found[nextInt(s.ships.rng, 0, found.length - 1)]!;
-      s.codex[e.id] = (s.codex[e.id] ?? 0) + Math.max(1, Math.round(sec.loot));
+    const picks = Math.min(rares, RARE_PICKS);
+    for (let i = 0; i < picks; i++) {
+      const share = Math.floor(rares / picks) + (i < rares % picks ? 1 : 0);
+      if (relics.length > 0 && nextFloat(s.ships.rng) < 0.5) {
+        const id = relics[nextInt(s.ships.rng, 0, relics.length - 1)]!;
+        addRelicLevels(s, id, share);
+      } else if (found.length > 0) {
+        const e = found[nextInt(s.ships.rng, 0, found.length - 1)]!;
+        s.codex[e.id] = (s.codex[e.id] ?? 0) + share * Math.max(1, Math.round(sec.loot));
+      }
     }
-    s.stats.rareFinds = (s.stats.rareFinds ?? 0) + 1;
+    s.stats.rareFinds = (s.stats.rareFinds ?? 0) + rares;
   }
-  // a base star seed for the Star Nursery comes home too (once it's open, so earlier trips roll the same)
+  // a base star seed for the Star Nursery comes home with each trip (once it's open, so earlier trips roll the same)
   if (nurseryOpen(s)) {
-    const seed = BASE_SEEDS[nextInt(s.ships.rng, 0, BASE_SEEDS.length - 1)]!;
-    s.nursery.seeds[seed] = (s.nursery.seeds[seed] ?? 0) + 1;
+    const picks = Math.min(trips, BASE_SEEDS.length);
+    for (let i = 0; i < picks; i++) {
+      const seed = BASE_SEEDS[nextInt(s.ships.rng, 0, BASE_SEEDS.length - 1)]!;
+      s.nursery.seeds[seed] = (s.nursery.seeds[seed] ?? 0) + Math.floor(trips / picks) + (i < trips % picks ? 1 : 0);
+    }
   }
-  s.stats.trips = (s.stats.trips ?? 0) + 1;
+  s.stats.trips = (s.stats.trips ?? 0) + trips;
   events.emit({ t: 'milestone', id: `ship.${sec.id}` });
 }
 
@@ -140,16 +160,19 @@ export function registerShips(): void {
         }
         // offline, ships fly at the offline efficiency
         sh.t -= dt * ctx.gainScale;
-        for (let guard = 0; sh.t <= 0 && guard < 1000; guard++) {
+        if (sh.t > 0) continue;
+        if (!sh.auto) {
+          // a one-off trip ends here
           deliver(s, sec, 1);
-          if (sh.auto) sh.t += tripSeconds(s, sec);
-          else {
-            // a one-off trip ends here (t = 0 would otherwise meet the loop's test again)
-            sh.sector = null;
-            sh.t = 0;
-            break;
-          }
+          sh.sector = null;
+          sh.t = 0;
+          continue;
         }
+        // every trip that ended this tick at once: the one that hit zero, then one per trip length
+        const trip = tripSeconds(s, sec);
+        const trips = Number.isFinite(trip) && trip > 0 ? 1 + Math.floor(-sh.t / trip) : 1;
+        sh.t = Number.isFinite(trip) && trip > 0 ? sh.t + trips * trip : 1;
+        deliver(s, sec, Math.min(trips, 1e12));
       }
     },
   });

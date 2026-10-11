@@ -140,6 +140,8 @@ export function registerSingularity(): void {
       { at: 10, id: 'nebulaFree', text: 'A Nebula resets nothing; 1/50 of its gain trickles in every second' },
     ],
     onReset: (s) => {
+      // from 10 Galactic Rebirths a Singularity keeps everything, but this run's Essence still starts over
+      s.totals.run.essence = ZERO;
       s.stats.singularitiesAll = (s.stats.singularitiesAll ?? 0) + 1;
       s.stats.singularitiesBest = Math.max(s.stats.singularitiesBest ?? 0, s.stats.singularities ?? 0);
     },

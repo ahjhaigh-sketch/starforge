@@ -257,7 +257,7 @@ export const BALANCE = {
     quickBurnSeconds: 900,
   },
   /** Cost growth per level of each Stellar Constant (between 1.05 and 2, Math and balance tab). */
-  constants: { gravity: 1.3, light: 1.3, heat: 1.35, orbit: 1.35, runeSpeed: 1.8, runeBulk: 1.6, resonance: 2, drift: 1.9, bloom: 1.7, mass: 1.5, spin: 1.8, horizon: 1.6, charge: 1.7, expansion: 1.6, arms: 1.8, halo: 1.7, lattice: 1.9 },
+  constants: { gravity: 1.3, light: 1.3, heat: 1.35, orbit: 1.35, runeSpeed: 1.8, runeBulk: 1.6, resonance: 2, drift: 1.9, bloom: 1.7, mass: 1.5, spin: 1.8, horizon: 1.6, charge: 1.7, expansion: 1.6, arms: 1.8, halo: 1.7, lattice: 1.9, entropy: 2, recursion: 1.8 },
   novaTree: {
     /** Node price along an arm: armBase x armGrowth^depth (depth 0 to 22). */
     armBase: 3,
@@ -341,6 +341,15 @@ export const BALANCE = {
   runes: {
     /** Rolls a second (Rune Speed) stop at 20; bulk (runes a roll) has no cap. */
     speedCap: 20,
+    /**
+     * A shrine's runes multiply together, which reaches e29 when they're all levelled. That suits Stardust-sized stats
+     * but not the late currencies that come in tens to billions. In the late shrines (paid in those currencies), each
+     * shrine's product for these is raised to this power (at e29: Dark Matter x800, Galaxy Cores x28, Chronons x4).
+     * Undamped, the Void and Galactic shrines fed themselves: the Big Crunch simulator reached e78 Galaxy Cores in one
+     * run. The early shrines keep their full strength (the Dust Shrine's Dark Matter bonus is part of the Galactic pacing).
+     */
+    smallStatPow: { darkMatterGain: 0.1, galaxyCoreGain: 0.05, chrononGain: 0.02 } as Record<string, number>,
+    lateShrines: ['void', 'galactic', 'eternal'],
     /** Every 10th roll gets x2 luck; the rarest visible rune in a shrine is guaranteed after 3 x its odds in rolls. */
     pityEvery: 10,
     pityLuck: 2,
@@ -514,6 +523,69 @@ export const BALANCE = {
     treeBase: 10,
     treeGrowth: 2.5,
   },
+  /** Phase 17: the Big Crunch, the fifth reset (Math and balance: reset layers). */
+  crunch: {
+    /**
+     * Needs this many galaxies explored in the Crunch run, and this many more for each Big Crunch already in this
+     * universe (up to all 20). Crunch runs keep megastructures, colonies and lifetime glows, and Eternity automates the
+     * rest, so with 7 every time the simulator's later Crunches came minutes apart; with the step, the tenth comes at
+     * about 3 times the first (26 h against 8.5 h) and the whole Galaxy Map gets used.
+     */
+    galaxies: 7,
+    galaxiesStep: 2,
+    /**
+     * Chronons = floor((log10(GC / 10) + 1)^1.5 x Chronon gain), GC = Galaxy Cores gained this Crunch run (at least 10).
+     * The plan divided by 1e6, which gives nothing: the simulator's first Crunch run gathers about 750 Cores (4 Chronons
+     * here; dividing by 100 gave 2, enough for one upgrade), and later runs thousands.
+     */
+    gainDiv: 10,
+    gainPow: 1.5,
+    /** Galaxy Cores x(1 + lifetime Chronons)^0.5. */
+    passivePow: 0.5,
+    /** Milestone 10: a Galactic Rebirth resets nothing, and this share of its gain trickles in each second. */
+    trickle: 1 / 50,
+  },
+  /** Phase 17: the Echo boards, the first three layers replayed small (Crunch milestone 1 opens them). */
+  echoes: {
+    /** Echo engine k: price 10 x 18^k, output 1 x 9^k a second, x1.15 a purchase; output doubles at 10, 25, 50, 100, 200 owned. */
+    engineCostBase: 10,
+    engineCostGrowth: 18,
+    engineProdBase: 1,
+    engineProdGrowth: 9,
+    ratio: 1.15,
+    milestones: [10, 25, 50, 100, 200],
+    /** A tap on the echo star gives 1 + 10% of a second's Echo Dust. */
+    tapShare: 0.1,
+    /** Echo Supernova: 1e6 Echo Dust this echo run gives floor((dust / 1e6)^0.5 x (1 + log10(1 + lifetime Echo Essence))) Echo Shards. */
+    novaAt: 1e6,
+    novaPow: 0.5,
+    /** Echo Nebula: 100 Echo Shards this echo run gives floor((shards / 100)^0.5) Echo Essence. */
+    nebulaAt: 100,
+    nebulaPow: 0.5,
+    /**
+     * Echo output x(1 + log10(1 + lifetime Echo Shards))^2 x (1 + log10(1 + lifetime Echo Essence))^3. The first draft
+     * multiplied by (1 + shards) and (1 + Essence)^2, and with Essence also multiplying shards, each echo cycle's output
+     * grew in proportion to the last cycle's dust: the simulator reached e235,000 Echo Dust within minutes.
+     */
+    shardBoardPow: 2,
+    essenceBoardPow: 3,
+    /** What the echoes give the real game, from lifetime amounts: Stardust x(1 + ED)^0.05, shards x(1 + ES)^0.2, Essence x(1 + EE)^0.5, Chronons x(1 + EE)^0.25. */
+    dustPow: 0.05,
+    shardPow: 0.2,
+    essencePow: 0.5,
+    chrononPow: 0.25,
+  },
+  /** Phase 17: Eternity upgrades, bought with Chronons. */
+  eternity: {
+    /** One automation upgrade per earlier layer, then boosts. */
+    costs: { forge: 1, nova: 2, mist: 3, void: 5, galaxy: 8, arrow: 4, echoes: 3, longnow: 6, cores: 10, dawn: 12 } as Record<string, number>,
+    /** Automation spends at most this share of a currency on constants each pass, and acts this often (game seconds). */
+    constantShare: 0.1,
+    every: 1,
+    /** "Double" also resets once the run's gain per second falls below this share of its best, after this many seconds. */
+    peakShare: 0.9,
+    peakAfter: 10,
+  },
   /** Phase 16: Megastructures, Colonies and Terraforming. */
   galaxyBuild: {
     /** Colonies open at 2 Galactic Rebirths; you may hold 1 + galaxies explored, up to 8. */
@@ -543,6 +615,8 @@ export const BALANCE = {
     /** Galactic Constants: Halo +10% colony capacity a level; Lattice +5% megastructure rewards (as a power) a level. */
     haloPer: 0.1,
     latticePer: 0.05,
+    /** Megastructure rewards grow to this power at most (Lattice), like the other "as a power" stats. */
+    megaPowerCap: 2,
   },
   /** Phase 15: Galactic Rebirth, the fourth reset (Math and balance: reset layers). */
   galactic: {
@@ -570,6 +644,13 @@ export const BALANCE = {
     chartCosts: [20, 60, 150, 400, 1000, 2500],
     /** Galactic Constants: Expansion makes cleared galaxies' rewards stronger, Arms makes the Galactic Tree's multipliers stronger. */
     expansionPer: 0.1,
+    /**
+     * The "as a power" stats stop here, like Reactor strength: Expansion raises cleared galaxy rewards (x3 at most) and
+     * Arms the Galactic Tree's multipliers (x2 at most). Both are bought with Galaxy Cores and raise Core multipliers,
+     * so uncapped the exponent grew with log(Cores) twice over: the Big Crunch simulator reached e213 Cores in a run.
+     */
+    rewardPowerCap: 3,
+    treePowerCap: 2,
     armsPer: 0.02,
   },
   /** Phase 14: the Antimatter Mirror (Singularity milestone 8). */

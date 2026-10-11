@@ -27,18 +27,62 @@ function startGalactic(open: (id: string) => void): void {
   else commands.reset('galactic');
 }
 
+function startCrunch(open: (id: string) => void): void {
+  if (snapshotStore.getState().confirmResets) open('crunchConfirm');
+  else commands.reset('crunch');
+}
+
+/** On a reset bar Eternity runs: the layer resets by itself, so its bar shrinks to a strip. */
+function AutoTag() {
+  return <span className="auto-tag ol-sm">AUTO</span>;
+}
+
+function CrunchBar() {
+  const visible = useSnap((s) => s.crunchVisible);
+  const ready = useSnap((s) => s.crunchReady);
+  const gain = useSnap((s) => s.crunchGain);
+  const req = useSnap((s) => s.crunchReq);
+  const pct = useSnap((s) => s.crunchPct);
+  const open = useUi((s) => s.open);
+  if (!visible) return null;
+  return (
+    <button
+      type="button"
+      className={cx('nova nebula-bar singularity-bar crunch-bar chunk pop', ready ? 'ready' : 'locked')}
+      style={tint('#B4501A')}
+      onClick={() => (ready ? startCrunch(open) : open('bigcrunch'))}
+      aria-label={ready ? `Big Crunch for ${gain} Chronons` : `Big Crunch. ${req}.`}
+      data-testid="crunch"
+    >
+      <span className="fill" style={{ width: `${pct}%` }} />
+      <span className="inner">
+        {!ready && <Icon name="lock" className="nova-lock" />}
+        <span className="title ol">BIG CRUNCH</span>
+        {ready && (
+          <span className="gain ol">
+            {gain}
+            <Icon name="chronon" />
+          </span>
+        )}
+        <span className="req ol-sm">{req}</span>
+      </span>
+    </button>
+  );
+}
+
 function GalacticBar() {
   const visible = useSnap((s) => s.galacticVisible);
   const ready = useSnap((s) => s.galacticReady);
   const gain = useSnap((s) => s.galacticGain);
   const req = useSnap((s) => s.galacticReq);
   const pct = useSnap((s) => s.galacticPct);
+  const slim = useSnap((s) => s.autoBars.includes('galactic'));
   const open = useUi((s) => s.open);
   if (!visible) return null;
   return (
     <button
       type="button"
-      className={cx('nova nebula-bar singularity-bar galactic-bar chunk pop', ready ? 'ready' : 'locked')}
+      className={cx('nova nebula-bar singularity-bar galactic-bar chunk pop', ready ? 'ready' : 'locked', slim && 'slim')}
       style={tint('#3F7A12')}
       onClick={() => (ready ? startGalactic(open) : open('galactic'))}
       aria-label={ready ? `Go Galactic for ${gain} Galaxy Cores` : `Galactic Rebirth. ${req}.`}
@@ -48,6 +92,7 @@ function GalacticBar() {
       <span className="inner">
         {!ready && <Icon name="lock" className="nova-lock" />}
         <span className="title ol">GALACTIC</span>
+        {slim && <AutoTag />}
         {ready && (
           <span className="gain ol">
             {gain}
@@ -66,12 +111,13 @@ function SingularityBar() {
   const gain = useSnap((s) => s.singularityGain);
   const req = useSnap((s) => s.singularityReq);
   const pct = useSnap((s) => s.singularityPct);
+  const slim = useSnap((s) => s.autoBars.includes('singularity'));
   const open = useUi((s) => s.open);
   if (!visible) return null;
   return (
     <button
       type="button"
-      className={cx('nova nebula-bar singularity-bar chunk pop', ready ? 'ready' : 'locked')}
+      className={cx('nova nebula-bar singularity-bar chunk pop', ready ? 'ready' : 'locked', slim && 'slim')}
       style={tint('#3A2470')}
       onClick={() => (ready ? startSingularity(open) : open('singularity'))}
       aria-label={ready ? `Go Singularity for ${gain} Dark Matter` : `Singularity. ${req}.`}
@@ -81,6 +127,7 @@ function SingularityBar() {
       <span className="inner">
         {!ready && <Icon name="lock" className="nova-lock" />}
         <span className="title ol">SINGULARITY</span>
+        {slim && <AutoTag />}
         {ready && (
           <span className="gain ol">
             {gain}
@@ -99,12 +146,13 @@ function NebulaBar() {
   const gain = useSnap((s) => s.nebulaGain);
   const req = useSnap((s) => s.nebulaReq);
   const pct = useSnap((s) => s.nebulaPct);
+  const slim = useSnap((s) => s.autoBars.includes('nebula'));
   const open = useUi((s) => s.open);
   if (!visible) return null;
   return (
     <button
       type="button"
-      className={cx('nova nebula-bar chunk pop', ready ? 'ready' : 'locked')}
+      className={cx('nova nebula-bar chunk pop', ready ? 'ready' : 'locked', slim && 'slim')}
       style={tint('#1E6F88')}
       disabled={!ready}
       onClick={() => startNebula(open)}
@@ -115,6 +163,7 @@ function NebulaBar() {
       <span className="inner">
         {!ready && <Icon name="lock" className="nova-lock" />}
         <span className="title ol">NEBULA</span>
+        {slim && <AutoTag />}
         {ready && (
           <span className="gain ol">
             {gain}
@@ -137,6 +186,7 @@ export function BottomBar() {
   const novaReq = useSnap((s) => s.novaReq);
   const ready = useSnap((s) => s.novaReady);
   const gain = useSnap((s) => s.novaGain);
+  const novaSlim = useSnap((s) => s.autoBars.includes('supernova'));
   const setDrawer = useUi((s) => s.setDrawer);
   const open = useUi((s) => s.open);
   return (
@@ -165,7 +215,7 @@ export function BottomBar() {
       </div>
       <button
         type="button"
-        className={cx('nova chunk pop', ready ? 'ready' : 'locked')}
+        className={cx('nova chunk pop', ready ? 'ready' : 'locked', novaSlim && 'slim')}
         disabled={!ready}
         onClick={() => startSupernova(open)}
         aria-label={ready ? `Go Supernova for ${gain} Nova Shards. ${novaReq}.` : `Supernova. ${novaReq}.`}
@@ -176,6 +226,7 @@ export function BottomBar() {
         <span className="inner">
           {!ready && <Icon name="lock" className="nova-lock" />}
           <span className="title ol">SUPERNOVA</span>
+          {novaSlim && <AutoTag />}
           {ready && (
             <span className="gain ol">
               {gain}
@@ -188,6 +239,7 @@ export function BottomBar() {
       <NebulaBar />
       <SingularityBar />
       <GalacticBar />
+      <CrunchBar />
     </div>
   );
 }

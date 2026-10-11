@@ -39,6 +39,9 @@ import { clearLinks, recordConstellation, starChart, toggleLink } from '../engin
 import { buildStage } from '../engine/systems/megastructures';
 import { buyBuilding, buyPort, buyResearch, closeRoute, finishPlanet, foundColony, openRoute, placeBiome } from '../engine/systems/colonies';
 import type { BuildingId } from '../content/galaxyBuild';
+import type { AutoLayer } from '../content/crunch';
+import { ECHO_BOARD, echoTap } from '../engine/systems/echoes';
+import { buyEternity, setEternityAuto } from '../engine/systems/eternity';
 import { buyForgeUpgrade, buyRelic, equipRelic, setForgeGrade, setForgeOn, setForgeShare, unequipRelic } from '../engine/systems/forge';
 import { backupNow, readBackup } from './backups';
 import { D } from '../engine/decimal';
@@ -65,6 +68,7 @@ function done(): void {
 }
 
 let askedToKeepData = false;
+let lastEchoTap = 0;
 
 export const commands = {
   /** One tap on the Star Core. Returns the floating text, or null if the 30-a-second cap dropped it. */
@@ -630,6 +634,35 @@ export const commands = {
       wish: { title: 'A Wish!', body: `Engines half price for ${secs}` },
     };
     return text[r.kind];
+  },
+  /** The Echo boards: engines with the buy amount, and the echo star (at most ~25 taps a second count). */
+  buyEchoEngine(id: string): boolean {
+    const s = game.state;
+    const own = ECHO_BOARD.owned(s, id);
+    const plan = planPurchase(ECHO_BOARD.curve(id), own, cur(s, 'echoDust'), s.settings.buyAmount, s.settings.customBuyAmount, stat(s, 'echoCostMult'), ECHO_BOARD.milestoneSpan(own, s)?.to);
+    const ok = plan.canAfford && ECHO_BOARD.buy(s, id, plan.count);
+    done();
+    return ok;
+  },
+  echoTap(): string | null {
+    const now = performance.now();
+    if (now - lastEchoTap < 40) return null;
+    lastEchoTap = now;
+    const amount = echoTap(game.state);
+    if (amount.lte(0)) return null;
+    done();
+    return `+${format(amount, game.state.settings.notation)}`;
+  },
+  /** Eternity: upgrades bought with Chronons, and each automated layer's switch and rule. */
+  buyEternity(id: string): boolean {
+    const ok = buyEternity(game.state, id);
+    done();
+    return ok;
+  },
+  setEternityAuto(layer: AutoLayer, change: { on?: boolean; mode?: 'double' | 'amount'; at?: number }) {
+    const { at, ...rest } = change;
+    setEternityAuto(game.state, layer, at === undefined ? rest : { ...rest, at: D(Math.max(0, Number.isFinite(at) ? Math.floor(at) : 0)) });
+    done();
   },
   toggleMute() {
     game.state.settings.muted = !game.state.settings.muted;

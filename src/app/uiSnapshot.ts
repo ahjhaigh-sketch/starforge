@@ -28,7 +28,9 @@ import { LEVIATHANS, SPIRE_BANNERS, TRIAL_BY_ID } from '../content/challenges';
 import { goalMet, inTrial, trialGoal } from '../engine/systems/trials';
 import { fighting, leviathanHp, leviathansUnlocked } from '../engine/systems/leviathans';
 import { antimatterRate, mirrorKey, mirrorOpen } from '../engine/systems/mirror';
-import { galacticGain, galacticReady, galacticReqs, galaxyOf } from '../engine/systems/galactic';
+import { darkMatterNeeded, galacticGain, galacticReady, galacticReqs, galaxyOf } from '../engine/systems/galactic';
+import { crunchGain, crunchReady, crunchSeen, galaxiesExplored, galaxiesNeeded, nextChrononAt, runCores } from '../engine/systems/crunch';
+import { automating } from '../engine/systems/eternity';
 import { wyrmSky } from './wyrmReports';
 import { nebulaGain, nebulaReady, runShards } from '../engine/systems/nebula';
 import { BUFF_KINDS, buffLeft, cometOnScreen } from '../engine/systems/comets';
@@ -191,6 +193,20 @@ export interface Snapshot {
   galaxyCoresVisible: boolean;
   galaxyColor: string;
   galaxyName: string;
+  /** The Big Crunch on the reset bar (from Galactic milestone 7), Chronons in the top bar. */
+  crunchVisible: boolean;
+  crunchReady: boolean;
+  crunchGain: string;
+  crunchReq: string;
+  crunchPct: number;
+  chronons: string;
+  chrononsVisible: boolean;
+  /** Reset bars of layers Eternity runs by itself ("supernova,nebula"): they shrink to a slim strip. */
+  autoBars: string;
+  /** Music: the soundtrack, its volume, and how many layers you've reached (each adds an instrument). */
+  soundtrack: string;
+  volumeMusic: number;
+  musicLayers: number;
   /** Megastructure stages built, for the sky ("dyson:3|ringworld:1"). */
   megaStages: string;
   /** The Antimatter pill in the top bar (once the Mirror is open). */
@@ -412,6 +428,10 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     muted: s.settings.muted,
     volumeMaster: s.settings.volumeMaster,
     volumeSfx: s.settings.volumeSfx,
+    soundtrack: s.settings.soundtrack,
+    volumeMusic: s.settings.volumeMusic,
+    musicLayers: ['supernovasAll', 'nebulasAll', 'singularitiesAll', 'galacticsAll', 'crunchesAll'].filter((k) => (s.stats[k] ?? 0) > 0).length,
+    autoBars: (['supernova', 'nebula', 'singularity', 'galactic'] as const).filter((l) => automating(s, l)).join(','),
     autosaveSeconds: s.settings.autosaveSeconds,
     confirmResets: s.settings.confirmResets,
     hotkeys: s.settings.hotkeys,
@@ -458,6 +478,7 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     nebulasAll: s.stats.nebulasAll ?? 0,
     ...singularityBar(s, n),
     ...galacticBar(s, n),
+    ...crunchBar(s, n),
     megaStages: Object.entries(s.megastructures)
       .filter(([, k]) => k > 0)
       .map(([id, k]) => `${id}:${k}`)
@@ -509,8 +530,8 @@ function galacticBar(s: GameState, n: Notation) {
   const all = s.stats.galacticsAll ?? 0;
   const ready = galacticReady(s);
   const r = galacticReqs(s);
-  const need = BALANCE.galactic.runDarkMatter;
-  const steps = [Math.min(1, r.stages / 8), r.key ? 1 : 0, Math.min(1, r.dm.add(1).log10().toNumber() / Math.log10(need))];
+  const need = darkMatterNeeded(s);
+  const steps = [Math.min(1, r.stages / 8), r.key ? 1 : 0, Math.min(1, r.dm.add(1).log10().toNumber() / need.log10().toNumber())];
   const req = ready
     ? 'Ready'
     : r.stages < 8
@@ -529,6 +550,29 @@ function galacticBar(s: GameState, n: Notation) {
     galaxyCoresVisible: all > 0 || cur(s, 'galaxyCores').gt(0),
     galaxyColor: all > 0 && g.id !== 'milkyway' ? g.color : '',
     galaxyName: g.name,
+  };
+}
+
+/** The Big Crunch on the reset bar: visible from Galactic milestone 7 (or after the first one). */
+function crunchBar(s: GameState, n: Notation) {
+  const C = BALANCE.crunch;
+  const ready = crunchReady(s);
+  const explored = galaxiesExplored(s);
+  const need = galaxiesNeeded(s);
+  const cores = runCores(s);
+  const req = ready
+    ? `Next Chronon at ${format(nextChrononAt(s), n)} Galaxy Cores this Crunch run`
+    : explored < need
+      ? `Explore ${need} galaxies this Crunch run (${explored}/${need})`
+      : `Gain ${format(C.gainDiv, n)} Galaxy Cores this Crunch run (${format(cores, n)})`;
+  return {
+    crunchVisible: crunchSeen(s),
+    crunchReady: ready,
+    crunchGain: ready ? `+${format(crunchGain(s), n)}` : '',
+    crunchReq: req,
+    crunchPct: ready ? 100 : Math.floor(Math.min(1, explored / need) * 100),
+    chronons: format(cur(s, 'chronons'), n),
+    chrononsVisible: (s.stats.crunchesAll ?? 0) > 0 || cur(s, 'chronons').gt(0),
   };
 }
 

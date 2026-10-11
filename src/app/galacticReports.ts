@@ -3,7 +3,7 @@ import { GALAXIES, starColor } from '../content/galactic';
 import { layer, milestoneReached, resetsDone } from '../engine/layers';
 import { cur } from '../engine/state';
 import { stat } from '../engine/stats';
-import { galacticGain, galacticReady, galacticReqs, galaxyAvailable, galaxyCleared, galaxyMapOpen, galaxyOf, goalProgress, nextCoreAt } from '../engine/systems/galactic';
+import { darkMatterNeeded, galacticGain, galacticReady, galacticReqs, galaxyAvailable, galaxyCleared, galaxyMapOpen, galaxyOf, goalProgress, nextCoreAt } from '../engine/systems/galactic';
 import { constellationScore, currentScore, linkScore, loopsOf, maxLinks, observatoryOpen, skyOf } from '../engine/systems/observatory';
 import { format, formatMult } from '../ui/format';
 import { game } from './game';
@@ -43,8 +43,8 @@ export function galacticReport(): GalacticReport {
     stages: r.stages,
     key: r.key,
     dm: format(r.dm, n()),
-    dmNeed: format(G.runDarkMatter, n()),
-    dmMet: r.dm.gte(G.runDarkMatter),
+    dmNeed: format(darkMatterNeeded(s), n()),
+    dmMet: r.dm.gte(darkMatterNeeded(s)),
     done: resetsDone(s, def),
     galaxy: galaxyOf(s).name,
     nextGalaxy: GALAXIES.find((g) => g.id === s.galactic.next)?.name ?? '',

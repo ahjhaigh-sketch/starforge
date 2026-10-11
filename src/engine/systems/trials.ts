@@ -2,7 +2,7 @@ import { BALANCE } from '../../content/balance';
 import { FAST_RANKS, TRIAL_BY_ID, TRIALS, type TrialDef, type TrialEffect } from '../../content/challenges';
 import { D, type Decimal, ZERO } from '../decimal';
 import { events } from '../events';
-import { layer, onBeforeReset } from '../layers';
+import { isEchoLayer, layer, onBeforeReset } from '../layers';
 import type { GameState } from '../state';
 import { invalidateStats, registerSources } from '../stats';
 import { registerSystem } from '../tick';
@@ -145,8 +145,9 @@ export function registerTrials(): void {
     { id: 'trial.fusion.essence', stat: 'essenceGain', op: 'mul', label: 'Trial Fusion (best score)', value: (s) => D(1 + s.trials.fusionBest ** pe), active: (s) => s.trials.fusionBest > 0 },
   );
   // a reset during a Trial finishes it if the goal was met, and otherwise ends it
-  onBeforeReset((s) => {
-    if (!inTrial(s)) return;
+  onBeforeReset((s, layerId) => {
+    // the Echo boards' small resets live outside the real game
+    if (!inTrial(s) || isEchoLayer(layerId)) return;
     if (!completeTrial(s)) exitTrial(s);
   });
   registerSystem({

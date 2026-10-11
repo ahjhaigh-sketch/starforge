@@ -291,6 +291,27 @@ describe('Starship Expeditions', () => {
     expect(s.ships.fleet[0]!.sector).toBe('ember');
   });
 
+  it('a million trips in one step pay a million times the loot, at the cost of one (found by the Big Crunch simulator)', () => {
+    const one = run(15);
+    one.tier = 4;
+    launch(one, 0, 'kuiper');
+    const many = run(15);
+    many.tier = 4;
+    launch(many, 0, 'kuiper');
+    const kuiper = SECTOR_BY_ID.get('kuiper')!;
+    const per = tripLoot(one, kuiper).ore;
+    tick(one, 600.0001);
+    expect(one.stats.trips).toBe(1);
+    const t0 = performance.now();
+    tick(many, 600 * 1_000_000 + 0.0001);
+    expect(performance.now() - t0).toBeLessThan(250);
+    expect(many.stats.trips).toBe(1_000_000);
+    // the Belt adds its own ore over those 600 million seconds; the trips bring at least a million loads
+    expect(cur(many, 'ore').div(per).toNumber()).toBeGreaterThanOrEqual(999_999);
+    expect(many.ships.fleet[0]!.t).toBeGreaterThan(0);
+    expect(many.ships.fleet[0]!.t).toBeLessThanOrEqual(600);
+  });
+
   it('sectors open with your best Star Tier; ships cost Iron alloy; Cargo fills the hold', () => {
     const s = run(15);
     expect(launch(s, 0, 'crystal')).toBe(false);

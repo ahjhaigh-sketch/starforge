@@ -3,7 +3,7 @@ import { commands } from '../../app/commands';
 import { constantsReport } from '../../app/earlyReports';
 import { NODE_LEGEND } from '../../app/novaReports';
 import { layerConfirm, nebulaReport, nebulaTreeReport, shrineReport } from '../../app/runeReports';
-import { snapshotStore } from '../../app/uiSnapshot';
+import { snapshotStore, useSnap } from '../../app/uiSnapshot';
 import { RUNE_BY_ID, RUNE_RARITIES } from '../../content/runes';
 import { AURA_BY_ID } from '../../content/runeDepth';
 import { WYRM_BY_ID } from '../../content/wyrms';
@@ -167,7 +167,37 @@ interface Card {
   key: number;
 }
 
-const KEEP_LABELS = ['Keep everything', 'Uncommon and up', 'Rare and up', 'Epic and up', 'Legendary and up', 'Mythic and up', 'Celestial and up', 'Cosmic and up'];
+/** How the reel slows: the gap before each step, about a second in all (UI style tab: "Rune roll: slot-machine cycling"). */
+const REEL_STEPS = [45, 45, 50, 55, 60, 65, 75, 85, 100, 120, 145, 175];
+
+/** The roll card: a reel of rarities spins for about a second, then lands on what came up. Reduced motion lands at once. */
+function RollCard({ card }: { card: Card }) {
+  const reduced = useSnap((s) => s.reducedMotion);
+  const [step, setStep] = useState(reduced ? REEL_STEPS.length : 0);
+  useEffect(() => {
+    if (step >= REEL_STEPS.length) return;
+    const id = window.setTimeout(() => setStep((k) => k + 1), REEL_STEPS[step]);
+    return () => window.clearTimeout(id);
+  }, [step]);
+  if (step < REEL_STEPS.length) {
+    const r = RUNE_RARITIES[(step * 3) % RUNE_RARITIES.length]!;
+    return (
+      <div key={step} className="roll-card chunk reel" style={tint(r.color)} aria-hidden="true">
+        <small className="ol-sm">{r.name}</small>
+        <b className="ol">???</b>
+      </div>
+    );
+  }
+  return (
+    <div className={cx('roll-card chunk', card.tier >= 3 && 'epic', card.tier >= 5 && 'mythic')} style={tint(card.color)} data-testid="roll-card" aria-live="polite">
+      <small className="ol-sm">{card.rarity}</small>
+      <b className="ol">{card.name}</b>
+      {card.tier >= -1 && card.rarity !== 'No rune' && <span className="num ol-sm">x{card.count}</span>}
+    </div>
+  );
+}
+
+const KEEP_LABELS =['Keep everything', 'Uncommon and up', 'Rare and up', 'Epic and up', 'Legendary and up', 'Mythic and up', 'Celestial and up', 'Cosmic and up'];
 
 export function RunesPanel() {
   const [shrine, setShrine] = useState('dust');
@@ -250,13 +280,7 @@ export function RunesPanel() {
                 </select>
               </label>
             </div>
-            {card && (
-              <div key={card.key} className={cx('roll-card chunk', card.tier >= 3 && 'epic', card.tier >= 5 && 'mythic')} style={tint(card.color)} data-testid="roll-card" aria-live="polite">
-                <small className="ol-sm">{card.rarity}</small>
-                <b className="ol">{card.name}</b>
-                {card.tier >= -1 && card.rarity !== 'No rune' && <span className="num ol-sm">x{card.count}</span>}
-              </div>
-            )}
+            {card && <RollCard key={card.key} card={card} />}
           </div>
           <div className="rune-table" role="table" aria-label={`${data.name} runes`}>
             {data.runes.map((x) => (

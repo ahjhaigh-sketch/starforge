@@ -121,6 +121,9 @@ export function registerNebula(): void {
     // a Singularity keeps Nebula milestones from its first one (Singularity milestone 1)
     milestoneFloor: (s) => (milestoneReached(s, 'singularity', 'keepNebula') ? (s.stats.nebulasBest ?? 0) : 0),
     onReset: (s) => {
+      // from 10 Singularities a Nebula keeps everything, but this run's shards still start over
+      // (or an auto-Nebula would pay again for the same shards every tick)
+      s.totals.run.shards = ZERO;
       s.stats.nebulasAll = (s.stats.nebulasAll ?? 0) + 1;
       s.stats.nebulasBest = Math.max(s.stats.nebulasBest ?? 0, s.stats.nebulas ?? 0);
     },

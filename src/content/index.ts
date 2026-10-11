@@ -27,6 +27,9 @@ import { registerGalactic } from '../engine/systems/galactic';
 import { registerObservatory } from '../engine/systems/observatory';
 import { registerMegastructures } from '../engine/systems/megastructures';
 import { registerColonies } from '../engine/systems/colonies';
+import { registerCrunch } from '../engine/systems/crunch';
+import { registerEchoes } from '../engine/systems/echoes';
+import { registerEternity } from '../engine/systems/eternity';
 import { registerStarsmith } from '../engine/systems/starsmith';
 import { registerComets } from '../engine/systems/comets';
 import { registerNovaTree } from '../engine/systems/novaTree';
@@ -84,5 +87,8 @@ export function registerContent(): void {
   registerObservatory();
   registerMegastructures();
   registerColonies();
+  registerCrunch();
+  registerEchoes();
+  registerEternity();
   registerUnlocks();
 }

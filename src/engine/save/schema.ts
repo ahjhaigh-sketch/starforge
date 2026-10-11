@@ -130,6 +130,10 @@ export const plainSaveSchema = z.looseObject({
     .optional(),
   starChart: z.record(z.string(), z.number().int().min(0)).optional(),
   megastructures: z.record(z.string(), z.number().int().min(0)).optional(),
+  eternity: z
+    .looseObject({ upgrades: z.array(z.string()), auto: z.record(z.string(), z.looseObject({ on: z.boolean(), mode: z.enum(['double', 'amount']), at: dec })) })
+    .optional(),
+  echoes: z.looseObject({ engines: z.record(z.string(), z.number().int().min(0)), ever: z.record(z.string(), z.number().int().min(0)) }).optional(),
   colonies: z
     .looseObject({
       list: z.array(

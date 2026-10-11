@@ -118,9 +118,9 @@ export function recordConstellation(s: GameState): number {
 
 export function registerObservatory(): void {
   starChart.register();
-  // every Galactic run brings a new sky, from the seeded generator saved with the game
+  // every Galactic run (and every Crunch run) brings a new sky, from the seeded generator saved with the game
   onAnyReset((s, layerId) => {
-    if (layerId !== 'galactic') return;
+    if (layerId !== 'galactic' && layerId !== 'crunch') return;
     s.observatory.seed = Math.floor(nextFloat(s.rng) * 2 ** 31);
     s.observatory.links = [];
     s.observatory.best = 0;

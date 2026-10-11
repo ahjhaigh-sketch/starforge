@@ -66,7 +66,25 @@ export function maxBuy(curve: CostCurve, owned: number, money: Decimal, limit = 
     left = left.sub(sumGeometric(seg.first, seg.ratio, 0, can));
     if (seg.end === Infinity) break;
   }
-  // Summing brackets separately can drift by a hair at bracket edges: confirm against the exact total.
-  while (bought > 0 && bulkCost(curve, owned, bought).gt(money)) bought--;
-  return bought;
+  // Summing brackets separately can drift at bracket edges: confirm against the exact total.
+  return largestFitting(bought, (k) => !bulkCost(curve, owned, k).gt(money));
+}
+
+/**
+ * The largest k in [0, upTo] that `fits`, where fits(0) is true and, once false, stays false (bulk
+ * costs only grow). A binary search: at most about 50 checks however far the estimate was off.
+ * (Stepping down one at a time could take millions of steps when an estimate is far off, as it can
+ * be at enormous magnitudes where one more purchase no longer changes the total.)
+ */
+export function largestFitting(upTo: number, fits: (k: number) => boolean): number {
+  if (!(upTo > 0)) return 0;
+  if (fits(upTo)) return upTo;
+  let lo = 0;
+  let hi = upTo;
+  while (hi - lo > 1) {
+    const mid = Math.floor(lo + (hi - lo) / 2);
+    if (fits(mid)) lo = mid;
+    else hi = mid;
+  }
+  return lo;
 }

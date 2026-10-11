@@ -35,16 +35,20 @@ export const galacticTree = makeTree({
   nodes: GALACTIC_TREE,
   levels: (s) => s.galacticTree,
   open: (s) => (s.stats.galacticsAll ?? 0) >= 1,
-  power: (s) => stat(s, 'galacticTreePower').toNumber(),
+  power: (s) => Math.min(G.treePowerCap, stat(s, 'galacticTreePower').toNumber()),
 });
 
 /** Dark Matter gained this Galactic run. */
 export const runDarkMatter = (s: GameState): Decimal => s.totals.run.darkMatter ?? ZERO;
 
+/** The Dark Matter a Galactic Rebirth needs in its run. */
+export const darkMatterNeeded = (_s: GameState): Decimal => D(G.runDarkMatter);
+
 export function galacticGain(s: GameState): Decimal {
   const dm = runDarkMatter(s);
-  if (dm.lt(G.runDarkMatter)) return ZERO;
-  return dm.div(G.runDarkMatter).pow(G.gainPow).mul(stat(s, 'galaxyCoreGain')).floor();
+  const need = darkMatterNeeded(s);
+  if (dm.lt(need)) return ZERO;
+  return dm.div(need).pow(G.gainPow).mul(stat(s, 'galaxyCoreGain')).floor();
 }
 
 /** Each requirement on its own, for the reset bar and the panel. */
@@ -54,13 +58,13 @@ export function galacticReqs(s: GameState): { stages: number; key: boolean; dm: 
 
 export function galacticReady(s: GameState): boolean {
   const r = galacticReqs(s);
-  return r.stages >= 8 && r.key && r.dm.gte(G.runDarkMatter) && galacticGain(s).gte(1);
+  return r.stages >= 8 && r.key && r.dm.gte(darkMatterNeeded(s)) && galacticGain(s).gte(1);
 }
 
 /** Dark Matter this run needed for one more Galaxy Core. */
 export function nextCoreAt(s: GameState): Decimal {
   const next = galacticGain(s).add(1).div(stat(s, 'galaxyCoreGain'));
-  return next.pow(1 / G.gainPow).mul(G.runDarkMatter);
+  return next.pow(1 / G.gainPow).mul(darkMatterNeeded(s));
 }
 
 // ---------- galaxies ----------
@@ -102,7 +106,7 @@ export function galaxyGoalMet(s: GameState): boolean {
   return now.gte(target);
 }
 
-const rewardPower = (s: GameState) => stat(s, 'galaxyRewardPower').toNumber();
+const rewardPower = (s: GameState) => Math.min(G.rewardPowerCap, stat(s, 'galaxyRewardPower').toNumber());
 
 function galaxySources(): StatSource[] {
   const out: StatSource[] = [];
@@ -127,6 +131,10 @@ function galaxySources(): StatSource[] {
 
 export const singularityFree = (s: GameState) => milestoneReached(s, 'galactic', 'singularityFree');
 
+/** Big Crunch milestone 10: a Galactic Rebirth resets nothing (checked here so this layer needn't import the Crunch). */
+const galacticFree = (s: GameState) => milestoneReached(s, 'crunch', 'galacticFree');
+const FREE = 'Milestone: 10 Big Crunches';
+
 export function registerGalactic(): void {
   defineStat({ id: 'galaxyRewardPower', label: 'Cleared galaxy rewards', base: () => D(1) });
   defineStat({ id: 'galacticTreePower', label: 'Galactic Tree strength', base: () => D(1) });
@@ -148,6 +156,7 @@ export function registerGalactic(): void {
       {
         id: 'singularityLayer',
         label: 'Everything a Singularity resets, Dark Matter and Void Constants',
+        keptBy: (s) => (galacticFree(s) ? FREE : null),
         reset: (s) => {
           for (const p of layer('singularity')?.parts ?? []) p.reset(s);
           for (const c of CONSTANTS) if (c.set === 'void') s.constants[c.id] = 0;
@@ -164,7 +173,7 @@ export function registerGalactic(): void {
         reset: (s) => {
           s.singularityTree = {};
         },
-        keptBy: (s) => (milestoneReached(s, 'galactic', 'keepTree') ? 'Milestone: 3 Galactic Rebirths' : null),
+        keptBy: (s) => (galacticFree(s) ? FREE : milestoneReached(s, 'galactic', 'keepTree') ? 'Milestone: 3 Galactic Rebirths' : null),
       },
       {
         id: 'blackHole',
@@ -174,11 +183,12 @@ export function registerGalactic(): void {
           s.wheel.banks = {};
           s.reactor.charge = ZERO;
         },
-        keptBy: (s) => (milestoneReached(s, 'galactic', 'keepHole') ? 'Milestone: 5 Galactic Rebirths' : null),
+        keptBy: (s) => (galacticFree(s) ? FREE : milestoneReached(s, 'galactic', 'keepHole') ? 'Milestone: 5 Galactic Rebirths' : null),
       },
       {
         id: 'mirror',
         label: 'The Antimatter Mirror (its key stays)',
+        keptBy: (s) => (galacticFree(s) ? FREE : null),
         reset: (s) => {
           const key = mirrorKey(s);
           s.mirror.engines = {};
@@ -197,6 +207,8 @@ export function registerGalactic(): void {
       'Relics, the Codex, the Belt and the Starforge',
       'The Event Horizon key, medals and everything you have unlocked',
     ],
+    // a Big Crunch keeps Galactic milestones from its first one (Big Crunch milestone 1)
+    milestoneFloor: (s) => (milestoneReached(s, 'crunch', 'keepGalactic') ? (s.stats.galacticsBest ?? 0) : 0),
     milestones: [
       { at: 1, id: 'keepSingularity', text: 'Keep your Singularity milestones' },
       { at: 2, id: 'autoSingularity', text: 'Auto-Singularity when its gain reaches a number you set' },
@@ -206,6 +218,8 @@ export function registerGalactic(): void {
       { at: 10, id: 'singularityFree', text: 'A Singularity resets nothing; 1/50 of its gain trickles in every second' },
     ],
     onReset: (s) => {
+      // from 10 Big Crunches a Galactic Rebirth keeps everything, but this run's Dark Matter still starts over
+      s.totals.run.darkMatter = ZERO;
       s.stats.galacticsAll = (s.stats.galacticsAll ?? 0) + 1;
       s.stats.galacticsBest = Math.max(s.stats.galacticsBest ?? 0, s.stats.galactics ?? 0);
       if (galaxyAvailable(s, s.galactic.next)) s.galactic.galaxy = s.galactic.next;

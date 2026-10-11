@@ -1,4 +1,4 @@
-import { bulkCost, type CostCurve, maxBuy } from './cost';
+import { bulkCost, type CostCurve, largestFitting, maxBuy } from './cost';
 import { D, type Decimal, ONE } from './decimal';
 import type { BuyAmount } from './state';
 
@@ -30,9 +30,8 @@ export function planPurchase(
     return { count, cost, canAfford: cost.lte(money) };
   }
   if (amount === 'max') {
-    let n = maxBuy(curve, owned, money.div(costMult));
     // dividing by the discount can round by a hair: never let Max claim more than the money covers
-    while (n > 0 && bulkCost(curve, owned, n).mul(costMult).gt(money)) n--;
+    const n = largestFitting(maxBuy(curve, owned, money.div(costMult)), (k) => !bulkCost(curve, owned, k).mul(costMult).gt(money));
     if (n === 0) return { count: 1, cost: bulkCost(curve, owned, 1).mul(costMult), canAfford: false };
     return { count: n, cost: bulkCost(curve, owned, n).mul(costMult), canAfford: true };
   }
@@ -49,8 +48,7 @@ export function planLimited(curve: CostCurve, owned: number, money: Decimal, amo
   const left = Math.max(0, Math.floor(limit - owned));
   if (left === 0) return { count: 0, cost: bulkCost(curve, owned, 1), canAfford: false };
   if (amount === 'max') {
-    let n = maxBuy(curve, owned, money, left);
-    while (n > 0 && bulkCost(curve, owned, n).gt(money)) n--;
+    const n = largestFitting(maxBuy(curve, owned, money, left), (k) => !bulkCost(curve, owned, k).gt(money));
     if (n === 0) return { count: 1, cost: bulkCost(curve, owned, 1), canAfford: false };
     return { count: n, cost: bulkCost(curve, owned, n), canAfford: true };
   }

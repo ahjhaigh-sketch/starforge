@@ -1,19 +1,23 @@
 import { snapshotStore } from '../app/uiSnapshot';
 import { events } from '../engine/events';
+import { startMusic } from './music';
 
 /**
  * The one audio module (CLAUDE.md rule 14). Every sound is synthesised with WebAudio, so there are
- * no files to download: short, bright, soft. Purchases climb in pitch when repeated quickly.
- * The context starts on the first tap or key press (browsers require a gesture).
+ * no files to download: short, bright, soft. Purchases climb in pitch when repeated quickly;
+ * automation buys quietly. Each reset layer has its own sound. The soundtrack (music.ts) plays
+ * through its own volume. The context starts on the first tap or key press (browsers require a
+ * gesture) and sleeps while the tab is hidden.
  */
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let sfx: GainNode | null = null;
+let music: GainNode | null = null;
 let noise: AudioBuffer | null = null;
 
 function ensure(): boolean {
   if (ctx) {
-    if (ctx.state === 'suspended') void ctx.resume();
+    if (ctx.state === 'suspended' && !document.hidden) void ctx.resume();
     return true;
   }
   try {
@@ -22,16 +26,22 @@ function ensure(): boolean {
     ctx = new AC();
     master = ctx.createGain();
     sfx = ctx.createGain();
+    music = ctx.createGain();
     const comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -14;
     comp.ratio.value = 6;
     sfx.connect(master);
+    music.connect(master);
     master.connect(comp);
     comp.connect(ctx.destination);
     noise = ctx.createBuffer(1, ctx.sampleRate * 0.6, ctx.sampleRate);
     const data = noise.getChannelData(0);
     for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
     applyVolumes();
+    startMusic(ctx, music, () => {
+      const s = snapshotStore.getState();
+      return { soundtrack: s.soundtrack, layers: s.musicLayers };
+    });
     return true;
   } catch {
     ctx = null;
@@ -40,10 +50,11 @@ function ensure(): boolean {
 }
 
 function applyVolumes(): void {
-  if (!ctx || !master || !sfx) return;
+  if (!ctx || !master || !sfx || !music) return;
   const s = snapshotStore.getState();
   master.gain.setTargetAtTime(s.muted ? 0 : s.volumeMaster, ctx.currentTime, 0.02);
   sfx.gain.setTargetAtTime(s.volumeSfx * 0.6, ctx.currentTime, 0.02);
+  music.gain.setTargetAtTime(s.soundtrack === 'off' ? 0 : s.volumeMusic, ctx.currentTime, 0.05);
 }
 
 /** One enveloped oscillator note. */
@@ -88,7 +99,27 @@ let lastTap = 0;
 let buyStreak = 0;
 let lastBuy = 0;
 let lastHarvest = 0;
+/** When a big sound (a reset, a new tier) last played: a priority toast right after stays quiet. */
+let lastBig = -1;
+const lastAt: Record<string, number> = {};
 const RARE_STEPS: Record<string, number> = { gold: 0, crystal: 3, prismatic: 5, void: 7 };
+
+/** True at most once every `gap` seconds per kind of sound (some events come in floods). */
+function throttle(kind: string, gap: number): boolean {
+  if (!ctx) return false;
+  const t = ctx.currentTime;
+  if (t - (lastAt[kind] ?? -1e9) < gap) return false;
+  lastAt[kind] = t;
+  return true;
+}
+
+/** Each reset layer's chord, from the bright Supernova down to the deep Singularity. */
+const RESET_CHORDS: Record<string, { root: number; steps: number[]; sweep: [number, number] }> = {
+  supernova: { root: 392, steps: [0, 4, 7, 12], sweep: [500, 5000] },
+  nebula: { root: 349, steps: [0, 5, 9, 14], sweep: [800, 3000] },
+  singularity: { root: 196, steps: [0, 3, 7, 10], sweep: [3000, 200] },
+  galactic: { root: 262, steps: [0, 7, 12, 16, 19], sweep: [300, 6000] },
+};
 
 export const sounds = {
   tap(crit: boolean) {
@@ -116,8 +147,33 @@ export const sounds = {
   tierUp() {
     if (!ensure() || !ctx) return;
     const t = ctx.currentTime;
+    lastBig = t;
     [0, 4, 7, 12, 16].forEach((n, i) => tone(392 * semis(n), t + i * 0.07, 0.45, 'triangle', 0.24));
     whoosh(t, 0.9, 400, 4000, 0.12);
+  },
+  /** Every reset has its own chord; the Big Crunch falls into a point, then booms as it comes back. */
+  reset(layer: string) {
+    if (!ensure() || !ctx) return;
+    const t = ctx.currentTime;
+    if (layer === 'echoNova' || layer === 'echoNebula') {
+      if (!throttle('echo', 0.3)) return;
+      const f = layer === 'echoNova' ? 784 : 659;
+      [0, 7, 12].forEach((n, i) => tone(f * semis(n), t + i * 0.05, 0.35, 'sine', 0.1));
+      return;
+    }
+    lastBig = t;
+    if (layer === 'crunch') {
+      whoosh(t, 1.1, 6000, 120, 0.22);
+      tone(330, t, 1.1, 'sawtooth', 0.06, 40);
+      tone(55, t + 1.15, 1.6, 'sine', 0.5, 32);
+      whoosh(t + 1.15, 1.4, 150, 7000, 0.18);
+      [0, 7, 12, 16, 19, 24].forEach((n, i) => tone(196 * semis(n), t + 1.2 + i * 0.08, 1.2, 'triangle', 0.16));
+      return;
+    }
+    const r = RESET_CHORDS[layer] ?? RESET_CHORDS.supernova!;
+    whoosh(t, 1, r.sweep[0], r.sweep[1], 0.14);
+    tone(r.root / 4, t, 0.9, 'sine', 0.35, r.root / 8);
+    r.steps.forEach((n, i) => tone(r.root * semis(n), t + 0.12 + i * 0.07, 0.7, 'triangle', 0.18));
   },
   comet() {
     if (!ensure() || !ctx) return;
@@ -154,6 +210,63 @@ export const sounds = {
     tone(988, t, 0.14, 'sine', 0.1);
     tone(1319, t + 0.08, 0.18, 'sine', 0.1);
   },
+  /** Big news (a galaxy explored, the Mirror Key): a short fanfare, unless a reset or tier just sounded. */
+  fanfare() {
+    if (!ensure() || !ctx) return;
+    const t = ctx.currentTime;
+    if (t - lastBig < 0.8 || !throttle('fanfare', 1)) return;
+    [0, 4, 7, 12].forEach((n, i) => tone(523 * semis(n), t + i * 0.09, 0.4, 'triangle', 0.16));
+    tone(1046, t + 0.36, 0.6, 'sine', 0.1);
+  },
+  /** A rare rune: a sparkle that climbs higher the first time you find it. */
+  rune(first: boolean) {
+    if (!ensure() || !ctx || !throttle('rune', 0.25)) return;
+    const t = ctx.currentTime;
+    const top = first ? 4 : 3;
+    for (let i = 0; i < top; i++) tone(1175 * semis(i * 4), t + i * 0.05, 0.3, 'sine', 0.13);
+  },
+  aura(first: boolean) {
+    if (!ensure() || !ctx || !throttle('aura', 0.25)) return;
+    const t = ctx.currentTime;
+    whoosh(t, 0.8, 900, 5000, 0.08);
+    [0, 7, 14].forEach((n, i) => tone(740 * semis(n), t + i * 0.1, 0.6, 'sine', first ? 0.15 : 0.1));
+  },
+  hatch() {
+    if (!ensure() || !ctx || !throttle('hatch', 0.2)) return;
+    const t = ctx.currentTime;
+    whoosh(t, 0.08, 2600, 900, 0.1);
+    tone(880, t + 0.05, 0.12, 'sine', 0.16, 1320);
+    tone(1320, t + 0.13, 0.1, 'sine', 0.12, 1760);
+  },
+  card() {
+    if (!ensure() || !ctx || !throttle('card', 0.12)) return;
+    const t = ctx.currentTime;
+    whoosh(t, 0.12, 5000, 2000, 0.08);
+    tone(660, t + 0.06, 0.2, 'triangle', 0.12);
+  },
+  bhStage(stage: number) {
+    if (!ensure() || !ctx || !throttle('bh', 0.4)) return;
+    const t = ctx.currentTime;
+    tone(55 * semis(stage), t, 1.2, 'sine', 0.35, 41 * semis(stage));
+    whoosh(t, 1.2, 2000, 150, 0.1);
+  },
+  star() {
+    if (!ensure() || !ctx || !throttle('star', 0.3)) return;
+    const t = ctx.currentTime;
+    [0, 4, 7, 11, 14].forEach((n, i) => tone(988 * semis(n), t + i * 0.05, 0.4, 'sine', 0.12));
+  },
+  smelt() {
+    if (!ensure() || !ctx || !throttle('smelt', 0.6)) return;
+    const t = ctx.currentTime;
+    tone(1568, t, 0.25, 'square', 0.035);
+    tone(2093, t + 0.04, 0.3, 'sine', 0.06);
+  },
+  mutation() {
+    if (!ensure() || !ctx || !throttle('mutation', 0.3)) return;
+    const t = ctx.currentTime;
+    tone(440, t, 0.5, 'sine', 0.14, 660);
+    tone(554, t + 0.08, 0.45, 'sine', 0.1, 415);
+  },
 };
 
 export function installAudio(): void {
@@ -165,6 +278,12 @@ export function installAudio(): void {
   };
   window.addEventListener('pointerdown', unlock, true);
   window.addEventListener('keydown', unlock, true);
+  // the music and every sound sleep while the tab is hidden
+  document.addEventListener('visibilitychange', () => {
+    if (!ctx) return;
+    if (document.hidden) void ctx.suspend();
+    else void ctx.resume();
+  });
   snapshotStore.subscribe(applyVolumes);
   events.on((e) => {
     if (!ctx) return; // no sound until the player has interacted
@@ -173,10 +292,13 @@ export function installAudio(): void {
         sounds.tap(e.crit);
         break;
       case 'purchase':
-        sounds.buy();
+        if (!e.auto) sounds.buy();
         break;
       case 'tierUp':
         sounds.tierUp();
+        break;
+      case 'reset':
+        sounds.reset(e.layer);
         break;
       case 'comet':
         if (e.kind === 'spawn') sounds.comet();
@@ -190,6 +312,34 @@ export function installAudio(): void {
         break;
       case 'unlock':
         sounds.toast();
+        break;
+      case 'toast':
+        // decided after the event that raised it has played its own sound (a reset's toast arrives first)
+        if (e.priority) queueMicrotask(() => sounds.fanfare());
+        break;
+      case 'rune':
+        sounds.rune(e.first);
+        break;
+      case 'aura':
+        sounds.aura(e.first);
+        break;
+      case 'hatch':
+        sounds.hatch();
+        break;
+      case 'card':
+        sounds.card();
+        break;
+      case 'bhStage':
+        sounds.bhStage(e.stage);
+        break;
+      case 'star':
+        sounds.star();
+        break;
+      case 'smelt':
+        sounds.smelt();
+        break;
+      case 'mutation':
+        if (e.firstOfKind) sounds.mutation();
         break;
     }
   });

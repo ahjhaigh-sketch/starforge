@@ -1614,3 +1614,76 @@ test('Terraforming: paint hexes, finish the planet, and its multiplier is locked
   ).toBe(true);
   expect(errors).toEqual([]);
 });
+
+// ---------- Phase 17: the Big Crunch, Eternity, the Echo boards, music ----------
+
+type Sf17 = {
+  sf: {
+    game: {
+      state: {
+        stats: Record<string, number>;
+        galactic: { galaxy: string; next: string; cleared: string[] };
+        eternity: { upgrades: string[]; auto: Record<string, { on: boolean }> };
+        echoes: { engines: Record<string, number> };
+        settings: { soundtrack: string };
+        currencies: Record<string, { toNumber(): number }>;
+      };
+    };
+    commands: { devAdd(c: string, n: number): void };
+  };
+};
+
+test('the Big Crunch: explore 7 galaxies, crunch through the confirm screen, then buy Eternity and switch its automation', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { sf } = window as unknown as Sf17;
+    const s = sf.game.state;
+    s.stats.galactics = 9;
+    s.stats.galacticsAll = 9;
+    s.stats.galacticsBest = 9;
+    s.galactic.cleared = ['milkyway', 'spiral', 'elliptical', 'ring', 'dwarf', 'quasar', 'lenticular'];
+    s.galactic.galaxy = 'lenticular';
+    sf.commands.devAdd('galaxyCores', 20_000);
+  });
+  await expect(page.getByTestId('crunch')).toBeVisible();
+  await page.getByTestId('crunch').click();
+  const confirm = page.locator('[data-panel="crunchConfirm"]');
+  await expect(confirm).toHaveClass(/open/);
+  await confirm.getByRole('button', { name: 'Big Crunch', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf17).sf.game.state.stats.crunchesAll)).toBe(1);
+  expect(await page.evaluate(() => (window as unknown as Sf17).sf.game.state.galactic.cleared)).toEqual([]);
+  await expect(page.locator('.hud .pill[aria-label="Chronons"]')).toBeVisible();
+  await openRail(page, 'eternity');
+  const et = page.locator('[data-panel="eternity"]');
+  await et.locator('[data-et="et.forge"]').click();
+  expect(await page.evaluate(() => (window as unknown as Sf17).sf.game.state.eternity.upgrades)).toEqual(['et.forge']);
+  await et.locator('[data-et-auto="stardust"]').click();
+  expect(await page.evaluate(() => (window as unknown as Sf17).sf.game.state.eternity.auto.stardust?.on)).toBe(false);
+  expect(errors).toEqual([]);
+});
+
+test('the Echo boards: tap the echo star, buy an echo engine; and the soundtrack can be changed in Settings', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { sf } = window as unknown as Sf17;
+    sf.game.state.stats.crunchesAll = 1;
+  });
+  await openRail(page, 'echoes');
+  const echo = page.locator('[data-panel="echoes"]');
+  for (let i = 0; i < 12; i++) {
+    await echo.getByTestId('echo-star').click();
+    await page.waitForTimeout(60);
+  }
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf17).sf.game.state.currencies.echoDust?.toNumber() ?? 0)).toBeGreaterThanOrEqual(10);
+  await echo.locator('[data-echo="echo.mote"] button').click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf17).sf.game.state.echoes.engines['echo.mote'] ?? 0)).toBeGreaterThan(0);
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => [...document.querySelectorAll<HTMLButtonElement>('.settings-btn')].find((b) => b.offsetParent !== null)?.click());
+  const settings = page.locator('[data-panel="settings"]');
+  await expect(settings).toHaveClass(/open/);
+  await settings.locator('[data-soundtrack="deepvoid"]').click();
+  expect(await page.evaluate(() => (window as unknown as Sf17).sf.game.state.settings.soundtrack)).toBe('deepvoid');
+  expect(errors).toEqual([]);
+});

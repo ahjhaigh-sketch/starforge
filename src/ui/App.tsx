@@ -36,6 +36,7 @@ import { ChallengeHud, LeviathansPanel, ScaleTreePanel, SpirePanel, TrialsPanel 
 import { MirrorPanel, WormholesPanel } from './screens/MirrorPanels';
 import { GalacticConfirmPanel, GalacticPanel, GalacticTreePanel, GalaxyMapPanel, ObservatoryPanel, StarChartPanel } from './screens/GalacticPanels';
 import { ColoniesPanel, MegastructuresPanel, TerraformPanel } from './screens/GalaxyBuildPanels';
+import { BigCrunchPanel, CrunchConfirmPanel, EchoesPanel, EternityPanel } from './screens/CrunchPanels';
 import { useUi } from './store';
 
 /** Shown while time away is being simulated; fades in only if that takes a moment. */
@@ -136,6 +137,10 @@ export function App() {
       <MegastructuresPanel />
       <ColoniesPanel />
       <TerraformPanel />
+      <BigCrunchPanel />
+      <CrunchConfirmPanel />
+      <EternityPanel />
+      <EchoesPanel />
       <SettingsPanel />
       <PanelHost />
       <ToastHost />

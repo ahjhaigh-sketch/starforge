@@ -3,7 +3,8 @@ import type { Decimal } from './decimal';
 /** Everything the engine announces. UI, audio and the renderer listen; systems never call them directly. */
 export type GameEvent =
   | { t: 'tap'; amount: Decimal; crit: boolean; x?: number; y?: number }
-  | { t: 'purchase'; kind: string; id: string; amount: number }
+  /** `auto`: made by automation (auto-buyers, Eternity), which buys quietly. */
+  | { t: 'purchase'; kind: string; id: string; amount: number; auto?: boolean }
   | { t: 'tierUp'; tier: number }
   | { t: 'reset'; layer: string; gain: Decimal }
   | { t: 'unlock'; feature: string }
@@ -44,7 +45,20 @@ class EventBus {
     return () => this.listeners.delete(fn);
   }
 
+  private automation = 0;
+
+  /** Runs automation: every purchase announced inside is marked `auto`. */
+  automated(fn: () => void): void {
+    this.automation++;
+    try {
+      fn();
+    } finally {
+      this.automation--;
+    }
+  }
+
   emit(e: GameEvent): void {
+    if (this.automation > 0 && e.t === 'purchase') e = { ...e, auto: true };
     for (const fn of this.listeners) {
       try {
         fn(e);

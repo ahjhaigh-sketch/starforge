@@ -119,6 +119,12 @@ export const MEDALS: readonly MedalDef[] = [
   { id: 'planet.1', name: "Green Thumb", desc: "Finish terraforming a planet.", icon: 'terraform', req: { kind: 'count', stat: 'planetsFinished', count: 1, noun: 'planet' } },
   { id: 'wormhole.1', name: "Shortcut", desc: "Open a wormhole.", icon: 'wormhole', req: { kind: 'count', stat: 'wormholesOpened', count: 1, noun: 'wormhole' } },
   { id: 'nursery.25', name: "Stellar Gardener", desc: "Grow all 25 star species.", icon: 'nursery', req: { kind: 'count', stat: 'speciesGrown', count: 25, noun: 'species' } },
+  // Phase 17: the Big Crunch, Eternity and the Echo boards
+  { id: 'crunch.1', name: "Heat Death, Reversed", desc: "Go Big Crunch.", icon: 'crunch', req: { kind: 'count', stat: 'crunchesAll', count: 1, noun: 'Big Crunch' } },
+  { id: 'crunch.10', name: "Cosmic Accordion", desc: "Go Big Crunch 10 times.", icon: 'crunch', req: { kind: 'count', stat: 'crunchesAll', count: 10, noun: 'Big Crunch' } },
+  { id: 'eternity.all', name: "Forever and a Day", desc: "Buy every Eternity upgrade.", icon: 'eternity', req: { kind: 'count', stat: 'eternityUpgrades', count: 10, noun: 'Eternity upgrade' } },
+  { id: 'echo.nova', name: "Ringing in the Ears", desc: "Go Echo Supernova.", icon: 'echo', req: { kind: 'count', stat: 'echoNovas', count: 1, noun: 'Echo Supernova' } },
+  { id: 'echo.nebula', name: "Reverb", desc: "Go Echo Nebula.", icon: 'echo', req: { kind: 'count', stat: 'echoNebulas', count: 1, noun: 'Echo Nebula' } },
   // Phase 7: Comet Fusion, Attunements, the Merchant and starships
   { id: 'fusion.5', name: "Comet Smith", desc: "Fuse a level 5 comet.", icon: 'comet', req: { kind: 'count', stat: 'fusionBest', count: 5, noun: 'fusion level' } },
   { id: 'fusion.10', name: "Starfall Forge", desc: "Fuse a level 10 comet.", icon: 'comet', req: { kind: 'count', stat: 'fusionBest', count: 10, noun: 'fusion level' } },

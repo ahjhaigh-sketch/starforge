@@ -1,6 +1,7 @@
 import { useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { commands } from '../../app/commands';
 import { mirrorReport, previewGain, wormholeReport } from '../../app/mirrorReports';
+import { boughtFx } from '../kit/boughtFx';
 import { BuyAmountControl } from '../kit/BuyAmountControl';
 import { Button, cx, tint } from '../kit/Chunk';
 import { Icon } from '../kit/Icon';
@@ -77,7 +78,7 @@ export function MirrorPanel() {
                         Price {e.ratio} a purchase, {e.nextStep}
                       </span>
                     </div>
-                    <Button size="sm" color={e.can ? 'var(--lime)' : '#5A5F8F'} disabled={!e.can} onClick={() => commands.buyAmEngine(e.id)} aria-label={`Buy ${e.count} ${e.name} for ${e.cost} Antimatter`}>
+                    <Button size="sm" color={e.can ? 'var(--lime)' : '#5A5F8F'} disabled={!e.can} onClick={(ev) => commands.buyAmEngine(e.id) && boughtFx(ev.currentTarget.closest('.am-row'))} aria-label={`Buy ${e.count} ${e.name} for ${e.cost} Antimatter`}>
                       x{e.count} · {e.cost}
                     </Button>
                   </div>

@@ -88,7 +88,7 @@ export const SHRINES: readonly ShrineDef[] = [
   { id: 'wyrm', name: 'Wyrm Shrine', currency: 'embers', currencyName: 'Embers', price: 1000, color: '#2E9C78', req: { kind: 'count', stat: 'wyrmsHatched', count: 1, noun: 'Void Wyrm hatched' } },
   { id: 'void', name: 'Void Shrine', currency: 'darkMatter', currencyName: 'Dark Matter', price: 1, color: '#3A2470', req: { kind: 'count', stat: 'singularitiesAll', count: 1, noun: 'Singularity' } },
   { id: 'galactic', name: 'Galactic Shrine', currency: 'galaxyCores', currencyName: 'Galaxy Cores', price: 1, color: '#4C3BC4', req: { kind: 'count', stat: 'galacticsAll', count: 1, noun: 'Galactic Rebirth' } },
-  { id: 'eternal', name: 'Eternal Shrine', currency: 'chronons', currencyName: 'Chronons', price: 1, color: '#E8E0FF', req: { kind: 'count', stat: 'crunchesAll', count: 1, noun: 'Big Crunch' } },
+  { id: 'eternal', name: 'Eternal Shrine', currency: 'chronons', currencyName: 'Chronons', price: 1e-6, color: '#E8E0FF', req: { kind: 'count', stat: 'crunchesAll', count: 1, noun: 'Big Crunch' } },
 ];
 
 export const SHRINE_BY_ID: ReadonlyMap<string, ShrineDef> = new Map(SHRINES.map((x) => [x.id, x]));

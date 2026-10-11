@@ -73,6 +73,10 @@ export const SYSTEMS: readonly SystemDef[] = [
   { id: 'colonies', name: 'Colonies', icon: 'colony', color: '#2B7FD0', rail: 'right', req: { kind: 'count', stat: 'galacticsAll', count: 2, noun: 'Galactic Rebirth' }, panel: 'colonies', built: true, blurb: 'Settle planets: people grow, build, trade and research.' },
   { id: 'terraform', name: 'Terraform', icon: 'terraform', color: '#3E9E2A', rail: 'right', req: { kind: 'count', stat: 'coloniesFounded', count: 1, noun: 'colony' }, panel: 'terraform', built: true, blurb: 'Lay out biomes on a hex planet; a finished planet is a multiplier for good.' },
   { id: 'starchart', name: 'Star Chart', icon: 'telescope', color: '#7B3FD6', rail: 'right', req: { kind: 'count', stat: 'galacticsAll', count: 1, noun: 'Galactic Rebirth' }, panel: 'starchart', built: true, blurb: 'Spend Star Charts from the Observatory on a small tree.' },
+  { id: 'bigcrunch', name: 'Big Crunch', icon: 'crunch', color: '#C2561A', rail: 'right', req: { kind: 'count', stat: 'galacticsAll', count: 7, noun: 'Galactic Rebirth' }, panel: 'bigcrunch', built: true, blurb: 'The fifth reset: explore 7 galaxies, then collapse the universe for Chronons.' },
+  { id: 'eternity', name: 'Eternity', icon: 'eternity', color: '#B85A1A', rail: 'right', req: { kind: 'count', stat: 'crunchesAll', count: 1, noun: 'Big Crunch' }, panel: 'eternity', built: true, blurb: 'Spend Chronons on upgrades that run whole layers for you.' },
+  { id: 'echoes', name: 'Echo Boards', icon: 'echo', color: '#B08A1A', rail: 'right', req: { kind: 'count', stat: 'crunchesAll', count: 1, noun: 'Big Crunch' }, panel: 'echoes', built: true, blurb: 'The first three layers replayed small; their echoes boost the real game.' },
+  { id: 'multiverse', name: 'Multiverse', icon: 'multiverse', color: '#7B3FD6', rail: 'right', req: { kind: 'count', stat: 'crunchesAll', count: 10, noun: 'Big Crunch' }, built: false, blurb: 'The sixth reset: Sparks, a Universe Forge and Omni Constants.' },
 ];
 
 export const SYSTEM_BY_ID: ReadonlyMap<string, SystemDef> = new Map(SYSTEMS.map((x) => [x.id, x]));

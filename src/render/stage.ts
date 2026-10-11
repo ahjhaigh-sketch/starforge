@@ -3,6 +3,7 @@ import { onFrame } from '../app/clock';
 import { snapshotStore } from '../app/uiSnapshot';
 import { TIERS } from '../content/tiers';
 import { events } from '../engine/events';
+import { isEchoLayer, layer } from '../engine/layers';
 import { burst, initParticles, setParticlesEnabled, updateParticles } from './particles';
 import { OrbitalsView } from './orbitals';
 import { StarCore } from './star';
@@ -108,15 +109,21 @@ export async function initRender(): Promise<boolean> {
 
   events.on((e) => {
     if (e.t === 'reset' && star) {
-      const r = anchorRect();
+      if (isEchoLayer(e.layer)) return;
       star.collapse();
-      star.flashWhite(1 * flashScale);
-      if (r) {
+      // 140 particles in the layer's colour (and white); the Big Crunch bursts as the universe comes back
+      const color = colorNum(layer(e.layer)?.color ?? '#FF4FC1');
+      const blast = () => {
+        const r = anchorRect();
+        star?.flashWhite(1 * flashScale);
+        if (!r) return;
         const cx = r.left + r.width / 2;
         const cy = r.top + r.height / 2;
-        burst(cx, cy, 80, 0xff4fc1, r.width * 0.6, 16);
-        burst(cx, cy, 60, 0xff7a2e, r.width * 0.45, 14);
-      }
+        burst(cx, cy, 80, color, r.width * 0.6, 16);
+        burst(cx, cy, 60, 0xffffff, r.width * 0.45, 14);
+      };
+      if (e.layer === 'crunch') window.setTimeout(blast, 1150);
+      else blast();
       return;
     }
     if (e.t !== 'tierUp' || !star) return;

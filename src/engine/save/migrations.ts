@@ -85,6 +85,9 @@ const migrations: Record<number, (d: PlainSave) => void> = {
   16: () => {},
   // 17 (Phase 16): megastructures, colonies (with terraforming) and research. New fields with defaults; nothing moves.
   17: () => {},
+  // 18 (Phase 17): the Big Crunch (Eternity upgrades and automation, the Echo boards) and the soundtrack setting. New
+  // fields with defaults; nothing moves.
+  18: () => {},
 };
 
 export function migrate(version: number, data: PlainSave): PlainSave {

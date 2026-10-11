@@ -1,3 +1,4 @@
+import { BALANCE } from '../../content/balance';
 import { MEGA_BY_ID, MEGASTRUCTURES, type MegastructureDef } from '../../content/galaxyBuild';
 import { D, type Decimal } from '../decimal';
 import { events } from '../events';
@@ -42,7 +43,8 @@ export function buildStage(s: GameState, id: string): boolean {
   return true;
 }
 
-export const rewardPower = (s: GameState) => stat(s, 'megaRewardPower').toNumber();
+/** Lattice raises every reward to a power, up to x2 (like Reactor strength: it must not compound with itself). */
+export const rewardPower = (s: GameState) => Math.min(BALANCE.galaxyBuild.megaPowerCap, stat(s, 'megaRewardPower').toNumber());
 
 /** A structure's reward with the stages built. */
 export function megaReward(s: GameState, m: MegastructureDef): Decimal {

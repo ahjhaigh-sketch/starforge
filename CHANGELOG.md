@@ -1,5 +1,39 @@
 # Changelog
 
+## Phase 17: the Big Crunch, Eternity, the Echo boards, music and a polish pass
+- The Big Crunch is the fifth reset. It needs 7 galaxies explored in the Crunch run, and two more for each Big Crunch already in this universe (up to all 20). With 7 every time, Eternity's automation and everything a Crunch keeps made the simulator's later Crunches minutes apart; with the step, the tenth comes at about 3 times the first (26 hours against 8.5), and the whole Galaxy Map gets used.
+  - It gives floor((log10(GC / 10) + 1)^1.5) x Chronon gain, GC = Galaxy Cores gained this Crunch run. The plan divided by 1e6, which gives nothing: the simulator's first Crunch run gathers about 750 Cores (4 Chronons).
+  - Lifetime Chronons multiply Galaxy Cores by (1 + Chronons)^0.5.
+  - It resets the Galactic layer and everything below: Galaxy Cores, explored galaxies, the Galactic Tree and Galactic Constants (until milestones keep them). Megastructures, colonies, the Stardust Chart, Trials, the Spire, the Leviathans, wormholes and every collection stay. The Observatory draws a new sky.
+  - Milestones: 1 keeps the Galactic milestones; 2 makes echo resets automatic; 3 keeps the Galactic Tree; 5 keeps Galactic Constants; 8 the Multiverse stirs; 10 a Galactic Rebirth resets nothing (1/50 of its gain trickles in).
+  - The collapse cinematic: everything falls into a point, a white flash, then the universe bursts back out. Reduced motion shows a fade instead.
+- The Echo boards replay the first three layers small. Five echo engines (on the shared engine kit) make Echo Dust; Echo Supernova trades the board for Echo Shards at 1e6 Echo Dust; Echo Nebula trades the shards for Echo Essence at 100 Echo Shards. Both go through the one reset function. Inside the boards, lifetime Echo Shards and Essence multiply echo output on a log scale; outside, lifetime echoes boost Stardust, shards, Essence and Chronons.
+- Eternity: ten upgrades bought with Chronons (54 in all).
+  - Five each automate a whole layer: Stardust (every auto-buyer from the start of a run, Stellar Constants), Supernova, Nebula, Singularity and Galactic (each layer's reset, tree, constants and side systems: shrines, the Black Hole, the Reactor, the Mirror, megastructures, colony buildings and research).
+  - Each automated layer has a switch and a rule: reset when the gain at least doubles this run's total, or at a number you set. Automation never cuts an unfinished Trial short, waits until the galaxy you're in is explored, never auto-rolls the Eternal Shrine, and spends at most a tenth of a currency on anything that repeats for ever.
+  - The rest are boosts: Chronons x2, echo output x10, the game 25% faster, Galaxy Cores x2, and False Dawn (every Crunch run starts with three galaxies explored).
+  - Eternal Constants: Entropy (more Chronons) and Recursion (echo output).
+- Music: a soundtrack synthesised live in WebAudio, with a pad from the start and one instrument for each layer reached (arpeggio, bass, percussion, bells, choir). Three soundtracks (Starlight, Deep Void, Nebula) or off, a music volume in Settings, paused while the tab is hidden.
+- The polish pass (every change is listed in POLISH.md):
+  - Each reset flashes, rings and bursts in its own layer's colour, with its own sound.
+  - A purchase punches its row and flashes the price green; an unlock breaks the rail button's padlock; the rune roll card spins a reel for about a second before landing.
+  - New sounds for runes, auras, hatching, cards, Black Hole stages, shrine stars, smelting, mutations and big news.
+  - Automated purchases no longer chime several times a second.
+  - Text says "2 Singularities", "5 galaxies" and "3 Big Crunches" (it said "Singularitys"); the welcome-back report names layers properly.
+  - Constants bought with Dark Matter, Galaxy Cores or Chronons show their own currency's icon (they showed Stardust).
+  - Late in the game the right-hand system grid scrolls instead of squeezing the engine shop.
+  - Reset bars of layers Eternity runs shrink to a slim "AUTO" strip.
+- Fixed: from Singularity milestone 10 ("a Nebula resets nothing"), an auto-Nebula paid its full gain every tick, because the run's shards never started over. A Nebula, a Singularity and a Galactic Rebirth now always start their gain's run total over, as the Supernova already did.
+- Fixed, found by the simulator's long runs:
+  - The first Echo boards fed themselves: shards and Essence multiplied echo output by their full amount, so each cycle's output grew with the last cycle's dust and reached e235,000 in minutes (and through the real-game boosts, everything else). Their boosts inside the boards are now log-scale.
+  - Starships delivered trips one at a time, up to 1,000 a tick. Late in the game a trip lasts a fraction of a tick, so ships did tens of thousands of deliveries a second and dropped the rest. Every trip that ends in a tick now pays at once, with rare finds as one draw (like the runes), so a million trips cost the same as one.
+  - Max buying corrected its estimate one purchase at a time, which could take millions of steps at enormous numbers. It now searches in halves: at most about 50 checks.
+  - The Void and Galactic rune shrines cost the currency they boost, and a levelled shrine multiplies by e29: Galaxy Cores reached e78 in one Crunch run. In the late shrines, Dark Matter, Galaxy Core and Chronon multipliers are now damped (at most about x800, x28 and x4).
+  - Expansion, Arms and Lattice raise multipliers to a power, and are bought with the currency those multipliers grow, so the exponent itself compounded (e213 Galaxy Cores). Like Reactor strength, they now stop at x3, x2 and x2.
+- Also: the Chronons pill, the Big Crunch bar, three panels and a confirm screen, five icons, 5 medals, rails and the Ascent map (with the Multiverse teaser).
+- The simulator plays the Big Crunch (SIM_CRUNCHES), buys Eternity and plays the Echo boards.
+- Save version 18, with a migration test that loads a real version 17 save.
+
 ## Phase 16: Megastructures, Colonies and Terraforming
 - Six megastructures of five stages: Dyson Swarm, Ringworld, Matrioshka Brain, Star Lifter, Stellar Engine and Birch Planet.
   - They open from 1 to 5 Galactic Rebirths.

@@ -47,6 +47,7 @@ export const CONSTANT_SETS: readonly ConstantSetDef[] = [
   { id: 'nebula', name: 'Nebula Constants', layer: 'nebula', req: { kind: 'count', stat: 'nebulasAll', count: 1, noun: 'Nebula' } },
   { id: 'void', name: 'Void Constants', layer: 'singularity', req: { kind: 'count', stat: 'singularitiesAll', count: 1, noun: 'Singularity' } },
   { id: 'galactic', name: 'Galactic Constants', layer: 'galactic', req: { kind: 'count', stat: 'galacticsAll', count: 1, noun: 'Galactic Rebirth' } },
+  { id: 'eternal', name: 'Eternal Constants', layer: 'crunch', req: { kind: 'count', stat: 'crunchesAll', count: 1, noun: 'Big Crunch' } },
 ];
 
 export const CONSTANTS: readonly ConstantDef[] = [
@@ -225,7 +226,7 @@ export const CONSTANTS: readonly ConstantDef[] = [
     base: 3,
     growth: BALANCE.constants.expansion,
     effects: [{ stat: 'galaxyRewardPower', a: BALANCE.galactic.expansionPer, doubles: false, what: 'Cleared galaxy rewards' }],
-    desc: "Every cleared galaxy's reward grows stronger.",
+    desc: "Every cleared galaxy's reward grows stronger, up to three times as strong.",
   },
   {
     id: 'gal.arms',
@@ -237,7 +238,7 @@ export const CONSTANTS: readonly ConstantDef[] = [
     base: 5,
     growth: BALANCE.constants.arms,
     effects: [{ stat: 'galacticTreePower', a: BALANCE.galactic.armsPer, doubles: false, what: 'Galactic Tree multipliers' }],
-    desc: "The Galactic Tree's multipliers grow stronger.",
+    desc: "The Galactic Tree's multipliers grow stronger, up to twice as strong.",
   },
   {
     id: 'gal.halo',
@@ -261,7 +262,32 @@ export const CONSTANTS: readonly ConstantDef[] = [
     base: 12,
     growth: BALANCE.constants.lattice,
     effects: [{ stat: 'megaRewardPower', a: BALANCE.galaxyBuild.latticePer, doubles: false, what: 'Megastructure rewards' }],
-    desc: 'Every megastructure stage gives more.',
+    desc: 'Every megastructure stage gives more, up to twice as much.',
+  },
+  // Eternal Constants: bought with Chronons, kept through every Big Crunch.
+  {
+    id: 'et.entropy',
+    set: 'eternal',
+    name: 'Entropy',
+    icon: 'chronon',
+    color: '#FF8A3D',
+    currency: 'chronons',
+    base: 2,
+    growth: BALANCE.constants.entropy,
+    effects: [{ stat: 'chrononGain', a: 0.1, doubles: false, what: 'Chronons' }],
+    desc: 'More Chronons from every Big Crunch.',
+  },
+  {
+    id: 'et.recursion',
+    set: 'eternal',
+    name: 'Recursion',
+    icon: 'echo',
+    color: '#FFC83D',
+    currency: 'chronons',
+    base: 1,
+    growth: BALANCE.constants.recursion,
+    effects: [{ stat: 'echoMult', a: 0.25, doubles: true, what: 'Echo board output' }],
+    desc: 'The Echo boards make more.',
   },
 ];
 

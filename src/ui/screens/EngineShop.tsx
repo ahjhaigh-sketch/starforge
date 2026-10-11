@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { commands } from '../../app/commands';
 import { type EngineRow as Row, type UpgradeTile as Tile, useSnap } from '../../app/uiSnapshot';
+import { boughtFx } from '../kit/boughtFx';
 import { BuyAmountControl } from '../kit/BuyAmountControl';
 import { cx, tint } from '../kit/Chunk';
 import { tipProps } from '../kit/FloatTip';
@@ -14,7 +15,7 @@ const EngineRow = memo(function EngineRow({ row }: { row: Row }) {
       type="button"
       className={cx('eng chunk pop', row.can ? 'can' : 'cant')}
       style={tint('#4A3BA8')}
-      onClick={() => commands.buyEngine(row.id)}
+      onClick={(e) => commands.buyEngine(row.id) && boughtFx(e.currentTarget)}
       aria-label={`${row.name}: buy ${row.count || 'x1'} for ${row.cost} Stardust. You own ${row.owned}.`}
       data-engine={row.id}
       {...tipProps(`eng-${row.id}`, 'left', row.name, (

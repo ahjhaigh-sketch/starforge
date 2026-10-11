@@ -3,6 +3,7 @@ import { type BackupMeta, listBackups } from '../../app/backups';
 import { commands } from '../../app/commands';
 import { previewImport } from '../../app/reports';
 import { useSnap } from '../../app/uiSnapshot';
+import { SOUNDTRACKS } from '../../audio/music';
 import type { Notation, Settings } from '../../engine/state';
 import { Button } from '../kit/Chunk';
 import { Panel } from '../kit/Panel';
@@ -105,6 +106,8 @@ export function SettingsPanel() {
   const muted = useSnap((s) => s.muted);
   const volumeMaster = useSnap((s) => s.volumeMaster);
   const volumeSfx = useSnap((s) => s.volumeSfx);
+  const volumeMusic = useSnap((s) => s.volumeMusic);
+  const soundtrack = useSnap((s) => s.soundtrack);
   const autosave = useSnap((s) => s.autosaveSeconds);
   const confirmResets = useSnap((s) => s.confirmResets);
   const showToasts = useSnap((s) => s.showToasts);
@@ -185,6 +188,18 @@ export function SettingsPanel() {
           </Toggle>
           <Slider label="Master" value={volumeMaster} onChange={(v) => commands.setSetting('volumeMaster', v)} />
           <Slider label="Effects" value={volumeSfx} onChange={(v) => commands.setSetting('volumeSfx', v)} />
+          <Slider label="Music" value={volumeMusic} onChange={(v) => commands.setSetting('volumeMusic', v)} />
+        </div>
+      </div>
+      <div className="set-row">
+        <span className="lbl">Music</span>
+        <div className="set-ctl">
+          {[...SOUNDTRACKS.map((t) => ({ v: t.id, label: t.name })), { v: 'off', label: 'Off' }].map((t) => (
+            <Button key={t.v} size="sm" gloss={false} color={soundtrack === t.v ? 'var(--cyan)' : '#5A5F8F'} onClick={() => commands.setSetting('soundtrack', t.v)} aria-pressed={soundtrack === t.v} data-soundtrack={t.v}>
+              {t.label}
+            </Button>
+          ))}
+          <small className="set-note">Each layer you reach adds an instrument.</small>
         </div>
       </div>
       <div className="set-row">

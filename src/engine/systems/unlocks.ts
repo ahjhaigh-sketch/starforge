@@ -7,6 +7,7 @@ import { events } from '../events';
 import { cur, type GameState } from '../state';
 import { stat } from '../stats';
 import { every, registerSystem } from '../tick';
+import { plural } from '../words';
 
 /** Amounts that span many orders of magnitude fill their ring on a log scale. */
 function logShare(have: number, need: number): number {
@@ -63,7 +64,7 @@ export function reqText(req: Requirement, fmt: (n: number) => string = big): str
       return req.count === 1 ? `Own a ${name.replace(/s$/, '')}` : `Own ${fmt(req.count)} ${name}`;
     }
     case 'count':
-      return `${fmt(req.count)} ${req.noun}${req.count === 1 ? '' : 's'}`;
+      return `${fmt(req.count)} ${plural(req.noun, req.count)}`;
     case 'total':
       return `Gather ${fmt(req.amount)} ${req.currency === 'stardust' ? 'Stardust' : req.currency} in total`;
     case 'rate':

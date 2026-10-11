@@ -80,7 +80,7 @@ canvas.sky { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; p
 
 /* ---------- engine shop ---------- */
 .side { grid-area: side; min-height: 0; display: flex; flex-direction: column; gap: 0.75rem; }
-.store { flex: 1; min-height: 0; border-radius: var(--r-panel); display: flex; flex-direction: column; gap: 0.55rem; padding: 0.9rem 0.8rem 0.7rem; border-width: 4px; }
+.store { flex: 1 1 auto; min-height: 14rem; border-radius: var(--r-panel); display: flex; flex-direction: column; gap: 0.55rem; padding: 0.9rem 0.8rem 0.7rem; border-width: 4px; }
 .store-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
 .store-head h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1.8rem; letter-spacing: 0.04em; }
 .store .drawer-close { display: none; }
@@ -143,9 +143,10 @@ canvas.sky { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; p
   50% { box-shadow: 0 4px 0 color-mix(in oklab, var(--c) 35%, black), 0 0 24px 6px rgba(125, 255, 90, 0.55); }
 }
 .rail .settings-btn { margin-top: auto; width: 4.2rem; }
-.teasers { flex: none; }
+/* late in the game the right rail holds 40+ systems: the grid scrolls so the engine shop keeps its room */
+.teasers { flex: 0 1 auto; min-height: 0; max-height: 46%; display: flex; flex-direction: column; }
 .teasers-head { font-family: var(--font-display); font-size: 1.05rem; letter-spacing: 0.04em; margin: 0 0 0.45rem 0.3rem; }
-.teasers-grid { display: flex; flex-wrap: wrap; gap: 0.75rem 0.7rem; padding: 0.5rem 0.4rem 0.2rem; }
+.teasers-grid { display: flex; flex-wrap: wrap; gap: 0.75rem 0.7rem; padding: 0.5rem 0.4rem 0.2rem; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #6a5ad8 transparent; }
 
 /* ---------- floating tooltip (outside scrolling lists) ---------- */
 .float-tip {

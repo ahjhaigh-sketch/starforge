@@ -203,7 +203,9 @@ export function registerRunes(): void {
             const lvl = runeLevel(s, x.r);
             if (lvl > 0) v = v.mul(1 + x.a * lvl * res);
           }
-          return v;
+          // late currencies come in tens to billions: their multipliers are damped (see BALANCE.runes.smallStatPow)
+          const damp = op === 'mul' && (R.lateShrines as readonly string[]).includes(sh.id) ? R.smallStatPow[statId] : undefined;
+          return damp ? v.pow(damp) : v;
         },
         active: (s: GameState) => list.some((x) => copies(s, x.r.id).gt(0)),
       });

@@ -66,6 +66,9 @@ export function layer(id: string): LayerDef | undefined {
   return layers.get(id);
 }
 
+/** The Echo boards' resets (Phase 17): small layers inside the Big Crunch that the real game's hooks, toasts and effects ignore. */
+export const isEchoLayer = (id: string): boolean => id === 'echoNova' || id === 'echoNebula';
+
 export const resetsDone = (s: GameState, def: LayerDef): number => s.stats[def.counter] ?? 0;
 
 export function milestoneReached(s: GameState, layerId: string, milestoneId: string): boolean {

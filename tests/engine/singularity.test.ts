@@ -118,7 +118,11 @@ describe('the Singularity', () => {
     performReset(t, 'nebula');
     expect(t.novaTree).toEqual({ root: 1 });
     expect(t.stats.supernovas).toBe(30);
-    // 1/50 of the gain a second (measured from zero: next to 1e94 a trickle is lost to rounding)
+    // the run's shards still start over, so the same shards can't pay twice (an auto-Nebula every tick)
+    expect(t.totals.run.shards!.toNumber()).toBe(0);
+    expect(performReset(t, 'nebula')).toBeNull();
+    // 1/50 of the gain a second once shards come in again (measured from zero: next to 1e94 a trickle is lost to rounding)
+    t.totals.run.shards = D(1e9);
     t.currencies.essence = D(0);
     tick(t, 1);
     expect(cur(t, 'essence').toNumber()).toBeGreaterThan(0);

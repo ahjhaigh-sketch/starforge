@@ -1,7 +1,9 @@
 import { D, type Decimal } from './decimal';
 import { events, type GameEvent } from './events';
+import { layer } from './layers';
 import type { GameState } from './state';
 import { tick } from './tick';
+import { plural } from './words';
 
 export interface OfflineReport {
   secondsAway: number;
@@ -9,7 +11,7 @@ export interface OfflineReport {
   efficiency: number;
   capped: boolean;
   gains: Record<string, Decimal>;
-  /** Notable things automation did while away ("Went Supernova 3 times"). */
+  /** Notable things automation did while away ("3 Supernovas"). */
   notes: string[];
 }
 
@@ -65,8 +67,8 @@ function* elapsedSteps(s: GameState, opts: ElapsedOptions, report: OfflineReport
     const diff = v.sub(before[k] ?? D(0));
     if (diff.gt(0)) report.gains[k] = diff;
   }
-  for (const [layer, n] of Object.entries(resets)) {
-    report.notes.push(`Went ${layer} ${n} time${n === 1 ? '' : 's'}`);
+  for (const [id, n] of Object.entries(resets)) {
+    report.notes.push(`${n} ${plural(layer(id)?.name ?? id, n)}`);
   }
 }
 
