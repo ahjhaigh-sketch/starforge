@@ -22,6 +22,44 @@ function startSingularity(open: (id: string) => void): void {
   else commands.reset('singularity');
 }
 
+function startGalactic(open: (id: string) => void): void {
+  if (snapshotStore.getState().confirmResets) open('galacticConfirm');
+  else commands.reset('galactic');
+}
+
+function GalacticBar() {
+  const visible = useSnap((s) => s.galacticVisible);
+  const ready = useSnap((s) => s.galacticReady);
+  const gain = useSnap((s) => s.galacticGain);
+  const req = useSnap((s) => s.galacticReq);
+  const pct = useSnap((s) => s.galacticPct);
+  const open = useUi((s) => s.open);
+  if (!visible) return null;
+  return (
+    <button
+      type="button"
+      className={cx('nova nebula-bar singularity-bar galactic-bar chunk pop', ready ? 'ready' : 'locked')}
+      style={tint('#3F7A12')}
+      onClick={() => (ready ? startGalactic(open) : open('galactic'))}
+      aria-label={ready ? `Go Galactic for ${gain} Galaxy Cores` : `Galactic Rebirth. ${req}.`}
+      data-testid="galactic"
+    >
+      <span className="fill" style={{ width: `${pct}%` }} />
+      <span className="inner">
+        {!ready && <Icon name="lock" className="nova-lock" />}
+        <span className="title ol">GALACTIC</span>
+        {ready && (
+          <span className="gain ol">
+            {gain}
+            <Icon name="galaxy" />
+          </span>
+        )}
+        <span className="req ol-sm">{req}</span>
+      </span>
+    </button>
+  );
+}
+
 function SingularityBar() {
   const visible = useSnap((s) => s.singularityVisible);
   const ready = useSnap((s) => s.singularityReady);
@@ -149,6 +187,7 @@ export function BottomBar() {
       </button>
       <NebulaBar />
       <SingularityBar />
+      <GalacticBar />
     </div>
   );
 }

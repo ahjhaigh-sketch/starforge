@@ -65,6 +65,11 @@ export const SYSTEMS: readonly SystemDef[] = [
   { id: 'scaletree', name: 'Scale Tree', icon: 'scale', color: '#1A9DB8', rail: 'right', req: { kind: 'count', stat: 'leviathanKills', count: 1, noun: 'Leviathan kill' }, panel: 'scaletree', built: true, blurb: 'Spend Leviathan scales on a small tree of big boosts.' },
   { id: 'wormholes', name: 'Wormholes', icon: 'wormhole', color: '#5B45C2', rail: 'right', req: { kind: 'count', stat: 'singularitiesAll', count: 6, noun: 'Singularity' }, panel: 'wormholes', built: true, blurb: 'Link systems on a map so one feeds another.' },
   { id: 'mirror', name: 'Mirror', icon: 'antimatter', color: '#2A6F8F', rail: 'right', req: { kind: 'count', stat: 'singularitiesAll', count: 8, noun: 'Singularity' }, panel: 'mirror', built: true, blurb: 'An inverted Stardust layer with 10 Antimatter engines; its last upgrade is the key to the Galaxy.' },
+  { id: 'galactic', name: 'Galactic', icon: 'galaxy', color: '#3F7A12', rail: 'right', req: { kind: 'count', stat: 'mirrorKey', count: 1, noun: 'Mirror Key' }, panel: 'galactic', built: true, blurb: 'The fourth reset: trade the Singularity layer for Galaxy Cores.' },
+  { id: 'galaxymap', name: 'Galaxies', icon: 'galaxy', color: '#2B7FD0', rail: 'right', req: { kind: 'count', stat: 'mirrorKey', count: 1, noun: 'Mirror Key' }, panel: 'galaxymap', built: true, blurb: '20 galaxies, each with a rule, a goal and a reward for good.' },
+  { id: 'galactictree', name: 'Galactic Tree', icon: 'tree', color: '#3F7A12', rail: 'right', req: { kind: 'count', stat: 'galacticsAll', count: 1, noun: 'Galactic Rebirth' }, panel: 'galactictree', built: true, blurb: '200 nodes on five spiral arms, one per way to play.' },
+  { id: 'observatory', name: 'Observatory', icon: 'telescope', color: '#5B45C2', rail: 'right', req: { kind: 'count', stat: 'galacticsAll', count: 1, noun: 'Galactic Rebirth' }, panel: 'observatory', built: true, blurb: 'Draw constellations across a new sky each run.' },
+  { id: 'starchart', name: 'Star Chart', icon: 'telescope', color: '#7B3FD6', rail: 'right', req: { kind: 'count', stat: 'galacticsAll', count: 1, noun: 'Galactic Rebirth' }, panel: 'starchart', built: true, blurb: 'Spend Star Charts from the Observatory on a small tree.' },
 ];
 
 export const SYSTEM_BY_ID: ReadonlyMap<string, SystemDef> = new Map(SYSTEMS.map((x) => [x.id, x]));

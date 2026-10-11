@@ -20,7 +20,9 @@ import { snapshotStore } from './uiSnapshot';
  * that matters more (a new tier, an unlock).
  */
 const MEDAL_BATCH_MS = 400;
-const CURRENCY_NAMES: Record<string, string> = { shards: 'Nova Shards', essence: 'Nebula Essence' };
+const CURRENCY_NAMES: Record<string, string> = { shards: 'Nova Shards', essence: 'Nebula Essence', darkMatter: 'Dark Matter', galaxyCores: 'Galaxy Cores' };
+/** Each layer's toast wears its currency's icon. */
+const CURRENCY_ICONS: Record<string, string> = { shards: 'shard', essence: 'nebula', darkMatter: 'darkmatter', galaxyCores: 'galaxy' };
 
 export function installNotifications(): void {
   let medals: string[] = [];
@@ -94,7 +96,7 @@ export function installNotifications(): void {
     } else if (e.t === 'reset') {
       const def = layer(e.layer);
       if (!def) return;
-      events.emit({ t: 'toast', title: `${def.name}!`, body: `+${format(e.gain, snapshotStore.getState().notation)} ${CURRENCY_NAMES[def.currency] ?? def.currency}.`, icon: 'shard', priority: true });
+      events.emit({ t: 'toast', title: `${def.name}!`, body: `+${format(e.gain, snapshotStore.getState().notation)} ${CURRENCY_NAMES[def.currency] ?? def.currency}.`, icon: CURRENCY_ICONS[def.currency] ?? 'shard', priority: true });
       const done = resetsDone(game.state, def);
       const m = def.milestones.find((x) => x.at === done);
       if (m) events.emit({ t: 'toast', title: `Milestone: ${m.at} ${def.name}${m.at === 1 ? '' : 's'}`, body: `${m.text}.`, icon: 'trophy' });

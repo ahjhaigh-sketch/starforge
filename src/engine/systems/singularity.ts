@@ -62,6 +62,10 @@ export function nextDarkMatterAt(s: GameState): Decimal {
 
 export const nebulaFree = (s: GameState) => milestoneReached(s, 'singularity', 'nebulaFree');
 
+/** Galactic milestone 10: a Singularity resets nothing (its gain trickles in instead). */
+const singularityFree = (s: GameState) => milestoneReached(s, 'galactic', 'singularityFree');
+const FREE = 'Milestone: 10 Galactic Rebirths';
+
 export function registerSingularity(): void {
   defineStat({ id: 'massGain', label: 'Black Hole mass gain', base: () => D(1) });
   defineStat({ id: 'gameSpeed', label: 'Game speed', base: () => D(1) });
@@ -83,6 +87,7 @@ export function registerSingularity(): void {
       {
         id: 'nebulaLayer',
         label: 'Everything a Nebula resets, Nebula Essence and Nebula Constants',
+        keptBy: (s) => (singularityFree(s) ? FREE : null),
         reset: (s) => {
           for (const p of layer('nebula')?.parts ?? []) p.reset(s);
           for (const c of CONSTANTS) if (c.set === 'nebula') s.constants[c.id] = 0;
@@ -97,7 +102,7 @@ export function registerSingularity(): void {
         reset: (s) => {
           s.nebulaTree = {};
         },
-        keptBy: (s) => (milestoneReached(s, 'singularity', 'keepTree') ? 'Milestone: 3 Singularities' : null),
+        keptBy: (s) => (singularityFree(s) ? FREE : milestoneReached(s, 'singularity', 'keepTree') ? 'Milestone: 3 Singularities' : null),
       },
       {
         id: 'spectral',
@@ -105,11 +110,12 @@ export function registerSingularity(): void {
         reset: (s) => {
           s.spectral.energy = {};
         },
-        keptBy: (s) => (singularityTree.flag(s, 'keepSpectral') > 0 ? 'Colour Memory (Singularity Tree)' : null),
+        keptBy: (s) => (singularityFree(s) ? FREE : singularityTree.flag(s, 'keepSpectral') > 0 ? 'Colour Memory (Singularity Tree)' : null),
       },
       {
         id: 'nebulas',
         label: 'Your Nebula count (milestones are kept from the first Singularity)',
+        keptBy: (s) => (singularityFree(s) ? FREE : null),
         reset: (s) => {
           s.stats.nebulas = Math.min(9, Math.floor(singularityTree.flag(s, 'startNebulas')));
         },
@@ -123,6 +129,8 @@ export function registerSingularity(): void {
       'Relics, the Codex, the Belt and the Starforge',
       'The Event Horizon key, medals and everything you have unlocked',
     ],
+    // a Galactic Rebirth keeps Singularity milestones from the first one (Galactic milestone 1)
+    milestoneFloor: (s) => (milestoneReached(s, 'galactic', 'keepSingularity') ? (s.stats.singularitiesBest ?? 0) : 0),
     milestones: [
       { at: 1, id: 'keepNebula', text: 'Keep your Nebula milestones; the Black Hole wakes' },
       { at: 2, id: 'autoNebula', text: 'Auto-Nebula when its gain reaches a number you set' },

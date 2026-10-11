@@ -82,6 +82,7 @@ export function buyMirrorUpgrade(s: GameState, id: string): boolean {
   s.mirror.upgrades.push(id);
   s.stats.mirrorUpgrades = s.mirror.upgrades.length;
   invalidateStats();
+  if (id === 'mu.key') s.stats.mirrorKey = 1;
   if (id === 'mu.key') events.emit({ t: 'toast', title: 'The Mirror Key', body: 'The way to Galactic Rebirth is open.', icon: 'antimatter', priority: true });
   else events.emit({ t: 'purchase', kind: 'mirrorUpgrade', id, amount: 1 });
   return true;

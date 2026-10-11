@@ -17,6 +17,7 @@ import './ui/nebulaextras.css';
 import './ui/singularity.css';
 import './ui/challenges.css';
 import './ui/mirror.css';
+import './ui/galactic.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

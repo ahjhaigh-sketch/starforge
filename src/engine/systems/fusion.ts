@@ -33,7 +33,7 @@ export function fusionCurve(id: FusionUpgradeId): CostCurve {
   return c;
 }
 
-const fusionLimit = (id: FusionUpgradeId) => (id === 'size' ? F.maxSize - F.baseSize : id === 'start' ? F.maxStart : Infinity);
+const fusionLimit = (id: FusionUpgradeId) => (id === 'size' ? F.maxSize - F.baseSize : id === 'start' ? F.maxStart : id === 'speed' ? F.maxSpeed : Infinity);
 
 export function fusionPlan(s: GameState, id: FusionUpgradeId): PurchasePlan {
   return planLimited(fusionCurve(id), fusionLevel(s, id), cur(s, 'shards'), s.settings.buyAmount, s.settings.customBuyAmount, fusionLimit(id));

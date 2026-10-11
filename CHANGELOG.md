@@ -1,5 +1,37 @@
 # Changelog
 
+## Phase 15: Galactic Rebirth
+- Galactic Rebirth is the fourth reset. It needs all 8 Black Hole stages, the Mirror Key and 1e8 Dark Matter gained in the Galactic run.
+  - It gives floor((DM / 1e8)^0.5) x Galaxy Core gain. The plan's ^0.25 gave 3 to 6 Cores a run in the simulator, which bought 18 of the 200 tree nodes in four Galactic Rebirths.
+  - Lifetime Galaxy Cores multiply Dark Matter by (1 + GC)^0.3.
+  - It resets the Singularity layer: Dark Matter, the Singularity Tree, Void Constants, the Black Hole (with the Prism Wheel banks and the Reactor), the Antimatter Mirror (its key stays) and everything below.
+  - It keeps collections, Trials, the Spire, the Leviathans and the Wormhole Network.
+- Milestones:
+  - 1: keep the Singularity milestones;
+  - 2: auto-Singularity at a gain you set;
+  - 3: keep the Singularity Tree;
+  - 5: keep the Black Hole;
+  - 7: the Big Crunch stirs;
+  - 10: a Singularity resets nothing (1/50 of its gain trickles in).
+- 20 galaxies: Milky Way, Spiral, Elliptical, Ring, Dwarf, Quasar Host and fourteen more.
+  - Before each Galactic Rebirth, pick where you restart on the Galaxy Map, up to four galaxies beyond those you've explored.
+  - A galaxy's rule is only stat sources ("Galaxy: <name>" in every breakdown) and holds only while you're there.
+  - Its goal is an amount to reach there (Singularities, Dark Matter, anti-star collapses or Essence). Meeting it explores the galaxy, and its reward stays for good.
+  - The galaxy you're in tints the sky. The Index's Galaxies page is live.
+- The Galactic Tree: 200 nodes on five spiral arms (Active, Idle, Runes, Wyrms, Production), five capstones where neighbouring arms end, and four echoes with no cap. It runs on the shared tree engine and stays smooth at phone size.
+- Galactic Constants: Expansion (cleared galaxies' rewards grow stronger) and Arms (the Galactic Tree's multipliers grow stronger, through a new power hook in the tree engine).
+- The Observatory: each Galactic run rolls a new sky of 24 stars from a seed saved with the game, each with a mass, a temperature and a distance.
+  - Link stars into a constellation (8 links). Long links between heavy, near stars score most, and every closed shape adds 25%. The score depends only on which pairs are linked.
+  - Recording a better score on this sky pays the difference in Star Charts, which buy the 12-node Stardust Chart.
+- Long-run fixes the Galactic simulator found (it plays 7 Galactic Rebirths, almost 10 hours):
+  - Relic effects were plain numbers and overflowed to Infinity past about 3,000 levels, poisoning every stat after them. They are now Decimals.
+  - Merchant relic deals restock as you buy and cost almost nothing late on, so relics could be pushed to tens of thousands of levels. Relics now stop at 1,000 levels, and growth past level 300 is x1.02 a level instead of x1.25. Normal play reaches about 260 levels by the Nebula era and is unchanged.
+  - Comet Fusion's speed upgrade stops at 60 levels: past that, 1.12^level overflowed and spawning would have divided by zero.
+  - Reset toasts name Dark Matter and Galaxy Cores properly (the Singularity's had shown "darkMatter").
+- Also: a Galactic reset bar, a Galaxy Cores pill, six panels (Galactic Rebirth, its confirm screen, the Galactic Tree, the Galaxy Map, the Observatory, the Stardust Chart), two icons, 3 medals and the Ascent map.
+- The simulator plays on through Galactic Rebirths with SIM_GALACTICS. It picks the first unexplored galaxy, stays until it's explored, spends Galaxy Cores, and draws a greedy constellation.
+- Save version 16, with a migration test that loads a real version 15 save.
+
 ## Phase 14: the Antimatter Mirror and the Wormhole Network
 - A shared engine kit (`src/engine/engineKit.ts`) now runs the Stardust layer's engines: prices in brackets with closed-form bulk cost and Max, the "???" reveal, buying, milestones, the per-second stat and the production tick. Stardust is its first user, with the same numbers as before (the simulator's results are identical).
 - The Antimatter Mirror appears at 8 Singularities (Singularity milestone 8). It is the same kit with different data, under inverted rules:

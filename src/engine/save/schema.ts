@@ -123,6 +123,12 @@ export const plainSaveSchema = z.looseObject({
     .looseObject({ engines: z.record(z.string(), z.number().int().min(0)), ever: z.record(z.string(), z.number().int().min(0)), depth: z.number().int().min(0), upgrades: z.array(z.string()) })
     .optional(),
   wormholes: z.looseObject({ links: z.array(z.looseObject({ from: z.string(), to: z.string(), share: z.number().min(0).max(1) })) }).optional(),
+  galactic: z.looseObject({ galaxy: z.string(), next: z.string(), cleared: z.array(z.string()), autoAt: dec }).optional(),
+  galacticTree: z.record(z.string(), z.number().int().min(0)).optional(),
+  observatory: z
+    .looseObject({ seed: z.number().int().min(0), links: z.array(z.tuple([z.number().int().min(0), z.number().int().min(0)])), best: z.number().min(0) })
+    .optional(),
+  starChart: z.record(z.string(), z.number().int().min(0)).optional(),
   tarot: z
     .looseObject({
       owned: z.array(z.string()),

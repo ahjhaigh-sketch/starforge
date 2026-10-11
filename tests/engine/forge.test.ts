@@ -208,7 +208,7 @@ describe('relics', () => {
     buyRelic(s, 'anvil');
     expect(s.relics.levels.anvil).toBe(11);
     const def = RELICS.find((r) => r.id === 'anvil')!;
-    expect(relicEffect(def, 11)).toBeCloseTo(0.25 * 1.25 ** 10, 9);
+    expect(relicEffect(def, 11).toNumber()).toBeCloseTo(0.25 * 1.25 ** 10, 9);
   });
 
   it('show in stat breakdowns, but only while equipped', () => {

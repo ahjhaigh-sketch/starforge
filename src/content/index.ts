@@ -23,6 +23,8 @@ import { registerSpire } from '../engine/systems/spire';
 import { registerLeviathans } from '../engine/systems/leviathans';
 import { registerMirror } from '../engine/systems/mirror';
 import { registerWormholes } from '../engine/systems/wormholes';
+import { registerGalactic } from '../engine/systems/galactic';
+import { registerObservatory } from '../engine/systems/observatory';
 import { registerStarsmith } from '../engine/systems/starsmith';
 import { registerComets } from '../engine/systems/comets';
 import { registerNovaTree } from '../engine/systems/novaTree';
@@ -76,5 +78,7 @@ export function registerContent(): void {
   registerLeviathans();
   registerMirror();
   registerWormholes();
+  registerGalactic();
+  registerObservatory();
   registerUnlocks();
 }

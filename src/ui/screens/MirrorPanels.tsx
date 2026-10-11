@@ -38,7 +38,7 @@ export function MirrorPanel() {
       ) : (
         <>
           <div className="tree-head">
-            <p>The Stardust layer, mirrored. Its engines are your top ten in reverse; their milestones slow price growth instead of doubling output; each is boosted by its Stardust twin's Mastery; and the anti-star collapses down the tiers instead of evolving up, scrapping your Antimatter engines each time. A Singularity never resets it.</p>
+            <p>The Stardust layer, mirrored. Its engines are your top ten in reverse; their milestones slow price growth instead of doubling output; each is boosted by its Stardust twin's Mastery; and the anti-star collapses down the tiers instead of evolving up, scrapping your Antimatter engines each time. A Singularity never resets it; a Galactic Rebirth does, but the Mirror Key stays.</p>
             <Chip icon="antimatter" value={data.antimatter} />
           </div>
           <div className="mirror-cols">

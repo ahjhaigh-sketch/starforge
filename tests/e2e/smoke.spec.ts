@@ -1425,3 +1425,105 @@ test('the Wormhole Network: pick two systems, open a wormhole, and it shows in b
   expect(await has('essenceGain')).toBe(false);
   expect(errors).toEqual([]);
 });
+
+// ---------- Phase 15: Galactic Rebirth ----------
+
+type Sf15 = {
+  sf: {
+    game: {
+      state: {
+        stats: Record<string, number>;
+        blackHole: { mass: unknown };
+        mirror: { upgrades: string[] };
+        galactic: { galaxy: string; next: string };
+        galacticTree: Record<string, number>;
+        observatory: { links: Array<[number, number]> };
+        currencies: Record<string, { toNumber(): number; constructor: new (x: number) => unknown }>;
+      };
+    };
+    commands: { devAdd(c: string, n: number): void; devOwnGalacticTree(): void };
+  };
+};
+
+test('Galactic Rebirth: pick a galaxy, go Galactic through the confirm screen, and the new sky and pill appear', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { sf } = window as unknown as Sf15;
+    const s = sf.game.state;
+    s.stats.singularities = 14;
+    s.stats.singularitiesAll = 14;
+    s.stats.singularitiesBest = 14;
+    s.stats.mirrorKey = 1;
+    s.mirror.upgrades = ['mu.key'];
+    s.blackHole.mass = new s.currencies.stardust!.constructor(2e7);
+    sf.commands.devAdd('darkMatter', 1.6e9);
+  });
+  await openRail(page, 'galaxymap');
+  const map = page.locator('[data-panel="galaxymap"]');
+  await expect(map.locator('[data-galaxy]')).toHaveCount(20);
+  await map.getByTestId('galaxy-next-spiral').click();
+  expect(await page.evaluate(() => (window as unknown as Sf15).sf.game.state.galactic.next)).toBe('spiral');
+  await page.keyboard.press('Escape');
+  await page.getByTestId('galactic').click();
+  const confirm = page.locator('[data-panel="galacticConfirm"]');
+  await expect(confirm).toHaveClass(/open/);
+  await expect(confirm).toContainText('You will restart in Spiral');
+  await confirm.getByRole('button', { name: 'Go Galactic' }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf15).sf.game.state.stats.galacticsAll)).toBe(1);
+  expect(await page.evaluate(() => (window as unknown as Sf15).sf.game.state.galactic.galaxy)).toBe('spiral');
+  expect(await page.evaluate(() => (window as unknown as Sf15).sf.game.state.currencies.galaxyCores!.toNumber())).toBe(4);
+  await expect(page.locator('.hud .pill[aria-label="Galaxy Cores"]')).toBeVisible();
+  await expect(page.locator('.galaxy-tint')).toHaveCount(1);
+  expect(errors).toEqual([]);
+});
+
+test('the 200-node Galactic Tree stays smooth to pan, and the Observatory draws and records a constellation', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { sf } = window as unknown as Sf15;
+    const s = sf.game.state;
+    s.stats.galacticsAll = 1;
+    sf.commands.devOwnGalacticTree();
+  });
+  await openRail(page, 'galactictree');
+  const view = page.locator('[data-panel="galactictree"] .tree-view');
+  await expect(view).toBeVisible();
+  await expect(page.locator('[data-panel="galactictree"] [data-node]')).toHaveCount(200);
+  const box = (await view.boundingBox())!;
+  await page.evaluate(() => {
+    const w = window as unknown as { __frames: number[]; __on: boolean };
+    w.__frames = [];
+    w.__on = true;
+    let last = performance.now();
+    const loop = (t: number) => {
+      w.__frames.push(t - last);
+      last = t;
+      if (w.__on) requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  });
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  for (let i = 0; i < 20; i++) await page.mouse.move(box.x + box.width / 2 + i * 6, box.y + box.height / 2 + i * 3);
+  await page.mouse.up();
+  const avg = await page.evaluate(() => {
+    const w = window as unknown as { __frames: number[]; __on: boolean };
+    w.__on = false;
+    const f = w.__frames.slice(2);
+    return f.reduce((a, b) => a + b, 0) / Math.max(1, f.length);
+  });
+  expect(avg).toBeLessThan(50);
+  await page.keyboard.press('Escape');
+  // the Observatory: two stars make a link, and a record pays Star Charts
+  await openRail(page, 'observatory');
+  const obs = page.locator('[data-panel="observatory"]');
+  await expect(obs.locator('[data-star]')).toHaveCount(24);
+  await obs.locator('[data-star="0"]').click();
+  await obs.locator('[data-star="1"]').click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf15).sf.game.state.observatory.links.length)).toBe(1);
+  await obs.getByTestId('obs-record').click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf15).sf.game.state.currencies.starCharts?.toNumber() ?? 0)).toBeGreaterThan(0);
+  expect(errors).toEqual([]);
+});

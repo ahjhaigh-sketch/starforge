@@ -34,7 +34,7 @@ export const mythicalChance = (s: GameState) => M.mythicalChance + M.mythicalPer
 function kinds(s: GameState): DealKind[] {
   const k: DealKind[] = ['shards', 'ore', 'xp', 'frenzy'];
   if (forgeOpen(s)) k.push('alloy');
-  if (Object.keys(s.relics.levels).some((id) => relicLevel(s, id) > 0 && relicLevel(s, id) < (RELIC_BY_ID.get(id)?.maxLevel ?? Infinity))) k.push('relic');
+  if (Object.keys(s.relics.levels).some((id) => relicLevel(s, id) > 0 && relicLevel(s, id) < (RELIC_BY_ID.get(id)?.maxLevel ?? BALANCE.relics.maxLevel))) k.push('relic');
   if (Object.values(s.codex).some((n) => n > 0)) k.push('codex');
   return k;
 }
@@ -67,7 +67,7 @@ export function makeDeal(s: GameState): Deal {
       return { kind, quality, pay: { currency: 'ore', amount: atLeast(oreRate.mul(300).add(1000 * (1 + 2 * i)), 1000) }, get: { currency: g.alloy, amount: atLeast(perMinute.mul(10 * v / (1 + i)), 1) } };
     }
     case 'relic': {
-      const owned = Object.keys(s.relics.levels).filter((id) => relicLevel(s, id) > 0 && relicLevel(s, id) < (RELIC_BY_ID.get(id)?.maxLevel ?? Infinity));
+      const owned = Object.keys(s.relics.levels).filter((id) => relicLevel(s, id) > 0 && relicLevel(s, id) < (RELIC_BY_ID.get(id)?.maxLevel ?? BALANCE.relics.maxLevel));
       const id = owned[nextInt(r, 0, owned.length - 1)]!;
       const count = M.relicLevels[quality === 'mythical' ? 2 : quality === 'rare' ? 1 : 0]!;
       return { kind, quality, pay: { currency: 'shards', amount: atLeast(shardRate.mul(0.02), 5) }, get: { id, count } };

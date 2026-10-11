@@ -2,7 +2,7 @@ import { D, type Decimal } from './decimal';
 import { seedRng, type RngState } from './rng';
 
 /** Bump with every change to the save's shape, and add a migration + an old-save fixture test. */
-export const SAVE_VERSION = 15;
+export const SAVE_VERSION = 16;
 /** A new Fusion board is 3 x 3 (BALANCE.fusion.baseSize). */
 const BALANCE_FUSION_CELLS = 9;
 
@@ -166,6 +166,12 @@ export interface GameState {
   /** Phase 14: the Antimatter Mirror (its own engines, collapse depth and upgrades) and the Wormhole Network. */
   mirror: { engines: Record<string, number>; ever: Record<string, number>; depth: number; upgrades: string[] };
   wormholes: { links: Array<{ from: string; to: string; share: number }> };
+  /** Phase 15: the galaxy you are in, the one you will go to next, and those whose goal you met. */
+  galactic: { galaxy: string; next: string; cleared: string[]; autoAt: Decimal };
+  galacticTree: Record<string, number>;
+  /** The Observatory: this run's sky (a seed), the links drawn, and the best score recorded on it. */
+  observatory: { seed: number; links: Array<[number, number]>; best: number };
+  starChart: Record<string, number>;
   settings: Settings;
 }
 
@@ -272,6 +278,10 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     scaleTree: {},
     mirror: { engines: {}, ever: {}, depth: 0, upgrades: [] },
     wormholes: { links: [] },
+    galactic: { galaxy: 'milkyway', next: 'milkyway', cleared: [], autoAt: D(0) },
+    galacticTree: {},
+    observatory: { seed: (seed ^ 0x2545f491) >>> 0, links: [], best: 0 },
+    starChart: {},
     settings: defaultSettings(),
   };
 }

@@ -171,7 +171,7 @@ export function SingularityTreePanel() {
   return (
     <Panel id="singularitytree" title="Singularity Tree" color="#6E5CC4" size="wide">
       <div className="tree-head">
-        <p>Four rings round the accretion disk, each in four sectors: Mass (the Black Hole and game speed), Matter (Dark Matter and Essence), Fate (runes and Luck Root) and Memory (what a Singularity keeps). It is never reset.</p>
+        <p>Four rings round the accretion disk, each in four sectors: Mass (the Black Hole and game speed), Matter (Dark Matter and Essence), Fate (runes and Luck Root) and Memory (what a Singularity keeps). Only a Galactic Rebirth resets it, and from 3 Galactic Rebirths not even that.</p>
         {r && <DarkChip value={r.money} />}
       </div>
       {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={(id) => commands.buySingularityNode(id)} currencyLabel="Dark Matter" legend={NODE_LEGEND} />}

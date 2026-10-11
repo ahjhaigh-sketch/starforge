@@ -1,0 +1,54 @@
+/* =====================================================================
+   Phase 15: Galactic Rebirth, the Galaxy Map, the Observatory.
+   ===================================================================== */
+
+/* the galaxy you're in tints the sky behind everything */
+.galaxy-tint { position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 45%, transparent 20%, color-mix(in oklab, var(--c) 22%, transparent) 70%, color-mix(in oklab, var(--c) 32%, transparent)); }
+
+.galactic-bar .title { letter-spacing: 0.06em; }
+.gal-checks li { display: flex; align-items: center; gap: 0.35rem; }
+.gal-checks li .icon { width: 1.1rem; height: 1.1rem; }
+
+/* ---------- the Galaxy Map ---------- */
+.galaxy-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.55rem; }
+.galaxy-card { border-radius: 16px; --stroke: 2.5px; padding: 0.6rem 0.7rem; display: flex; flex-direction: column; gap: 0.35rem; color: #fff; text-shadow: var(--outline-sm);
+  background: radial-gradient(circle at 18% 22%, color-mix(in oklab, var(--c) 45%, transparent), transparent 55%), #1c1640; }
+.galaxy-card.here { box-shadow: 0 0 18px 2px color-mix(in oklab, var(--c) 55%, transparent); }
+.galaxy-card.locked { opacity: 0.55; }
+.galaxy-card .btn { align-self: flex-start; margin-top: auto; }
+.galaxy-top { display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; }
+.galaxy-top b { font-family: var(--font-display); font-weight: 400; font-size: 1.08rem; }
+/* a small spiral drawn with a conic gradient, turning slowly */
+.galaxy-swirl { width: 1.6rem; height: 1.6rem; border-radius: 50%; border: 2px solid var(--ink); flex: none;
+  background: radial-gradient(circle, #fff 0 12%, transparent 13%), conic-gradient(from 0deg, var(--c), transparent 30%, var(--c) 50%, transparent 80%, var(--c));
+  animation: swirl 9s linear infinite; }
+@keyframes swirl { to { transform: rotate(360deg); } }
+.reduced-motion .galaxy-swirl { animation: none; }
+.galaxy-top .tag { font-size: 0.66rem; font-weight: 800; padding: 0.05rem 0.4rem; border-radius: 6px; border: 2px solid var(--ink); background: var(--gold); color: var(--ink); text-shadow: none; }
+.galaxy-top .tag.next { background: var(--cyan); }
+.galaxy-top .tag.done { background: var(--lime); }
+.galaxy-rule { margin: 0; font-size: 0.8rem; font-weight: 700; }
+.galaxy-goal { margin: 0; font-size: 0.76rem; font-weight: 600; color: var(--text-dim); }
+.galaxy-goal b { color: var(--lime); }
+.galaxy-prog { font-size: 0.72rem; font-weight: 800; align-self: flex-end; }
+
+/* ---------- the Observatory ---------- */
+.obs-cols { display: grid; grid-template-columns: 1fr minmax(13rem, 16rem); gap: 0.8rem; align-items: start; }
+.obs-sky { width: 100%; border-radius: 16px; border: 3px solid var(--ink); user-select: none;
+  background: radial-gradient(ellipse at 30% 30%, #2a1f66, #0b0720 70%); box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.6); }
+.obs-star { cursor: pointer; outline: none; }
+.obs-star .glow { fill: var(--c); opacity: 0.18; }
+.obs-star .core { fill: var(--c); stroke: #140b2e; stroke-width: 2; transition: transform 120ms ease; }
+.obs-star:hover .core, .obs-star:focus-visible .core { transform: scale(1.35); }
+.obs-star:focus-visible .core { stroke: var(--cyan); stroke-width: 3; }
+.obs-star.sel .core { stroke: var(--gold); stroke-width: 4; transform: scale(1.4); }
+.obs-link { stroke: #b8d4ff; stroke-width: 3; stroke-linecap: round; opacity: 0.85; filter: drop-shadow(0 0 4px #7fb0ff); }
+.obs-side { display: flex; flex-direction: column; gap: 0.5rem; }
+.obs-score { padding: 0.7rem 0.9rem; display: flex; flex-direction: column; gap: 0.4rem; font-weight: 600; }
+.obs-big { font-size: 2rem; text-shadow: var(--outline-sm); color: #b8d4ff; }
+.obs-links { padding: 0.55rem 0.8rem; display: flex; flex-direction: column; gap: 0.15rem; font-size: 0.78rem; font-weight: 600; max-height: 12rem; overflow: auto; }
+
+@media (max-width: 900px) {
+  .obs-cols { grid-template-columns: 1fr; }
+}

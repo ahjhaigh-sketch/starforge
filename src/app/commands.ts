@@ -34,6 +34,8 @@ import { flyBanner, setClimbing } from '../engine/systems/spire';
 import { chooseLeviathan, scaleTree, setFighting } from '../engine/systems/leviathans';
 import { buyMirrorUpgrade, collapse, MIRROR_ENGINES, nextPriceStep } from '../engine/systems/mirror';
 import { closeLink, openLink, setLinkShare } from '../engine/systems/wormholes';
+import { galacticTree, setNextGalaxy } from '../engine/systems/galactic';
+import { clearLinks, recordConstellation, starChart, toggleLink } from '../engine/systems/observatory';
 import { buyForgeUpgrade, buyRelic, equipRelic, setForgeGrade, setForgeOn, setForgeShare, unequipRelic } from '../engine/systems/forge';
 import { backupNow, readBackup } from './backups';
 import { D } from '../engine/decimal';
@@ -454,6 +456,41 @@ export const commands = {
     closeLink(game.state, index);
     done();
   },
+  /** Galactic Rebirth: the tree, the next galaxy, auto-Singularity. */
+  buyGalacticNode(id: string): boolean {
+    const ok = galacticTree.buy(game.state, id);
+    done();
+    return ok;
+  },
+  setNextGalaxy(id: string): boolean {
+    const ok = setNextGalaxy(game.state, id);
+    done();
+    return ok;
+  },
+  setAutoSingularity(darkMatter: number) {
+    game.state.galactic.autoAt = D(Math.max(0, Number.isFinite(darkMatter) ? Math.floor(darkMatter) : 0));
+    done();
+  },
+  /** The Observatory and the Stardust Chart. */
+  toggleStarLink(a: number, b: number): boolean {
+    const ok = toggleLink(game.state, a, b);
+    done();
+    return ok;
+  },
+  clearStarLinks() {
+    clearLinks(game.state);
+    done();
+  },
+  recordConstellation(): number {
+    const paid = recordConstellation(game.state);
+    done();
+    return paid;
+  },
+  buyChartNode(id: string): boolean {
+    const ok = starChart.buy(game.state, id);
+    done();
+    return ok;
+  },
   /** Spectral Focus. */
   setFocus(id: string | null): boolean {
     const ok = setFocus(game.state, id);
@@ -610,6 +647,11 @@ export const commands = {
   // ---- dev tools (only reachable with ?dev=1) ----
   devAdd(currency: string, amount: number) {
     gain(game.state, currency, D(amount));
+    done();
+  },
+  /** Dev: owns every Galactic Tree node (for checking the 200-node view). */
+  devOwnGalacticTree() {
+    for (const node of galacticTree.def.nodes) game.state.galacticTree[node.id] = Math.max(1, game.state.galacticTree[node.id] ?? 0);
     done();
   },
   devMultiply(currency: string, factor: number) {

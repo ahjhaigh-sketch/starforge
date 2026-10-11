@@ -46,6 +46,7 @@ export const CONSTANT_SETS: readonly ConstantSetDef[] = [
   { id: 'stellar', name: 'Stellar Constants', layer: 'stardust', req: { kind: 'tier', tier: 2 } },
   { id: 'nebula', name: 'Nebula Constants', layer: 'nebula', req: { kind: 'count', stat: 'nebulasAll', count: 1, noun: 'Nebula' } },
   { id: 'void', name: 'Void Constants', layer: 'singularity', req: { kind: 'count', stat: 'singularitiesAll', count: 1, noun: 'Singularity' } },
+  { id: 'galactic', name: 'Galactic Constants', layer: 'galactic', req: { kind: 'count', stat: 'galacticsAll', count: 1, noun: 'Galactic Rebirth' } },
 ];
 
 export const CONSTANTS: readonly ConstantDef[] = [
@@ -212,6 +213,31 @@ export const CONSTANTS: readonly ConstantDef[] = [
     growth: BALANCE.constants.charge,
     effects: [{ stat: 'reactorPower', a: 0.05, doubles: false, what: 'Reactor strength' }],
     desc: "The Reactor's charge counts for more, up to twice as much.",
+  },
+  // Galactic Constants: bought with Galaxy Cores, kept through every Galactic Rebirth.
+  {
+    id: 'gal.expansion',
+    set: 'galactic',
+    name: 'Expansion',
+    icon: 'galaxy',
+    color: '#B4F04A',
+    currency: 'galaxyCores',
+    base: 3,
+    growth: BALANCE.constants.expansion,
+    effects: [{ stat: 'galaxyRewardPower', a: BALANCE.galactic.expansionPer, doubles: false, what: 'Cleared galaxy rewards' }],
+    desc: "Every cleared galaxy's reward grows stronger.",
+  },
+  {
+    id: 'gal.arms',
+    set: 'galactic',
+    name: 'Arms',
+    icon: 'tree',
+    color: '#5FD39B',
+    currency: 'galaxyCores',
+    base: 5,
+    growth: BALANCE.constants.arms,
+    effects: [{ stat: 'galacticTreePower', a: BALANCE.galactic.armsPer, doubles: false, what: 'Galactic Tree multipliers' }],
+    desc: "The Galactic Tree's multipliers grow stronger.",
   },
 ];
 

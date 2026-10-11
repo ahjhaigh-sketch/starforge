@@ -80,6 +80,9 @@ const migrations: Record<number, (d: PlainSave) => void> = {
   14: () => {},
   // 15 (Phase 14): the Antimatter Mirror and the Wormhole Network. New fields with defaults; nothing moves.
   15: () => {},
+  // 16 (Phase 15): Galactic Rebirth (the galaxy, the Galactic Tree, the Observatory, the Stardust Chart). New fields
+  // with defaults; nothing moves.
+  16: () => {},
 };
 
 export function migrate(version: number, data: PlainSave): PlainSave {

@@ -187,10 +187,18 @@ export const BALANCE = {
     shareChoices: [1, 0.5, 0.1],
   },
   relics: {
-    /** Crafting costs 10 alloy; level L to L+1 costs 10 x 1.6^L of its alloy. Effect = base x 1.25^(level - 1). */
+    /**
+     * Crafting costs 10 alloy; level L to L+1 costs 10 x 1.6^L of its alloy. Effect = base x 1.25^(level - 1) up to
+     * level 300, then x1.02 a level. Uncapped, the ore and alloy relics fed the alloy that levels them, and with two or
+     * three equipped that loop ran away in long Galactic runs (shards e263 to e3430 in one run, sim, Phase 15).
+     */
     costBase: 10,
     costGrowth: 1.6,
     effectGrowth: 1.25,
+    effectKnee: 300,
+    effectGrowthLate: 1.02,
+    /** No relic goes past 1,000 levels: Merchant deals restock as you buy, and cost almost nothing late on. */
+    maxLevel: 1000,
     slots: 6,
     /** Crafting every relic of a grade multiplies that alloy. */
     collectorMult: 2,
@@ -249,7 +257,7 @@ export const BALANCE = {
     quickBurnSeconds: 900,
   },
   /** Cost growth per level of each Stellar Constant (between 1.05 and 2, Math and balance tab). */
-  constants: { gravity: 1.3, light: 1.3, heat: 1.35, orbit: 1.35, runeSpeed: 1.8, runeBulk: 1.6, resonance: 2, drift: 1.9, bloom: 1.7, mass: 1.5, spin: 1.8, horizon: 1.6, charge: 1.7 },
+  constants: { gravity: 1.3, light: 1.3, heat: 1.35, orbit: 1.35, runeSpeed: 1.8, runeBulk: 1.6, resonance: 2, drift: 1.9, bloom: 1.7, mass: 1.5, spin: 1.8, horizon: 1.6, charge: 1.7, expansion: 1.6, arms: 1.8 },
   novaTree: {
     /** Node price along an arm: armBase x armGrowth^depth (depth 0 to 22). */
     armBase: 3,
@@ -269,8 +277,9 @@ export const BALANCE = {
     baseSize: 3,
     maxSize: 5,
     spawnSeconds: 12,
-    /** Spawn speed: x1.12 a level. Upgrades cost Nova Shards. */
+    /** Spawn speed: x1.12 a level, up to 60 levels (a comet every 0.013 s, faster than any board fills). Upgrades cost Nova Shards. */
     speedPerLevel: 1.12,
+    maxSpeed: 60,
     upgrades: {
       speed: { base: 5, growth: 1.7 },
       start: { base: 200, growth: 12 },
@@ -504,6 +513,34 @@ export const BALANCE = {
     /** Scale Tree prices: 10 x 2.5^step. */
     treeBase: 10,
     treeGrowth: 2.5,
+  },
+  /** Phase 15: Galactic Rebirth, the fourth reset (Math and balance: reset layers). */
+  galactic: {
+    /** Needs all 8 Black Hole stages, the Mirror Key and this much Dark Matter gained in the Galactic run. */
+    runDarkMatter: 1e8,
+    /**
+     * Galaxy Cores = floor((DM / 1e8)^0.5) x Galaxy Core gain. The plan's ^0.25 gave 3 to 6 a run: 18 of 200 tree nodes
+     * after four Galactic Rebirths (sim, Phase 15).
+     */
+    gainPow: 0.5,
+    /** Dark Matter x(1 + lifetime Galaxy Cores)^0.3. */
+    passivePow: 0.3,
+    /** Galactic Tree: five arms of 38 nodes; node i on an arm costs 1 x 1.2^i Galaxy Cores; echoes x3 a level. */
+    treeArmNodes: 38,
+    treeBase: 1,
+    treeGrowth: 1.2,
+    echoGrowth: 3,
+    /** Galaxy k can be chosen once you've cleared k - 3 galaxies (four choices ahead). */
+    galaxiesAhead: 3,
+    /** The Observatory: stars in each run's sky, links you may draw, and how closed shapes score. */
+    skyStars: 24,
+    links: 8,
+    loopBonus: 0.25,
+    /** Stardust Chart node prices in Star Charts, by ring. */
+    chartCosts: [20, 60, 150, 400, 1000, 2500],
+    /** Galactic Constants: Expansion makes cleared galaxies' rewards stronger, Arms makes the Galactic Tree's multipliers stronger. */
+    expansionPer: 0.1,
+    armsPer: 0.02,
   },
   /** Phase 14: the Antimatter Mirror (Singularity milestone 8). */
   mirror: {

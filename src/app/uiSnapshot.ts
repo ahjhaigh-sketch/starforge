@@ -27,7 +27,8 @@ import { gameSpeed } from '../engine/tick';
 import { LEVIATHANS, SPIRE_BANNERS, TRIAL_BY_ID } from '../content/challenges';
 import { goalMet, inTrial, trialGoal } from '../engine/systems/trials';
 import { fighting, leviathanHp, leviathansUnlocked } from '../engine/systems/leviathans';
-import { antimatterRate, mirrorOpen } from '../engine/systems/mirror';
+import { antimatterRate, mirrorKey, mirrorOpen } from '../engine/systems/mirror';
+import { galacticGain, galacticReady, galacticReqs, galaxyOf } from '../engine/systems/galactic';
 import { wyrmSky } from './wyrmReports';
 import { nebulaGain, nebulaReady, runShards } from '../engine/systems/nebula';
 import { BUFF_KINDS, buffLeft, cometOnScreen } from '../engine/systems/comets';
@@ -180,6 +181,16 @@ export interface Snapshot {
   bhStage: number;
   bhMassLog: number;
   gameSpeed: number;
+  /** Galactic Rebirth on the reset bar, Galaxy Cores in the top bar, the galaxy's tint over the sky. */
+  galacticVisible: boolean;
+  galacticReady: boolean;
+  galacticGain: string;
+  galacticReq: string;
+  galacticPct: number;
+  galaxyCores: string;
+  galaxyCoresVisible: boolean;
+  galaxyColor: string;
+  galaxyName: string;
   /** The Antimatter pill in the top bar (once the Mirror is open). */
   antimatter: string;
   antimatterRate: string;
@@ -444,6 +455,7 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     essenceVisible: (s.stats.nebulasAll ?? 0) > 0 || cur(s, 'essence').gt(0),
     nebulasAll: s.stats.nebulasAll ?? 0,
     ...singularityBar(s, n),
+    ...galacticBar(s, n),
     darkMatter: format(cur(s, 'darkMatter'), n),
     darkMatterVisible: (s.stats.singularitiesAll ?? 0) > 0 || cur(s, 'darkMatter').gt(0),
     bhStage: bhOpen(s) ? Math.max(1, bhStage(s)) : 0,
@@ -484,6 +496,34 @@ export function publish(): void {
 /** Select ONE primitive field (or a stable row/list): a new object per call loops forever. */
 export function useSnap<T>(selector: (s: Snapshot) => T): T {
   return useStore(snapshotStore, selector);
+}
+
+/** Galactic Rebirth on the reset bar: visible with the Mirror Key or after the first one. */
+function galacticBar(s: GameState, n: Notation) {
+  const all = s.stats.galacticsAll ?? 0;
+  const ready = galacticReady(s);
+  const r = galacticReqs(s);
+  const need = BALANCE.galactic.runDarkMatter;
+  const steps = [Math.min(1, r.stages / 8), r.key ? 1 : 0, Math.min(1, r.dm.add(1).log10().toNumber() / Math.log10(need))];
+  const req = ready
+    ? 'Ready'
+    : r.stages < 8
+      ? `Bring the Black Hole to stage 8 (${r.stages}/8)`
+      : !r.key
+        ? 'Find the Mirror Key in the Antimatter Mirror'
+        : `Gain ${format(need, n)} Dark Matter this Galactic run (${format(r.dm, n)})`;
+  const g = galaxyOf(s);
+  return {
+    galacticVisible: all > 0 || mirrorKey(s),
+    galacticReady: ready,
+    galacticGain: ready ? `+${format(galacticGain(s), n)}` : '',
+    galacticReq: req,
+    galacticPct: ready ? 100 : Math.floor((steps.reduce((a, b) => a + b, 0) / 3) * 100),
+    galaxyCores: format(cur(s, 'galaxyCores'), n),
+    galaxyCoresVisible: all > 0 || cur(s, 'galaxyCores').gt(0),
+    galaxyColor: all > 0 && g.id !== 'milkyway' ? g.color : '',
+    galaxyName: g.name,
+  };
 }
 
 /** The Trial chip, the Leviathan boss bar and the Spire banner. */

@@ -1,4 +1,5 @@
 import { BALANCE } from '../../content/balance';
+import { GALAXIES } from '../../content/galactic';
 import { RARITIES } from '../../content/belt';
 import { ELEMENTS } from '../../content/elements';
 import { RELICS } from '../../content/forge';
@@ -47,6 +48,8 @@ export function pageCount(s: GameState, id: string): { found: number; total: num
       return { found: s.nursery.found.length, total: STAR_SPECIES.length };
     case 'cards':
       return { found: s.tarot.owned.length, total: CARDS.length };
+    case 'galaxies':
+      return { found: s.galactic.cleared.length, total: GALAXIES.length };
     default:
       return { found: 0, total: 0 };
   }

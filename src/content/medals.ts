@@ -109,6 +109,9 @@ export const MEDALS: readonly MedalDef[] = [
   { id: 'lev.12', name: "Mother of All", desc: "Beat all 12 Void Leviathans.", icon: 'leviathan', req: { kind: 'count', stat: 'leviathansBeaten', count: 12, noun: 'Leviathan' } },
   { id: 'mirror.engines', name: "Through the Looking Glass", desc: "Buy 100 Antimatter engines.", icon: 'antimatter', req: { kind: 'count', stat: 'amEnginesBought', count: 100, noun: 'Antimatter engine' } },
   { id: 'mirror.depth', name: "Inside Out", desc: "Collapse the anti-star all the way to a Protostar.", icon: 'antimatter', req: { kind: 'count', stat: 'mirrorDepth', count: 11, noun: 'collapse' } },
+  { id: 'galactic.1', name: "Island Universe", desc: "Go Galactic.", icon: 'galaxy', req: { kind: 'count', stat: 'galacticsAll', count: 1, noun: 'Galactic Rebirth' } },
+  { id: 'galactic.galaxies', name: "Galaxy Hopper", desc: "Explore 5 galaxies.", icon: 'galaxy', req: { kind: 'count', stat: 'galaxiesCleared', count: 5, noun: 'galaxy' } },
+  { id: 'observatory.100', name: "Stargazer", desc: "Record a Star Score of 100.", icon: 'telescope', req: { kind: 'count', stat: 'starScoreBest', count: 100, noun: 'Star Score' } },
   { id: 'wormhole.1', name: "Shortcut", desc: "Open a wormhole.", icon: 'wormhole', req: { kind: 'count', stat: 'wormholesOpened', count: 1, noun: 'wormhole' } },
   { id: 'nursery.25', name: "Stellar Gardener", desc: "Grow all 25 star species.", icon: 'nursery', req: { kind: 'count', stat: 'speciesGrown', count: 25, noun: 'species' } },
   // Phase 7: Comet Fusion, Attunements, the Merchant and starships

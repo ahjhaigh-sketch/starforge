@@ -167,8 +167,14 @@ export function relicCostCurve(): CostCurve {
 }
 
 /** The relic's effect at a level: base x 1.25^(level - 1); nothing at level 0. */
-export function relicEffect(def: RelicDef, level: number): number {
-  return level <= 0 ? 0 : def.base * R.effectGrowth ** (level - 1);
+/** A relic's effect at a level: base x 1.25^(level - 1), x1.02 a level past 300. A Decimal: Merchant deals can push levels past where a number would overflow. */
+export function relicEffect(def: RelicDef, level: number): Decimal {
+  if (level <= 0) return ZERO;
+  // a save from before the cap may hold more levels: they count up to the cap
+  level = Math.min(level, def.maxLevel ?? R.maxLevel);
+  const early = Math.min(level, R.effectKnee) - 1;
+  const late = Math.max(0, level - R.effectKnee);
+  return D(def.base).mul(D(R.effectGrowth).pow(early)).mul(D(R.effectGrowthLate).pow(late));
 }
 
 export const relicAlloy = (def: RelicDef) => GRADE_BY_ID.get(def.grade)!.alloy;
@@ -178,7 +184,7 @@ export function relicPlan(s: GameState, id: string): PurchasePlan {
   const level = relicLevel(s, id);
   // crafting is always one level; levelling follows the buy amount
   const amount = level === 0 ? 1 : s.settings.buyAmount === 'next' ? 1 : s.settings.buyAmount;
-  return planLimited(relicCostCurve(), level, cur(s, relicAlloy(def)), amount, s.settings.customBuyAmount, def.maxLevel ?? Infinity);
+  return planLimited(relicCostCurve(), level, cur(s, relicAlloy(def)), amount, s.settings.customBuyAmount, def.maxLevel ?? R.maxLevel);
 }
 
 /** Crafts the relic (level 1) or levels it by the buy amount. Newly crafted relics equip if a slot is free. */
@@ -202,7 +208,7 @@ export function addRelicLevels(s: GameState, id: string, n: number): number {
   const def = RELIC_BY_ID.get(id);
   const level = relicLevel(s, id);
   if (!def || level <= 0) return 0;
-  const add = Math.max(0, Math.min(n, (def.maxLevel ?? Infinity) - level));
+  const add = Math.max(0, Math.min(n, (def.maxLevel ?? R.maxLevel) - level));
   s.relics.levels[id] = level + add;
   return add;
 }
@@ -248,7 +254,7 @@ export function registerForge(): void {
       label: `${def.name} (relic)`,
       value: (s: GameState) => {
         const e = relicEffect(def, relicLevel(s, def.id));
-        return def.kind === 'add' ? D(e) : def.kind === 'mul' ? D(1 + e) : D(1).div(1 + e);
+        return def.kind === 'add' ? e : def.kind === 'mul' ? e.add(1) : D(1).div(e.add(1));
       },
       active: (s: GameState) => s.relics.equipped.includes(def.id) && relicLevel(s, def.id) > 0,
     })),

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { type CSSProperties, useEffect } from 'react';
 import { game } from '../app/game';
 import { useSnap } from '../app/uiSnapshot';
 import { DevPanel } from '../dev/DevPanel';
@@ -34,6 +34,7 @@ import { SpectralPanel, TarotPanel } from './screens/NebulaExtrasPanels';
 import { BlackHolePanel, PrismWheelPanel, ReactorPanel, SingularityConfirmPanel, SingularityPanel, SingularityTreePanel } from './screens/SingularityPanels';
 import { ChallengeHud, LeviathansPanel, ScaleTreePanel, SpirePanel, TrialsPanel } from './screens/ChallengePanels';
 import { MirrorPanel, WormholesPanel } from './screens/MirrorPanels';
+import { GalacticConfirmPanel, GalacticPanel, GalacticTreePanel, GalaxyMapPanel, ObservatoryPanel, StarChartPanel } from './screens/GalacticPanels';
 import { useUi } from './store';
 
 /** Shown while time away is being simulated; fades in only if that takes a moment. */
@@ -54,6 +55,7 @@ export function App() {
   const bench = benchSize();
   if (bench > 0) return <TreeBench count={bench} />;
   const reducedMotion = useSnap((s) => s.reducedMotion);
+  const galaxyColor = useSnap((s) => s.galaxyColor);
   const drawer = useUi((s) => s.drawer);
   const setDrawer = useUi((s) => s.setDrawer);
   useEffect(() => {
@@ -62,6 +64,7 @@ export function App() {
 
   return (
     <>
+      {galaxyColor && <div className="galaxy-tint" style={{ ['--c' as string]: galaxyColor } as CSSProperties} aria-hidden="true" />}
       <div className="app">
         <Hud />
         <LeftRail />
@@ -123,6 +126,12 @@ export function App() {
       <ScaleTreePanel />
       <MirrorPanel />
       <WormholesPanel />
+      <GalacticPanel />
+      <GalacticConfirmPanel />
+      <GalacticTreePanel />
+      <GalaxyMapPanel />
+      <ObservatoryPanel />
+      <StarChartPanel />
       <SettingsPanel />
       <PanelHost />
       <ToastHost />

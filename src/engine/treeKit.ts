@@ -41,6 +41,8 @@ export interface TreeDef {
   nodes: readonly KitNode[];
   levels: (s: GameState) => Record<string, number>;
   open: (s: GameState) => boolean;
+  /** Raises every multiplier node's effect to this power (the Galactic Tree's Arms constant). */
+  power?: (s: GameState) => number;
 }
 
 export interface Tree {
@@ -92,7 +94,7 @@ export function makeTree(def: TreeDef): Tree {
         const base = { id: `${def.id}.${n.id}`, stat: e.stat, label: `${n.name} (${def.label})`, active: (s: GameState) => owns(s, n.id) };
         if (e.op === 'add') sources.push({ ...base, op: 'add', value: (s) => D(e.value * level(s, n.id)) });
         else if (e.op === 'pow') sources.push({ ...base, op: 'pow', value: () => D(e.value) });
-        else sources.push({ ...base, op: 'mul', value: (s) => D(e.value).pow(level(s, n.id)) });
+        else sources.push({ ...base, op: 'mul', value: (s) => D(e.value).pow(level(s, n.id) * (def.power?.(s) ?? 1)) });
       }
       registerSources(...sources);
     },

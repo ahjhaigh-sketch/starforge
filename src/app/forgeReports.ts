@@ -46,9 +46,10 @@ export function dur(sec: number): string {
 
 /** What a relic does at a level, in words: "+25% engine output", "+30m offline cap". */
 export function relicEffectText(def: RelicDef, level: number): string {
-  const e = relicEffect(def, Math.max(1, level));
-  if (def.kind === 'mul') return `+${pct(e)} ${def.what}`;
-  if (def.kind === 'reduce') return `${pct(e / (1 + e))} ${def.what}`;
+  const big = relicEffect(def, Math.max(1, level));
+  if (def.kind === 'mul') return big.gt(99) ? `x${format(big.add(1), n())} ${def.what}` : `+${pct(big.toNumber())} ${def.what}`;
+  const e = big.toNumber();
+  if (def.kind === 'reduce') return `${pct(Number.isFinite(e) ? e / (1 + e) : 1)} ${def.what}`;
   switch (def.stat) {
     case 'critChance':
     case 'offlineEfficiency':

@@ -128,6 +128,9 @@ let MR: typeof import('../src/engine/systems/mirror');
 let WH: typeof import('../src/engine/systems/wormholes');
 let MC: typeof import('../src/content/mirror');
 let COST: typeof import('../src/engine/cost');
+let GL: typeof import('../src/engine/systems/galactic');
+let OB: typeof import('../src/engine/systems/observatory');
+let GC: typeof import('../src/content/galactic');
 let PLANET_TYPES: (typeof import('../src/content/early'))['PLANET_TYPES'];
 
 async function loadGame(): Promise<void> {
@@ -185,6 +188,9 @@ async function loadGame(): Promise<void> {
   WH = await import('../src/engine/systems/wormholes');
   MC = await import('../src/content/mirror');
   COST = await import('../src/engine/cost');
+  GL = await import('../src/engine/systems/galactic');
+  OB = await import('../src/engine/systems/observatory');
+  GC = await import('../src/content/galactic');
 }
 
 const TAPS_PER_SECOND = 4;
@@ -193,6 +199,8 @@ const MAX_HOURS = 120;
 const STOP_AT_NEBULAS = Number(process.env.SIM_NEBULAS ?? 8);
 /** With SIM_SINGULARITIES the bot plays on through that many Singularities (the plan's first Galactic Rebirth comes at about 10). */
 const STOP_AT_SINGULARITIES = Number(process.env.SIM_SINGULARITIES ?? 0);
+/** With SIM_GALACTICS the bot plays on through that many Galactic Rebirths. */
+const STOP_AT_GALACTICS = Number(process.env.SIM_GALACTICS ?? 0);
 /** How often (game seconds) the bot looks after the Belt and the Starforge. */
 const SIDE_EVERY = 5;
 
@@ -396,6 +404,37 @@ function sideSystems(s: GameState): void {
 }
 
 /** Dark Matter: Void Constants under 15%, the cheapest Singularity Tree nodes, then a tenth into the Reactor. */
+/** Galaxy Cores: Galactic Constants under 20%, then the cheapest Galactic Tree nodes (one-offs first). Then the sky. */
+function spendGalaxyCores(s: GameState): void {
+  for (const id of ['gal.expansion', 'gal.arms']) {
+    const c = CONSTANTS.find((x) => x.id === id)!;
+    if (constantOpen(s, c) && constantPlan(s, c, 1).cost.lt(cur(s, 'galaxyCores').mul(0.2))) buyConstant(s, id, 1);
+  }
+  const tree = GL.galacticTree;
+  for (let i = 0; i < 300; i++) {
+    const pick = tree.def.nodes.filter((n) => tree.canBuy(s, n)).sort((a, b) => Number(!!a.repeat) - Number(!!b.repeat) || tree.cost(s, a).cmp(tree.cost(s, b)))[0];
+    if (!pick || !tree.buy(s, pick.id)) break;
+  }
+  if (OB.observatoryOpen(s)) {
+    // a greedy constellation: the best-scoring links that close a loop where they can
+    const sky = OB.skyOf(s);
+    s.observatory.links = [];
+    const pairs: Array<[number, number, number]> = [];
+    for (let a = 0; a < sky.length; a++) for (let b = a + 1; b < sky.length; b++) pairs.push([a, b, OB.linkScore(sky[a]!, sky[b]!)]);
+    pairs.sort((x, y) => y[2] - x[2]);
+    for (const [a, b] of pairs) {
+      if (s.observatory.links.length >= OB.maxLinks(s)) break;
+      OB.toggleLink(s, a, b);
+    }
+    OB.recordConstellation(s);
+    const chart = OB.starChart;
+    for (let i = 0; i < 20; i++) {
+      const pick = chart.def.nodes.filter((n) => chart.canBuy(s, n)).sort((a, b) => chart.cost(s, a).cmp(chart.cost(s, b)))[0];
+      if (!pick || !chart.buy(s, pick.id)) break;
+    }
+  }
+}
+
 /** The bot's wormhole plan: ore and alloy feed Dark Matter and Essence, Embers feed Antimatter. */
 const SIM_WORMHOLES: Array<[string, string, number]> = [
   ['ore', 'darkmatter', 0.5],
@@ -524,14 +563,49 @@ it('balance simulation', async () => {
   /** Trials the bot failed, and the Singularity count when it did (it tries again after the next one). */
   const trialFailed = new Map<string, number>();
   const singularityLengths: number[] = [];
-  const playing = () => (STOP_AT_SINGULARITIES > 0 ? (s.stats.singularitiesAll ?? 0) < STOP_AT_SINGULARITIES : (s.stats.nebulasAll ?? 0) < STOP_AT_NEBULAS);
+  const playing = () =>
+    STOP_AT_GALACTICS > 0
+      ? (s.stats.galacticsAll ?? 0) < STOP_AT_GALACTICS
+      : STOP_AT_SINGULARITIES > 0
+        ? (s.stats.singularitiesAll ?? 0) < STOP_AT_SINGULARITIES
+        : (s.stats.nebulasAll ?? 0) < STOP_AT_NEBULAS;
+  let galacticStart = 0;
+  const galacticLengths: number[] = [];
   while (s.playtime < MAX_HOURS * 3600 && playing()) {
     // Phase 12: buy the key, then fall in when it at least doubles lifetime Dark Matter (or the run drags past an hour)
     if (SG.keyOnSale(s) && !s.singularity.key) SG.buyKey(s);
+    // Phase 15: head for the first unexplored galaxy, and go Galactic when that at least doubles lifetime Galaxy Cores (or after an hour)
+    if (GL.galaxyMapOpen(s)) {
+      // stay until the galaxy you're in is explored, then the first one not explored yet
+      const here = (s.stats.galacticsAll ?? 0) > 0 ? s.galactic.galaxy : '';
+      const next = here && !GL.galaxyCleared(s, here) ? GC.GALAXY_BY_ID.get(here) : GC.GALAXIES.find((g) => !GL.galaxyCleared(s, g.id) && g.id !== here && GL.galaxyAvailable(s, g.id));
+      if (next && s.galactic.next !== next.id) GL.setNextGalaxy(s, next.id);
+    }
+    if (GL.galacticReady(s)) {
+      const g = GL.galacticGain(s);
+      const life = s.totals.all.galaxyCores ?? D(0);
+      const explored = GL.galaxyCleared(s, s.galactic.galaxy);
+      if ((s.stats.galacticsAll ?? 0) === 0 || (explored && (g.gte(life.div(2)) || s.playtime - galacticStart > 3600)) || s.playtime - galacticStart > 3 * 3600) {
+        galacticLengths.push(s.playtime - galacticStart);
+        performReset(s, 'galactic');
+        galacticStart = s.playtime;
+        singularityStart = s.playtime;
+        nebulaStart = s.playtime;
+        runStart = s.playtime;
+        bestRate = D(0);
+        spendGalaxyCores(s);
+        spendDarkMatter(s);
+        spendEssence(s);
+        spendShards(s);
+        record(`Galactic ${s.stats.galacticsAll}`);
+        continue;
+      }
+    }
     if (SG.singularityReady(s)) {
       const g = SG.singularityGain(s);
-      const life = s.totals.all.darkMatter ?? D(0);
-      if ((s.stats.singularitiesAll ?? 0) === 0 || g.gte(life) || s.playtime - singularityStart > 3600) {
+      const life = ((s.stats.galacticsAll ?? 0) > 0 ? s.totals.run.darkMatter : s.totals.all.darkMatter) ?? D(0);
+      const countGoal = (s.stats.galacticsAll ?? 0) > 0 && !GL.galaxyCleared(s, s.galactic.galaxy) && GL.galaxyOf(s).goal.kind === 'singularities';
+      if ((s.stats.singularitiesAll ?? 0) === 0 || countGoal || g.gte(life) || s.playtime - singularityStart > 3600) {
         singularityLengths.push(s.playtime - singularityStart);
         if (process.env.SIM_DEBUG_P13) console.log(`[p13] Singularity ${(s.stats.singularitiesAll ?? 0) + 1}: log10 SPS ${stat(s, 'stardustPerSec').add(1).log10().toNumber().toFixed(1)}, log10 run Stardust ${(s.totals.run.stardust ?? D(0)).add(1).log10().toNumber().toFixed(1)}, log10 tap ${stat(s, 'tapPower').add(1).log10().toNumber().toFixed(1)}, supernovas ${s.stats.supernovasAll ?? 0}`);
         performReset(s, 'singularity');
@@ -576,6 +650,29 @@ it('balance simulation', async () => {
     const dt = s.playtime - runStart < 1800 ? 1 : 5;
     for (let i = 0; i < TAPS_PER_SECOND * dt && i < 40; i++) tapStar(s, rt, (ms += 1000 / TAPS_PER_SECOND));
     tick(s, dt);
+    if (process.env.SIM_DEBUG_BIG && !nanSeen) {
+      const bad = Object.entries(s.currencies).find(([, v]) => Number.isNaN(v.mag) || (v.gt(0) && (!Number.isFinite(v.log10().toNumber()) || v.log10().toNumber() > 9e15)));
+      const watch = ['productionMult', 'shardGain', 'essenceGain', 'darkMatterGain', 'galaxyCoreGain', 'emberGain', 'oreGain', 'alloyGain', 'runeBulk', 'antimatterMult', 'tapPower'];
+      const statBad = watch.find((id) => {
+        const v = stat(s, id);
+        return Number.isNaN(v.mag) || (v.gt(0) && (!Number.isFinite(v.log10().toNumber()) || v.log10().toNumber() > 1e6));
+      });
+      if (bad || statBad) {
+        nanSeen = true;
+        const st = await import('../src/engine/stats');
+        console.log(`[big] ${hms(s.playtime)} currency ${bad?.[0]} stat ${statBad} galaxy ${s.galactic.galaxy} cleared ${s.galactic.cleared.join(',')} galactics ${s.stats.galacticsAll}`);
+        for (const id of watch) {
+          const top = st
+            .breakdown(s, id)
+            .filter((l) => !l.value.eq(1))
+            .sort((x, y) => y.value.abs().add(1).log10().toNumber() - x.value.abs().add(1).log10().toNumber())
+            .slice(0, 6)
+            .map((l) => `${l.label} ${l.op} ${fmt(l.value)}`)
+            .join('; ');
+          console.log(`[big] ${id} = ${fmt(stat(s, id))}: ${top}`);
+        }
+      }
+    }
     if (process.env.SIM_DEBUG_NAN && !nanSeen) {
       const pm = stat(s, 'productionMult');
       if (!Number.isFinite(pm.log10().toNumber()) || Number.isNaN(pm.mag)) {
@@ -645,11 +742,13 @@ it('balance simulation', async () => {
   console.log(`Run length, game time: first ${hms(runLengths[0] ?? 0)}, runs 2-5 avg ${hms(avg(runLengths.slice(1, 5)))}, 6-12 avg ${hms(avg(runLengths.slice(5, 12)))}, 13-30 avg ${hms(avg(runLengths.slice(12)))}`);
   if (process.env.SIM_DEBUG_DM) {
     const { breakdown } = await import('../src/engine/stats');
-    for (const id of ['darkMatterGain', 'essenceGain', 'gameSpeed']) console.log(`[dm] ${id}: ${breakdown(s, id).filter((l) => l.value.toNumber() !== 1).map((l) => `${l.label} ${l.op} ${fmt(l.value)}`).join('; ')}`);
+    for (const id of ['darkMatterGain', 'essenceGain', 'gameSpeed', 'shardGain', 'productionMult']) console.log(`[dm] ${id}: ${breakdown(s, id).filter((l) => l.value.toNumber() !== 1).map((l) => `${l.label} ${l.op} ${fmt(l.value)}`).join('; ')}`);
+    console.log(`[dm] relic levels: ${Object.entries(s.relics.levels).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, v]) => `${k} ${v}`).join(', ')}; alloys: ${Object.entries(s.currencies).filter(([k]) => k.startsWith('alloy')).map(([k, v]) => `${k} ${fmt(v)}`).join(', ')}; ore ${fmt(cur(s, 'ore'))}`);
     console.log(`[dm] reactor charge ${fmt(s.reactor.charge)}, strength ${stat(s, 'reactorPower').toNumber().toFixed(2)}, void.charge level ${s.constants['void.charge'] ?? 0}, horizon ${s.constants['void.horizon'] ?? 0}, antimatter ${fmt(cur(s, 'antimatter'))}`);
   }
   if (MR.mirrorOpen(s)) console.log(`Mirror (opened ${hms(s.stats.mirrorOpenedAt ?? 0)}): depth ${s.mirror.depth}/11, ${s.mirror.upgrades.length}/9 upgrades${MR.mirrorKey(s) ? ' (key)' : ''}, Antimatter ${fmt(cur(s, 'antimatter'))} at ${fmt(MR.antimatterRate(s))}/s, ${Object.values(s.mirror.engines).reduce((a, b) => a + b, 0)} engines. Wormholes: ${s.wormholes.links.map((l) => `${l.from}>${l.to}`).join(', ') || 'none'}.`);
   if (TR.trialsOpen(s)) console.log(`Trials: ${TR.totalTrialLevels(s)} levels (${CH.TRIALS.filter((t) => TR.trialLevel(s, t.id) >= t.levels).length} mastered), Fast Nova ${CH.FAST_RANKS[s.trials.fastBest]?.name ?? 'none'}. Spire floor ${s.spire.floor}. Leviathans beaten ${s.stats.leviathansBeaten ?? 0}/12 (${s.stats.leviathanKills ?? 0} kills), Scale Tree ${Object.keys(s.scaleTree).length}/14, scales ${fmt(cur(s, 'scales'))}.`);
+  if (galacticLengths.length) console.log(`Galactic runs, game time: first ${hms(galacticLengths[0] ?? 0)}, then ${galacticLengths.slice(1).map(hms).join(', ')}. Galaxy Cores (lifetime) ${fmt(s.totals.all.galaxyCores ?? D(0))}, Galactic Tree ${Object.keys(s.galacticTree).length}/200, galaxies explored ${s.galactic.cleared.length} (${s.galactic.cleared.join(', ')}), in ${s.galactic.galaxy}, Star Charts ${fmt(cur(s, 'starCharts'))}, chart ${Object.keys(s.starChart).length}/12, best Star Score ${s.stats.starScoreBest ?? 0}.`);
   if (singularityLengths.length) console.log(`Singularity runs, game time: first ${hms(singularityLengths[0] ?? 0)}, then ${singularityLengths.slice(1).map(hms).join(', ')}`);
   console.log(`Nebula runs, game time: first ${hms(nebulaLengths[0] ?? 0)}, then ${nebulaLengths.slice(1).map(hms).join(', ')}`);
   console.log(`Ended at ${s.stats.supernovasAll} Supernovas and ${s.stats.nebulasAll ?? 0} Nebulas, ${hms(s.playtime)} played, Nebula Tree ${nebulaShare(s)} bought, raw next gain ${fmt(rawShardGain(s))}.`);
