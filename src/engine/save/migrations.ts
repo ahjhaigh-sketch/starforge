@@ -88,6 +88,13 @@ const migrations: Record<number, (d: PlainSave) => void> = {
   // 18 (Phase 17): the Big Crunch (Eternity upgrades and automation, the Echo boards) and the soundtrack setting. New
   // fields with defaults; nothing moves.
   18: () => {},
+  // 19 (Phase 18): the Multiverse (Spark choices, the Universe Forge's rules, the story). The Multiverse needs Big
+  // Crunches counted per universe: every Crunch so far was in the first universe.
+  19: (d) => {
+    const stats = (d.stats ?? {}) as Record<string, number>;
+    stats.crunchesCycle = stats.crunchesCycle ?? stats.crunchesAll ?? 0;
+    d.stats = stats;
+  },
 };
 
 export function migrate(version: number, data: PlainSave): PlainSave {

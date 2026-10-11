@@ -11,7 +11,7 @@ import { TIERS } from '../content/tiers';
 import { events } from '../engine/events';
 import { isEchoLayer, layer, resetsDone } from '../engine/layers';
 import { plural } from '../engine/words';
-import { format } from '../ui/format';
+import { format, formatFifths } from '../ui/format';
 import { game } from './game';
 import { snapshotStore } from './uiSnapshot';
 
@@ -21,9 +21,9 @@ import { snapshotStore } from './uiSnapshot';
  * that matters more (a new tier, an unlock).
  */
 const MEDAL_BATCH_MS = 400;
-const CURRENCY_NAMES: Record<string, string> = { shards: 'Nova Shards', essence: 'Nebula Essence', darkMatter: 'Dark Matter', galaxyCores: 'Galaxy Cores', chronons: 'Chronons' };
+const CURRENCY_NAMES: Record<string, string> = { shards: 'Nova Shards', essence: 'Nebula Essence', darkMatter: 'Dark Matter', galaxyCores: 'Galaxy Cores', chronons: 'Chronons', sparks: 'Multiverse Sparks' };
 /** Each layer's toast wears its currency's icon. */
-const CURRENCY_ICONS: Record<string, string> = { shards: 'shard', essence: 'nebula', darkMatter: 'darkmatter', galaxyCores: 'galaxy', chronons: 'chronon' };
+const CURRENCY_ICONS: Record<string, string> = { shards: 'shard', essence: 'nebula', darkMatter: 'darkmatter', galaxyCores: 'galaxy', chronons: 'chronon', sparks: 'spark' };
 
 export function installNotifications(): void {
   let medals: string[] = [];
@@ -98,7 +98,7 @@ export function installNotifications(): void {
       const def = layer(e.layer);
       // the Echo boards' small resets show on their own panel, not as big news
       if (!def || isEchoLayer(e.layer)) return;
-      events.emit({ t: 'toast', title: `${def.name}!`, body: `+${format(e.gain, snapshotStore.getState().notation)} ${CURRENCY_NAMES[def.currency] ?? def.currency}.`, icon: CURRENCY_ICONS[def.currency] ?? 'shard', priority: true });
+      events.emit({ t: 'toast', title: `${def.name}!`, body: `+${(def.currency === 'sparks' ? formatFifths : format)(e.gain, snapshotStore.getState().notation)} ${CURRENCY_NAMES[def.currency] ?? def.currency}.`, icon: CURRENCY_ICONS[def.currency] ?? 'shard', priority: true });
       const done = resetsDone(game.state, def);
       const m = def.milestones.find((x) => x.at === done);
       if (m) events.emit({ t: 'toast', title: `Milestone: ${m.at} ${plural(def.name, m.at)}`, body: `${m.text}.`, icon: 'trophy' });

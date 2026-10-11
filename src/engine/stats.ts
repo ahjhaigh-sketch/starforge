@@ -92,6 +92,9 @@ export function breakdown(s: GameState, id: string): BreakdownLine[] {
   return lines;
 }
 
+/** Whether a stat is defined (content tests check every effect names a real stat). */
+export const isStat = (id: string): boolean => defs.has(id);
+
 export function statLabel(id: string): string {
   return defs.get(id)?.label ?? id;
 }

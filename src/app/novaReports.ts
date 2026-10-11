@@ -148,7 +148,7 @@ const STAGES: Array<{ name: string; ids: string[] }> = [
   { name: 'Galactic', ids: ['galactic', 'galaxymap', 'galactictree', 'observatory', 'starchart'] },
   { name: 'Building the galaxy', ids: ['megastructures', 'colonies', 'terraform'] },
   { name: 'Big Crunch', ids: ['bigcrunch', 'eternity', 'echoes'] },
-  { name: 'Multiverse', ids: ['multiverse'] },
+  { name: 'Multiverse', ids: ['multiverse', 'universeforge', 'sparktree'] },
 ];
 
 /** Every system id on the Ascent map (a test checks that each built system is on it). */

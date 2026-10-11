@@ -170,6 +170,14 @@ export const sounds = {
       [0, 7, 12, 16, 19, 24].forEach((n, i) => tone(196 * semis(n), t + 1.2 + i * 0.08, 1.2, 'triangle', 0.16));
       return;
     }
+    if (layer === 'multiverse') {
+      // glass cracks three times, shatters, then a rainbow of bells climbs over a low boom
+      [0, 0.14, 0.26].forEach((d) => whoosh(t + d, 0.08, 7000, 3000, 0.12));
+      whoosh(t + 0.85, 1.2, 9000, 300, 0.2);
+      tone(65.4, t + 0.85, 1.8, 'sine', 0.45, 49);
+      [0, 4, 7, 11, 14, 16, 19, 23, 24].forEach((n, i) => tone(261.63 * semis(n), t + 0.95 + i * 0.07, 1.4, 'triangle', 0.13));
+      return;
+    }
     const r = RESET_CHORDS[layer] ?? RESET_CHORDS.supernova!;
     whoosh(t, 1, r.sweep[0], r.sweep[1], 0.14);
     tone(r.root / 4, t, 0.9, 'sine', 0.35, r.root / 8);

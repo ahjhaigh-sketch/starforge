@@ -48,6 +48,7 @@ export const CONSTANT_SETS: readonly ConstantSetDef[] = [
   { id: 'void', name: 'Void Constants', layer: 'singularity', req: { kind: 'count', stat: 'singularitiesAll', count: 1, noun: 'Singularity' } },
   { id: 'galactic', name: 'Galactic Constants', layer: 'galactic', req: { kind: 'count', stat: 'galacticsAll', count: 1, noun: 'Galactic Rebirth' } },
   { id: 'eternal', name: 'Eternal Constants', layer: 'crunch', req: { kind: 'count', stat: 'crunchesAll', count: 1, noun: 'Big Crunch' } },
+  { id: 'omni', name: 'Omni Constants', layer: 'multiverse', req: { kind: 'count', stat: 'multiversesAll', count: 1, noun: 'Multiverse' } },
 ];
 
 export const CONSTANTS: readonly ConstantDef[] = [
@@ -288,6 +289,59 @@ export const CONSTANTS: readonly ConstantDef[] = [
     growth: BALANCE.constants.recursion,
     effects: [{ stat: 'echoMult', a: 0.25, doubles: true, what: 'Echo board output' }],
     desc: 'The Echo boards make more.',
+  },
+  // Omni Constants: the last infinite upgrades, never reset. Prices rise by a hair a level, so a universe buys
+  // millions of levels; effects are linear, so no level ever pays for the next.
+  {
+    id: 'omni.gain',
+    set: 'omni',
+    name: 'Omni Gain',
+    icon: 'multiverse',
+    color: '#FF6AD5',
+    currency: 'stardust',
+    base: 1e100,
+    growth: BALANCE.multiverse.omniGrowth.gain!,
+    effects: [
+      { stat: 'productionMult', a: 1e-3, doubles: false, what: 'Stardust' },
+      { stat: 'shardGain', a: 1e-3, doubles: false, what: 'Nova Shards' },
+      { stat: 'essenceGain', a: 1e-3, doubles: false, what: 'Essence' },
+      { stat: 'darkMatterGain', a: 1e-5, doubles: false, what: 'Dark Matter' },
+      { stat: 'galaxyCoreGain', a: 1e-6, doubles: false, what: 'Galaxy Cores' },
+      { stat: 'chrononGain', a: 1e-6, doubles: false, what: 'Chronons' },
+    ],
+    desc: 'Every layer gains more, from Stardust to Chronons.',
+  },
+  {
+    id: 'omni.luck',
+    set: 'omni',
+    name: 'Omni Luck',
+    icon: 'dice',
+    color: '#B06BFF',
+    currency: 'essence',
+    base: 1e50,
+    growth: BALANCE.multiverse.omniGrowth.luck!,
+    effects: [
+      { stat: 'runeLuck', a: 1e-5, doubles: false, what: 'Rune Luck' },
+      { stat: 'auraLuck', a: 1e-5, doubles: false, what: 'Aura luck' },
+      { stat: 'mutationLuck', a: 1e-6, doubles: false, what: 'Mutation luck' },
+    ],
+    desc: 'Every roll in every shrine is luckier.',
+  },
+  {
+    id: 'omni.speed',
+    set: 'omni',
+    name: 'Omni Speed',
+    icon: 'auto',
+    color: '#2EE6FF',
+    currency: 'shards',
+    base: 1e80,
+    growth: BALANCE.multiverse.omniGrowth.speed!,
+    effects: [
+      { stat: 'gameSpeed', a: 2e-7, doubles: false, what: 'Game speed' },
+      { stat: 'runeSpeed', a: 1e-6, doubles: false, what: 'Rune speed' },
+      { stat: 'autoSpeed', a: 1e-6, doubles: false, what: 'Auto-buyers' },
+    ],
+    desc: 'Time itself runs faster, and so does every machine.',
   },
 ];
 

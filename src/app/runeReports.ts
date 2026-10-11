@@ -11,7 +11,7 @@ import { copies, rollSpeed, runeBulk, runeEffLog, runeLevel, runePrice, runesPer
 import { runeMutations } from '../engine/systems/mutations';
 import { MUTATIONS } from '../content/runeDepth';
 import { reqText } from '../engine/systems/unlocks';
-import { format, formatCount, formatTime } from '../ui/format';
+import { format, formatCount, formatFifths, formatTime } from '../ui/format';
 import type { TreeNodeView } from '../ui/tree/TreeView';
 import { NODE_COLORS } from './novaReports';
 import { game } from './game';
@@ -70,7 +70,7 @@ export function layerConfirm(id: string): LayerConfirm | null {
   const def = layer(id);
   const p = resetPreview(s, id);
   if (!def || !p) return null;
-  return { name: def.name, action: def.action, gain: format(p.gain, n()), currency: def.currency === 'essence' ? 'Nebula Essence' : def.currency, ready: def.ready(s), resets: p.resets, kept: p.kept };
+  return { name: def.name, action: def.action, gain: (def.currency === 'sparks' ? formatFifths : format)(p.gain, n()), currency: def.currency === 'essence' ? 'Nebula Essence' : def.currency, ready: def.ready(s), resets: p.resets, kept: p.kept };
 }
 
 export function nebulaTreeReport(): { open: boolean; essence: string; nodes: TreeNodeView[]; edges: Array<[string, string]> } {

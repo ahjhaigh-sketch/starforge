@@ -37,6 +37,7 @@ import { MirrorPanel, WormholesPanel } from './screens/MirrorPanels';
 import { GalacticConfirmPanel, GalacticPanel, GalacticTreePanel, GalaxyMapPanel, ObservatoryPanel, StarChartPanel } from './screens/GalacticPanels';
 import { ColoniesPanel, MegastructuresPanel, TerraformPanel } from './screens/GalaxyBuildPanels';
 import { BigCrunchPanel, CrunchConfirmPanel, EchoesPanel, EternityPanel } from './screens/CrunchPanels';
+import { CreditsPanel, MultiverseConfirmPanel, MultiversePanel, SparkTreePanel, StoryPanel, UniverseForgePanel } from './screens/MultiversePanels';
 import { useUi } from './store';
 
 /** Shown while time away is being simulated; fades in only if that takes a moment. */
@@ -141,6 +142,12 @@ export function App() {
       <CrunchConfirmPanel />
       <EternityPanel />
       <EchoesPanel />
+      <MultiversePanel />
+      <MultiverseConfirmPanel />
+      <SparkTreePanel />
+      <UniverseForgePanel />
+      <StoryPanel />
+      <CreditsPanel />
       <SettingsPanel />
       <PanelHost />
       <ToastHost />

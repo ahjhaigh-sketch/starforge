@@ -125,6 +125,12 @@ export const MEDALS: readonly MedalDef[] = [
   { id: 'eternity.all', name: "Forever and a Day", desc: "Buy every Eternity upgrade.", icon: 'eternity', req: { kind: 'count', stat: 'eternityUpgrades', count: 10, noun: 'Eternity upgrade' } },
   { id: 'echo.nova', name: "Ringing in the Ears", desc: "Go Echo Supernova.", icon: 'echo', req: { kind: 'count', stat: 'echoNovas', count: 1, noun: 'Echo Supernova' } },
   { id: 'echo.nebula', name: "Reverb", desc: "Go Echo Nebula.", icon: 'echo', req: { kind: 'count', stat: 'echoNebulas', count: 1, noun: 'Echo Nebula' } },
+  // Phase 18: the Multiverse
+  { id: 'multiverse.1', name: "The Last Starsmith", desc: "Enter the Multiverse.", icon: 'multiverse', req: { kind: 'count', stat: 'multiversesAll', count: 1, noun: 'Multiverse' } },
+  { id: 'multiverse.10', name: "Many Worlds", desc: "Enter the Multiverse 10 times.", icon: 'multiverse', req: { kind: 'count', stat: 'multiversesAll', count: 10, noun: 'Multiverse' } },
+  { id: 'multiverse.rules', name: "Against the Odds", desc: "Finish a universe played under 4 rules.", icon: 'universe', req: { kind: 'count', stat: 'rulesBest', count: 4, noun: 'rule' } },
+  { id: 'sparks.all', name: "Every Spark", desc: "Own all 114 Spark choices.", icon: 'spark', req: { kind: 'count', stat: 'sparkChoices', count: 114, noun: 'Spark choice' } },
+  { id: 'omni.1m', name: "Omnipresent", desc: "Raise an Omni Constant to level 1,000,000.", icon: 'constants', req: { kind: 'count', stat: 'omniBest', count: 1e6, noun: 'level' } },
   // Phase 7: Comet Fusion, Attunements, the Merchant and starships
   { id: 'fusion.5', name: "Comet Smith", desc: "Fuse a level 5 comet.", icon: 'comet', req: { kind: 'count', stat: 'fusionBest', count: 5, noun: 'fusion level' } },
   { id: 'fusion.10', name: "Starfall Forge", desc: "Fuse a level 10 comet.", icon: 'comet', req: { kind: 'count', stat: 'fusionBest', count: 10, noun: 'fusion level' } },

@@ -11,7 +11,7 @@ import { planPurchase } from '../buy';
 import { maxBuy } from '../cost';
 import { D, type Decimal, ZERO } from '../decimal';
 import { events } from '../events';
-import { onAnyReset, performReset } from '../layers';
+import { milestoneReached, onAnyReset, performReset } from '../layers';
 import { cur, type GameState, spend } from '../state';
 import { invalidateStats, registerSources, stat } from '../stats';
 import { every, registerSystem } from '../tick';
@@ -35,7 +35,9 @@ import { goalMet as trialGoalMet, inTrial } from './trials';
  * whole earlier layer each (its reset, its tree, its constants and its side systems); the rest are
  * boosts. Every automated layer has a switch and a rule for when it resets:
  * - "double": once the reset would at least double what this run has gathered of its currency, or
- *   once the run's gain per second starts to fall (waiting longer would only slow you down);
+ *   once the run's gain per second starts to fall (waiting longer would only slow you down); and
+ *   as soon as it is ready once the layer's reset is free (its "resets nothing" milestone one layer
+ *   up). Passive income can make a run's total dwarf any one reset, so a free layer must not wait;
  * - "amount": once the reset gives at least a number you set.
  * Automation acts once a game second and never cuts an unfinished Trial short. It spends freely on
  * one-off tree nodes and builds, but at most a tenth of a currency on anything that repeats
@@ -106,11 +108,21 @@ export function gainPeaked(s: GameState, layer: string, gain: Decimal): boolean 
   return secs >= ET.peakAfter && rate.lt(best.rate.mul(ET.peakShare));
 }
 
+/** A layer whose reset resets nothing (the milestone one layer up): waiting would gain nothing. */
+const FREE: Partial<Record<AutoLayer, (s: GameState) => boolean>> = {
+  supernova: (s) => milestoneReached(s, 'nebula', 'novaFree'),
+  nebula: (s) => milestoneReached(s, 'singularity', 'nebulaFree'),
+  singularity: (s) => milestoneReached(s, 'galactic', 'singularityFree'),
+  galactic: (s) => milestoneReached(s, 'crunch', 'galacticFree'),
+};
+export const resetIsFree = (s: GameState, layer: AutoLayer): boolean => FREE[layer]?.(s) ?? false;
+
 /** Whether the layer's rule says to reset now, given the gain and the run total of its currency. */
 export function ruleSaysGo(s: GameState, layer: AutoLayer, gain: Decimal, currency: string): boolean {
   if (gain.lt(1)) return false;
   const a = eternityAuto(s, layer);
   if (a.mode === 'amount') return gain.gte(a.at);
+  if (resetIsFree(s, layer)) return true;
   const peaked = gainPeaked(s, layer, gain);
   return peaked || gain.gte(s.totals.run[currency] ?? ZERO);
 }

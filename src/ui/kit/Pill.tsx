@@ -11,6 +11,7 @@ export function CurrencyPill({
   rate,
   label,
   locked,
+  className,
 }: {
   icon: string;
   color?: string;
@@ -18,9 +19,11 @@ export function CurrencyPill({
   rate?: (s: Snapshot) => string;
   label: string;
   locked?: boolean;
+  /** e.g. the rainbow rim of the Sparks pill. */
+  className?: string;
 }) {
   return (
-    <div className={`pill chunk ${locked ? 'locked' : ''}`} style={tint(color)} title={label} aria-label={label}>
+    <div className={`pill chunk ${locked ? 'locked' : ''} ${className ?? ''}`} style={tint(color)} title={label} aria-label={label}>
       <span className="ico">
         <Icon name={icon} />
       </span>

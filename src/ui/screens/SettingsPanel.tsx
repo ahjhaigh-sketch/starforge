@@ -103,6 +103,8 @@ export function SettingsPanel() {
   const saveLabel = useSnap((s) => s.saveLabel);
   const reducedMotion = useSnap((s) => s.reducedMotion);
   const reduceFlashing = useSnap((s) => s.reduceFlashing);
+  const storySeen = useSnap((s) => s.storySeen);
+  const openPanel = useUi((s) => s.open);
   const muted = useSnap((s) => s.muted);
   const volumeMaster = useSnap((s) => s.volumeMaster);
   const volumeSfx = useSnap((s) => s.volumeSfx);
@@ -279,6 +281,19 @@ export function SettingsPanel() {
       <p style={{ fontSize: '0.8rem' }}>Safari deletes site data after 7 days without a visit, so export a code now and then.</p>
       <h3>Backups</h3>
       <Backups />
+      <h3>About</h3>
+      <div className="set-row">
+        <div className="set-ctl">
+          {storySeen && (
+            <Button size="sm" color="#7B3FD6" onClick={() => openPanel('story')}>
+              Read the ending again
+            </Button>
+          )}
+          <Button size="sm" color="#5A2A8C" onClick={() => openPanel('credits')} data-testid="open-credits">
+            Credits
+          </Button>
+        </div>
+      </div>
       <div className="set-row">
         <span className="lbl">Danger</span>
         <div className="set-ctl">

@@ -193,7 +193,7 @@ export function EternityPanel() {
       ) : (
         <>
           <div className="tree-head">
-            <p>Chronons buy upgrades that last for ever. Five of them each run a whole earlier layer for you: its reset, its tree, its constants and its side systems. Automation acts once a second, never cuts an unfinished Trial short, and never spends more than a tenth of a currency on anything that repeats for ever.</p>
+            <p>Chronons buy upgrades that last for ever. Five of them each run a whole earlier layer for you: its reset, its tree, its constants and its side systems. Automation acts once a second, never cuts an unfinished Trial short, and never spends more than a tenth of a currency on anything that repeats for ever. Once a layer's reset is free (it resets nothing), it goes as soon as it can.</p>
             <Chip icon="chronon" value={data.chronons} />
           </div>
           <div className="mirror-upgrades et-grid">

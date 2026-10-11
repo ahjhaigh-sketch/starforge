@@ -1687,3 +1687,54 @@ test('the Echo boards: tap the echo star, buy an echo engine; and the soundtrack
   expect(await page.evaluate(() => (window as unknown as Sf17).sf.game.state.settings.soundtrack)).toBe('deepvoid');
   expect(errors).toEqual([]);
 });
+
+// ---------- Phase 18: the Multiverse ----------
+
+type Sf18 = {
+  sf: {
+    game: {
+      state: {
+        stats: Record<string, number>;
+        multiverse: { tree: Record<string, number>; rules: string[]; next: string[]; storySeen: boolean };
+        currencies: Record<string, { toNumber(): number }>;
+      };
+    };
+  };
+};
+const mv = (page: Page) => <T,>(fn: () => T) => page.evaluate(fn);
+
+test('the Multiverse: pick a rule in the Universe Forge, enter through the confirm screen, read the ending, then buy a Spark choice', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const s = (window as unknown as Sf18).sf.game.state;
+    Object.assign(s.stats, { crunches: 10, crunchesAll: 10, crunchesBest: 10, crunchesCycle: 10 });
+  });
+  await openRail(page, 'universeforge');
+  const forge = page.locator('[data-panel="universeforge"]');
+  await forge.locator('[data-rule="dim"]').click();
+  expect(await mv(page)(() => (window as unknown as Sf18).sf.game.state.multiverse.next)).toEqual(['dim']);
+  await page.keyboard.press('Escape');
+  await page.getByTestId('multiverse').click();
+  const confirm = page.locator('[data-panel="multiverseConfirm"]');
+  await expect(confirm).toHaveClass(/open/);
+  await expect(confirm).toContainText('Dim Universe');
+  await confirm.getByRole('button', { name: 'Enter the Multiverse', exact: true }).click();
+  await expect.poll(() => mv(page)(() => (window as unknown as Sf18).sf.game.state.stats.multiversesAll)).toBe(1);
+  expect(await mv(page)(() => (window as unknown as Sf18).sf.game.state.multiverse.rules)).toEqual(['dim']);
+  // the ending tells itself, once, a moment later
+  const story = page.locator('[data-panel="story"]');
+  await expect(story).toHaveClass(/open/, { timeout: 8000 });
+  expect(await mv(page)(() => (window as unknown as Sf18).sf.game.state.multiverse.storySeen)).toBe(true);
+  await story.getByRole('button', { name: 'Credits' }).click();
+  await expect(page.locator('[data-panel="credits"]')).toHaveClass(/open/);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.hud .pill[aria-label="Multiverse Sparks"]')).toBeVisible();
+  await openRail(page, 'sparktree');
+  const tree = page.locator('[data-panel="sparktree"]');
+  await tree.locator('[data-node="mv.stardust.keep"]').click();
+  await tree.locator('.tree-card').getByRole('button', { name: /Buy/ }).click();
+  await expect.poll(() => mv(page)(() => (window as unknown as Sf18).sf.game.state.multiverse.tree['mv.stardust.keep'])).toBe(1);
+  expect(await mv(page)(() => (window as unknown as Sf18).sf.game.state.currencies.sparks?.toNumber())).toBe(5.8);
+  expect(errors).toEqual([]);
+});

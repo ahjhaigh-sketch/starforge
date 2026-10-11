@@ -122,7 +122,15 @@ export async function initRender(): Promise<boolean> {
         burst(cx, cy, 80, color, r.width * 0.6, 16);
         burst(cx, cy, 60, 0xffffff, r.width * 0.45, 14);
       };
+      // the Multiverse: a burst in every colour as the glass shatters
+      const rainbow = () => {
+        const r = anchorRect();
+        star?.flashWhite(1 * flashScale);
+        if (!r) return;
+        for (const c of [0xff4fc1, 0xffc83d, 0x7dff5a, 0x2ee6ff, 0xb06bff, 0xffffff]) burst(r.left + r.width / 2, r.top + r.height / 2, 30, c, r.width * 0.55, 16);
+      };
       if (e.layer === 'crunch') window.setTimeout(blast, 1150);
+      else if (e.layer === 'multiverse') window.setTimeout(rainbow, 850);
       else blast();
       return;
     }

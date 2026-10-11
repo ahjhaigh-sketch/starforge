@@ -76,7 +76,9 @@ export const SYSTEMS: readonly SystemDef[] = [
   { id: 'bigcrunch', name: 'Big Crunch', icon: 'crunch', color: '#C2561A', rail: 'right', req: { kind: 'count', stat: 'galacticsAll', count: 7, noun: 'Galactic Rebirth' }, panel: 'bigcrunch', built: true, blurb: 'The fifth reset: explore 7 galaxies, then collapse the universe for Chronons.' },
   { id: 'eternity', name: 'Eternity', icon: 'eternity', color: '#B85A1A', rail: 'right', req: { kind: 'count', stat: 'crunchesAll', count: 1, noun: 'Big Crunch' }, panel: 'eternity', built: true, blurb: 'Spend Chronons on upgrades that run whole layers for you.' },
   { id: 'echoes', name: 'Echo Boards', icon: 'echo', color: '#B08A1A', rail: 'right', req: { kind: 'count', stat: 'crunchesAll', count: 1, noun: 'Big Crunch' }, panel: 'echoes', built: true, blurb: 'The first three layers replayed small; their echoes boost the real game.' },
-  { id: 'multiverse', name: 'Multiverse', icon: 'multiverse', color: '#7B3FD6', rail: 'right', req: { kind: 'count', stat: 'crunchesAll', count: 10, noun: 'Big Crunch' }, built: false, blurb: 'The sixth reset: Sparks, a Universe Forge and Omni Constants.' },
+  { id: 'multiverse', name: 'Multiverse', icon: 'multiverse', color: '#7B3FD6', rail: 'right', req: { kind: 'count', stat: 'crunchesAll', count: 8, noun: 'Big Crunch' }, panel: 'multiverse', built: true, blurb: 'The sixth and last reset: 10 Big Crunches for 6 Sparks, then Omni Constants.' },
+  { id: 'universeforge', name: 'Universe Forge', icon: 'universe', color: '#B23A8E', rail: 'right', req: { kind: 'count', stat: 'crunchesAll', count: 8, noun: 'Big Crunch' }, panel: 'universeforge', built: true, blurb: 'Pick the rules of the next universe: each makes it harder and pays more Sparks.' },
+  { id: 'sparktree', name: 'Spark Choices', icon: 'spark', color: '#5A2A8C', rail: 'right', req: { kind: 'count', stat: 'multiversesAll', count: 1, noun: 'Multiverse' }, panel: 'sparktree', built: true, blurb: '114 choices at 0.2 Sparks each, in any order: keep layers, automate them, boost them.' },
 ];
 
 export const SYSTEM_BY_ID: ReadonlyMap<string, SystemDef> = new Map(SYSTEMS.map((x) => [x.id, x]));

@@ -30,6 +30,7 @@ import { fighting, leviathanHp, leviathansUnlocked } from '../engine/systems/lev
 import { antimatterRate, mirrorKey, mirrorOpen } from '../engine/systems/mirror';
 import { darkMatterNeeded, galacticGain, galacticReady, galacticReqs, galaxyOf } from '../engine/systems/galactic';
 import { crunchGain, crunchReady, crunchSeen, galaxiesExplored, galaxiesNeeded, nextChrononAt, runCores } from '../engine/systems/crunch';
+import { crunchesThisUniverse, multiverseGain, multiverseReady, multiverseSeen, sparkFlag } from '../engine/systems/multiverse';
 import { automating } from '../engine/systems/eternity';
 import { wyrmSky } from './wyrmReports';
 import { nebulaGain, nebulaReady, runShards } from '../engine/systems/nebula';
@@ -49,7 +50,7 @@ import { BELT_UPGRADES } from '../content/belt';
 import { GRADE_BY_ID, RELICS } from '../content/forge';
 import { forgeOpen, relicLevel } from '../engine/systems/forge';
 import { levelInfo, perksFree, starsmithOpen } from '../engine/systems/starsmith';
-import { format, formatCount, formatMult, formatRate, formatTime } from '../ui/format';
+import { format, formatCount, formatFifths, formatMult, formatRate, formatTime } from '../ui/format';
 import { game } from './game';
 
 /**
@@ -201,6 +202,17 @@ export interface Snapshot {
   crunchPct: number;
   chronons: string;
   chrononsVisible: boolean;
+  /** The Multiverse on the reset bar (from Big Crunch milestone 8), Sparks in the top bar. */
+  multiverseVisible: boolean;
+  multiverseReady: boolean;
+  multiverseGain: string;
+  multiverseReq: string;
+  multiversePct: number;
+  sparks: string;
+  sparksVisible: boolean;
+  /** The ending is waiting to be told (after the first Multiverse, once). */
+  storyDue: boolean;
+  storySeen: boolean;
   /** Reset bars of layers Eternity runs by itself ("supernova,nebula"): they shrink to a slim strip. */
   autoBars: string;
   /** Music: the soundtrack, its volume, and how many layers you've reached (each adds an instrument). */
@@ -431,7 +443,7 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     soundtrack: s.settings.soundtrack,
     volumeMusic: s.settings.volumeMusic,
     musicLayers: ['supernovasAll', 'nebulasAll', 'singularitiesAll', 'galacticsAll', 'crunchesAll'].filter((k) => (s.stats[k] ?? 0) > 0).length,
-    autoBars: (['supernova', 'nebula', 'singularity', 'galactic'] as const).filter((l) => automating(s, l)).join(','),
+    autoBars: [...(['supernova', 'nebula', 'singularity', 'galactic'] as const).filter((l) => automating(s, l)), ...(sparkFlag(s, 'autoCrunch') ? ['crunch'] : [])].join(','),
     autosaveSeconds: s.settings.autosaveSeconds,
     confirmResets: s.settings.confirmResets,
     hotkeys: s.settings.hotkeys,
@@ -479,6 +491,7 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     ...singularityBar(s, n),
     ...galacticBar(s, n),
     ...crunchBar(s, n),
+    ...multiverseBar(s, n),
     megaStages: Object.entries(s.megastructures)
       .filter(([, k]) => k > 0)
       .map(([id, k]) => `${id}:${k}`)
@@ -573,6 +586,24 @@ function crunchBar(s: GameState, n: Notation) {
     crunchPct: ready ? 100 : Math.floor(Math.min(1, explored / need) * 100),
     chronons: format(cur(s, 'chronons'), n),
     chrononsVisible: (s.stats.crunchesAll ?? 0) > 0 || cur(s, 'chronons').gt(0),
+  };
+}
+
+/** The Multiverse on the reset bar: visible from Big Crunch milestone 8 (or after the first one). */
+function multiverseBar(s: GameState, n: Notation) {
+  const need = BALANCE.multiverse.crunches;
+  const done = crunchesThisUniverse(s);
+  const ready = multiverseReady(s);
+  return {
+    multiverseVisible: multiverseSeen(s),
+    multiverseReady: ready,
+    multiverseGain: ready ? `+${formatFifths(multiverseGain(s), n)}` : '',
+    multiverseReq: ready ? 'Every universe after this one can have its own rules' : `Big Crunch ${need} times in this universe (${Math.min(done, need)}/${need})`,
+    multiversePct: ready ? 100 : Math.floor(Math.min(1, done / need) * 100),
+    sparks: formatFifths(cur(s, 'sparks'), n),
+    sparksVisible: (s.stats.multiversesAll ?? 0) > 0 || cur(s, 'sparks').gt(0),
+    storyDue: (s.stats.multiversesAll ?? 0) > 0 && !s.multiverse.storySeen,
+    storySeen: s.multiverse.storySeen,
   };
 }
 

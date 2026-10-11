@@ -138,6 +138,9 @@ let CR: typeof import('../src/engine/systems/crunch');
 let ET: typeof import('../src/engine/systems/eternity');
 let EC: typeof import('../src/engine/systems/echoes');
 let CC: typeof import('../src/content/crunch');
+let MV: typeof import('../src/engine/systems/multiverse');
+let MVC: typeof import('../src/content/multiverse');
+let constantCurve: (typeof import('../src/engine/systems/constants'))['constantCurve'];
 let PLANET_TYPES: (typeof import('../src/content/early'))['PLANET_TYPES'];
 
 async function loadGame(): Promise<void> {
@@ -206,6 +209,9 @@ async function loadGame(): Promise<void> {
   ET = await import('../src/engine/systems/eternity');
   EC = await import('../src/engine/systems/echoes');
   CC = await import('../src/content/crunch');
+  MV = await import('../src/engine/systems/multiverse');
+  MVC = await import('../src/content/multiverse');
+  ({ constantCurve } = await import('../src/engine/systems/constants'));
 }
 
 /** SIM_PROGRESS: wall time spent in each system since the last progress line. */
@@ -227,6 +233,8 @@ const STOP_AT_SINGULARITIES = Number(process.env.SIM_SINGULARITIES ?? 0);
 const STOP_AT_GALACTICS = Number(process.env.SIM_GALACTICS ?? 0);
 /** With SIM_CRUNCHES the bot plays on through that many Big Crunches. */
 const STOP_AT_CRUNCHES = Number(process.env.SIM_CRUNCHES ?? 0);
+/** With SIM_MULTIVERSES the bot plays on through that many Multiverses. */
+const STOP_AT_MULTIVERSES = Number(process.env.SIM_MULTIVERSES ?? 0);
 /** How often (game seconds) the bot looks after the Belt and the Starforge. */
 const SIDE_EVERY = 5;
 
@@ -293,6 +301,7 @@ function shop(s: GameState): void {
 function sideSystems(s: GameState): void {
   if (!beltOpen(s) || process.env.SIM_NO_SIDE) return;
   playEchoes(s);
+  spendOmni(s);
   invalidateStats();
   if (s.belt.field.length > 0) harvest(s, s.belt.field.map((a) => a.id));
   beltTierUp(s);
@@ -493,6 +502,36 @@ function spendChronons(s: GameState): void {
   }
 }
 
+/**
+ * Sparks: every layer's head first (the next universe keeps it all), then Auto-Crunch and the Spark
+ * Hoards, then the boosts, then echoes, cheapest first. Choices a head already covers are skipped.
+ */
+function spendSparks(s: GameState): void {
+  const tree = MV.sparkTree;
+  const covered = (id: string) => {
+    const n = MVC.SPARK_NODE.get(id)!;
+    return (id.endsWith('.milestones') || (id.endsWith('.auto') && n.arm !== 'crunch')) && tree.owns(s, `mv.${n.arm}.keep`);
+  };
+  const rank = (id: string) => (id.endsWith('.keep') ? 0 : id === 'mv.crunch.auto' ? 1 : 'flag' in MVC.SPARK_NODE.get(id)!.effect ? 2 : MVC.SPARK_NODE.get(id)!.repeat ? 4 : 3);
+  for (let i = 0; i < 200; i++) {
+    const pick = MVC.SPARK_TREE.filter((n) => tree.canBuy(s, n) && !covered(n.id)).sort((a, b) => rank(a.id) - rank(b.id) || tree.cost(s, a).cmp(tree.cost(s, b)))[0];
+    if (!pick || !tree.buy(s, pick.id)) break;
+  }
+}
+
+/** Omni Constants: as many levels as a tenth of each currency buys (they never double, so this climbs into the millions). */
+function spendOmni(s: GameState): void {
+  for (const c of CONSTANTS) {
+    if (c.set !== 'omni' || !constantOpen(s, c)) continue;
+    const n = COST.maxBuy(constantCurve(c), s.constants[c.id] ?? 0, cur(s, c.currency).mul(0.1));
+    if (n <= 0) continue;
+    const keep = s.settings.customBuyAmount;
+    s.settings.customBuyAmount = n;
+    buyConstant(s, c.id, 'custom');
+    s.settings.customBuyAmount = keep;
+  }
+}
+
 /** The Echo boards: the costliest engines Echo Dust covers, and each echo reset once it doubles what's held. */
 function playEchoes(s: GameState): void {
   if (!EC.echoesOpen(s)) return;
@@ -648,7 +687,9 @@ it('balance simulation', async () => {
   const trialFailed = new Map<string, number>();
   const singularityLengths: number[] = [];
   const playing = () =>
-    STOP_AT_CRUNCHES > 0
+    STOP_AT_MULTIVERSES > 0
+      ? (s.stats.multiversesAll ?? 0) < STOP_AT_MULTIVERSES
+      : STOP_AT_CRUNCHES > 0
       ? (s.stats.crunchesAll ?? 0) < STOP_AT_CRUNCHES
       : STOP_AT_GALACTICS > 0
       ? (s.stats.galacticsAll ?? 0) < STOP_AT_GALACTICS
@@ -663,10 +704,23 @@ it('balance simulation', async () => {
   let progressHour = 0;
   const wallStart = Date.now();
   const crunchLengths: number[] = [];
+  let multiverseStart = 0;
+  const multiverseLengths: string[] = [];
+  let seenCrunches = 0;
   while (s.playtime < MAX_HOURS * 3600 && playing()) {
     // Phase 12: buy the key, then fall in when it at least doubles lifetime Dark Matter (or the run drags past an hour)
     tracing = TRACE_FROM > 0 && s.playtime >= TRACE_FROM;
     trace('loop');
+    // a Big Crunch happened (the bot's, or the Auto-Crunch Spark choice's inside a tick): a new Crunch run starts
+    if ((s.stats.crunchesAll ?? 0) > seenCrunches) {
+      seenCrunches = s.stats.crunchesAll ?? 0;
+      crunchLengths.push(s.playtime - crunchStart);
+      skipped.clear();
+      crunchStart = galacticStart = singularityStart = nebulaStart = runStart = s.playtime;
+      bestRate = D(0);
+      spendChronons(s);
+      record(`Big Crunch ${seenCrunches}`);
+    }
     if (SG.keyOnSale(s) && !s.singularity.key) SG.buyKey(s);
     // Phase 17: Big Crunch as soon as 7 galaxies are explored (each Crunch counts towards the Multiverse's ten)
     // Phase 15: head for the first unexplored galaxy, and go Galactic when that at least doubles lifetime Galaxy Cores (or after an hour)
@@ -674,16 +728,33 @@ it('balance simulation', async () => {
       // stay until the galaxy you're in is explored, then the first one not explored yet; a galaxy whose goal is out of
       // reach for an hour after a Big Crunch is skipped for the rest of that Crunch run (the map offers three ahead)
       const here = (s.stats.galacticsAll ?? 0) > 0 ? s.galactic.galaxy : '';
-      if (here && (s.stats.crunchesAll ?? 0) > 0 && !GL.galaxyCleared(s, here) && s.playtime - galacticStart > 3600) skipped.add(here);
+      // (never the last galaxy left: skipping it would only Galactic-reset its goal's count every hour)
+      const elsewhere = GC.GALAXIES.some((g) => g.id !== here && !GL.galaxyCleared(s, g.id) && !skipped.has(g.id) && GL.galaxyAvailable(s, g.id));
+      if (!elsewhere) skipped.delete(here);
+      else if (here && (s.stats.crunchesAll ?? 0) > 0 && !GL.galaxyCleared(s, here) && s.playtime - galacticStart > 3600) skipped.add(here);
       const stay = here && !GL.galaxyCleared(s, here) && !skipped.has(here);
       const next = stay ? GC.GALAXY_BY_ID.get(here) : GC.GALAXIES.find((g) => !GL.galaxyCleared(s, g.id) && g.id !== here && !skipped.has(g.id) && GL.galaxyAvailable(s, g.id));
       if (next && s.galactic.next !== next.id) GL.setNextGalaxy(s, next.id);
+    }
+    // Phase 18: enter the Multiverse as soon as it pays; the next universe is Restless (no time away: the bot never leaves)
+    trace('multiverse?');
+    if (MV.multiverseReady(s)) {
+      const g = MV.multiverseGain(s);
+      multiverseLengths.push(`${hms(s.playtime - multiverseStart)} (+${g.toNumber()} Sparks)`);
+      MV.setNextRule(s, 'restless', true);
+      performReset(s, 'multiverse');
+      skipped.clear();
+      multiverseStart = crunchStart = galacticStart = singularityStart = nebulaStart = runStart = s.playtime;
+      bestRate = D(0);
+      spendSparks(s);
+      spendChronons(s);
+      record(`Multiverse ${s.stats.multiversesAll}`);
+      continue;
     }
     trace('crunch?');
     if (CR.crunchReady(s)) {
       const g = CR.crunchGain(s);
       if (g.gte(1)) {
-        crunchLengths.push(s.playtime - crunchStart);
         if (process.env.SIM_DEBUG_MAG) console.log(`[mag] Crunch ${(s.stats.crunchesAll ?? 0) + 1}: +${fmt(g)} Chronons from ${fmt(CR.runCores(s))} run Galaxy Cores, ${s.stats.galactics ?? 0} Galactic Rebirths this run`);
         if (process.env.SIM_DEBUG_MAG) {
           const { breakdown } = await import('../src/engine/stats');
@@ -698,11 +769,6 @@ it('balance simulation', async () => {
           }
         }
         performReset(s, 'crunch');
-        skipped.clear();
-        crunchStart = galacticStart = singularityStart = nebulaStart = runStart = s.playtime;
-        bestRate = D(0);
-        spendChronons(s);
-        record(`Big Crunch ${s.stats.crunchesAll}`);
         continue;
       }
     }
@@ -789,6 +855,12 @@ it('balance simulation', async () => {
       progressHour = Math.floor(s.playtime / PROGRESS_EVERY);
       process.stderr.write(`[progress] ${hms(s.playtime)} wall ${((Date.now() - wallStart) / 1000).toFixed(0)}s: SN ${s.stats.supernovasAll ?? 0}, N ${s.stats.nebulasAll ?? 0}, S ${s.stats.singularitiesAll ?? 0}, G ${s.stats.galacticsAll ?? 0} (${s.galactic.cleared.length} explored, in ${s.galactic.galaxy}), C ${s.stats.crunchesAll ?? 0}, Chronons ${fmt(s.totals.all.chronons ?? D(0))}, run GC ${fmt(s.totals.run.galaxyCores ?? D(0))}, Eternity ${s.eternity.upgrades.length}; slowest: ${[...sysTime].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([id, ms]) => `${id} ${(ms / 1000).toFixed(1)}s`).join(', ')}\n`);
       sysTime.clear();
+      // SIM_DEBUG_MV: why Singularities come when they do
+      if (process.env.SIM_DEBUG_MV) {
+        const since = (l: string) => (s.playtime - (s.lastResetAt[l] ?? 0)).toFixed(0);
+        process.stderr.write(`[mv] S this run ${s.stats.singularities ?? 0}, since S ${since('singularity')}s N ${since('nebula')}s SN ${since('supernova')}s; run essence ${fmt(s.totals.run.essence ?? D(0))}, essence ${fmt(cur(s, 'essence'))}, S gain ${fmt(SG.singularityGain(s))}, ready ${SG.singularityReady(s)}, key ${s.singularity.key}; essenceGain ${fmt(stat(s, 'essenceGain'))}, DM gain ${fmt(stat(s, 'darkMatterGain'))}, speed ${stat(s, 'gameSpeed').toNumber().toFixed(2)}, auto ${(['supernova', 'nebula', 'singularity', 'galactic'] as const).filter((l) => ET.automating(s, l)).join('/')}, nebulaFree ${SG.nebulaFree(s)}; SN this run ${s.stats.supernovas ?? 0}, SN ready ${supernovaReady(s)}, SN gain ${fmt(supernovaGain(s))}, run shards ${fmt(s.totals.run.shards ?? D(0))}, tier ${s.tier}, run dust ${fmt(s.totals.run.stardust ?? D(0))}, passive ${stat(s, 'passiveShards').toNumber().toFixed(3)}, nebula ready ${nebulaReady(s)}
+`);
+      }
     }
     const dt = s.playtime - runStart < 1800 ? 1 : 5;
     for (let i = 0; i < TAPS_PER_SECOND * dt && i < 40; i++) tapStar(s, rt, (ms += 1000 / TAPS_PER_SECOND));
@@ -898,6 +970,7 @@ it('balance simulation', async () => {
   if (MR.mirrorOpen(s)) console.log(`Mirror (opened ${hms(s.stats.mirrorOpenedAt ?? 0)}): depth ${s.mirror.depth}/11, ${s.mirror.upgrades.length}/9 upgrades${MR.mirrorKey(s) ? ' (key)' : ''}, Antimatter ${fmt(cur(s, 'antimatter'))} at ${fmt(MR.antimatterRate(s))}/s, ${Object.values(s.mirror.engines).reduce((a, b) => a + b, 0)} engines. Wormholes: ${s.wormholes.links.map((l) => `${l.from}>${l.to}`).join(', ') || 'none'}.`);
   if (TR.trialsOpen(s)) console.log(`Trials: ${TR.totalTrialLevels(s)} levels (${CH.TRIALS.filter((t) => TR.trialLevel(s, t.id) >= t.levels).length} mastered), Fast Nova ${CH.FAST_RANKS[s.trials.fastBest]?.name ?? 'none'}. Spire floor ${s.spire.floor}. Leviathans beaten ${s.stats.leviathansBeaten ?? 0}/12 (${s.stats.leviathanKills ?? 0} kills), Scale Tree ${Object.keys(s.scaleTree).length}/14, scales ${fmt(cur(s, 'scales'))}.`);
   if (CO.coloniesOpen(s) || s.stats.megaStages) console.log(`Megastructures: ${GB.MEGASTRUCTURES.map((m) => `${m.name} ${MS.megaStage(s, m.id)}/5`).join(', ')}. Colonies: ${s.colonies.list.map((c) => `${c.name} ${fmt(D(c.pop))}${c.finished !== null ? ` (terraformed ${c.finished})` : ''}`).join(', ') || 'none'}; routes ${s.colonies.routes.length}, research ${s.colonies.research.length}/6, Supply ${fmt(cur(s, 'supply'))}.`);
+  if (multiverseLengths.length) console.log(`Universes, game time: ${multiverseLengths.join(', ')}. Spark choices ${Object.keys(s.multiverse.tree).length}/${MVC.SPARK_TREE.length} (${MVC.MULTIVERSE_ARMS.filter((a) => MV.keeps(s, a.key)).map((a) => a.name).join(', ') || 'no layers'} kept), Sparks ${cur(s, 'sparks').toNumber()}, Omni Constants ${CONSTANTS.filter((c) => c.set === 'omni').map((c) => `${c.name} ${s.constants[c.id] ?? 0}`).join(', ')}, Big Crunches this universe ${s.stats.crunchesCycle ?? 0}.`);
   if (crunchLengths.length) console.log(`Crunch runs, game time: first ${hms(crunchLengths[0] ?? 0)}, then ${crunchLengths.slice(1).map(hms).join(', ')}. Chronons (lifetime) ${fmt(s.totals.all.chronons ?? D(0))}, Eternity ${s.eternity.upgrades.length}/${CC.ETERNITY_UPGRADES.length}, Echo board: ${Object.values(s.echoes.engines).reduce((a, b) => a + b, 0)} engines, Echo Shards ${fmt(s.totals.all.echoShards ?? D(0))}, Echo Essence ${fmt(s.totals.all.echoEssence ?? D(0))} (${s.stats.echoNovas ?? 0} Echo Supernovas, ${s.stats.echoNebulas ?? 0} Echo Nebulas).`);
   if (galacticLengths.length) console.log(`Galactic runs, game time: first ${hms(galacticLengths[0] ?? 0)}, then ${galacticLengths.slice(1).map(hms).join(', ')}. Galaxy Cores (lifetime) ${fmt(s.totals.all.galaxyCores ?? D(0))}, Galactic Tree ${Object.keys(s.galacticTree).length}/200, galaxies explored ${s.galactic.cleared.length} (${s.galactic.cleared.join(', ')}), in ${s.galactic.galaxy}, Star Charts ${fmt(cur(s, 'starCharts'))}, chart ${Object.keys(s.starChart).length}/12, best Star Score ${s.stats.starScoreBest ?? 0}.`);
   if (singularityLengths.length) console.log(`Singularity runs, game time: first ${hms(singularityLengths[0] ?? 0)}, then ${singularityLengths.slice(1).map(hms).join(', ')}`);

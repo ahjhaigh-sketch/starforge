@@ -42,6 +42,7 @@ import type { BuildingId } from '../content/galaxyBuild';
 import type { AutoLayer } from '../content/crunch';
 import { ECHO_BOARD, echoTap } from '../engine/systems/echoes';
 import { buyEternity, setEternityAuto } from '../engine/systems/eternity';
+import { setNextRule, sparkTree } from '../engine/systems/multiverse';
 import { buyForgeUpgrade, buyRelic, equipRelic, setForgeGrade, setForgeOn, setForgeShare, unequipRelic } from '../engine/systems/forge';
 import { backupNow, readBackup } from './backups';
 import { D } from '../engine/decimal';
@@ -662,6 +663,21 @@ export const commands = {
   setEternityAuto(layer: AutoLayer, change: { on?: boolean; mode?: 'double' | 'amount'; at?: number }) {
     const { at, ...rest } = change;
     setEternityAuto(game.state, layer, at === undefined ? rest : { ...rest, at: D(Math.max(0, Number.isFinite(at) ? Math.floor(at) : 0)) });
+    done();
+  },
+  /** The Multiverse: Spark choices, the next universe's rules, and the ending (told once). */
+  buySparkNode(id: string): boolean {
+    const ok = sparkTree.buy(game.state, id);
+    done();
+    return ok;
+  },
+  setNextRule(id: string, on: boolean): boolean {
+    const ok = setNextRule(game.state, id, on);
+    done();
+    return ok;
+  },
+  markStorySeen() {
+    game.state.multiverse.storySeen = true;
     done();
   },
   toggleMute() {

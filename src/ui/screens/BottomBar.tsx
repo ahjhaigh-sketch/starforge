@@ -43,12 +43,13 @@ function CrunchBar() {
   const gain = useSnap((s) => s.crunchGain);
   const req = useSnap((s) => s.crunchReq);
   const pct = useSnap((s) => s.crunchPct);
+  const slim = useSnap((s) => s.autoBars.includes('crunch'));
   const open = useUi((s) => s.open);
   if (!visible) return null;
   return (
     <button
       type="button"
-      className={cx('nova nebula-bar singularity-bar crunch-bar chunk pop', ready ? 'ready' : 'locked')}
+      className={cx('nova nebula-bar singularity-bar crunch-bar chunk pop', ready ? 'ready' : 'locked', slim && 'slim')}
       style={tint('#B4501A')}
       onClick={() => (ready ? startCrunch(open) : open('bigcrunch'))}
       aria-label={ready ? `Big Crunch for ${gain} Chronons` : `Big Crunch. ${req}.`}
@@ -58,10 +59,50 @@ function CrunchBar() {
       <span className="inner">
         {!ready && <Icon name="lock" className="nova-lock" />}
         <span className="title ol">BIG CRUNCH</span>
+        {slim && <AutoTag />}
         {ready && (
           <span className="gain ol">
             {gain}
             <Icon name="chronon" />
+          </span>
+        )}
+        <span className="req ol-sm">{req}</span>
+      </span>
+    </button>
+  );
+}
+
+function startMultiverse(open: (id: string) => void): void {
+  if (snapshotStore.getState().confirmResets) open('multiverseConfirm');
+  else commands.reset('multiverse');
+}
+
+/** The last reset: a rainbow bar. */
+function MultiverseBar() {
+  const visible = useSnap((s) => s.multiverseVisible);
+  const ready = useSnap((s) => s.multiverseReady);
+  const gain = useSnap((s) => s.multiverseGain);
+  const req = useSnap((s) => s.multiverseReq);
+  const pct = useSnap((s) => s.multiversePct);
+  const open = useUi((s) => s.open);
+  if (!visible) return null;
+  return (
+    <button
+      type="button"
+      className={cx('nova nebula-bar singularity-bar multiverse-bar chunk pop', ready ? 'ready' : 'locked')}
+      style={tint('#7B3FD6')}
+      onClick={() => (ready ? startMultiverse(open) : open('multiverse'))}
+      aria-label={ready ? `Enter the Multiverse for ${gain} Sparks` : `Multiverse. ${req}.`}
+      data-testid="multiverse"
+    >
+      <span className="fill" style={{ width: `${pct}%` }} />
+      <span className="inner">
+        {!ready && <Icon name="lock" className="nova-lock" />}
+        <span className="title ol">MULTIVERSE</span>
+        {ready && (
+          <span className="gain ol">
+            {gain}
+            <Icon name="spark" />
           </span>
         )}
         <span className="req ol-sm">{req}</span>
@@ -240,6 +281,7 @@ export function BottomBar() {
       <SingularityBar />
       <GalacticBar />
       <CrunchBar />
+      <MultiverseBar />
     </div>
   );
 }

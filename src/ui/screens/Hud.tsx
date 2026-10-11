@@ -14,6 +14,7 @@ const darkMatterValue = (s: { darkMatter: string }) => s.darkMatter;
 const antimatterValue = (s: { antimatter: string }) => s.antimatter;
 const coresValue = (s: { galaxyCores: string }) => s.galaxyCores;
 const chrononValue = (s: { chronons: string }) => s.chronons;
+const sparkValue = (s: { sparks: string }) => s.sparks;
 
 const BUFF_COLORS: Record<string, string> = { frenzy: '#FF7A2E', tapstorm: '#2EE6FF', wish: '#B06BFF' };
 
@@ -41,6 +42,7 @@ export function Hud() {
   const antimatterVisible = useSnap((s) => s.antimatterVisible);
   const coresVisible = useSnap((s) => s.galaxyCoresVisible);
   const chrononsVisible = useSnap((s) => s.chrononsVisible);
+  const sparksVisible = useSnap((s) => s.sparksVisible);
   return (
     <header className="hud">
       <CurrencyPill icon="stardust" label="Stardust" value={dustValue} rate={dustRate} />
@@ -50,6 +52,7 @@ export function Hud() {
       {antimatterVisible && <CurrencyPill icon="antimatter" label="Antimatter" color="#2A6F8F" value={antimatterValue} />}
       {coresVisible && <CurrencyPill icon="galaxy" label="Galaxy Cores" color="#3F7A12" value={coresValue} />}
       {chrononsVisible && <CurrencyPill icon="chronon" label="Chronons" color="#9A4A12" value={chrononValue} />}
+      {sparksVisible && <CurrencyPill icon="spark" label="Multiverse Sparks" color="#5A2A8C" value={sparkValue} className="pill-rainbow" />}
       {oreVisible && <CurrencyPill icon="belt" label="Ore" color="#3B4370" value={oreValue} />}
       <div className="tag-pill chunk tier-pill" style={tint('var(--panel)')} title={`Star Tier ${tierIndex + 1} of 12`}>
         <span className="tier-dot" style={{ background: tierColor, color: tierColor }} />

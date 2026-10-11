@@ -523,6 +523,22 @@ export const BALANCE = {
     treeBase: 10,
     treeGrowth: 2.5,
   },
+  /** Phase 18: the Multiverse, the sixth and last reset (Math and balance: reset layers; UUT's Rift). */
+  multiverse: {
+    /** Needs this many Big Crunches in this universe. */
+    crunches: 10,
+    /** Sparks a Multiverse pays (Spark Hoards add 0.2 each, milestone 6 adds 1), times 1 + the Universe Forge's reward. */
+    sparks: 6,
+    sparkBonus: 0.2,
+    /** Every Spark choice costs 0.2; the echoes at the fork centres level up with no cap, x2 the price a level. */
+    choiceCost: 0.2,
+    echoGrowth: 2,
+    /**
+     * Omni Constants: prices rise by a hair a level (10^0.0001 to 10^0.0002), so one universe's Stardust, Essence or
+     * shards buys millions of levels. Effects are linear (no doublings): an Omni level can never pay for the next.
+     */
+    omniGrowth: { gain: 10 ** 0.0002, luck: 10 ** 0.0001, speed: 10 ** 0.0002 } as Record<string, number>,
+  },
   /** Phase 17: the Big Crunch, the fifth reset (Math and balance: reset layers). */
   crunch: {
     /**

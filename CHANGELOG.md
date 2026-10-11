@@ -1,7 +1,27 @@
 # Changelog
 
+## Phase 18: the Multiverse
+- The Multiverse is the sixth and last reset. Ten Big Crunches in a universe pay 6 Multiverse Sparks (more from Spark Hoards, milestone 6 and the Universe Forge's rules). It resets every earlier layer; Trials, the Spire, the Leviathans, the Scale Tree, every collection, relics, the Codex, Mastery, the Starsmith Level, medals and Omni Constants stay.
+  - Milestones: 1 Omni Constants and the ending; 2 the Forge takes 4 rules; 4 every rule; 6 +1 Spark; 10 every universe starts with all ten Eternity upgrades.
+  - A rainbow cinematic: the sky cracks into coloured glass and shatters outwards, with a burst in every colour and its own sound. Reduced motion shows the glass glowing and fading instead.
+- Spark choices: 114 choices at 0.2 Sparks each, bought in any order, on a radial tree with six arms (one per earlier layer).
+  - Each arm's head stops the Multiverse resetting that layer; the next two keep its milestones and its Eternity automation (on the Crunch arm, Auto-Crunch).
+  - The rest are boosts, six Spark Hoards (+0.2 Sparks each) and 24 echoes that level with no cap (0.2 x 2^level).
+  - Sparks snap back to whole fifths after every change: in floating point 0.6 - 0.2 - 0.2 is 0.19999..., which could not buy the third choice.
+- The Universe Forge: pick the next universe's rules (Dim, Dear, Cold, Heavy, Unlucky, Restless, Faint). Each makes that universe harder and pays from 15% to 50% more Sparks at its end. Two rules at once, four from Multiverse 2, all seven from Multiverse 4. Rules show in every stat breakdown as "Universe: <name>".
+- Omni Constants: Omni Gain (Stardust), Omni Luck (Essence) and Omni Speed (Nova Shards). They never double, so they are linear and climb into the millions of levels; 10,000,000 levels buy in one step, for exactly the series' cost.
+- The ending: the Last Starsmith's story opens by itself a moment after the first Multiverse (once no other panel is open), followed by the credits. Settings can show both again.
+- Also:
+  - A rainbow-rimmed Sparks pill in the top bar, and a rainbow Multiverse bar.
+  - The Multiverse, Spark Choices, Universe Forge, story and credits panels, plus a confirm screen that names the next universe's rules.
+  - Two icons, 5 medals, rails and the Ascent map.
+  - The Big Crunch bar shrinks to an "AUTO" strip with Auto-Crunch.
+- Fixed, found by the simulator's long runs: once passive shards had made a run's shards far larger than any single Supernova, while Stardust kept climbing, Eternity's Supernova rule (double the run, or a slowing gain) never fired. The Nebula waited on its 30 Supernovas, and Singularities and galaxies waited on the Nebula. Now, once a layer's reset is free (its "resets nothing" milestone one layer up), Eternity resets it as soon as it is ready. In a universe that keeps everything, Crunch runs fell from 2 to 4 hours to under 45 minutes.
+- The simulator plays the Multiverse (SIM_MULTIVERSES). It spends Sparks (every layer's head first), buys Omni Constants, counts Crunches made by Auto-Crunch, never skips the last unexplored galaxy, and has a SIM_DEBUG_MV progress line. The first Multiverse comes at 12 h 24 min to 17 h 35 min across seeds (about twice the first Big Crunch). On seed 2026 the second universe takes 16 h and the third, keeping every layer, 4 h 39 min.
+- Save version 19 (Spark choices, rules, the story flag; Big Crunches so far count towards the first universe), with a migration test that loads a real version 18 save.
+
 ## Phase 17: the Big Crunch, Eternity, the Echo boards, music and a polish pass
-- The Big Crunch is the fifth reset. It needs 7 galaxies explored in the Crunch run, and two more for each Big Crunch already in this universe (up to all 20). With 7 every time, Eternity's automation and everything a Crunch keeps made the simulator's later Crunches minutes apart; with the step, the tenth comes at about 3 times the first (26 hours against 8.5), and the whole Galaxy Map gets used.
+- The Big Crunch is the fifth reset. It needs 7 galaxies explored in the Crunch run, and two more for each Big Crunch already in this universe (up to all 20). With 7 every time, Eternity's automation and everything a Crunch keeps made the simulator's later Crunches minutes apart; with the step, the tenth comes at about twice the first (17 h 46 min against 8 h 29 min on the simulator's seed 2026), and the whole Galaxy Map gets used.
   - It gives floor((log10(GC / 10) + 1)^1.5) x Chronon gain, GC = Galaxy Cores gained this Crunch run. The plan divided by 1e6, which gives nothing: the simulator's first Crunch run gathers about 750 Cores (4 Chronons).
   - Lifetime Chronons multiply Galaxy Cores by (1 + Chronons)^0.5.
   - It resets the Galactic layer and everything below: Galaxy Cores, explored galaxies, the Galactic Tree and Galactic Constants (until milestones keep them). Megastructures, colonies, the Stardust Chart, Trials, the Spire, the Leviathans, wormholes and every collection stay. The Observatory draws a new sky.

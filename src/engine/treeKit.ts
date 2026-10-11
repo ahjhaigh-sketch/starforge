@@ -43,6 +43,10 @@ export interface TreeDef {
   open: (s: GameState) => boolean;
   /** Raises every multiplier node's effect to this power (the Galactic Tree's Arms constant). */
   power?: (s: GameState) => number;
+  /** Lines drawn between nodes that are not requirements (the Spark tree: every choice is open). */
+  links?: ReadonlyArray<readonly [string, string]>;
+  /** Runs after every purchase (the Spark tree snaps Sparks back to whole fifths). */
+  afterBuy?: (s: GameState) => void;
 }
 
 export interface Tree {
@@ -77,6 +81,7 @@ export function makeTree(def: TreeDef): Tree {
       const n = byId.get(id);
       if (!n || !canBuy(s, n) || !spend(s, def.currency, cost(s, n))) return false;
       def.levels(s)[id] = level(s, id) + 1;
+      def.afterBuy?.(s);
       invalidateStats();
       events.emit({ t: 'purchase', kind: def.id, id, amount: 1 });
       return true;

@@ -134,6 +134,7 @@ export const plainSaveSchema = z.looseObject({
     .looseObject({ upgrades: z.array(z.string()), auto: z.record(z.string(), z.looseObject({ on: z.boolean(), mode: z.enum(['double', 'amount']), at: dec })) })
     .optional(),
   echoes: z.looseObject({ engines: z.record(z.string(), z.number().int().min(0)), ever: z.record(z.string(), z.number().int().min(0)) }).optional(),
+  multiverse: z.looseObject({ tree: z.record(z.string(), z.number().int().min(0)), rules: z.array(z.string()), next: z.array(z.string()), storySeen: z.boolean() }).optional(),
   colonies: z
     .looseObject({
       list: z.array(

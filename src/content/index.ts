@@ -30,6 +30,7 @@ import { registerColonies } from '../engine/systems/colonies';
 import { registerCrunch } from '../engine/systems/crunch';
 import { registerEchoes } from '../engine/systems/echoes';
 import { registerEternity } from '../engine/systems/eternity';
+import { registerMultiverse } from '../engine/systems/multiverse';
 import { registerStarsmith } from '../engine/systems/starsmith';
 import { registerComets } from '../engine/systems/comets';
 import { registerNovaTree } from '../engine/systems/novaTree';
@@ -90,5 +91,6 @@ export function registerContent(): void {
   registerCrunch();
   registerEchoes();
   registerEternity();
+  registerMultiverse();
   registerUnlocks();
 }

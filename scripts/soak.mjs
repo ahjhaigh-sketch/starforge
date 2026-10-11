@@ -6,7 +6,7 @@ import { chromium } from '@playwright/test';
 
 const seconds = Number(process.argv[2] ?? 120);
 const base = process.argv[3] ?? 'http://localhost:4173';
-const PANELS = ['upgrades', 'medals', 'stats', 'constants', 'quests', 'orbitals', 'mastery', 'novatree', 'automation', 'ascent', 'belt', 'level', 'drill', 'starforge', 'fusion', 'attune', 'merchant', 'expeditions', 'nebula', 'runes', 'nebulatree', 'index', 'starring', 'mutations', 'auras', 'wyrms', 'nursery', 'spectral', 'tarot', 'singularity', 'singularitytree', 'blackhole', 'reactor', 'prismwheel'];
+const PANELS = ['upgrades', 'medals', 'stats', 'constants', 'quests', 'orbitals', 'mastery', 'novatree', 'automation', 'ascent', 'belt', 'level', 'drill', 'starforge', 'fusion', 'attune', 'merchant', 'expeditions', 'nebula', 'runes', 'nebulatree', 'index', 'starring', 'mutations', 'auras', 'wyrms', 'nursery', 'spectral', 'tarot', 'singularity', 'singularitytree', 'blackhole', 'reactor', 'prismwheel', 'trials', 'spire', 'leviathans', 'wormholes', 'mirror', 'galactic', 'galaxymap', 'galactictree', 'observatory', 'megastructures', 'colonies', 'starchart', 'bigcrunch', 'eternity', 'echoes', 'multiverse', 'universeforge', 'sparktree'];
 
 const browser = await chromium.launch();
 let failed = false;
@@ -50,6 +50,12 @@ for (const view of [
     s.stats.bhStageBest = 8;
     s.blackHole.mass = new (s.currencies.stardust.constructor)(2e7);
     commands.devAdd('darkMatter', 1e6);
+    // Phases 13 to 18: every later rail open (each panel shows what it needs where it is still locked)
+    Object.assign(s.stats, { mirrorKey: 1, galacticsAll: 7, crunchesAll: 10, multiversesAll: 1 });
+    s.multiverse.storySeen = true;
+    commands.devAdd('galaxyCores', 1e4);
+    commands.devAdd('chronons', 20);
+    commands.devAdd('sparks', 6);
   });
   const end = Date.now() + seconds * 1000;
   let round = 0;

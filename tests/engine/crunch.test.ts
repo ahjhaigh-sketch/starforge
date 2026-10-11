@@ -416,6 +416,22 @@ describe('Eternity', () => {
     expect(s.stats.supernovasAll).toBe(6);
   });
 
+  it('a layer whose reset is free goes as soon as it is ready, however far passive income has run ahead (found by the simulator)', () => {
+    const s = crunched();
+    s.eternity.upgrades = ['et.nova'];
+    s.tier = BALANCE.supernova.tier;
+    s.stats.supernovasAll = 5;
+    // Nebula milestone 10: a Supernova resets nothing
+    Object.assign(s.stats, { nebulas: 10, nebulasAll: 10, nebulasBest: 10 });
+    expect(milestoneReached(s, 'nebula', 'novaFree')).toBe(true);
+    gain(s, 'stardust', D(1e9));
+    // the run's shards dwarf the gain, and the gain is still climbing: neither "double" nor "slowing" would ever fire
+    s.totals.run.shards = D('1e300');
+    tick(s, 1);
+    tick(s, 1);
+    expect(s.stats.supernovasAll).toBeGreaterThan(5);
+  });
+
   it('buys quietly: automated purchases are marked auto', () => {
     const s = crunched();
     s.eternity.upgrades = ['et.nova'];

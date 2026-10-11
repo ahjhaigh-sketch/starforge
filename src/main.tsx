@@ -20,6 +20,7 @@ import './ui/mirror.css';
 import './ui/galactic.css';
 import './ui/galaxybuild.css';
 import './ui/crunch.css';
+import './ui/multiverse.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -112,7 +113,7 @@ async function boot(): Promise<void> {
   startClock();
 
   if (game.devMode) {
-    Object.assign(window, { sf: { game, commands, stat, breakdown, D, saveNow, fx: { burst, liveParticles, renderMs: () => renderStage.renderMs, wyrms: () => renderStage.swimmingWyrms() } } });
+    Object.assign(window, { sf: { game, commands, stat, breakdown, D, saveNow, open: (id: string) => useUi.getState().open(id), fx: { burst, liveParticles, renderMs: () => renderStage.renderMs, wyrms: () => renderStage.swimmingWyrms() } } });
   }
 }
 

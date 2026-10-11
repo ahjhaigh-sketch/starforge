@@ -97,3 +97,10 @@ export function formatTime(seconds: number): string {
   if (m > 0) return `${m}m ${sec}s`;
   return `${sec}s`;
 }
+
+/** Multiverse Sparks come in fifths: 10.4 Sparks reads "10.4", not "10". From 1,000 up, as format(). */
+export function formatFifths(value: DecimalSource, notation: Notation = 'suffix'): string {
+  const x = value instanceof Decimal ? value : D(value);
+  if (!x.isFinite() || x.lt(0) || x.gte(1000)) return format(x, notation);
+  return (Math.round(x.toNumber() * 5) / 5).toFixed(1).replace(/\.0$/, '');
+}
