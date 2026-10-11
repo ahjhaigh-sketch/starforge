@@ -6,7 +6,7 @@ import { events } from '../engine/events';
 import { burst, initParticles, setParticlesEnabled, updateParticles } from './particles';
 import { OrbitalsView } from './orbitals';
 import { StarCore } from './star';
-import { initStarfield, resizeStarfield, updateStarfield } from './starfield';
+import { initStarfield, resizeStarfield, setNebulaClouds, updateClouds, updateStarfield } from './starfield';
 
 /**
  * PixiJS draws behind the whole UI: the sky, the Star Core and particles. One canvas, fixed to
@@ -73,6 +73,7 @@ export async function initRender(): Promise<boolean> {
     star!.setMotes(s.moteCount);
     orbitals!.set(s.planets, s.ringsOpen);
     star!.setTier(s.tierIndex, false);
+    setNebulaClouds(s.nebulasAll);
   };
   star.setTier(snapshotStore.getState().tierIndex, true);
   apply();
@@ -105,6 +106,7 @@ export async function initRender(): Promise<boolean> {
     const { width, height } = app.screen;
     resizeStarfield(width, height);
     updateStarfield(dt, still);
+    updateClouds(dt, still);
     const r = anchorRect();
     if (r && r.width > 0) {
       star.update(dt, r.left + r.width / 2, r.top + r.height / 2, r.width, still);

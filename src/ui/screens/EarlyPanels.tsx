@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { commands } from '../../app/commands';
-import { constantsReport, masteryReport, orbitalsReport, questsReport } from '../../app/earlyReports';
+import { type ConstantCard, constantsReport, masteryReport, orbitalsReport, questsReport } from '../../app/earlyReports';
 import { BuyAmountControl } from '../kit/BuyAmountControl';
 import { Button, cx, tint } from '../kit/Chunk';
 import { Icon } from '../kit/Icon';
@@ -10,40 +10,47 @@ import { useReport } from '../kit/useReport';
 
 /** Cosmic Constants: infinite upgrades with any buy amount, including "to the next x2". */
 export function ConstantsPanel() {
-  const r = useReport('constants', constantsReport, 150);
+  const r = useReport('constants', () => constantsReport('stellar'), 150);
   return (
     <Panel id="constants" title="Cosmic Constants" color="#7B3FD6" size="wide">
       <p>No level cap. Each level costs more; every effect doubles every 25 levels (every 100 after Lv 1,000, every 1,000 after Lv 100,000).</p>
       <BuyAmountControl />
-      <div className="const-grid">
-        {r?.cards.map((c) => (
-          <div key={c.id} className={cx('const-card chunk', !c.open && 'locked')} style={tint(c.open ? '#2B1F6E' : '#24203F')} data-constant={c.id}>
-            <span className="const-ico chunk" style={tint(c.open ? c.color : '#3A3466')}>
-              <Icon name={c.open ? c.icon : 'lock'} />
-            </span>
-            <div className="const-body">
-              <b>
-                {c.name} <span className="num lvl">{c.level}</span>
-              </b>
-              <small>{c.open ? c.desc : c.req}</small>
-              {c.effects.map((e) => (
-                <span key={e.what} className="const-eff">
-                  {e.what} <span className="num">{e.now}</span> → <span className="num next">{e.next}</span>
-                </span>
-              ))}
-              {c.doubling && <span className="const-dbl">{c.doubling}</span>}
-            </div>
-            <Button className="const-buy" color={c.can ? 'var(--lime)' : '#5A5F8F'} disabled={!c.can} onClick={() => commands.buyConstant(c.id)} aria-label={`Buy ${c.count} levels of ${c.name} for ${c.cost} Stardust`}>
-              <span className="num">{c.count}</span>
-              <span className="cost-chip">
-                <Icon name="stardust" />
-                {c.cost}
-              </span>
-            </Button>
-          </div>
-        ))}
-      </div>
+      {r && <ConstantGrid cards={r.cards} />}
     </Panel>
+  );
+}
+
+/** Constant cards with buy buttons (the Stellar set here, the Nebula set on the Nebula panel). */
+export function ConstantGrid({ cards }: { cards: ConstantCard[] }) {
+  return (
+    <div className="const-grid">
+      {cards.map((c) => (
+        <div key={c.id} className={cx('const-card chunk', !c.open && 'locked')} style={tint(c.open ? '#2B1F6E' : '#24203F')} data-constant={c.id}>
+          <span className="const-ico chunk" style={tint(c.open ? c.color : '#3A3466')}>
+            <Icon name={c.open ? c.icon : 'lock'} />
+          </span>
+          <div className="const-body">
+            <b>
+              {c.name} <span className="num lvl">{c.level}</span>
+            </b>
+            <small>{c.open ? c.desc : c.req}</small>
+            {c.effects.map((e) => (
+              <span key={e.what} className="const-eff">
+                {e.what} <span className="num">{e.now}</span> → <span className="num next">{e.next}</span>
+              </span>
+            ))}
+            {c.doubling && <span className="const-dbl">{c.doubling}</span>}
+          </div>
+          <Button className="const-buy" color={c.can ? 'var(--lime)' : '#5A5F8F'} disabled={!c.can} onClick={() => commands.buyConstant(c.id)} aria-label={`Buy ${c.count} levels of ${c.name} for ${c.cost} ${c.currencyName}`}>
+            <span className="num">{c.count}</span>
+            <span className="cost-chip">
+              <Icon name={c.currencyIcon} />
+              {c.cost}
+            </span>
+          </Button>
+        </div>
+      ))}
+    </div>
   );
 }
 

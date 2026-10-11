@@ -21,6 +21,7 @@ import {
 } from '../engine/systems/stardust';
 import { reqProgress, reqText } from '../engine/systems/unlocks';
 import { attuneHud } from './extrasReports';
+import { nebulaGain, nebulaReady, runShards } from '../engine/systems/nebula';
 import { BUFF_KINDS, buffLeft, cometOnScreen } from '../engine/systems/comets';
 import { availableUpgrades } from '../engine/systems/upgrades';
 import { MEDALS } from '../content/medals';
@@ -150,6 +151,16 @@ export interface Snapshot {
   railRight: RailItem[];
   novaPct: number;
   novaReq: string;
+  /** The Nebula: shown on the reset bar from 30 Supernovas (or after the first Nebula). */
+  nebulaVisible: boolean;
+  nebulaReady: boolean;
+  nebulaGain: string;
+  nebulaReq: string;
+  nebulaPct: number;
+  essence: string;
+  essenceVisible: boolean;
+  /** Nebulas ever: cyan clouds drift into the sky after the first. */
+  nebulasAll: number;
   novaReady: boolean;
   novaGain: string;
   shards: string;
@@ -319,6 +330,7 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
   const nova = BALANCE.supernova;
   const novaReady = supernovaReady(s);
   const hud = attuneHud();
+  const neb = nebulaBar(s, n);
   const lvl = levelInfo(s);
   const novaTier = reqProgress(s, { kind: 'tier', tier: nova.tier });
   const run = (s.totals.run.stardust ?? D(0)).toNumber();
@@ -384,6 +396,14 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     enginesOwned: formatCount(enginesOwned, n),
     railLeft: railItems(s, 'left', prev?.railLeft),
     railRight: railItems(s, 'right', prev?.railRight),
+    nebulaVisible: neb.visible,
+    nebulaReady: neb.ready,
+    nebulaGain: neb.gain,
+    nebulaReq: neb.req,
+    nebulaPct: neb.pct,
+    essence: format(cur(s, 'essence'), n),
+    essenceVisible: (s.stats.nebulasAll ?? 0) > 0 || cur(s, 'essence').gt(0),
+    nebulasAll: s.stats.nebulasAll ?? 0,
     novaPct: novaReady ? 100 : Math.floor((s.tier >= nova.tier ? 0.5 + novaDust * 0.5 : novaTier * 0.5) * 100),
     novaReq: novaReady
       ? `Next shard at ${format(nextShardAt(s), n)} Stardust`
@@ -413,4 +433,20 @@ export function publish(): void {
 /** Select ONE primitive field (or a stable row/list): a new object per call loops forever. */
 export function useSnap<T>(selector: (s: Snapshot) => T): T {
   return useStore(snapshotStore, selector);
+}
+
+/** The Nebula on the reset bar: visible once a run reaches 30 Supernovas, or after the first Nebula. */
+function nebulaBar(s: GameState, n: Notation): { visible: boolean; ready: boolean; gain: string; req: string; pct: number } {
+  const B = BALANCE.nebula;
+  const novas = s.stats.supernovas ?? 0;
+  const visible = (s.stats.nebulasAll ?? 0) > 0 || (s.stats.supernovasBest ?? 0) >= B.supernovas || novas >= B.supernovas;
+  const ready = nebulaReady(s);
+  const shardShare = Math.min(1, runShards(s).div(B.runShards).toNumber());
+  const pct = ready ? 100 : Math.floor((Math.min(1, novas / B.supernovas) * 0.5 + shardShare * 0.5) * 100);
+  const req = ready
+    ? 'Nebula Essence buys the Nebula Tree and boosts all shards'
+    : novas < B.supernovas
+      ? `${novas} / ${B.supernovas} Supernovas this Nebula run`
+      : `Gather ${format(B.runShards, n)} Nova Shards this Nebula run (${format(runShards(s), n)})`;
+  return { visible, ready, gain: ready ? `+${format(nebulaGain(s), n)}` : '', req, pct };
 }

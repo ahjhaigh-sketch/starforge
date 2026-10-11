@@ -19,6 +19,8 @@ import { buyAutoFuse, buyFusionUpgrade, fuse, type FusionUpgradeId } from '../en
 import { equipAttune, unequipAttune, unlockAttune } from '../engine/systems/attune';
 import { buyDeal, buyLuck, reroll } from '../engine/systems/merchant';
 import { buyShip, buyShipUpgrade, launch, setShipAuto, type ShipUpgradeId } from '../engine/systems/ships';
+import { buyNebulaNode } from '../engine/systems/nebulaTree';
+import { rollOnce, type RollResult, setShrine } from '../engine/systems/runes';
 import { buyForgeUpgrade, buyRelic, equipRelic, setForgeGrade, setForgeOn, setForgeShare, unequipRelic } from '../engine/systems/forge';
 import { backupNow, readBackup } from './backups';
 import { D } from '../engine/decimal';
@@ -222,6 +224,26 @@ export const commands = {
   },
   setShipAuto(ship: number, auto: boolean) {
     setShipAuto(game.state, ship, auto);
+    done();
+  },
+  buyNebulaNode(id: string): boolean {
+    const ok = buyNebulaNode(game.state, id);
+    done();
+    return ok;
+  },
+  /** Auto-Supernova at this gain (0 turns it off). */
+  setAutoNova(shards: number) {
+    game.state.nebula.autoAt = D(Math.max(0, Number.isFinite(shards) ? Math.floor(shards) : 0));
+    done();
+  },
+  /** One roll by hand at a shrine; returns what came up for the roll card. */
+  rollRunes(shrine: string): RollResult | null {
+    const r = rollOnce(game.state, shrine);
+    done();
+    return r;
+  },
+  setShrine(shrine: string, patch: { auto?: boolean; rate?: number; luck?: number; keep?: number }) {
+    setShrine(game.state, shrine, patch);
     done();
   },
   buyNode(id: string): boolean {

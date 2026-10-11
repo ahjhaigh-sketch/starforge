@@ -249,7 +249,7 @@ export const BALANCE = {
     quickBurnSeconds: 900,
   },
   /** Cost growth per level of each Stellar Constant (between 1.05 and 2, Math and balance tab). */
-  constants: { gravity: 1.3, light: 1.3, heat: 1.35, orbit: 1.35 },
+  constants: { gravity: 1.3, light: 1.3, heat: 1.35, orbit: 1.35, runeSpeed: 1.8, runeBulk: 1.6, resonance: 2, drift: 1.9 },
   novaTree: {
     /** Node price along an arm: armBase x armGrowth^depth (depth 0 to 22). */
     armBase: 3,
@@ -304,13 +304,42 @@ export const BALANCE = {
     /** Rerolling the deals costs shards: 5 x 2^n, back to 5 after each Supernova (a new ship docks free). */
     rerollBase: 5,
     rerollGrowth: 2,
-    /** Merchant Luck: deals x1.1 a level; Mythical chance 1% + 0.2% a level. */
-    luck: { base: 20, growth: 1.8, value: 0.1 },
+    /** Merchant Luck: deals +10% a level and Mythical chance 1% + 0.2% a level, up to level 25 (x3.5, 6%). */
+    luck: { base: 20, growth: 1.8, value: 0.1, max: 25 },
+    /** Levels a relic deal gives: common, rare, Mythical (never scaled by luck). */
+    relicLevels: [1, 2, 5],
     rareChance: 0.1,
     rareMult: 3,
     mythicalChance: 0.01,
     mythicalPerLevel: 0.002,
     mythicalMult: 100,
+  },
+  nebula: {
+    /** The second reset: 30 Supernovas and 100,000 shards gathered in one Nebula run. */
+    supernovas: 30,
+    runShards: 1e5,
+    /** Essence = floor((NS / 1e5)^0.35); the first Nebula gives 2. */
+    gainPow: 0.35,
+    firstGain: 2,
+    /** Lifetime Essence boosts shard gain: x(1 + E)^0.4. */
+    passivePow: 0.4,
+    /** Milestone 10: Supernova resets nothing and 1/50 of its gain trickles in every second. */
+    trickle: 1 / 50,
+    /** Nebula Tree nodes cost Essence: 1 x 2.6^depth along each wisp. */
+    treeBase: 1,
+    treeGrowth: 2.6,
+  },
+  runes: {
+    /** Rolls a second (Rune Speed) stop at 20; bulk (runes a roll) has no cap. */
+    speedCap: 20,
+    /** Every 10th roll gets x2 luck; the rarest visible rune in a shrine is guaranteed after 3 x its odds in rolls. */
+    pityEvery: 10,
+    pityLuck: 2,
+    hardPity: 3,
+    /** Nothing gets better than 1 in 10 (runes at 1 in 10 or better never change). */
+    floor: 10,
+    /** Below this many expected hits a tick, draw a Poisson count; above it, use the expectation. */
+    poissonBelow: 1000,
   },
   ships: {
     /** Starship Expeditions open at 15 Supernovas. Ships cost Iron alloy; up to 5. */

@@ -1,5 +1,46 @@
 # Changelog
 
+## Phase 8: the Nebula and Constellation Runes
+- The Nebula, the second reset, needs 30 Supernovas and 100,000 shards gathered in one Nebula run.
+  - Essence = floor((shards this run / 100,000)^0.35); the first Nebula always gives 2.
+  - Lifetime Essence multiplies shard gain by (1 + Essence)^0.4.
+  - A Nebula bar sits under the Supernova bar. A confirm screen lists what resets (Stardust, the Supernova layer, shards) and what stays (relics, the Codex and runes).
+  - Supernova counts are now per run, lifetime and best, so milestones keep working across Nebulas.
+- Nebula milestones remove chores:
+  - 1: keep Supernova milestones;
+  - 2: auto-Supernova at a shard amount you type;
+  - 3: Void Wyrms appear on the rails;
+  - 5: keep the Nova Tree;
+  - 8: the Singularity appears;
+  - 10: a Supernova resets nothing and 1/50 of its gain trickles in every second.
+- The Nebula Tree: 100 nodes in a drifting cloud, drawn with the same tree view as the Nova Tree.
+  - A root, four wisps of 22 nodes (Veil, Bloom, Drift, Lattice), four capstones and seven repeatable echoes.
+  - Nodes cost Essence, 1 x 2.6^depth along a wisp.
+- Nebula Constants (infinite upgrades, bought with Essence): Rune Speed, Rune Bulk, Resonance (rune effects) and Drift (Essence).
+- Constellation Runes: eight shrines, each with its own currency.
+  - Dust and Nova open at the first Nebula, Nebula and Forge at the second, Wyrm with the first Wyrm. Void, Galactic and Eternal wait on the rails for later layers.
+  - Each shrine has 19 runes from 1 in 2 to 1 in e36, a hidden "???" rune and an Anomaly that ignores luck.
+  - Effective odds use Rune Luck and Luck Root in log space, never better than 1 in 10.
+  - Every 10th roll gets x2 luck, and the rarest visible rune has a hard pity at 3 x its odds.
+  - Rune level = min(cap, floor(sqrt(copies))); each rune boosts 1 to 8 stats, shown as one "Runes: <shrine>" line per stat in the breakdowns.
+- Rolling:
+  - Runes per second = speed (up to 20 rolls a second) x bulk.
+  - Every rune costs the shrine's price, so spend per second is price x runes per second.
+  - Auto-roll slows to what you can afford and never goes negative; a slider caps the roll rate.
+  - Hand rolls, a keep filter for auto-roll, and "You can roll for" (∞ when income covers it).
+  - The engine never loops roll by roll: expected hits per tick, Poisson draws below 1,000. A billion billion runes a second costs the computer the same as one.
+  - Auto-roll keeps going offline from its own random stream.
+- A slot-machine card lands for each roll ("Nothing this time" when a roll finds no new copies), and Mythic or rarer finds get a banner across the screen. Both respect reduced motion.
+- The hidden Dust rune, the Whisper of Sylthaz, opens a secret Starsmith perk.
+- Nebula clouds drift through the starfield once you have gone Nebula, with an Essence pill in the top bar.
+- 8 new medals for Nebulas, runes found and runes rolled.
+- Balance fixes found by the simulator, which now plays to 8 Nebulas:
+  - Resonance is +2% rune effects a level with no doublings, and it never scales a rune's power. A doubling Resonance was multiplied into every rune of a shrine and ran away.
+  - Merchant Luck stops at level 25. Relic deals give 1, 2 or 5 levels, and every deal is sized from rates, never lifetime totals.
+  - Nebula Tree echoes cost x4 to x10 more a level (they were x3), so each Nebula adds a little less than the last.
+  - Result: across five seeds, Nebulas 2 to 8 take 2.2 to 3.5 times the bot time of the first Nebula.
+- Save version 9, with a migration test that loads a real version 8 save.
+
 ## Phase 7: Supernova extras
 - Comet Fusion opens at 6 Supernovas.
   - A merge board: 3x3, growing to 5x5. A comet arrives every 12 s.

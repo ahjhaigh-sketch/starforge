@@ -28,12 +28,18 @@ export interface ConstantCard {
   cost: string;
   count: string;
   can: boolean;
+  /** The icon and name of the currency it costs. */
+  currencyIcon: string;
+  currencyName: string;
 }
 
-export function constantsReport(): { title: string; cards: ConstantCard[] } {
+const CURRENCY_ICONS: Record<string, string> = { stardust: 'stardust', essence: 'nebula', shards: 'shard' };
+
+/** One set of Cosmic Constants (Stellar on the Constants panel, Nebula on the Nebula panel). */
+export function constantsReport(setId = 'stellar'): { title: string; cards: ConstantCard[] } {
   const s = game.state;
-  const set = CONSTANT_SETS[0]!;
-  const cards = CONSTANTS.map((c): ConstantCard => {
+  const set = CONSTANT_SETS.find((x) => x.id === setId) ?? CONSTANT_SETS[0]!;
+  const cards = CONSTANTS.filter((c) => c.set === set.id).map((c): ConstantCard => {
     const L = level(s, c.id);
     const plan = constantPlan(s, c);
     const after = L + plan.count;
@@ -51,6 +57,8 @@ export function constantsReport(): { title: string; cards: ConstantCard[] } {
       cost: format(plan.cost, n()),
       count: `+${formatCount(plan.count, n())}`,
       can: plan.canAfford && constantOpen(s, c),
+      currencyIcon: CURRENCY_ICONS[c.currency] ?? 'stardust',
+      currencyName: c.currency === 'essence' ? 'Essence' : 'Stardust',
     };
   });
   return { title: set.name, cards };

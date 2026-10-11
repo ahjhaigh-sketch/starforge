@@ -47,3 +47,27 @@ export function nextInt(st: RngState, min: number, max: number): number {
 export function nextRange(st: RngState, min: number, max: number): number {
   return min + nextFloat(st) * (max - min);
 }
+
+/**
+ * A Poisson-distributed count with mean `lambda`, from the seeded stream: exact (Knuth) for small
+ * means, the normal approximation above 30. Rune rolls use it so the work per tick stays the same
+ * however many runes are rolled.
+ */
+export function nextPoisson(st: RngState, lambda: number): number {
+  if (!(lambda > 0)) return 0;
+  if (lambda < 30) {
+    const limit = Math.exp(-lambda);
+    let k = 0;
+    let p = 1;
+    do {
+      k++;
+      p *= nextFloat(st);
+    } while (p > limit);
+    return k - 1;
+  }
+  // Box-Muller: one standard normal from two uniforms
+  const u1 = Math.max(1e-12, nextFloat(st));
+  const u2 = nextFloat(st);
+  const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  return Math.max(0, Math.round(lambda + Math.sqrt(lambda) * z));
+}

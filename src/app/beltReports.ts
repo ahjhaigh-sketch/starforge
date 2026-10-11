@@ -20,7 +20,7 @@ import {
   layerAt,
   oreMastery,
 } from '../engine/systems/belt';
-import { levelInfo, perksFree, starsmithOpen } from '../engine/systems/starsmith';
+import { levelInfo, perkAvailable, perksFree, starsmithOpen } from '../engine/systems/starsmith';
 import { format, formatCount, formatMult } from '../ui/format';
 import { game } from './game';
 
@@ -146,6 +146,6 @@ export function starsmithReport(): StarsmithReport {
     into: format(info.into, n()),
     need: format(info.need, n()),
     free: perksFree(s),
-    perks: PERKS.map((p) => ({ id: p.id, name: p.name, desc: p.desc, icon: p.icon, points: s.starsmith.perks[p.id] ?? 0 })),
+    perks: PERKS.filter((p) => perkAvailable(s, p)).map((p) => ({ id: p.id, name: p.name, desc: p.desc, icon: p.icon, points: s.starsmith.perks[p.id] ?? 0 })),
   };
 }

@@ -42,7 +42,10 @@ export interface ConstantSetDef {
   req: Requirement;
 }
 
-export const CONSTANT_SETS: readonly ConstantSetDef[] = [{ id: 'stellar', name: 'Stellar Constants', layer: 'stardust', req: { kind: 'tier', tier: 2 } }];
+export const CONSTANT_SETS: readonly ConstantSetDef[] = [
+  { id: 'stellar', name: 'Stellar Constants', layer: 'stardust', req: { kind: 'tier', tier: 2 } },
+  { id: 'nebula', name: 'Nebula Constants', layer: 'nebula', req: { kind: 'count', stat: 'nebulasAll', count: 1, noun: 'Nebula' } },
+];
 
 export const CONSTANTS: readonly ConstantDef[] = [
   {
@@ -96,6 +99,56 @@ export const CONSTANTS: readonly ConstantDef[] = [
     effects: [{ stat: 'planetPower', a: 0.05, doubles: true, what: 'Planet bonuses' }],
     req: { kind: 'tier', tier: 3 },
     desc: 'Tightens every orbit: planets give more.',
+  },
+  // Nebula Constants: bought with Essence, kept through every Nebula. Rune speed and bulk live here,
+  // so runes per second can climb from 1 to quintillions over the game.
+  {
+    id: 'nebula.speed',
+    set: 'nebula',
+    name: 'Rune Speed',
+    icon: 'rune',
+    color: '#2EE6FF',
+    currency: 'essence',
+    base: 2,
+    growth: BALANCE.constants.runeSpeed,
+    effects: [{ stat: 'runeSpeed', a: 0.05, doubles: true, what: 'Rolls a second' }],
+    desc: 'Rolls runes faster (at most 20 rolls a second).',
+  },
+  {
+    id: 'nebula.bulk',
+    set: 'nebula',
+    name: 'Rune Bulk',
+    icon: 'rune',
+    color: '#B06BFF',
+    currency: 'essence',
+    base: 3,
+    growth: BALANCE.constants.runeBulk,
+    effects: [{ stat: 'runeBulk', a: 0.1, doubles: true, what: 'Runes a roll' }],
+    desc: 'More runes in every roll.',
+  },
+  {
+    id: 'nebula.resonance',
+    set: 'nebula',
+    name: 'Resonance',
+    icon: 'pulse',
+    color: '#FF4FC1',
+    currency: 'essence',
+    base: 10,
+    growth: BALANCE.constants.resonance,
+    effects: [{ stat: 'runeEffect', a: 0.02, doubles: false, what: 'Rune effects' }],
+    desc: "Every rune's boost is stronger.",
+  },
+  {
+    id: 'nebula.drift',
+    set: 'nebula',
+    name: 'Drift',
+    icon: 'nebula',
+    color: '#1E8FA8',
+    currency: 'essence',
+    base: 5,
+    growth: BALANCE.constants.drift,
+    effects: [{ stat: 'essenceGain', a: 0.05, doubles: true, what: 'Essence' }],
+    desc: 'More Essence from every Nebula.',
   },
 ];
 

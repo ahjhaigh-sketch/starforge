@@ -65,6 +65,15 @@ export const MEDALS: readonly MedalDef[] = [
   { id: 'element.56', name: "Heavy Metal", desc: "Find 56 elements, up to barium.", icon: 'atom', req: { kind: 'count', stat: 'elements', count: 56, noun: 'element' } },
   { id: 'element.92', name: "Uranium Age", desc: "Find 92 elements, up to uranium.", icon: 'atom', req: { kind: 'count', stat: 'elements', count: 92, noun: 'element' } },
   { id: 'element.118', name: "Every Element", desc: "Find all 118 elements.", icon: 'atom', req: { kind: 'count', stat: 'elements', count: 118, noun: 'element' } },
+  // Phase 8: the Nebula and Constellation Runes
+  { id: 'nebula.1', name: "Into the Mist", desc: "Go Nebula.", icon: 'nebula', req: { kind: 'count', stat: 'nebulasAll', count: 1, noun: 'Nebula' } },
+  { id: 'nebula.5', name: "Cloud Walker", desc: "Go Nebula 5 times.", icon: 'nebula', req: { kind: 'count', stat: 'nebulasAll', count: 5, noun: 'Nebula' } },
+  { id: 'nebula.10', name: "Free Star", desc: "Go Nebula 10 times.", icon: 'nebula', req: { kind: 'count', stat: 'nebulasAll', count: 10, noun: 'Nebula' } },
+  { id: 'runes.1', name: "First Rune", desc: "Find a rune.", icon: 'rune', req: { kind: 'count', stat: 'runesFound', count: 1, noun: 'rune' } },
+  { id: 'runes.25', name: "Rune Reader", desc: "Find 25 different runes.", icon: 'rune', req: { kind: 'count', stat: 'runesFound', count: 25, noun: 'rune' } },
+  { id: 'runes.75', name: "Constellation Keeper", desc: "Find 75 different runes.", icon: 'rune', req: { kind: 'count', stat: 'runesFound', count: 75, noun: 'rune' } },
+  { id: 'rolls.1m', name: "A Million Throws", desc: "Roll a million runes.", icon: 'rune', req: { kind: 'count', stat: 'runesRolled', count: 1000000, noun: 'rune rolled' } },
+  { id: 'rolls.1t', name: "Rune Storm", desc: "Roll a trillion runes.", icon: 'rune', req: { kind: 'count', stat: 'runesRolled', count: 1000000000000, noun: 'rune rolled' } },
   // Phase 7: Comet Fusion, Attunements, the Merchant and starships
   { id: 'fusion.5', name: "Comet Smith", desc: "Fuse a level 5 comet.", icon: 'comet', req: { kind: 'count', stat: 'fusionBest', count: 5, noun: 'fusion level' } },
   { id: 'fusion.10', name: "Starfall Forge", desc: "Fuse a level 10 comet.", icon: 'comet', req: { kind: 'count', stat: 'fusionBest', count: 10, noun: 'fusion level' } },

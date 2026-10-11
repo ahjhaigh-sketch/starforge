@@ -49,7 +49,7 @@ export interface NovaNode {
 /** Stats whose node changes another rule rather than adding or multiplying: drawn red. */
 const CHANGE_STATS = new Set(['milestoneBase', 'masteryMult', 'frenzyMult', 'tapstormMult', 'comboPower', 'comboDrain', 'engineCostMult', 'tierCostMult']);
 
-function colorOf(e: NodeEffect): NodeColor {
+export function colorOf(e: NodeEffect): NodeColor {
   if ('flag' in e) return 'unlock';
   if ('spsShare' in e) return 'add';
   if (CHANGE_STATS.has(e.stat)) return 'change';
@@ -74,7 +74,7 @@ const FORGE: Spec[] = [
   ['Remnant Heat', 'Keep 10% of your Stellar Constant levels when you go Supernova.', flag('keepConstants', 0.1)],
   ['Engine Choir', 'Engines produce 2.5 times as much.', mul('productionMult', 2.5)],
   ['Cheaper Still', 'Engines cost 15% less.', mul('engineCostMult', 0.85)],
-  ['Compound Forge', 'Engines +2% for every Supernova you have done.', { stat: 'productionMult', op: 'mul', perCount: 'supernovas', each: 0.02 }],
+  ['Compound Forge', 'Engines +2% for every Supernova you have done.', { stat: 'productionMult', op: 'mul', perCount: 'supernovasAll', each: 0.02 }],
   ['Foundry Core', 'Evolving your star costs half as much.', mul('tierCostMult', 0.5)],
   ['Overclock', 'Engines produce three times as much.', mul('productionMult', 3)],
   ['Echo Mastery', 'Each Mastery rank is x1.6 instead of x1.5.', add('masteryMult', 0.1)],

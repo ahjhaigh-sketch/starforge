@@ -11,6 +11,46 @@ export function startSupernova(open: (id: string) => void): void {
   else commands.reset('supernova');
 }
 
+/** The Nebula goes through its confirm screen when "Ask before resets" is on. */
+function startNebula(open: (id: string) => void): void {
+  if (snapshotStore.getState().confirmResets) open('nebulaConfirm');
+  else commands.reset('nebula');
+}
+
+function NebulaBar() {
+  const visible = useSnap((s) => s.nebulaVisible);
+  const ready = useSnap((s) => s.nebulaReady);
+  const gain = useSnap((s) => s.nebulaGain);
+  const req = useSnap((s) => s.nebulaReq);
+  const pct = useSnap((s) => s.nebulaPct);
+  const open = useUi((s) => s.open);
+  if (!visible) return null;
+  return (
+    <button
+      type="button"
+      className={cx('nova nebula-bar chunk pop', ready ? 'ready' : 'locked')}
+      style={tint('#1E6F88')}
+      disabled={!ready}
+      onClick={() => startNebula(open)}
+      aria-label={ready ? `Go Nebula for ${gain} Nebula Essence` : `Nebula. ${req}.`}
+      data-testid="nebula"
+    >
+      <span className="fill" style={{ width: `${pct}%` }} />
+      <span className="inner">
+        {!ready && <Icon name="lock" className="nova-lock" />}
+        <span className="title ol">NEBULA</span>
+        {ready && (
+          <span className="gain ol">
+            {gain}
+            <Icon name="nebula" />
+          </span>
+        )}
+        <span className="req ol-sm">{req}</span>
+      </span>
+    </button>
+  );
+}
+
 /** Under the star: Evolve, the phone Engines button, and the reset bar. */
 export function BottomBar() {
   const next = useSnap((s) => s.nextTierName);
@@ -69,6 +109,7 @@ export function BottomBar() {
           <span className="req ol-sm">{novaReq}</span>
         </span>
       </button>
+      <NebulaBar />
     </div>
   );
 }

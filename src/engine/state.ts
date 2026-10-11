@@ -2,7 +2,7 @@ import { D, type Decimal } from './decimal';
 import { seedRng, type RngState } from './rng';
 
 /** Bump with every change to the save's shape, and add a migration + an old-save fixture test. */
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 /** A new Fusion board is 3 x 3 (BALANCE.fusion.baseSize). */
 const BALANCE_FUSION_CELLS = 9;
 
@@ -130,7 +130,29 @@ export interface GameState {
   merchant: { deals: Deal[]; luck: number; rerolls: number; rng: RngState };
   /** Starship Expeditions: each ship's destination and time left, and fleet upgrades. */
   ships: { fleet: Array<{ sector: string | null; t: number; auto: boolean }>; upgrades: Record<string, number>; rng: RngState };
+  /** Nebula Tree node levels. */
+  nebulaTree: Record<string, number>;
+  /** Nebula settings: auto-Supernova when the gain reaches this many shards (0 = off). */
+  nebula: { autoAt: Decimal };
+  /** Constellation Runes: each shrine's settings and progress, copies of every rune, the rune stream. */
+  runes: { shrines: Record<string, ShrineState>; copies: Record<string, Decimal>; rng: RngState };
   settings: Settings;
+}
+
+/** One rune shrine: auto-roll, the share of your speed it uses, luck turned down, the keep filter. */
+export interface ShrineState {
+  auto: boolean;
+  /** Share of your roll speed to use (0 to 1). */
+  rate: number;
+  /** Share of your luck to use (0 to 1): turn it down to farm commons. */
+  luck: number;
+  /** Auto-roll keeps runes of this rarity and up (0 = keep everything). */
+  keep: number;
+  /** Fraction of a rune carried to the next tick. */
+  acc: number;
+  /** Rolls since the shrine's rarest visible rune (hard pity). */
+  pity: Decimal;
+  rolled: Decimal;
 }
 
 /** One Merchant offer: pay this, get that. Amounts are fixed when the deal appears. */
@@ -200,6 +222,9 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     attune: { unlocked: ['pulse'], equipped: [], pulse: [], heart: 0, chaosTaps: 0, chaos: null, rng: seedRng(seed ^ 0x0c4a_05d1) },
     merchant: { deals: [], luck: 0, rerolls: 0, rng: seedRng(seed ^ 0x3e7c_4a17) },
     ships: { fleet: [{ sector: null, t: 0, auto: true }], upgrades: {}, rng: seedRng(seed ^ 0x5417_9e11) },
+    nebulaTree: {},
+    nebula: { autoAt: D(0) },
+    runes: { shrines: {}, copies: {}, rng: seedRng(seed ^ 0x7b3f_d611) },
     settings: defaultSettings(),
   };
 }

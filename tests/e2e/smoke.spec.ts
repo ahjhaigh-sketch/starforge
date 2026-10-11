@@ -791,3 +791,87 @@ test('Starships: launch a ship; Engines make the trip shorter', async ({ page })
   await expect(panel.locator('[data-ship="0"]')).toContainText('Kuiper Drift');
   expect(errors).toEqual([]);
 });
+
+// ---------- Phase 8: the Nebula and Constellation Runes ----------
+
+type Sf8 = {
+  sf: {
+    game: {
+      state: {
+        tier: number;
+        unlocked: string[];
+        stats: Record<string, number>;
+        nebulaTree: Record<string, number>;
+        runes: { copies: Record<string, { toNumber(): number }>; shrines: Record<string, { rolled: { toNumber(): number }; auto: boolean }> };
+        currencies: Record<string, { toNumber(): number }>;
+      };
+    };
+    commands: { devAdd(c: string, n: number): void };
+  };
+};
+
+const st8 = (page: Page) => page.evaluate.bind(page);
+
+test('the Nebula: from 30 Supernovas through the confirm screen; Essence arrives and the shrines open', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf8).sf;
+    const s = game.state;
+    s.tier = 3;
+    s.stats.supernovas = 30;
+    s.stats.supernovasAll = 30;
+    s.stats.supernovasBest = 30;
+    commands.devAdd('shards', 2e5);
+  });
+  const bar = page.getByTestId('nebula');
+  await expect(bar).toBeEnabled();
+  await bar.click();
+  const confirm = page.locator('[data-panel="nebulaConfirm"]');
+  await expect(confirm).toHaveClass(/open/);
+  await expect(confirm).toContainText('Nova Shards');
+  await expect(confirm).toContainText('Relics, the Codex and runes');
+  await confirm.getByRole('button', { name: 'Go Nebula' }).click();
+  await expect.poll(() => st8(page)(() => (window as unknown as Sf8).sf.game.state.currencies.essence?.toNumber() ?? 0)).toBe(2);
+  await expect.poll(() => st8(page)(() => (window as unknown as Sf8).sf.game.state.stats.supernovas)).toBe(0);
+  await expect(page.locator('.hud .pill[aria-label="Nebula Essence"]')).toBeVisible();
+  // the rune shrines: roll once by hand at the Nova shrine (10 shards a rune). Not Stardust: from the
+  // first Nebula the Supernova milestones stay, so auto-buyers spend Stardust on engines at once.
+  await page.evaluate(() => (window as unknown as Sf8).sf.commands.devAdd('shards', 1000));
+  await openRail(page, 'runes');
+  const runes = page.locator('[data-panel="runes"]');
+  await runes.locator('[data-shrine="nova"]').click();
+  await runes.getByTestId('roll-once').click();
+  await expect(runes.getByTestId('roll-card')).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as Sf8).sf.game.state.currencies.shards!.toNumber())).toBe(1000 - 10);
+  // the Nebula Tree: the root costs 1 Essence
+  await openRail(page, 'nebulatree');
+  const tree = page.locator('[data-panel="nebulatree"]');
+  await tree.locator('[data-node="nroot"]').click();
+  await tree.locator('.tree-card').getByRole('button', { name: /Buy/ }).click();
+  await expect.poll(() => st8(page)(() => (window as unknown as Sf8).sf.game.state.nebulaTree.nroot)).toBe(1);
+  expect(errors).toEqual([]);
+});
+
+test('auto-roll spends exactly the price of every rune it rolls', async ({ page }) => {
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf8).sf;
+    game.state.stats.nebulasAll = 1;
+    commands.devAdd('stardust', 5e7);
+  });
+  await openRail(page, 'runes');
+  const runes = page.locator('[data-panel="runes"]');
+  const before = await page.evaluate(() => (window as unknown as Sf8).sf.game.state.currencies.stardust!.toNumber());
+  await runes.getByTestId('auto-roll').click();
+  await expect(runes.getByTestId('auto-roll')).toContainText('On');
+  await page.waitForTimeout(2500);
+  await runes.getByTestId('auto-roll').click();
+  const after = await page.evaluate(() => {
+    const s = (window as unknown as Sf8).sf.game.state;
+    return { left: s.currencies.stardust!.toNumber(), rolled: s.runes.shrines.dust!.rolled.toNumber(), prod: s.stats.taps ?? 0 };
+  });
+  expect(after.rolled).toBeGreaterThanOrEqual(1);
+  // nothing else earns or spends Stardust here (no engines): the spend is exactly 1M a rune
+  expect(before - after.left).toBe(after.rolled * 1e6);
+});

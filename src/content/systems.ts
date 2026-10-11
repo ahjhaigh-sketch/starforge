@@ -43,9 +43,10 @@ export const SYSTEMS: readonly SystemDef[] = [
   { id: 'attune', name: 'Attune', icon: 'pulse', color: '#C23F6A', rail: 'right', req: { kind: 'count', stat: 'supernovas', count: 8, noun: 'Supernova' }, panel: 'attune', built: true, blurb: 'Change how tapping works.' },
   { id: 'merchant', name: 'Merchant', icon: 'merchant', color: '#B08A1A', rail: 'right', req: { kind: 'count', stat: 'supernovas', count: 10, noun: 'Supernova' }, panel: 'merchant', built: true, blurb: 'A trader ship with four deals.' },
   { id: 'expeditions', name: 'Ships', icon: 'ship', color: '#2B7FD0', rail: 'right', req: { kind: 'count', stat: 'supernovas', count: 15, noun: 'Supernova' }, panel: 'expeditions', built: true, blurb: 'Send starships to far sectors for loot.' },
-  { id: 'nebula', name: 'Nebula', icon: 'nebula', color: '#1E8FA8', rail: 'right', req: { kind: 'count', stat: 'supernovas', count: 30, noun: 'Supernova' }, built: false, blurb: 'The second reset layer.' },
-  { id: 'runes', name: 'Runes', icon: 'rune', color: '#7B3FD6', rail: 'right', req: { kind: 'count', stat: 'nebulas', count: 1, noun: 'Nebula' }, built: false, blurb: 'Roll Constellation Runes at eight shrines.' },
-  { id: 'wyrms', name: 'Wyrms', icon: 'wyrm', color: '#2E9C78', rail: 'right', req: { kind: 'count', stat: 'nebulas', count: 3, noun: 'Nebula' }, built: false, blurb: 'Hatch, train and fuse Void Wyrms.' },
+  { id: 'nebula', name: 'Nebula', icon: 'nebula', color: '#1E8FA8', rail: 'right', req: { kind: 'count', stat: 'supernovas', count: 30, noun: 'Supernova' }, panel: 'nebula', built: true, blurb: 'The second reset layer.' },
+  { id: 'nebulatree', name: 'Nebula Tree', icon: 'tree', color: '#1E8FA8', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 1, noun: 'Nebula' }, panel: 'nebulatree', built: true, blurb: 'Spend Nebula Essence on a 100-node cloud.' },
+  { id: 'runes', name: 'Runes', icon: 'rune', color: '#7B3FD6', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 1, noun: 'Nebula' }, panel: 'runes', built: true, blurb: 'Roll Constellation Runes at eight shrines.' },
+  { id: 'wyrms', name: 'Wyrms', icon: 'wyrm', color: '#2E9C78', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 3, noun: 'Nebula' }, built: false, blurb: 'Hatch, train and fuse Void Wyrms.' },
 ];
 
 export const SYSTEM_BY_ID: ReadonlyMap<string, SystemDef> = new Map(SYSTEMS.map((x) => [x.id, x]));

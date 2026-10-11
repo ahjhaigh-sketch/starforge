@@ -1,6 +1,7 @@
 import { BELT_TIER_REWARDS, DEPTH_LAYERS, RARITIES } from '../content/belt';
 import { GOAL_BY_ID, MEDAL_BY_ID } from '../content/medals';
 import { SECTOR_BY_ID } from '../content/extras';
+import { RUNE_BY_ID, SHRINE_BY_ID } from '../content/runes';
 import { SYSTEM_BY_ID } from '../content/systems';
 import { TIERS } from '../content/tiers';
 import { events } from '../engine/events';
@@ -15,6 +16,7 @@ import { snapshotStore } from './uiSnapshot';
  * that matters more (a new tier, an unlock).
  */
 const MEDAL_BATCH_MS = 400;
+const CURRENCY_NAMES: Record<string, string> = { shards: 'Nova Shards', essence: 'Nebula Essence' };
 
 export function installNotifications(): void {
   let medals: string[] = [];
@@ -88,7 +90,7 @@ export function installNotifications(): void {
     } else if (e.t === 'reset') {
       const def = layer(e.layer);
       if (!def) return;
-      events.emit({ t: 'toast', title: `${def.name}!`, body: `+${format(e.gain, snapshotStore.getState().notation)} ${def.currency === 'shards' ? 'Nova Shards' : def.currency}.`, icon: 'shard', priority: true });
+      events.emit({ t: 'toast', title: `${def.name}!`, body: `+${format(e.gain, snapshotStore.getState().notation)} ${CURRENCY_NAMES[def.currency] ?? def.currency}.`, icon: 'shard', priority: true });
       const done = resetsDone(game.state, def);
       const m = def.milestones.find((x) => x.at === done);
       if (m) events.emit({ t: 'toast', title: `Milestone: ${m.at} ${def.name}${m.at === 1 ? '' : 's'}`, body: `${m.text}.`, icon: 'trophy' });
@@ -116,6 +118,9 @@ export function installNotifications(): void {
     } else if (e.t === 'milestone' && e.id.startsWith('ship.')) {
       ships.push(e.id.slice(5));
       timer ??= setTimeout(flushMedals, MEDAL_BATCH_MS);
+    } else if (e.t === 'rune' && e.first) {
+      const r = RUNE_BY_ID.get(e.id);
+      if (r) events.emit({ t: 'toast', title: `New rune: ${r.name}`, body: `${r.hidden ? 'A hidden' : r.anomaly ? 'An Anomaly' : 'A ' + r.rarity} rune from the ${SHRINE_BY_ID.get(r.shrine)?.name ?? 'shrine'}.`, icon: 'rune' });
     } else if (e.t === 'milestone' && e.id.startsWith('codex.')) {
       const fresh = Number(e.id.slice(6));
       events.emit({ t: 'toast', title: `${fresh} new element${fresh === 1 ? '' : 's'}`, body: 'Added to the Codex in the Starforge.', icon: 'atom' });

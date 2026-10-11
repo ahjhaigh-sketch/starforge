@@ -77,6 +77,15 @@ export const plainSaveSchema = z.looseObject({
       rng: z.tuple([finite, finite, finite, finite]),
     })
     .optional(),
+  nebulaTree: z.record(z.string(), z.number().int().min(0)).optional(),
+  nebula: z.looseObject({ autoAt: dec }).optional(),
+  runes: z
+    .looseObject({
+      shrines: z.record(z.string(), z.looseObject({ auto: z.boolean(), rate: finite, luck: finite, keep: z.number().int().min(0), acc: finite, pity: dec, rolled: dec })),
+      copies: z.record(z.string(), dec),
+      rng: z.tuple([finite, finite, finite, finite]),
+    })
+    .optional(),
   ships: z.looseObject({ fleet: z.array(z.looseObject({ sector: z.string().nullable(), t: finite, auto: z.boolean() })), upgrades: z.record(z.string(), z.number().int().min(0)), rng: z.tuple([finite, finite, finite, finite]) }).optional(),
   settings: z.looseObject({
     notation: z.enum(['suffix', 'scientific', 'engineering']),

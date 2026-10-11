@@ -9,6 +9,7 @@ const dustValue = (s: { dust: string }) => s.dust;
 const dustRate = (s: { dustRate: string }) => s.dustRate;
 const shardValue = (s: { shards: string }) => s.shards;
 const oreValue = (s: { ore: string }) => s.ore;
+const essenceValue = (s: { essence: string }) => s.essence;
 
 const BUFF_COLORS: Record<string, string> = { frenzy: '#FF7A2E', tapstorm: '#2EE6FF', wish: '#B06BFF' };
 
@@ -31,10 +32,12 @@ export function Hud() {
   const buffs = useSnap((s) => s.buffChips);
   const shardsVisible = useSnap((s) => s.shardsVisible);
   const oreVisible = useSnap((s) => s.oreVisible);
+  const essenceVisible = useSnap((s) => s.essenceVisible);
   return (
     <header className="hud">
       <CurrencyPill icon="stardust" label="Stardust" value={dustValue} rate={dustRate} />
       {shardsVisible && <CurrencyPill icon="shard" label="Nova Shards" color="#5A2A8C" value={shardValue} />}
+      {essenceVisible && <CurrencyPill icon="nebula" label="Nebula Essence" color="#1E6F88" value={essenceValue} />}
       {oreVisible && <CurrencyPill icon="belt" label="Ore" color="#3B4370" value={oreValue} />}
       <div className="tag-pill chunk tier-pill" style={tint('var(--panel)')} title={`Star Tier ${tierIndex + 1} of 12`}>
         <span className="tier-dot" style={{ background: tierColor, color: tierColor }} />

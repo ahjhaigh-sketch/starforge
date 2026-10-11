@@ -53,8 +53,9 @@ describe('Supernova', () => {
     const dwarf = readyRun();
     dwarf.tier = 2;
     expect(supernovaReady(dwarf)).toBe(false);
-    // after the first: floor((S / 1e7)^gainPow)
+    // after the first ever: floor((S / 1e7)^gainPow)
     s.stats.supernovas = 1;
+    s.stats.supernovasAll = 1;
     const S = s.totals.run.stardust!.toNumber();
     const raw = (S / 1e7) ** BALANCE.supernova.gainPow;
     expect(supernovaGain(s).toNumber()).toBe(Math.floor(raw));

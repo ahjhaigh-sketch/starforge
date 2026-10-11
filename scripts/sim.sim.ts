@@ -96,6 +96,16 @@ let buyShip: (typeof import('../src/engine/systems/ships'))['buyShip'];
 let shipCost: (typeof import('../src/engine/systems/ships'))['shipCost'];
 let buyShipUpgrade: (typeof import('../src/engine/systems/ships'))['buyShipUpgrade'];
 let shipUpgradePlan: (typeof import('../src/engine/systems/ships'))['shipUpgradePlan'];
+let milestoneReached: (typeof import('../src/engine/layers'))['milestoneReached'];
+let nebulaReady: (typeof import('../src/engine/systems/nebula'))['nebulaReady'];
+let nebulaGain: (typeof import('../src/engine/systems/nebula'))['nebulaGain'];
+let NEBULA_TREE: (typeof import('../src/content/nebulaTree'))['NEBULA_TREE'];
+let buyNebulaNode: (typeof import('../src/engine/systems/nebulaTree'))['buyNebulaNode'];
+let canBuyNebulaNode: (typeof import('../src/engine/systems/nebulaTree'))['canBuyNebulaNode'];
+let nebulaNodeCost: (typeof import('../src/engine/systems/nebulaTree'))['nebulaNodeCost'];
+let ownsNebulaNode: (typeof import('../src/engine/systems/nebulaTree'))['ownsNebulaNode'];
+let runesOpen: (typeof import('../src/engine/systems/runes'))['runesOpen'];
+let setShrine: (typeof import('../src/engine/systems/runes'))['setShrine'];
 let PLANET_TYPES: (typeof import('../src/content/early'))['PLANET_TYPES'];
 
 async function loadGame(): Promise<void> {
@@ -128,17 +138,24 @@ async function loadGame(): Promise<void> {
   ({ attuneOpen, unlockAttune, equipAttune } = await import('../src/engine/systems/attune'));
   ({ merchantOpen, buyDeal } = await import('../src/engine/systems/merchant'));
   ({ shipsOpen, launch, sectorOpen, buyShip, shipCost, buyShipUpgrade, shipUpgradePlan } = await import('../src/engine/systems/ships'));
+  ({ milestoneReached } = await import('../src/engine/layers'));
+  ({ nebulaReady, nebulaGain } = await import('../src/engine/systems/nebula'));
+  ({ NEBULA_TREE } = await import('../src/content/nebulaTree'));
+  ({ buyNebulaNode, canBuyNebulaNode, nebulaNodeCost, ownsNebulaNode } = await import('../src/engine/systems/nebulaTree'));
+  ({ runesOpen, setShrine } = await import('../src/engine/systems/runes'));
 }
 
 const TAPS_PER_SECOND = 4;
 const MAX_HOURS = 120;
-const STOP_AT_SUPERNOVAS = 30;
+/** The bot plays until this many Nebulas (the plan's first Singularity comes at about 8). */
+const STOP_AT_NEBULAS = Number(process.env.SIM_NEBULAS ?? 8);
 /** How often (game seconds) the bot looks after the Belt and the Starforge. */
 const SIDE_EVERY = 5;
 
 interface Row {
   milestone: string;
   supernovas: number;
+  nebulas: number;
   enginesBought: number;
   upgrades: number;
   tier: string;
@@ -222,6 +239,11 @@ function sideSystems(s: GameState): void {
       if (!next || !buyRelic(s, next.id)) break;
     }
   }
+  // Phase 8: roll at the Dust shrine (cheap) and a little at the Nova shrine
+  if (runesOpen(s)) {
+    setShrine(s, 'dust', { auto: true, rate: 1 });
+    setShrine(s, 'nova', { auto: true, rate: 0.25 });
+  }
   // Phase 7: fuse the board, the Gravity Lens (the bot taps a steady 4 a second), good deals, ships
   if (fusionOpen(s)) autoFuse(s);
   const merchantDeals = merchantOpen(s) ? s.merchant.deals : [];
@@ -242,6 +264,23 @@ function sideSystems(s: GameState): void {
   if (drone.canAfford && drone.cost.lt(cur(s, 'ore').mul(0.3))) buyDrillDrone(s);
   if (bitPlan(s).canAfford) buyDrillBit(s);
   invalidateStats();
+}
+
+/** Essence: Nebula Constants first (rune speed and bulk, Drift), then the cheapest Nebula Tree node. */
+function spendEssence(s: GameState): void {
+  for (const id of ['nebula.drift', 'nebula.speed', 'nebula.bulk', 'nebula.resonance']) {
+    const c = CONSTANTS.find((x) => x.id === id)!;
+    const plan = constantPlan(s, c, 1);
+    if (constantOpen(s, c) && plan.cost.lt(cur(s, 'essence').mul(0.15))) buyConstant(s, id, 1);
+  }
+  for (let i = 0; i < 200; i++) {
+    const pick = NEBULA_TREE.filter((n) => canBuyNebulaNode(s, n)).sort((a, b) => Number(!!a.repeat) - Number(!!b.repeat) || nebulaNodeCost(s, a).cmp(nebulaNodeCost(s, b)))[0];
+    if (!pick || !buyNebulaNode(s, pick.id)) break;
+  }
+}
+
+function nebulaShare(s: GameState): string {
+  return `${Math.round((NEBULA_TREE.filter((n) => !n.repeat && ownsNebulaNode(s, n.id)).length / NEBULA_TREE.filter((n) => !n.repeat).length) * 100)}%`;
 }
 
 function spendShards(s: GameState): void {
@@ -288,7 +327,8 @@ it('balance simulation', async () => {
   const record = (milestone: string) =>
     rows.push({
       milestone,
-      supernovas: s.stats.supernovas ?? 0,
+      supernovas: s.stats.supernovasAll ?? 0,
+      nebulas: s.stats.nebulasAll ?? 0,
       enginesBought: s.stats.enginesBought ?? 0,
       upgrades: s.upgrades.length,
       tier: String(s.tier),
@@ -312,7 +352,42 @@ it('balance simulation', async () => {
   let firstSnPurchases = 0;
   let firstSnTiers = 0;
   let ms = 0;
-  while (s.playtime < MAX_HOURS * 3600 && (s.stats.supernovas ?? 0) < STOP_AT_SUPERNOVAS) {
+  let nebulaStart = 0;
+  let traceAt = 0;
+  const nebulaLengths: number[] = [];
+  const wantNebula = new Map([
+    [1, 'First Nebula'],
+    [2, 'Nebula 2'],
+    [3, 'Nebula 3 (Wyrms)'],
+    [5, 'Nebula 5 (keep the tree)'],
+    [8, 'Nebula 8 (Singularity)'],
+  ]);
+  while (s.playtime < MAX_HOURS * 3600 && (s.stats.nebulasAll ?? 0) < STOP_AT_NEBULAS) {
+    if (process.env.SIM_DEBUG_RUN && s.playtime - traceAt >= 600 && (s.stats.nebulasAll ?? 0) >= Number(process.env.SIM_DEBUG_RUN)) (traceAt = s.playtime) && console.log(`R ${hms(s.playtime)} N${s.stats.nebulasAll} sn ${s.stats.supernovas} shards ${fmt(cur(s, 'shards'))} raw ${fmt(rawShardGain(s))} ready ${nebulaReady(s)} essGain ${nebulaReady(s) ? fmt(nebulaGain(s)) : '-'} lifeE ${fmt(s.totals.all.essence ?? D(0))} tier ${s.tier}`);
+    if (nebulaReady(s)) {
+      const g = nebulaGain(s);
+      const lifetime = s.totals.all.essence ?? D(0);
+      if ((s.stats.nebulasAll ?? 0) === 0 || g.gte(lifetime) || s.playtime - nebulaStart > 6 * 3600) {
+        nebulaLengths.push(s.playtime - nebulaStart);
+        performReset(s, 'nebula');
+        nebulaStart = s.playtime;
+        runStart = s.playtime;
+        bestRate = D(0);
+        spendEssence(s);
+        spendShards(s);
+        if (process.env.SIM_DEBUG_NEB) {
+          const { breakdown } = await import('../src/engine/stats');
+          for (const id of ['shardGain', 'productionMult', 'essenceGain']) {
+            const top = breakdown(s, id).filter((l) => l.op === 'mul').sort((x, y) => y.value.log10().toNumber() - x.value.log10().toNumber()).filter((l) => l.value.log10().toNumber() > 0.5).map((l) => `${l.label} ${l.value.log10().toNumber().toFixed(1)}`).join('; ');
+            console.log(`N${s.stats.nebulasAll} ${id} = ${fmt(stat(s, id))}: ${top}`);
+          }
+          console.log(`N${s.stats.nebulasAll} essence ${fmt(s.totals.all.essence ?? D(0))} shards ${fmt(s.totals.all.shards ?? D(0))}`);
+        }
+        const label = wantNebula.get(s.stats.nebulasAll ?? 0);
+        if (label) record(label);
+        continue;
+      }
+    }
     const dt = s.playtime - runStart < 1800 ? 1 : 5;
     for (let i = 0; i < TAPS_PER_SECOND * dt && i < 40; i++) tapStar(s, rt, (ms += 1000 / TAPS_PER_SECOND));
     tick(s, dt);
@@ -325,14 +400,15 @@ it('balance simulation', async () => {
     }
     if (supernovaReady(s)) {
       const g = supernovaGain(s);
-      const lifetime = s.totals.all.shards ?? D(0);
+      // after a Nebula, shards from earlier Nebula runs are out of reach: double this Nebula run's shards
+      const lifetime = ((s.stats.nebulasAll ?? 0) > 0 ? s.totals.run.shards : s.totals.all.shards) ?? D(0);
       const tooLong = s.playtime - runStart > 4 * 3600;
       const rate = g.div(Math.max(1, s.playtime - runStart));
       if (rate.gt(bestRate)) bestRate = rate;
       // once lifetime shards grow by themselves (20 Supernovas), doubling them can stall a run for hours
-      const peaked = (s.stats.supernovas ?? 0) >= 20 && s.playtime - runStart > 60 && rate.lt(bestRate.mul(0.9));
-      if ((s.stats.supernovas ?? 0) === 0 || g.gte(lifetime.max(3)) || peaked || tooLong) {
-        if ((s.stats.supernovas ?? 0) === 0) {
+      const peaked = milestoneReached(s, 'supernova', 'passive') && s.playtime - runStart > 60 && rate.lt(bestRate.mul(0.9));
+      if ((s.stats.supernovasAll ?? 0) === 0 || g.gte(lifetime.max(3)) || peaked || tooLong) {
+        if ((s.stats.supernovasAll ?? 0) === 0) {
           firstSnPurchases = s.stats.enginesBought ?? 0;
           firstSnTiers = s.tier;
         }
@@ -344,7 +420,7 @@ it('balance simulation', async () => {
         runStart = s.playtime;
         bestRate = D(0);
         spendShards(s);
-        const label = want.get(s.stats.supernovas ?? 0);
+        const label = (s.stats.nebulasAll ?? 0) === 0 ? want.get(s.stats.supernovasAll ?? 0) : undefined;
         if (label) record(label);
       }
     }
@@ -355,5 +431,6 @@ it('balance simulation', async () => {
   console.table(rows);
   const avg = (a: number[]) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
   console.log(`Run length, game time: first ${hms(runLengths[0] ?? 0)}, runs 2-5 avg ${hms(avg(runLengths.slice(1, 5)))}, 6-12 avg ${hms(avg(runLengths.slice(5, 12)))}, 13-30 avg ${hms(avg(runLengths.slice(12)))}`);
-  console.log(`Ended at ${s.stats.supernovas} Supernovas, ${hms(s.playtime)} played, raw next gain ${fmt(rawShardGain(s))}.`);
+  console.log(`Nebula runs, game time: first ${hms(nebulaLengths[0] ?? 0)}, then ${nebulaLengths.slice(1).map(hms).join(', ')}`);
+  console.log(`Ended at ${s.stats.supernovasAll} Supernovas and ${s.stats.nebulasAll ?? 0} Nebulas, ${hms(s.playtime)} played, Nebula Tree ${nebulaShare(s)} bought, raw next gain ${fmt(rawShardGain(s))}.`);
 }, 600_000);

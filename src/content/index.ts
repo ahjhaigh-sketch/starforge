@@ -6,6 +6,9 @@ import { registerFusion } from '../engine/systems/fusion';
 import { registerAttune } from '../engine/systems/attune';
 import { registerMerchant } from '../engine/systems/merchant';
 import { registerShips } from '../engine/systems/ships';
+import { registerNebula } from '../engine/systems/nebula';
+import { registerNebulaTree } from '../engine/systems/nebulaTree';
+import { registerRunes } from '../engine/systems/runes';
 import { registerStarsmith } from '../engine/systems/starsmith';
 import { registerComets } from '../engine/systems/comets';
 import { registerNovaTree } from '../engine/systems/novaTree';
@@ -42,5 +45,8 @@ export function registerContent(): void {
   registerAttune();
   registerMerchant();
   registerShips();
+  registerNebula();
+  registerNebulaTree();
+  registerRunes();
   registerUnlocks();
 }

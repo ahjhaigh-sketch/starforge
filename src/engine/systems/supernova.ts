@@ -35,7 +35,8 @@ export function rawShardGain(s: GameState): Decimal {
 }
 
 export function supernovaGain(s: GameState): Decimal {
-  if ((s.stats.supernovas ?? 0) === 0) return D(B.firstGain);
+  // the first Supernova ever (not the first of each Nebula run) is a fixed 3
+  if ((s.stats.supernovasAll ?? 0) === 0) return D(B.firstGain);
   return rawShardGain(s).floor();
 }
 
@@ -89,6 +90,7 @@ export function registerSupernova(): void {
           s.currencies.stardust = ZERO;
           s.totals.run.stardust = ZERO;
         },
+        keptBy: (s) => (milestoneReached(s, 'nebula', 'novaFree') ? 'Milestone: 10 Nebulas' : null),
       },
       {
         id: 'engines',
@@ -98,6 +100,7 @@ export function registerSupernova(): void {
           const motes = treeFlag(s, 'startMotes');
           if (motes > 0) s.engines.mote = motes;
         },
+        keptBy: (s) => (milestoneReached(s, 'nebula', 'novaFree') ? 'Milestone: 10 Nebulas' : null),
       },
       {
         id: 'tier',
@@ -105,9 +108,9 @@ export function registerSupernova(): void {
         reset: (s) => {
           s.tier = startTier(s);
         },
-        keptBy: (s) => (startTier(s) > 0 ? `You start as a ${TIERS[startTier(s)]!.name}` : null),
+        keptBy: (s) => (milestoneReached(s, 'nebula', 'novaFree') ? 'Milestone: 10 Nebulas' : startTier(s) > 0 ? `You start as a ${TIERS[startTier(s)]!.name}` : null),
       },
-      { id: 'upgrades', label: 'Upgrades', reset: (s) => void (s.upgrades = []), keptBy: (s) => (treeFlag(s, 'keepUpgrades') ? 'Nova Tree: Keep the Tools' : null) },
+      { id: 'upgrades', label: 'Upgrades', reset: (s) => void (s.upgrades = []), keptBy: (s) => (milestoneReached(s, 'nebula', 'novaFree') ? 'Milestone: 10 Nebulas' : treeFlag(s, 'keepUpgrades') ? 'Nova Tree: Keep the Tools' : null) },
       {
         id: 'constants',
         label: 'Stellar Constants',
@@ -115,9 +118,9 @@ export function registerSupernova(): void {
           const keep = keepConstants(s);
           for (const c of CONSTANTS) if (c.set === 'stellar' && s.constants[c.id]) s.constants[c.id] = Math.floor(s.constants[c.id]! * keep);
         },
-        keptBy: (s) => (keepConstants(s) >= 1 ? 'Nova Tree' : null),
+        keptBy: (s) => (milestoneReached(s, 'nebula', 'novaFree') ? 'Milestone: 10 Nebulas' : keepConstants(s) >= 1 ? 'Nova Tree' : null),
       },
-      { id: 'planets', label: 'Planets', reset: (s) => void (s.planets = {}), keptBy: (s) => (treeFlag(s, 'keepPlanets') ? 'Nova Tree: Planetary Forge' : null) },
+      { id: 'planets', label: 'Planets', reset: (s) => void (s.planets = {}), keptBy: (s) => (milestoneReached(s, 'nebula', 'novaFree') ? 'Milestone: 10 Nebulas' : treeFlag(s, 'keepPlanets') ? 'Nova Tree: Planetary Forge' : null) },
       {
         id: 'buffs',
         label: 'Comet buffs',
@@ -125,12 +128,20 @@ export function registerSupernova(): void {
           s.buffs = {};
           s.comet.until = 0;
         },
+        keptBy: (s) => (milestoneReached(s, 'nebula', 'novaFree') ? 'Milestone: 10 Nebulas' : null),
       },
     ],
     onReset: (s, before) => {
+      s.stats.supernovasAll = (s.stats.supernovasAll ?? 0) + 1;
+      s.stats.supernovasBest = Math.max(s.stats.supernovasBest ?? 0, s.stats.supernovas ?? 0);
+      // from 10 Nebulas a Supernova keeps everything, but this run's Stardust still starts over
+      // (or every Supernova would pay again for the same Stardust)
+      s.totals.run.stardust = ZERO;
       giveXp(s, BALANCE.starsmith.xp.supernova);
       grantCodex(s, before.runStardust, before.tier);
     },
+    // a Nebula restarts the count, but from the first Nebula the milestones stay
+    milestoneFloor: (s) => (milestoneReached(s, 'nebula', 'keepNova') ? (s.stats.supernovasBest ?? 0) : 0),
     alwaysKept: ['Nova Shards and the Nova Tree', 'Medals and Goals', 'Engine Mastery', 'Star Quests and their bonus', 'The Asteroid Belt, Deep Core and Starsmith Level', 'The Starforge: ore, alloy, relics and the Codex', 'Comet Fusion, Attunements, the Merchant and your starships', 'Everything you have unlocked'],
     milestones: [
       { at: 1, id: 'tree', text: 'The Nova Tree opens' },
@@ -150,7 +161,7 @@ export function registerSupernova(): void {
     tick: (s: GameState, dt: number, ctx: TickContext) => {
       if (s.tier > (s.stats.bestTier ?? 0)) s.stats.bestTier = s.tier;
       const share = stat(s, 'passiveShards');
-      if (share.lte(0) || (s.stats.supernovas ?? 0) === 0) return;
+      if (share.lte(0) || (s.stats.supernovasAll ?? 0) === 0) return;
       const g = rawShardGain(s).mul(share).mul(dt * ctx.gainScale);
       if (g.gt(0)) gain(s, 'shards', g);
     },

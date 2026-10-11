@@ -75,6 +75,8 @@ export interface PerkDef {
   icon: string;
   stat: string;
   op: 'add' | 'mul';
+  /** A hidden perk: shown and usable only once this rune has been found. */
+  needsRune?: string;
   /** Per point. */
   value: number;
 }
@@ -85,4 +87,5 @@ export const PERKS: readonly PerkDef[] = [
   { id: 'growth', name: 'Gravity Lure', desc: 'Asteroids arrive 5% faster per point.', icon: 'comet', stat: 'beltSpawn', op: 'add', value: 0.05 },
   { id: 'xp', name: 'Scholar', desc: '+10% Starsmith XP per point.', icon: 'level', stat: 'xpGain', op: 'add', value: 0.1 },
   { id: 'beam', name: 'Long Beam', desc: '+3 px tractor beam per point.', icon: 'pulse', stat: 'beamRadius', op: 'add', value: 3 },
+  { id: 'sylthaz', name: "Sylthaz's Whisper", desc: 'A secret from the hidden Dust rune: Stardust x1.5 per point.', icon: 'rune', stat: 'productionMult', op: 'mul', value: 1.5, needsRune: 'dust.hidden' },
 ];

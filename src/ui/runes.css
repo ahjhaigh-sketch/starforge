@@ -1,0 +1,87 @@
+/* =====================================================================
+   Phase 8: the Nebula (panel, reset bar, confirm), the Nebula Tree and
+   the Constellation Rune shrines, the roll card and the Mythic banner.
+   ===================================================================== */
+
+/* ---------- the reset bar ---------- */
+.nebula-bar { margin-top: 0.35rem; height: 2.6rem; }
+.nebula-bar .title { font-size: 1.25rem; }
+
+/* ---------- the Nebula panel ---------- */
+.nebula-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+.nebula-cols .well { padding: 0.7rem 0.9rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.nebula-cols h4, .section-h { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1.1rem; text-shadow: var(--outline-sm); }
+.section-h { margin: 0.9rem 0 0.4rem; }
+.nebula-run span { font-weight: 700; }
+.nebula-run small { color: var(--text-dim); font-weight: 600; }
+.auto-nova { display: grid; grid-template-columns: 1fr auto; gap: 0.35rem 0.5rem; align-items: center; margin-top: 0.3rem; font-weight: 700; font-size: 0.85rem; }
+.auto-nova label { grid-column: 1 / -1; }
+.auto-nova input { font: inherit; font-weight: 700; background: var(--panel-deep); color: var(--text); border: 2px solid var(--ink); border-radius: 10px; padding: 0.35rem 0.5rem; min-width: 0; }
+.auto-nova small { grid-column: 1 / -1; }
+.nebula-links { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.3rem; }
+
+/* ---------- the shrines ---------- */
+.shrine-tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.7rem; }
+.shrine-tab { height: 2.3rem; padding: 0 0.8rem; border-radius: 999px; --stroke: 2.5px; display: inline-flex; align-items: center; gap: 0.3rem; font: inherit; font-weight: 700; font-size: 0.85rem; color: var(--text); cursor: pointer; text-shadow: var(--outline-sm); }
+.shrine-tab .icon { width: 1rem; height: 1rem; }
+.shrine-tab.locked { opacity: 0.6; }
+.shrine-locked { font-weight: 700; color: var(--text-dim); }
+.shrine-head { display: grid; grid-template-columns: 1fr minmax(14rem, 18rem) auto; gap: 0.7rem; align-items: start; margin-bottom: 0.7rem; }
+.shrine-stats { padding: 0.6rem 0.8rem; display: grid; gap: 0.25rem; font-weight: 600; font-size: 0.88rem; }
+.shrine-stats b { color: var(--lime); }
+.shrine-controls { display: grid; gap: 0.45rem; }
+.shrine-controls .slider { display: grid; gap: 0.2rem; font-weight: 700; font-size: 0.82rem; }
+.shrine-controls input[type='range'] { width: 100%; accent-color: var(--magenta); }
+.shrine-controls select { font: inherit; font-weight: 700; background: var(--panel-deep); color: var(--text); border: 2px solid var(--ink); border-radius: 10px; padding: 0.3rem 0.4rem; }
+
+/* the roll card lands like a slot machine */
+.roll-card { width: 9.5rem; min-height: 8rem; border-radius: 16px; --stroke: 3px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem; padding: 0.6rem; text-align: center; animation: cardLand 0.9s var(--back-out) both; }
+.roll-card b { font-family: var(--font-display); font-weight: 400; font-size: 1.15rem; line-height: 1.1; }
+.roll-card small { font-weight: 800; font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; }
+.roll-card.epic { box-shadow: 0 0 26px 4px color-mix(in oklab, var(--c) 70%, transparent), 0 4px 0 rgba(0, 0, 0, 0.35); }
+.roll-card.mythic { animation: cardLand 0.9s var(--back-out) both, cardGlow 1.4s ease-in-out 0.9s infinite alternate; }
+@keyframes cardLand {
+  0% { transform: translateY(-40px) rotateX(70deg) scale(0.7); opacity: 0; }
+  60% { transform: translateY(6px) rotateX(-10deg) scale(1.05); opacity: 1; }
+  100% { transform: none; }
+}
+@keyframes cardGlow { to { box-shadow: 0 0 40px 10px color-mix(in oklab, var(--c) 80%, transparent), 0 4px 0 rgba(0, 0, 0, 0.35); } }
+.reduced-motion .roll-card { animation: none; }
+
+.rune-table { display: grid; gap: 0.3rem; }
+.rune-row { display: grid; grid-template-columns: 6.6rem 1fr 7rem 5rem 4.6rem; gap: 0.5rem; align-items: center; padding: 0.35rem 0.5rem; border-radius: 12px; background: rgba(0, 0, 0, 0.18); font-size: 0.85rem; }
+.rune-row:not(.found) { opacity: 0.6; }
+.rune-row.secret .rune-name b { letter-spacing: 0.2em; }
+.rune-rarity { border-radius: 999px; --stroke: 2px; padding: 0.15rem 0.5rem; text-align: center; font-weight: 800; font-size: 0.72rem; color: #fff; text-shadow: var(--outline-sm); }
+.rune-name { display: flex; flex-direction: column; min-width: 0; }
+.rune-name b { font-weight: 700; }
+.rune-name small { color: var(--text-dim); font-weight: 600; font-size: 0.75rem; }
+.rune-odds, .rune-copies, .rune-level { text-align: right; }
+.rune-level small { color: var(--text-dim); font-size: 0.7rem; }
+
+/* ---------- the Mythic banner ---------- */
+.mythic-banner { position: fixed; z-index: 70; left: 0; right: 0; top: 34%; padding: 1rem 0; display: flex; flex-direction: column; align-items: center; pointer-events: none;
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--c) 55%, transparent) 20%, color-mix(in oklab, var(--c) 55%, transparent) 80%, transparent);
+  animation: bannerIn 2.6s ease-out both; }
+.mythic-banner small { font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.85rem; }
+.mythic-banner b { font-family: var(--font-display); font-weight: 400; font-size: 2.6rem; }
+@keyframes bannerIn {
+  0% { transform: scaleY(0); opacity: 0; }
+  12% { transform: scaleY(1.1); opacity: 1; }
+  20% { transform: none; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.reduced-motion .mythic-banner { animation: bannerFade 2.6s both; }
+@keyframes bannerFade { 0%, 85% { opacity: 1; } 100% { opacity: 0; } }
+
+@media (max-width: 900px) {
+  .nebula-cols { grid-template-columns: 1fr; }
+  .shrine-head { grid-template-columns: 1fr; }
+  .roll-card { justify-self: center; }
+  .rune-row { grid-template-columns: 5.6rem 1fr 4.4rem; font-size: 0.78rem; }
+  .rune-copies { display: none; }
+  .rune-odds { grid-column: 3; }
+  .rune-level { grid-column: 3; grid-row: 2; }
+  .mythic-banner b { font-size: 1.8rem; }
+}

@@ -6,7 +6,7 @@ import { chromium } from '@playwright/test';
 
 const seconds = Number(process.argv[2] ?? 120);
 const base = process.argv[3] ?? 'http://localhost:4173';
-const PANELS = ['upgrades', 'medals', 'stats', 'constants', 'quests', 'orbitals', 'mastery', 'novatree', 'automation', 'ascent', 'belt', 'level', 'drill', 'starforge', 'fusion', 'attune', 'merchant', 'expeditions'];
+const PANELS = ['upgrades', 'medals', 'stats', 'constants', 'quests', 'orbitals', 'mastery', 'novatree', 'automation', 'ascent', 'belt', 'level', 'drill', 'starforge', 'fusion', 'attune', 'merchant', 'expeditions', 'nebula', 'runes', 'nebulatree'];
 
 const browser = await chromium.launch();
 let failed = false;
@@ -35,6 +35,10 @@ for (const view of [
     commands.devAdd('xp', 3000);
     commands.devAdd('alloy.iron', 500);
     commands.devAdd('ore.gold', 2000);
+    // Phase 8: three Nebulas behind us, so the shrines and the Nebula Tree are open
+    s.stats.nebulasAll = 3;
+    s.stats.nebulas = 3;
+    commands.devAdd('essence', 5000);
   });
   const end = Date.now() + seconds * 1000;
   let round = 0;
@@ -93,6 +97,15 @@ for (const view of [
       if (panel === 'expeditions') {
         const launch = page.getByRole('button', { name: 'Launch' }).first();
         if (await launch.count()) await launch.click({ force: true });
+      }
+      if (panel === 'runes') {
+        await page.getByTestId('roll-once').click({ force: true });
+        if (round % 2 === 0) await page.getByTestId('auto-roll').click({ force: true });
+      }
+      if (panel === 'nebulatree') {
+        await page.locator('[data-node="nroot"]').click({ force: true });
+        const buy = page.locator('.tree-card').getByRole('button', { name: /Buy/ });
+        if (await buy.count()) await buy.click({ force: true });
       }
       if (panel === 'level') {
         await page.locator('[data-perk="ore"] button').click({ force: true });

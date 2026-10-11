@@ -14,6 +14,8 @@ export type GameEvent =
   | { t: 'harvest'; rarity: string; hand: boolean }
   /** A batch (or several) of this alloy grade came out of the furnace. */
   | { t: 'smelt'; grade: string }
+  /** A Mythic-or-rarer rune (or a hidden rune or Anomaly) was rolled. */
+  | { t: 'rune'; shrine: string; id: string; first: boolean }
   /** `priority`: big news (a new tier, a reset) that smaller toasts must never push out. */
   | { t: 'toast'; title: string; body: string; icon?: string; priority?: boolean }
   | { t: 'saved'; slot: string }

@@ -45,6 +45,8 @@ export interface LayerDef {
   /** Always kept, listed on the confirm screen so nobody fears losing them. */
   alwaysKept: readonly string[];
   milestones: readonly LayerMilestone[];
+  /** A count this layer's milestones never drop below (a Nebula keeps Supernova milestones). */
+  milestoneFloor?: (s: GameState) => number;
   /**
    * Runs after the reset: rewards that aren't the layer's currency (Starsmith XP, Codex samples).
    * `before` is what the run reached, since the reset has already cleared it.
@@ -67,7 +69,7 @@ export const resetsDone = (s: GameState, def: LayerDef): number => s.stats[def.c
 export function milestoneReached(s: GameState, layerId: string, milestoneId: string): boolean {
   const def = layers.get(layerId);
   const m = def?.milestones.find((x) => x.id === milestoneId);
-  return !!def && !!m && resetsDone(s, def) >= m.at;
+  return !!def && !!m && Math.max(resetsDone(s, def), def.milestoneFloor?.(s) ?? 0) >= m.at;
 }
 
 export interface ResetPreview {

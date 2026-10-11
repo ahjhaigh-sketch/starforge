@@ -240,6 +240,27 @@ describe('the Wandering Merchant', () => {
     buyLuck(s);
     expect(s.merchant.luck).toBe(10);
   });
+
+  it('Merchant Luck stops at level 25, and relic deals give 1, 2 or 5 levels however lucky you are', () => {
+    const s = run(10);
+    gain(s, 'shards', D('1e300'));
+    s.settings.buyAmount = 'max';
+    buyLuck(s);
+    expect(s.merchant.luck).toBe(BALANCE.merchant.luck.max);
+    buyLuck(s);
+    expect(s.merchant.luck).toBe(BALANCE.merchant.luck.max);
+    s.relics.levels.halo = 3;
+    const seen = new Map<string, Set<number>>();
+    for (let i = 0; i < 5000; i++) {
+      const d = makeDeal(s);
+      if (d.kind !== 'relic') continue;
+      const get = d.get as { count: number };
+      seen.set(d.quality, (seen.get(d.quality) ?? new Set()).add(get.count));
+    }
+    expect([...seen.get('common')!]).toEqual([1]);
+    expect([...seen.get('rare')!]).toEqual([2]);
+    expect([...(seen.get('mythical') ?? new Set([5]))]).toEqual([5]);
+  });
 });
 
 describe('Starship Expeditions', () => {

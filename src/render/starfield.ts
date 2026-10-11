@@ -56,3 +56,54 @@ export function updateStarfield(dt: number, still: boolean): void {
     s.sprite.alpha = tw * s.base;
   }
 }
+
+// ---------- nebula clouds (from the first Nebula) ----------
+
+interface Cloud {
+  sprite: Sprite;
+  x: number;
+  y: number;
+  speed: number;
+  phase: number;
+}
+
+let clouds: Cloud[] = [];
+let cloudLayer: Container | null = null;
+let cloudCount = 0;
+const CLOUD_TINTS = [0x2ee6ff, 0x1e8fa8, 0x7b3fd6, 0x2ee6ff, 0x5fd3c4, 0x9b7cff];
+
+/** Big soft cyan clouds drift behind the stars: two after the first Nebula, up to eight. */
+export function setNebulaClouds(nebulas: number): void {
+  const want = nebulas <= 0 ? 0 : Math.min(8, 1 + nebulas);
+  if (!layer || want === cloudCount) return;
+  cloudCount = want;
+  if (!cloudLayer) {
+    cloudLayer = new Container();
+    layer.parent?.addChildAt(cloudLayer, 0);
+  }
+  cloudLayer.removeChildren().forEach((c) => c.destroy());
+  const tex = textures().soft;
+  clouds = Array.from({ length: want }, (_, i) => {
+    const sprite = new Sprite(tex);
+    sprite.anchor.set(0.5);
+    // normal blending: 'add' onto the transparent sky canvas adds colour but no alpha, so it never shows
+    sprite.tint = CLOUD_TINTS[i % CLOUD_TINTS.length]!;
+    sprite.alpha = 0.3;
+    const size = 520 + ((i * 137) % 360);
+    sprite.scale.set(size / 64, (size * 0.55) / 64);
+    cloudLayer!.addChild(sprite);
+    return { sprite, x: ((i * 0.37) % 1) * (width || 1400), y: (0.15 + ((i * 0.29) % 0.7)) * (height || 900), speed: 3 + (i % 3) * 2, phase: i * 1.7 };
+  });
+}
+
+export function updateClouds(dt: number, still: boolean): void {
+  for (const c of clouds) {
+    if (!still) {
+      c.x -= dt * c.speed;
+      c.phase += dt * 0.15;
+      if (c.x < -400) c.x += width + 800;
+    }
+    c.sprite.position.set(c.x, c.y + Math.sin(c.phase) * 18);
+    c.sprite.alpha = 0.38 + 0.08 * Math.sin(c.phase * 0.7);
+  }
+}

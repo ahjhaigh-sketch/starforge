@@ -33,6 +33,14 @@ const migrations: Record<number, (d: PlainSave) => void> = {
   7: () => {},
   // 8 (Phase 7): Comet Fusion, Attunements, the Merchant and starships, all with defaults.
   8: () => {},
+  // 9 (Phase 8): the Nebula, its tree and the rune shrines. The Supernova count now restarts each
+  // Nebula run, so the count so far also becomes the lifetime count and the best run.
+  9: (d) => {
+    const stats = (d.stats ?? {}) as Record<string, number>;
+    stats.supernovasAll = stats.supernovas ?? 0;
+    stats.supernovasBest = stats.supernovas ?? 0;
+    d.stats = stats;
+  },
 };
 
 export function migrate(version: number, data: PlainSave): PlainSave {

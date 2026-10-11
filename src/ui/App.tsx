@@ -27,6 +27,7 @@ import { AscentPanel, AutomationPanel, NovaTreePanel, SupernovaPanel } from './s
 import { BeltPanel, DrillPanel, StarsmithPanel } from './screens/BeltPanels';
 import { StarforgePanel } from './screens/ForgePanels';
 import { AttunePanel, FusionPanel, MerchantPanel, ShipsPanel } from './screens/ExtrasPanels';
+import { MythicBanner, NebulaConfirmPanel, NebulaPanel, NebulaTreePanel, RunesPanel } from './screens/NebulaPanels';
 import { useUi } from './store';
 
 /** Shown while time away is being simulated; fades in only if that takes a moment. */
@@ -91,9 +92,14 @@ export function App() {
       <AttunePanel />
       <MerchantPanel />
       <ShipsPanel />
+      <NebulaPanel />
+      <NebulaConfirmPanel />
+      <NebulaTreePanel />
+      <RunesPanel />
       <SettingsPanel />
       <PanelHost />
       <ToastHost />
+      <MythicBanner />
       <FloatTipHost />
       <CatchUpOverlay />
       {game.devMode && <DevPanel />}

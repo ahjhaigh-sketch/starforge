@@ -42,8 +42,12 @@ export const perkPoints = (s: GameState) => levelInfo(s).level;
 export const perksSpent = (s: GameState) => Object.values(s.starsmith.perks).reduce((a, b) => a + b, 0);
 export const perksFree = (s: GameState) => perkPoints(s) - perksSpent(s);
 
+/** Hidden perks show up once their rune has been found. */
+export const perkAvailable = (s: GameState, p: (typeof PERKS)[number]) => !p.needsRune || (s.runes.copies[p.needsRune]?.gt(0) ?? false);
+
 export function addPerk(s: GameState, id: string): boolean {
-  if (!PERKS.some((p) => p.id === id) || perksFree(s) <= 0) return false;
+  const p = PERKS.find((x) => x.id === id);
+  if (!p || !perkAvailable(s, p) || perksFree(s) <= 0) return false;
   s.starsmith.perks[id] = (s.starsmith.perks[id] ?? 0) + 1;
   return true;
 }
