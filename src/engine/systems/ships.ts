@@ -12,6 +12,8 @@ import { defineStat, registerSources, stat } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
 import { addRelicLevels, relicLevel } from './forge';
 import { rawShardGain } from './supernova';
+import { BASE_SEEDS } from '../../content/nursery';
+import { nurseryOpen } from './nursery';
 
 /**
  * Starship Expeditions: ships fly to named sectors and bring back ore, alloy, shards and rare finds.
@@ -108,7 +110,11 @@ function deliver(s: GameState, sec: SectorDef, scale: number): void {
     }
     s.stats.rareFinds = (s.stats.rareFinds ?? 0) + 1;
   }
-  // TODO(Phase 10): star seeds for the Star Nursery come home too.
+  // a base star seed for the Star Nursery comes home too (once it's open, so earlier trips roll the same)
+  if (nurseryOpen(s)) {
+    const seed = BASE_SEEDS[nextInt(s.ships.rng, 0, BASE_SEEDS.length - 1)]!;
+    s.nursery.seeds[seed] = (s.nursery.seeds[seed] ?? 0) + 1;
+  }
   s.stats.trips = (s.stats.trips ?? 0) + 1;
   events.emit({ t: 'milestone', id: `ship.${sec.id}` });
 }
@@ -138,8 +144,10 @@ export function registerShips(): void {
           deliver(s, sec, 1);
           if (sh.auto) sh.t += tripSeconds(s, sec);
           else {
+            // a one-off trip ends here (t = 0 would otherwise meet the loop's test again)
             sh.sector = null;
             sh.t = 0;
+            break;
           }
         }
       }

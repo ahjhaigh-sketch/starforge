@@ -249,7 +249,7 @@ export const BALANCE = {
     quickBurnSeconds: 900,
   },
   /** Cost growth per level of each Stellar Constant (between 1.05 and 2, Math and balance tab). */
-  constants: { gravity: 1.3, light: 1.3, heat: 1.35, orbit: 1.35, runeSpeed: 1.8, runeBulk: 1.6, resonance: 2, drift: 1.9 },
+  constants: { gravity: 1.3, light: 1.3, heat: 1.35, orbit: 1.35, runeSpeed: 1.8, runeBulk: 1.6, resonance: 2, drift: 1.9, bloom: 1.7 },
   novaTree: {
     /** Node price along an arm: armBase x armGrowth^depth (depth 0 to 22). */
     armBase: 3,
@@ -380,6 +380,52 @@ export const BALANCE = {
     mutationFloor: 2,
     /** Index pages: each of these completion shares multiplies the page's stat once more. */
     indexMilestones: [0.1, 0.25, 0.5, 0.75, 1],
+  },
+  /** Phase 10: Void Wyrms (Math and balance: "Belt, Starforge and Wyrm numbers"). */
+  wyrms: {
+    /** They arrive with the third Nebula (Nebula milestone 3). */
+    nebulas: 3,
+    /** Eggs cost Essence: 10 x 1.5^(eggs hatched so far), so a first team of 3 to 5 by the first Singularity. */
+    eggBase: 10,
+    eggGrowth: 1.5,
+    /** Team slots: 3, plus one at each of these lifetime hatches (up to 6). */
+    slots: 3,
+    slotHatches: [25, 100, 400],
+    /** Training: level L to L+1 costs 20 x 1.35^L Iron alloy (Wyrm XP makes it cheaper). Boost = base x (1 + 0.1 x level). */
+    trainBase: 20,
+    trainGrowth: 1.35,
+    perLevel: 0.1,
+    /** Fusion: exactly 5 identical make one of the next form. Forms: Normal x1, Golden x3, Rainbow x10. */
+    fuse: 5,
+    forms: [1, 3, 10],
+    /** Each species' boost is base x growth^rarity (from +10% for the commonest). */
+    boostBase: 0.1,
+    boostGrowth: 1.5,
+    /** Embers a second from each Wyrm on the team: base x growth^rarity, scaled like its boost. */
+    emberBase: 1,
+    emberGrowth: 1.6,
+    /** A Wyrm on the team catches a comet this long after it appears. */
+    catchSeconds: 2.5,
+  },
+  /** Phase 10: the Star Nursery. */
+  nursery: {
+    nebulas: 4,
+    /** Plots: 3, plus one a level of the Plots upgrade (up to 12). */
+    plots: 3,
+    maxPlots: 12,
+    /** A base seed costs this much Essence. */
+    seedPrice: 5,
+    /** Each harvest gives its own seed back, and this chance of one more. */
+    extraSeed: 0.5,
+    /** Upgrades: [base Essence price, price growth, effect per level]. */
+    upgrades: {
+      plots: [25, 4, 1],
+      growth: [10, 2.5, 1.25],
+      yield: [15, 3, 1.5],
+      tending: [1000, 2, 1],
+    } as Record<string, [number, number, number]>,
+    /** Crossbreeding costs Essence: this times 10^(tier of the result). */
+    crossBase: 1,
   },
   ships: {
     /** Starship Expeditions open at 15 Supernovas. Ships cost Iron alloy; up to 5. */

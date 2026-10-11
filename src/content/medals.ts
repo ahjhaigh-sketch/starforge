@@ -83,6 +83,14 @@ export const MEDALS: readonly MedalDef[] = [
   { id: 'auras.30', name: "Every Light in the Sky", desc: "Find all 30 auras.", icon: 'aura', req: { kind: 'count', stat: 'aurasFound', count: 30, noun: 'aura' } },
   { id: 'mutations.1', name: "Something Shiny", desc: "Find a mutation.", icon: 'mutation', req: { kind: 'count', stat: 'mutationsFound', count: 1, noun: 'mutation' } },
   { id: 'mutations.50', name: "Strange Matter", desc: "Find 50 kinds of mutation.", icon: 'mutation', req: { kind: 'count', stat: 'mutationsFound', count: 50, noun: 'mutation' } },
+  // Phase 10: Void Wyrms and the Star Nursery
+  { id: 'wyrms.1', name: "It Hatched!", desc: "Hatch a Void Wyrm.", icon: 'wyrm', req: { kind: 'count', stat: 'wyrmsHatched', count: 1, noun: 'Wyrm hatched' } },
+  { id: 'wyrms.100', name: "Brood Mother", desc: "Hatch 100 Void Wyrms.", icon: 'wyrm', req: { kind: 'count', stat: 'wyrmsHatched', count: 100, noun: 'Wyrm hatched' } },
+  { id: 'wyrms.fuse', name: "Five Become One", desc: "Fuse five Wyrms.", icon: 'wyrm', req: { kind: 'count', stat: 'wyrmFusions', count: 1, noun: 'fusion' } },
+  { id: 'wyrms.catch', name: "Comet Snack", desc: "Let your Wyrms catch 25 comets.", icon: 'comet', req: { kind: 'count', stat: 'wyrmCatches', count: 25, noun: 'comet caught by a Wyrm' } },
+  { id: 'nursery.1', name: "Green Thumb", desc: "Harvest a nursery star.", icon: 'nursery', req: { kind: 'count', stat: 'nurseryHarvests', count: 1, noun: 'harvest' } },
+  { id: 'nursery.cross', name: "New Breed", desc: "Crossbreed two star seeds.", icon: 'nursery', req: { kind: 'count', stat: 'crossbreeds', count: 1, noun: 'crossbreed' } },
+  { id: 'nursery.25', name: "Stellar Gardener", desc: "Grow all 25 star species.", icon: 'nursery', req: { kind: 'count', stat: 'speciesGrown', count: 25, noun: 'species' } },
   // Phase 7: Comet Fusion, Attunements, the Merchant and starships
   { id: 'fusion.5', name: "Comet Smith", desc: "Fuse a level 5 comet.", icon: 'comet', req: { kind: 'count', stat: 'fusionBest', count: 5, noun: 'fusion level' } },
   { id: 'fusion.10', name: "Starfall Forge", desc: "Fuse a level 10 comet.", icon: 'comet', req: { kind: 'count', stat: 'fusionBest', count: 10, noun: 'fusion level' } },

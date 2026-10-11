@@ -113,9 +113,8 @@ export const MUTATION_BY_ID: ReadonlyMap<string, MutationDef> = new Map(MUTATION
 export const MUTATION_TARGETS: ReadonlyArray<{ id: string; name: string; built: boolean }> = [
   { id: 'rune', name: 'Runes', built: true },
   { id: 'asteroid', name: 'Asteroids', built: true },
-  // TODO(Phase 10): Void Wyrms and nursery stars roll mutations through rollMutation().
-  { id: 'wyrm', name: 'Void Wyrms', built: false },
-  { id: 'nursery', name: 'Nursery stars', built: false },
+  { id: 'wyrm', name: 'Void Wyrms', built: true },
+  { id: 'nursery', name: 'Nursery stars', built: true },
 ];
 
 // ---------- The Index ----------
@@ -138,8 +137,8 @@ export const INDEX_PAGES: readonly IndexPage[] = [
   { id: 'elements', name: 'Elements', icon: 'atom', stat: 'productionMult', per: 2, built: true, req: { kind: 'count', stat: 'nebulasAll', count: 1, noun: 'Nebula' } },
   { id: 'relics', name: 'Relics', icon: 'ingot', stat: 'alloyGain', per: 1.5, built: true, req: { kind: 'count', stat: 'nebulasAll', count: 1, noun: 'Nebula' } },
   { id: 'mutations', name: 'Mutations', icon: 'mutation', stat: 'mutationLuck', per: 1.25, built: true, req: { kind: 'count', stat: 'nebulasAll', count: BALANCE.runeDepth.opens.mutations, noun: 'Nebula' } },
-  { id: 'wyrms', name: 'Void Wyrms', icon: 'wyrm', stat: 'wyrmXp', per: 1.5, built: false, req: { kind: 'count', stat: 'wyrmsHatched', count: 1, noun: 'Void Wyrm hatched' } },
-  { id: 'species', name: 'Star species', icon: 'nebula', stat: 'essenceGain', per: 1.5, built: false, req: { kind: 'count', stat: 'nurseryHarvests', count: 1, noun: 'nursery harvest' } },
+  { id: 'wyrms', name: 'Void Wyrms', icon: 'wyrm', stat: 'wyrmXp', per: 1.5, built: true, req: { kind: 'count', stat: 'wyrmsHatched', count: 1, noun: 'Void Wyrm hatched' } },
+  { id: 'species', name: 'Star species', icon: 'nursery', stat: 'essenceGain', per: 1.5, built: true, req: { kind: 'count', stat: 'nurseryHarvests', count: 1, noun: 'nursery harvest' } },
   { id: 'cards', name: 'Tarot cards', icon: 'mystery', stat: 'shardGain', per: 1.5, built: false, req: { kind: 'count', stat: 'cardsDrawn', count: 1, noun: 'Tarot card' } },
   { id: 'galaxies', name: 'Galaxies', icon: 'mystery', stat: 'productionMult', per: 2, built: false, req: { kind: 'count', stat: 'galactics', count: 1, noun: 'Galactic Rebirth' } },
 ];

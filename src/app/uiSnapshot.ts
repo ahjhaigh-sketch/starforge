@@ -21,6 +21,7 @@ import {
 } from '../engine/systems/stardust';
 import { reqProgress, reqText } from '../engine/systems/unlocks';
 import { attuneHud } from './extrasReports';
+import { wyrmSky } from './wyrmReports';
 import { nebulaGain, nebulaReady, runShards } from '../engine/systems/nebula';
 import { BUFF_KINDS, buffLeft, cometOnScreen } from '../engine/systems/comets';
 import { availableUpgrades } from '../engine/systems/upgrades';
@@ -161,6 +162,8 @@ export interface Snapshot {
   essenceVisible: boolean;
   /** Nebulas ever: cyan clouds drift into the sky after the first. */
   nebulasAll: number;
+  /** The Wyrm team for the sky ("colour:rank:form|..."). */
+  wyrmSky: string;
   novaReady: boolean;
   novaGain: string;
   shards: string;
@@ -404,6 +407,7 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     essence: format(cur(s, 'essence'), n),
     essenceVisible: (s.stats.nebulasAll ?? 0) > 0 || cur(s, 'essence').gt(0),
     nebulasAll: s.stats.nebulasAll ?? 0,
+    wyrmSky: wyrmSky(),
     novaPct: novaReady ? 100 : Math.floor((s.tier >= nova.tier ? 0.5 + novaDust * 0.5 : novaTier * 0.5) * 100),
     novaReq: novaReady
       ? `Next shard at ${format(nextShardAt(s), n)} Stardust`

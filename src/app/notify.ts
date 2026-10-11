@@ -3,6 +3,7 @@ import { GOAL_BY_ID, MEDAL_BY_ID } from '../content/medals';
 import { SECTOR_BY_ID } from '../content/extras';
 import { RUNE_BY_ID, SHRINE_BY_ID } from '../content/runes';
 import { AURA_BY_ID, MUTATION_BY_ID } from '../content/runeDepth';
+import { WYRM_BY_ID } from '../content/wyrms';
 import { SYSTEM_BY_ID } from '../content/systems';
 import { TIERS } from '../content/tiers';
 import { events } from '../engine/events';
@@ -130,6 +131,10 @@ export function installNotifications(): void {
       const m = MUTATION_BY_ID.get(e.mut);
       const body = e.target === 'rune' ? `A ${m?.name} copy of ${RUNE_BY_ID.get(e.id)?.name ?? 'a rune'} counts as ${m?.mult} copies.` : `A ${m?.name} ${e.id} asteroid gives x${m?.mult} ore and XP.`;
       if (m) events.emit({ t: 'toast', title: `First ${m.name} mutation`, body, icon: 'mutation' });
+    } else if (e.t === 'hatch') {
+      const w = WYRM_BY_ID.get(e.best);
+      // only the notable hatches: everyday ones show in the hatchery itself
+      if (w && w.rank >= 8) events.emit({ t: 'toast', title: `A rare Wyrm hatched: ${w.name}`, body: 'Put it on your team in the Void Wyrms panel.', icon: 'wyrm' });
     } else if (e.t === 'star') {
       events.emit({ t: 'toast', title: `${SHRINE_BY_ID.get(e.shrine)?.name ?? 'Shrine'}: ${e.stars} star${e.stars === 1 ? '' : 's'}`, body: 'Its runes are stronger.', icon: 'starrank', priority: true });
     } else if (e.t === 'milestone' && e.id.startsWith('codex.')) {

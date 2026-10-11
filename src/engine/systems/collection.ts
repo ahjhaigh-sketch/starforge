@@ -10,6 +10,8 @@ import { registerSources } from '../stats';
 import { auraCopies } from './auras';
 import { mutationsFound } from './mutations';
 import { reqMet } from './unlocks';
+import { WYRM_FORMS, WYRM_SPECIES } from '../../content/wyrms';
+import { STAR_SPECIES } from '../../content/nursery';
 
 /**
  * The Index (Game design: "Across the whole game"): a collection book of every rune, aura,
@@ -37,7 +39,11 @@ export function pageCount(s: GameState, id: string): { found: number; total: num
     case 'relics':
       return { found: RELICS.filter((r) => (s.relics.levels[r.id] ?? 0) > 0).length, total: RELICS.length };
     case 'mutations':
-      return { found: mutationsFound(s), total: MUTATIONS.length * (RUNES.length + RARITIES.length) };
+      return { found: mutationsFound(s), total: MUTATIONS.length * (RUNES.length + RARITIES.length + WYRM_SPECIES.length + STAR_SPECIES.length) };
+    case 'wyrms':
+      return { found: s.wyrms.found.length, total: WYRM_SPECIES.length * WYRM_FORMS.length };
+    case 'species':
+      return { found: s.nursery.found.length, total: STAR_SPECIES.length };
     default:
       return { found: 0, total: 0 };
   }

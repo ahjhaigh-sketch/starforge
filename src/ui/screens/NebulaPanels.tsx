@@ -6,6 +6,7 @@ import { layerConfirm, nebulaReport, nebulaTreeReport, shrineReport } from '../.
 import { snapshotStore } from '../../app/uiSnapshot';
 import { RUNE_BY_ID, RUNE_RARITIES } from '../../content/runes';
 import { AURA_BY_ID } from '../../content/runeDepth';
+import { WYRM_BY_ID } from '../../content/wyrms';
 import { events } from '../../engine/events';
 import { BuyAmountControl } from '../kit/BuyAmountControl';
 import { Button, cx, tint } from '../kit/Chunk';
@@ -302,6 +303,12 @@ export function MythicBanner() {
     () =>
       events.on((e) => {
         // rare Celestial Auras (1 in 10,000 or rarer) get the banner too
+        // a very rare Wyrm (1 in 80,000 or rarer) too
+        if (e.t === 'hatch') {
+          const w = WYRM_BY_ID.get(e.best);
+          if (w && w.rank >= 12) setShow({ name: w.name, rarity: 'Void Wyrm', color: w.color, key: Date.now() });
+          return;
+        }
         if (e.t === 'aura' && e.first) {
           const a = AURA_BY_ID.get(e.id);
           if (a && a.log10 >= 4) setShow({ name: a.name, rarity: 'Celestial Aura', color: a.color, key: Date.now() });

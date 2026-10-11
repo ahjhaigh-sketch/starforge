@@ -150,6 +150,19 @@ export const CONSTANTS: readonly ConstantDef[] = [
     effects: [{ stat: 'essenceGain', a: 0.05, doubles: true, what: 'Essence' }],
     desc: 'More Essence from every Nebula.',
   },
+  {
+    id: 'nebula.bloom',
+    set: 'nebula',
+    name: 'Bloom',
+    icon: 'nursery',
+    color: '#FF7AE0',
+    currency: 'essence',
+    base: 20,
+    growth: BALANCE.constants.bloom,
+    effects: [{ stat: 'nurseryYield', a: 0.1, doubles: true, what: 'Nursery harvests' }],
+    req: { kind: 'count', stat: 'nebulasAll', count: BALANCE.nursery.nebulas, noun: 'Nebula' },
+    desc: 'More Essence from every Star Nursery harvest.',
+  },
 ];
 
 export const CONSTANT_BY_ID: ReadonlyMap<string, ConstantDef> = new Map(CONSTANTS.map((c) => [c.id, c]));

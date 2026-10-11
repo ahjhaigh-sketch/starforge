@@ -23,6 +23,8 @@ import { buyNebulaNode } from '../engine/systems/nebulaTree';
 import { rollOnce, type RollResult, setShrine } from '../engine/systems/runes';
 import { craftRune, salvage, starUp } from '../engine/systems/starring';
 import { type AuraRoll, equipAura, rollAuras } from '../engine/systems/auras';
+import { buyEggs, equipWyrm, fuseWyrms, type HatchResult, trainWyrm, unequipWyrm } from '../engine/systems/wyrms';
+import { buyNurseryUpgrade, buySeeds, crossbreed, harvestPlot, plant, uprootPlot } from '../engine/systems/nursery';
 import { buyForgeUpgrade, buyRelic, equipRelic, setForgeGrade, setForgeOn, setForgeShare, unequipRelic } from '../engine/systems/forge';
 import { backupNow, readBackup } from './backups';
 import { D } from '../engine/decimal';
@@ -277,6 +279,62 @@ export const commands = {
     const ok = equipAura(game.state, id);
     done();
     return ok;
+  },
+  /** Void Wyrms: eggs with the buy amount; fusion takes exactly five. */
+  buyEggs(): HatchResult | null {
+    const r = buyEggs(game.state);
+    done();
+    return r;
+  },
+  fuseWyrms(key: string): boolean {
+    const ok = fuseWyrms(game.state, key);
+    done();
+    return ok;
+  },
+  equipWyrm(key: string): boolean {
+    const ok = equipWyrm(game.state, key);
+    done();
+    return ok;
+  },
+  unequipWyrm(key: string) {
+    unequipWyrm(game.state, key);
+    done();
+  },
+  trainWyrm(key: string): boolean {
+    const ok = trainWyrm(game.state, key);
+    done();
+    return ok;
+  },
+  /** The Star Nursery. */
+  buyNurseryUpgrade(id: string): boolean {
+    const ok = buyNurseryUpgrade(game.state, id);
+    done();
+    return ok;
+  },
+  buySeeds(id: string): boolean {
+    const ok = buySeeds(game.state, id);
+    done();
+    return ok;
+  },
+  plant(plot: number, id: string): boolean {
+    const ok = plant(game.state, plot, id);
+    done();
+    return ok;
+  },
+  harvestPlot(plot: number): boolean {
+    const ok = harvestPlot(game.state, plot) !== null;
+    done();
+    return ok;
+  },
+  uprootPlot(plot: number): boolean {
+    const ok = uprootPlot(game.state, plot);
+    done();
+    return ok;
+  },
+  crossbreed(a: string, b: string): string | null {
+    const child = crossbreed(game.state, a, b);
+    done();
+    return child;
   },
   buyNode(id: string): boolean {
     const ok = buyNode(game.state, id);

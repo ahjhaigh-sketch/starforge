@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react';
 import { commands } from '../../app/commands';
 import { aurasReport, indexReport, mutationsReport, STAR_LADDER, starringReport } from '../../app/runeDepthReports';
-import { AURA_BY_ID } from '../../content/runeDepth';
 import { formatCount } from '../format';
 import { BuyAmountControl } from '../kit/BuyAmountControl';
 import { Button, cx, tint } from '../kit/Chunk';
@@ -218,8 +217,6 @@ export function AurasPanel() {
   );
 }
 
-/** The name of an aura for the toast and banner. */
-export const auraName = (id: string) => AURA_BY_ID.get(id)?.name ?? 'an aura';
 
 // ---------- Mutations ----------
 

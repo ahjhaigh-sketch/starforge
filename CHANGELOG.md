@@ -1,5 +1,28 @@
 # Changelog
 
+## Phase 10: Void Wyrms and the Star Nursery
+- Void Wyrms arrive with the third Nebula.
+  - Eggs cost Essence (10 x 1.5 for each egg so far), with every buy amount. A hatch shakes, cracks and reveals the rarest Wyrm in the batch; very rare ones get the banner.
+  - 20 species, from Ashling (the commonest) to Sylthaz (1 in 100M). Each comes in three forms: Normal, Golden (x3) and Rainbow (x10), 60 variants in all.
+  - A species' odds use the rune odds at the square root of your rune luck. Each species boosts one currency: Stardust, Essence, shards, taps, alloy, ore, Embers or Starsmith XP.
+  - Fusion takes exactly five identical Wyrms: five Normal make a Golden, five Golden make a Rainbow.
+  - Training feeds Iron alloy (20 x 1.35 per level, cheaper with Wyrm XP); each level is +10% boost.
+  - The team has 3 slots, growing to 6 at 25, 100 and 400 Wyrms hatched. Team Wyrms breathe Embers (offline too), which pay for runes at the Wyrm Shrine.
+  - Team Wyrms swim across the sky as serpents, and one darts for every comet and catches it a moment later. Six Wyrms add about 0.1 ms to a frame.
+  - Hatches can mutate. The Index's Wyrms page counts variants found.
+- The Star Nursery opens at 4 Nebulas.
+  - Plant star seeds in nebula plots; they grow through five stages (Seed to Bright star) in 30 seconds to 5 minutes.
+  - A harvest gives Essence, the seed back and a 50% chance of one more. Harvests can mutate.
+  - Five base species are for sale. Crossbreeding two species makes a third, exactly as the table says: 10 crosses of base species, then 10 crosses of those, 25 species in all.
+  - The crossbreed book shows each cross once you know both parents.
+  - Upgrades: more plots (up to 12), faster growth (up to 20 levels), bigger harvests (up to 50 levels), and Tending, which harvests and replants by itself, offline too.
+  - Pull up a growing star to get its seed back and plant something else.
+  - The Bloom constant makes every harvest bigger. Starships bring base seeds home. The Index's Star species page counts species grown.
+- 7 new medals for Wyrms and the Nursery.
+- Fixed: a one-off starship trip (repeat off) paid out 1,000 times when it landed. It now delivers once.
+- The simulator bot hatches, fuses, wears and trains Wyrms, and runs the Nursery.
+- Save version 11, with a migration test that loads a real version 10 save.
+
 ## Phase 9: Rune depth
 - The Index opens at 1 Nebula: a collection book with a page each for runes, auras, elements, relics and mutations.
   - Each page multiplies one stat at 10%, 25%, 50%, 75% and 100% complete: rune luck, rune bulk, Stardust, alloy and mutation luck.

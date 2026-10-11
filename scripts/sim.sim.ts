@@ -112,6 +112,9 @@ let equipAura: (typeof import('../src/engine/systems/auras'))['equipAura'];
 let AURAS: (typeof import('../src/content/runeDepth'))['AURAS'];
 let SHRINES: (typeof import('../src/content/runes'))['SHRINES'];
 let starUp: (typeof import('../src/engine/systems/starring'))['starUp'];
+let W: typeof import('../src/engine/systems/wyrms');
+let NS: typeof import('../src/engine/systems/nursery');
+let NC: typeof import('../src/content/nursery');
 let PLANET_TYPES: (typeof import('../src/content/early'))['PLANET_TYPES'];
 
 async function loadGame(): Promise<void> {
@@ -153,6 +156,9 @@ async function loadGame(): Promise<void> {
   ({ AURAS } = await import('../src/content/runeDepth'));
   ({ SHRINES } = await import('../src/content/runes'));
   ({ starUp } = await import('../src/engine/systems/starring'));
+  W = await import('../src/engine/systems/wyrms');
+  NS = await import('../src/engine/systems/nursery');
+  NC = await import('../src/content/nursery');
 }
 
 const TAPS_PER_SECOND = 4;
@@ -261,6 +267,40 @@ function sideSystems(s: GameState): void {
     if (best && s.auras.equipped !== best.id) equipAura(s, best.id);
   }
   for (const sh of SHRINES) starUp(s, sh.id);
+  // Phase 10: hatch eggs with a little Essence, fuse fives, wear the strongest Wyrms, train them a bit
+  const keepAmount = s.settings.buyAmount;
+  s.settings.buyAmount = 1;
+  if (W.wyrmsOpen(s)) {
+    for (let i = 0; i < 50 && W.eggPlan(s).cost.lt(cur(s, 'essence').mul(0.05)); i++) W.buyEggs(s);
+    for (const key of Object.keys(s.wyrms.stacks)) while (W.fuseWyrms(s, key));
+    const best = Object.keys(s.wyrms.stacks)
+      .filter((k) => W.stackOf(s, k).gte(1))
+      .sort((a, b) => W.boostOfKey(s, b).cmp(W.boostOfKey(s, a)))
+      .slice(0, W.teamSlots(s));
+    s.wyrms.team = best;
+    for (const key of best) for (let i = 0; i < 20 && W.trainPlan(s, key).cost.lt(cur(s, 'alloy.iron').mul(0.02)); i++) W.trainWyrm(s, key);
+  }
+  // the Nursery: Tending and plots when cheap, cross every new species, plant the best seeds
+  if (NS.nurseryOpen(s)) {
+    for (const id of ['tending', 'plots', 'yield', 'growth']) if (NS.upgradePlan(s, id).cost.lt(cur(s, 'essence').mul(0.05))) NS.buyNurseryUpgrade(s, id);
+    for (const [a, b, c] of NC.CROSSBREEDS) if ((s.nursery.seeds[c] ?? 0) === 0 && (s.nursery.seeds[a] ?? 0) >= 2 && (s.nursery.seeds[b] ?? 0) >= 2) NS.crossbreed(s, a, b);
+    NS.ensurePlots(s);
+    s.nursery.plots.forEach((plot, i) => {
+      if (NS.plotProgress(s, i) >= 1 && !s.nursery.upgrades.tending) NS.harvestPlot(s, i);
+      // the seed to grow: one never grown before first, then the highest tier
+      const want = NC.STAR_SPECIES.filter((x) => (s.nursery.seeds[x.id] ?? 0) >= 1).sort((x, y) => Number(s.nursery.found.includes(x.id)) - Number(s.nursery.found.includes(y.id)) || y.tier - x.tier)[0];
+      const here = plot.species ? NC.STAR_BY_ID.get(plot.species) : undefined;
+      if (here && want && (here.tier < want.tier || (!s.nursery.found.includes(want.id) && s.nursery.found.includes(here.id)))) NS.uprootPlot(s, i);
+      if (plot.species) return;
+      if (want) NS.plant(s, i, want.id);
+      else {
+        const base = NC.BASE_SEEDS[i % NC.BASE_SEEDS.length]!;
+        NS.buySeeds(s, base);
+        NS.plant(s, i, base);
+      }
+    });
+  }
+  s.settings.buyAmount = keepAmount;
   // Phase 7: fuse the board, the Gravity Lens (the bot taps a steady 4 a second), good deals, ships
   if (fusionOpen(s)) autoFuse(s);
   const merchantDeals = merchantOpen(s) ? s.merchant.deals : [];
@@ -452,4 +492,5 @@ it('balance simulation', async () => {
   console.log(`Run length, game time: first ${hms(runLengths[0] ?? 0)}, runs 2-5 avg ${hms(avg(runLengths.slice(1, 5)))}, 6-12 avg ${hms(avg(runLengths.slice(5, 12)))}, 13-30 avg ${hms(avg(runLengths.slice(12)))}`);
   console.log(`Nebula runs, game time: first ${hms(nebulaLengths[0] ?? 0)}, then ${nebulaLengths.slice(1).map(hms).join(', ')}`);
   console.log(`Ended at ${s.stats.supernovasAll} Supernovas and ${s.stats.nebulasAll ?? 0} Nebulas, ${hms(s.playtime)} played, Nebula Tree ${nebulaShare(s)} bought, raw next gain ${fmt(rawShardGain(s))}.`);
+  console.log(`Wyrms: team of ${s.wyrms.team.length}, ${s.stats.wyrmsHatched ?? 0} hatched, ${s.wyrms.found.length}/60 variants. Nursery: ${s.nursery.found.length}/25 species grown, ${s.stats.nurseryHarvests ?? 0} harvests. Auras ${s.stats.aurasFound ?? 0}/30, stars ${s.stats.starsEarned ?? 0}.`);
 }, 600_000);

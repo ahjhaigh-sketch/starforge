@@ -19,7 +19,9 @@ export type GameEvent =
   /** A Celestial Aura was rolled (`first`: never found before). */
   | { t: 'aura'; id: string; first: boolean }
   /** The first of a kind of mutation: a rune or an asteroid grade. */
-  | { t: 'mutation'; target: 'rune' | 'asteroid'; id: string; mut: string; firstOfKind: boolean }
+  | { t: 'mutation'; target: 'rune' | 'asteroid' | 'wyrm' | 'nursery'; id: string; mut: string; firstOfKind: boolean }
+  /** Eggs hatched: how many, and the rarest species among them. */
+  | { t: 'hatch'; count: number; best: string }
   /** A shrine gained a star. */
   | { t: 'star'; shrine: string; stars: number }
   /** `priority`: big news (a new tier, a reset) that smaller toasts must never push out. */

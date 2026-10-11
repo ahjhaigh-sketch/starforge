@@ -12,6 +12,8 @@ import { registerRunes } from '../engine/systems/runes';
 import { registerMutations } from '../engine/systems/mutations';
 import { registerAuras } from '../engine/systems/auras';
 import { registerIndex } from '../engine/systems/collection';
+import { registerWyrms } from '../engine/systems/wyrms';
+import { registerNursery } from '../engine/systems/nursery';
 import { registerStarsmith } from '../engine/systems/starsmith';
 import { registerComets } from '../engine/systems/comets';
 import { registerNovaTree } from '../engine/systems/novaTree';
@@ -54,5 +56,7 @@ export function registerContent(): void {
   registerMutations();
   registerAuras();
   registerIndex();
+  registerWyrms();
+  registerNursery();
   registerUnlocks();
 }

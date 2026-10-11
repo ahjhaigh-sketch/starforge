@@ -7,6 +7,7 @@ import { burst, initParticles, setParticlesEnabled, updateParticles } from './pa
 import { OrbitalsView } from './orbitals';
 import { StarCore } from './star';
 import { initStarfield, resizeStarfield, setNebulaClouds, updateClouds, updateStarfield } from './starfield';
+import { WyrmSky } from './wyrms';
 
 /**
  * PixiJS draws behind the whole UI: the sky, the Star Core and particles. One canvas, fixed to
@@ -17,6 +18,9 @@ let app: Application | null = null;
 let star: StarCore | null = null;
 let orbitals: OrbitalsView | null = null;
 let anchor: Element | null = null;
+let wyrms: WyrmSky | null = null;
+/** Wyrms swimming in the sky right now (tests and the dev panel). */
+export const swimmingWyrms = () => wyrms?.count ?? 0;
 let still = false;
 let flashScale = 1;
 /** Average CPU time of one rendered frame, ms (dev panel). */
@@ -60,6 +64,8 @@ export async function initRender(): Promise<boolean> {
   const fx = new Container();
   app.stage.addChild(sky, mid, fx);
   initStarfield(sky);
+  wyrms = new WyrmSky();
+  sky.addChild(wyrms.root);
   star = new StarCore();
   orbitals = new OrbitalsView();
   mid.addChild(orbitals.behind, star.root, orbitals.infront);
@@ -74,6 +80,7 @@ export async function initRender(): Promise<boolean> {
     orbitals!.set(s.planets, s.ringsOpen);
     star!.setTier(s.tierIndex, false);
     setNebulaClouds(s.nebulasAll);
+    wyrms!.set(s.wyrmSky, app!.screen.width, app!.screen.height);
   };
   star.setTier(snapshotStore.getState().tierIndex, true);
   apply();
@@ -107,6 +114,16 @@ export async function initRender(): Promise<boolean> {
     resizeStarfield(width, height);
     updateStarfield(dt, still);
     updateClouds(dt, still);
+    if (wyrms && wyrms.count > 0) {
+      // the lead Wyrm darts for a flying comet (the comet is a DOM button; read where it is)
+      let comet: { x: number; y: number } | null = null;
+      if (snapshotStore.getState().cometKey) {
+        const el = document.querySelector('[data-testid="comet"]');
+        const b = el?.getBoundingClientRect();
+        if (b && b.width > 0) comet = { x: b.left + b.width / 2, y: b.top + b.height / 2 };
+      }
+      wyrms.update(dt, width, height, still, comet);
+    }
     const r = anchorRect();
     if (r && r.width > 0) {
       star.update(dt, r.left + r.width / 2, r.top + r.height / 2, r.width, still);

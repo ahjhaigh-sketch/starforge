@@ -12,6 +12,7 @@ import './ui/forge.css';
 import './ui/extras.css';
 import './ui/runes.css';
 import './ui/runedepth.css';
+import './ui/wyrms.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -104,7 +105,7 @@ async function boot(): Promise<void> {
   startClock();
 
   if (game.devMode) {
-    Object.assign(window, { sf: { game, commands, stat, breakdown, D, saveNow, fx: { burst, liveParticles, renderMs: () => renderStage.renderMs } } });
+    Object.assign(window, { sf: { game, commands, stat, breakdown, D, saveNow, fx: { burst, liveParticles, renderMs: () => renderStage.renderMs, wyrms: () => renderStage.swimmingWyrms() } } });
   }
 }
 

@@ -350,3 +350,16 @@ describe('save version 8', () => {
     expect(BALANCE.fusion.supernovas).toBe(6);
   });
 });
+
+describe('Starship Expeditions: one-off trips', () => {
+  it('a trip without repeat delivers exactly once, however big the step', () => {
+    for (const step of [0.05, 700]) {
+      const s = run(15);
+      s.stats.bestTier = 4;
+      expect(launch(s, 0, 'kuiper', false)).toBe(true);
+      for (let t = 0; t < 700; t += step) tick(s, step);
+      expect(s.stats.trips).toBe(1);
+      expect(s.ships.fleet[0]!.sector).toBeNull();
+    }
+  });
+});

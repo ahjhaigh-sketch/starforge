@@ -50,7 +50,8 @@ export const SYSTEMS: readonly SystemDef[] = [
   { id: 'starring', name: 'Stars', icon: 'starrank', color: '#C99A1E', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 2, noun: 'Nebula' }, panel: 'starring', built: true, blurb: 'Sacrifice runes to give a shrine stars; craft the rune you want.' },
   { id: 'mutations', name: 'Mutations', icon: 'mutation', color: '#C23FA0', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 3, noun: 'Nebula' }, panel: 'mutations', built: true, blurb: 'Golden, Rainbow, Void and Prismatic runes and asteroids.' },
   { id: 'auras', name: 'Auras', icon: 'aura', color: '#1A9DB8', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 4, noun: 'Nebula' }, panel: 'auras', built: true, blurb: 'Roll Aura Dice and wear one Celestial Aura.' },
-  { id: 'wyrms', name: 'Wyrms', icon: 'wyrm', color: '#2E9C78', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 3, noun: 'Nebula' }, built: false, blurb: 'Hatch, train and fuse Void Wyrms.' },
+  { id: 'wyrms', name: 'Wyrms', icon: 'wyrm', color: '#2E9C78', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 3, noun: 'Nebula' }, panel: 'wyrms', built: true, blurb: 'Hatch, train and fuse Void Wyrms.' },
+  { id: 'nursery', name: 'Nursery', icon: 'nursery', color: '#C23FA0', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 4, noun: 'Nebula' }, panel: 'nursery', built: true, blurb: 'Grow and crossbreed 25 kinds of star.' },
 ];
 
 export const SYSTEM_BY_ID: ReadonlyMap<string, SystemDef> = new Map(SYSTEMS.map((x) => [x.id, x]));

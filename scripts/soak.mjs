@@ -6,7 +6,7 @@ import { chromium } from '@playwright/test';
 
 const seconds = Number(process.argv[2] ?? 120);
 const base = process.argv[3] ?? 'http://localhost:4173';
-const PANELS = ['upgrades', 'medals', 'stats', 'constants', 'quests', 'orbitals', 'mastery', 'novatree', 'automation', 'ascent', 'belt', 'level', 'drill', 'starforge', 'fusion', 'attune', 'merchant', 'expeditions', 'nebula', 'runes', 'nebulatree', 'index', 'starring', 'mutations', 'auras'];
+const PANELS = ['upgrades', 'medals', 'stats', 'constants', 'quests', 'orbitals', 'mastery', 'novatree', 'automation', 'ascent', 'belt', 'level', 'drill', 'starforge', 'fusion', 'attune', 'merchant', 'expeditions', 'nebula', 'runes', 'nebulatree', 'index', 'starring', 'mutations', 'auras', 'wyrms', 'nursery'];
 
 const browser = await chromium.launch();
 let failed = false;
@@ -42,6 +42,9 @@ for (const view of [
     // Phase 9: dice and Rune Shards to spend
     commands.devAdd('auraDice', 5000);
     commands.devAdd('runeShards', 1e6);
+    // Phase 10: Essence for eggs and seeds, Iron alloy for training
+    commands.devAdd('essence', 1e6);
+    commands.devAdd('alloy.iron', 1e5);
   });
   const end = Date.now() + seconds * 1000;
   let round = 0;
@@ -121,6 +124,20 @@ for (const view of [
         await page.getByTestId('salvage').click({ force: true });
       }
       if (panel === 'index') await page.locator('[data-page="elements"]').click({ force: true });
+      if (panel === 'wyrms') {
+        await page.getByTestId('hatch').click({ force: true });
+        await page.waitForTimeout(1200);
+        const fuse = page.locator('[data-fuse]:not([disabled])').first();
+        if (await fuse.count()) await fuse.click({ force: true });
+      }
+      if (panel === 'nursery') {
+        const plantBtn = page.locator('[data-plant]').first();
+        if (await plantBtn.count()) await plantBtn.click({ force: true });
+        const harvest = page.locator('[data-harvest]').first();
+        if (await harvest.count()) await harvest.click({ force: true });
+        const buy = page.locator('[data-seed] button').first();
+        if (await buy.count()) await buy.click({ force: true });
+      }
       if (panel === 'level') {
         await page.locator('[data-perk="ore"] button').click({ force: true });
         if (round % 3 === 0) await page.getByRole('button', { name: 'Reset perks (free)' }).click({ force: true });

@@ -88,7 +88,27 @@ export const plainSaveSchema = z.looseObject({
     })
     .optional(),
   auras: z.looseObject({ copies: decRecord, equipped: z.string().nullable(), auto: z.boolean(), rng: z.tuple([finite, finite, finite, finite]) }).optional(),
-  mutations: z.looseObject({ runes: z.record(z.string(), decRecord), asteroids: z.record(z.string(), finite), rng: z.tuple([finite, finite, finite, finite]) }).optional(),
+  mutations: z.looseObject({ runes: z.record(z.string(), decRecord), asteroids: z.record(z.string(), finite), others: z.record(z.string(), finite).optional(), rng: z.tuple([finite, finite, finite, finite]) }).optional(),
+  wyrms: z
+    .looseObject({
+      stacks: decRecord,
+      levels: z.record(z.string(), z.number().int().min(0)),
+      team: z.array(z.string()).max(6),
+      eggs: z.number().int().min(0),
+      found: z.array(z.string()),
+      catchAcc: finite,
+      rng: z.tuple([finite, finite, finite, finite]),
+    })
+    .optional(),
+  nursery: z
+    .looseObject({
+      plots: z.array(z.looseObject({ species: z.string().nullable(), t: finite })).max(12),
+      seeds: z.record(z.string(), z.number().int().min(0)),
+      upgrades: z.record(z.string(), z.number().int().min(0)),
+      found: z.array(z.string()),
+      rng: z.tuple([finite, finite, finite, finite]),
+    })
+    .optional(),
   ships: z.looseObject({ fleet: z.array(z.looseObject({ sector: z.string().nullable(), t: finite, auto: z.boolean() })), upgrades: z.record(z.string(), z.number().int().min(0)), rng: z.tuple([finite, finite, finite, finite]) }).optional(),
   settings: z.looseObject({
     notation: z.enum(['suffix', 'scientific', 'engineering']),

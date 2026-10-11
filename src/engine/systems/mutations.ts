@@ -75,7 +75,38 @@ const Decimal_min = (a: Decimal, b: Decimal) => (a.lt(b) ? a : b);
 /** Whether anything has had this mutation yet (for the one toast per kind). */
 function seenMutation(s: GameState, mut: string): boolean {
   for (const rec of Object.values(s.mutations.runes)) if (rec[mut]?.gt(0)) return true;
+  for (const [k, v] of Object.entries(s.mutations.others)) if (v > 0 && k.endsWith(`.${mut}`)) return true;
   return RARITIES.some((r) => (s.mutations.asteroids[`${r.id}.${mut}`] ?? 0) > 0);
+}
+
+/**
+ * Splits `count` new Wyrms or nursery harvests into mutations, rarest first, each at most once.
+ * Returns only the mutated shares; the rest are plain.
+ */
+export function rollMutations(s: GameState, count: Decimal): Array<{ mut: MutationDef; k: Decimal }> {
+  const out: Array<{ mut: MutationDef; k: Decimal }> = [];
+  if (!mutationsOpen(s) || count.lte(0)) return out;
+  let left = count;
+  for (let i = MUTATIONS.length - 1; i >= 0 && left.gt(0); i--) {
+    const m = MUTATIONS[i]!;
+    const k = Decimal_min(drawHits(s.mutations.rng, left, -mutEffLog(s, m), BALANCE.runes.poissonBelow), left);
+    if (k.lte(0)) continue;
+    out.push({ mut: m, k });
+    left = left.sub(k);
+  }
+  return out;
+}
+
+/** Counts a mutated Wyrm or nursery star for the Index ("wyrm.<species>.<mutation>"). */
+export function recordMutation(s: GameState, target: 'wyrm' | 'nursery', id: string, mut: string, n = 1): void {
+  const key = `${target}.${id}.${mut}`;
+  const firstOfKind = !seenMutation(s, mut);
+  const first = !s.mutations.others[key];
+  s.mutations.others[key] = (s.mutations.others[key] ?? 0) + n;
+  if (first) {
+    s.stats.mutationsFound = (s.stats.mutationsFound ?? 0) + 1;
+    events.emit({ t: 'mutation', target, id, mut, firstOfKind });
+  }
 }
 
 /**
@@ -128,6 +159,7 @@ export function mutationsFound(s: GameState): number {
   let n = 0;
   for (const rec of Object.values(s.mutations.runes)) for (const v of Object.values(rec)) if (v.gt(0)) n++;
   for (const v of Object.values(s.mutations.asteroids)) if (v > 0) n++;
+  for (const v of Object.values(s.mutations.others)) if (v > 0) n++;
   return n;
 }
 

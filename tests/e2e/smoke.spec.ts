@@ -975,3 +975,119 @@ test('the Index: page bonuses grow with completion and show in Stats; Mutations 
   await expect(page.locator('[data-panel="stats"]')).toContainText('Index: Elements');
   expect(errors).toEqual([]);
 });
+
+// ---------- Phase 10: Void Wyrms and the Star Nursery ----------
+
+type Sf10 = {
+  sf: {
+    game: {
+      state: {
+        unlocked: string[];
+        stats: Record<string, number>;
+        wyrms: { stacks: Record<string, unknown>; team: string[] };
+        nursery: { seeds: Record<string, number>; found: string[] };
+        currencies: Record<string, { toNumber(): number; constructor: new (x: number) => unknown }>;
+      };
+    };
+    commands: { devAdd(c: string, n: number): void; devWarp(s: number): void };
+    fx: { wyrms(): number; renderMs(): number };
+  };
+};
+
+test('Void Wyrms: hatch an egg, then fusion takes exactly five', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf10).sf;
+    game.state.stats.nebulasAll = 3;
+    game.state.stats.nebulas = 3;
+    commands.devAdd('essence', 1000);
+  });
+  await openRail(page, 'wyrms');
+  const panel = page.locator('[data-panel="wyrms"]');
+  await panel.getByTestId('hatch').click();
+  await expect(panel.getByTestId('hatch-card')).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as Sf10).sf.game.state.stats.wyrmsHatched)).toBe(1);
+  expect(await page.evaluate(() => (window as unknown as Sf10).sf.game.state.wyrms.team.length)).toBe(1);
+  await page.evaluate(() => {
+    const s = (window as unknown as Sf10).sf.game.state;
+    const D = s.currencies.essence!.constructor;
+    s.wyrms.stacks['wyrm.cinderwisp|0|'] = new D(7);
+  });
+  await panel.locator('[data-fuse="wyrm.cinderwisp|0|"]').click();
+  const after = await page.evaluate(() => {
+    const st = (window as unknown as Sf10).sf.game.state.wyrms.stacks as Record<string, { toNumber(): number }>;
+    return { normal: st['wyrm.cinderwisp|0|']!.toNumber(), golden: st['wyrm.cinderwisp|1|']!.toNumber() };
+  });
+  expect(after).toEqual({ normal: 2, golden: 1 });
+  expect(errors).toEqual([]);
+});
+
+test('six Wyrms swim across the sky and the frame rate holds', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  const measure = () =>
+    page.evaluate(async () => {
+      const times: number[] = [];
+      let last = performance.now();
+      await new Promise<void>((done) => {
+        const loop = (t: number) => {
+          times.push(t - last);
+          last = t;
+          if (times.length < 150) requestAnimationFrame(loop);
+          else done();
+        };
+        requestAnimationFrame(loop);
+      });
+      const f = times.slice(5);
+      return f.reduce((a, b) => a + b, 0) / f.length;
+    });
+  await page.evaluate(() => {
+    const s = (window as unknown as Sf10).sf.game.state;
+    s.stats.nebulasAll = 3;
+    s.stats.nebulas = 3;
+  });
+  // the same page without Wyrms first: headless browsers set their own pace
+  const before = await measure();
+  await page.evaluate(() => {
+    const s = (window as unknown as Sf10).sf.game.state;
+    s.stats.wyrmsHatched = 400;
+    const D = s.currencies.stardust!.constructor;
+    const ids = ['ashling', 'starscale', 'voidcoil', 'frostmaw', 'thunderhorn', 'sylthaz'];
+    ids.forEach((id, i) => {
+      const key = `wyrm.${id}|${i % 3}|`;
+      s.wyrms.stacks[key] = new D(1);
+      s.wyrms.team.push(key);
+    });
+  });
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf10).sf.fx.wyrms())).toBe(6);
+  const after = await measure();
+  // six Wyrms don't slow the frame, and a whole frame's drawing stays far inside 60 fps's 16.7 ms
+  expect(after).toBeLessThan(before * 1.25 + 2);
+  expect(await page.evaluate(() => (window as unknown as Sf10).sf.fx.renderMs())).toBeLessThan(8);
+  expect(errors).toEqual([]);
+});
+
+test('the Star Nursery: crossbreeding follows the table, and a planted seed ripens and harvests', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf10).sf;
+    game.state.stats.nebulasAll = 4;
+    game.state.stats.nebulas = 4;
+    game.state.nursery.seeds = { 'star.ember': 2, 'star.sol': 2 };
+    commands.devAdd('essence', 1000);
+  });
+  await openRail(page, 'nursery');
+  const panel = page.locator('[data-panel="nursery"]');
+  await panel.getByTestId('cross-a').selectOption('star.ember');
+  await panel.getByTestId('cross-b').selectOption('star.sol');
+  await expect(panel.getByTestId('cross-preview')).toContainText('Flare Star');
+  await panel.getByTestId('cross').click();
+  expect(await page.evaluate(() => (window as unknown as Sf10).sf.game.state.nursery.seeds)).toEqual({ 'star.ember': 1, 'star.sol': 1, 'star.flare': 1 });
+  await panel.locator('[data-plant="0"]').click();
+  await page.evaluate(() => (window as unknown as Sf10).sf.commands.devWarp(40));
+  await panel.locator('[data-harvest="0"]').click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf10).sf.game.state.nursery.found.length)).toBe(1);
+  expect(errors).toEqual([]);
+});

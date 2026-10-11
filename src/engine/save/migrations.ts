@@ -52,6 +52,16 @@ const migrations: Record<number, (d: PlainSave) => void> = {
     d.auras ??= { copies: {}, equipped: null, auto: false, rng: derive(0x0a4a_51d3) };
     d.mutations ??= { runes: {}, asteroids: {}, rng: derive(0x3d7a_7e05) };
   },
+  // 11 (Phase 10): Void Wyrms and the Star Nursery, with streams from the save's own; mutations of
+  // Wyrms and nursery stars get their own record.
+  11: (d) => {
+    const base = (d.rng as number[] | undefined) ?? [1, 2, 3, 4];
+    const derive = (k: number) => seedRng(((base[0] ?? 1) ^ k) >>> 0);
+    const m = d.mutations as { others?: Record<string, number> } | undefined;
+    if (m && !m.others) m.others = {};
+    d.wyrms ??= { stacks: {}, levels: {}, team: [], eggs: 0, found: [], catchAcc: 0, rng: derive(0x77c3_9a01) };
+    d.nursery ??= { plots: [], seeds: {}, upgrades: {}, found: [], rng: derive(0x5eed_0b10) };
+  },
 };
 
 export function migrate(version: number, data: PlainSave): PlainSave {
