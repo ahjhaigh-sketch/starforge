@@ -90,6 +90,12 @@ export const MEDALS: readonly MedalDef[] = [
   { id: 'wyrms.catch', name: "Comet Snack", desc: "Let your Wyrms catch 25 comets.", icon: 'comet', req: { kind: 'count', stat: 'wyrmCatches', count: 25, noun: 'comet caught by a Wyrm' } },
   { id: 'nursery.1', name: "Green Thumb", desc: "Harvest a nursery star.", icon: 'nursery', req: { kind: 'count', stat: 'nurseryHarvests', count: 1, noun: 'harvest' } },
   { id: 'nursery.cross', name: "New Breed", desc: "Crossbreed two star seeds.", icon: 'nursery', req: { kind: 'count', stat: 'crossbreeds', count: 1, noun: 'crossbreed' } },
+  // Phase 11: Spectral Focus and Tarot of the Void
+  { id: 'spectral.10', name: "Ten Orders Deep", desc: "Bring a colour to 10 orders of magnitude of energy.", icon: 'prism', req: { kind: 'count', stat: 'spectralBest', count: 10, noun: 'order of magnitude' } },
+  { id: 'spectral.7', name: "Full Spectrum", desc: "Open all seven colours.", icon: 'prism', req: { kind: 'count', stat: 'spectralColors', count: 7, noun: 'colour' } },
+  { id: 'cards.1', name: "First Draw", desc: "Draw a tarot card.", icon: 'card', req: { kind: 'count', stat: 'cardsDrawn', count: 1, noun: 'card' } },
+  { id: 'cards.30', name: "Half a Deck", desc: "Own 30 tarot cards.", icon: 'card', req: { kind: 'count', stat: 'cardsDrawn', count: 30, noun: 'card' } },
+  { id: 'cards.60', name: "The Whole Void", desc: "Own all 60 tarot cards.", icon: 'card', req: { kind: 'count', stat: 'cardsDrawn', count: 60, noun: 'card' } },
   { id: 'nursery.25', name: "Stellar Gardener", desc: "Grow all 25 star species.", icon: 'nursery', req: { kind: 'count', stat: 'speciesGrown', count: 25, noun: 'species' } },
   // Phase 7: Comet Fusion, Attunements, the Merchant and starships
   { id: 'fusion.5', name: "Comet Smith", desc: "Fuse a level 5 comet.", icon: 'comet', req: { kind: 'count', stat: 'fusionBest', count: 5, noun: 'fusion level' } },

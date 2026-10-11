@@ -6,7 +6,7 @@ import { parseWyrmKey, WYRM_BY_ID, WYRM_FORMS, WYRM_SPECIES } from '../content/w
 import { cur } from '../engine/state';
 import { crossCost, growSeconds, nurseryLevel, nurseryOpen, plotCount, plotProgress, seedPlan, seedsOf, stageOf, upgradePlan } from '../engine/systems/nursery';
 import { boostOfKey, eggPlan, embersOfKey, embersPerSecond, speciesEffLog, stackLevel, stackOf, teamSlots, trainPlan, wyrmsOpen } from '../engine/systems/wyrms';
-import { format, formatCount, formatTime } from '../ui/format';
+import { format, formatMult, formatCount, formatTime } from '../ui/format';
 import { game } from './game';
 import { oddsText } from './runeReports';
 
@@ -76,7 +76,7 @@ function stackRow(key: string): StackRow {
     mutColor: m?.color ?? '',
     count: format(stackOf(s, key), n()),
     level: stackLevel(s, key),
-    boost: `x${format(boostOfKey(s, key).add(1), n())} ${word(w.stat)}`,
+    boost: `${formatMult(boostOfKey(s, key).add(1), n())} ${word(w.stat)}`,
     embers: `${format(embersOfKey(s, key), n())}/s`,
     canFuse: form < WYRM_FORMS.length - 1 && stackOf(s, key).gte(W.fuse),
     fuseTo: WYRM_FORMS[form + 1]?.name ?? '',

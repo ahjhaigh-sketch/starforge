@@ -115,6 +115,9 @@ let starUp: (typeof import('../src/engine/systems/starring'))['starUp'];
 let W: typeof import('../src/engine/systems/wyrms');
 let NS: typeof import('../src/engine/systems/nursery');
 let NC: typeof import('../src/content/nursery');
+let SPX: typeof import('../src/engine/systems/spectral');
+let TAR: typeof import('../src/engine/systems/tarot');
+let NX: typeof import('../src/content/nebulaExtras');
 let PLANET_TYPES: (typeof import('../src/content/early'))['PLANET_TYPES'];
 
 async function loadGame(): Promise<void> {
@@ -159,6 +162,9 @@ async function loadGame(): Promise<void> {
   W = await import('../src/engine/systems/wyrms');
   NS = await import('../src/engine/systems/nursery');
   NC = await import('../src/content/nursery');
+  SPX = await import('../src/engine/systems/spectral');
+  TAR = await import('../src/engine/systems/tarot');
+  NX = await import('../src/content/nebulaExtras');
 }
 
 const TAPS_PER_SECOND = 4;
@@ -299,6 +305,18 @@ function sideSystems(s: GameState): void {
         NS.plant(s, i, base);
       }
     });
+  }
+  // Phase 11: focus the weakest open colour, buy Prism Lens and Afterglow, packs, and deal the strongest plain cards
+  if (SPX.spectralOpen(s)) {
+    const open = NX.SPECTRAL.filter((c) => SPX.colorOpen(s, c.id));
+    const weakest = open.sort((a, b) => SPX.oom(SPX.energyOf(s, a.id)) - SPX.oom(SPX.energyOf(s, b.id)))[0];
+    if (weakest) SPX.setFocus(s, weakest.id);
+    for (const id of ['lens', 'afterglow'] as const) for (let i = 0; i < 20 && SPX.spectralPlan(s, id).count > 0 && SPX.spectralPlan(s, id).cost.lt(cur(s, 'essence').mul(0.05)); i++) SPX.buySpectral(s, id);
+  }
+  if (TAR.tarotOpen(s)) {
+    for (let i = 0; i < 60 && TAR.packPlan(s).count > 0 && TAR.packPlan(s).cost.lt(cur(s, 'essence').mul(0.05)); i++) TAR.openPacks(s);
+    const plain = s.tarot.owned.map((id) => NX.CARD_BY_ID.get(id)!).filter((c) => !c.rule && c.rarity < 5).sort((a, b) => b.rarity - a.rarity);
+    s.tarot.deck = plain.slice(0, TAR.deckSlots(s)).map((c) => c.id);
   }
   s.settings.buyAmount = keepAmount;
   // Phase 7: fuse the board, the Gravity Lens (the bot taps a steady 4 a second), good deals, ships
@@ -492,5 +510,5 @@ it('balance simulation', async () => {
   console.log(`Run length, game time: first ${hms(runLengths[0] ?? 0)}, runs 2-5 avg ${hms(avg(runLengths.slice(1, 5)))}, 6-12 avg ${hms(avg(runLengths.slice(5, 12)))}, 13-30 avg ${hms(avg(runLengths.slice(12)))}`);
   console.log(`Nebula runs, game time: first ${hms(nebulaLengths[0] ?? 0)}, then ${nebulaLengths.slice(1).map(hms).join(', ')}`);
   console.log(`Ended at ${s.stats.supernovasAll} Supernovas and ${s.stats.nebulasAll ?? 0} Nebulas, ${hms(s.playtime)} played, Nebula Tree ${nebulaShare(s)} bought, raw next gain ${fmt(rawShardGain(s))}.`);
-  console.log(`Wyrms: team of ${s.wyrms.team.length}, ${s.stats.wyrmsHatched ?? 0} hatched, ${s.wyrms.found.length}/60 variants. Nursery: ${s.nursery.found.length}/25 species grown, ${s.stats.nurseryHarvests ?? 0} harvests. Auras ${s.stats.aurasFound ?? 0}/30, stars ${s.stats.starsEarned ?? 0}.`);
+  console.log(`Wyrms: team of ${s.wyrms.team.length}, ${s.stats.wyrmsHatched ?? 0} hatched, ${s.wyrms.found.length}/60 variants. Nursery: ${s.nursery.found.length}/25 species grown, ${s.stats.nurseryHarvests ?? 0} harvests. Auras ${s.stats.aurasFound ?? 0}/30, stars ${s.stats.starsEarned ?? 0}. Spectral best 10^${s.stats.spectralBest ?? 0}, ${s.stats.spectralColors ?? 0} colours; tarot ${s.tarot.owned.length}/60.`);
 }, 600_000);

@@ -1,0 +1,58 @@
+/* =====================================================================
+   Phase 11: Spectral Focus (seven bands of the nebula's light) and Tarot
+   of the Void (a deck where position matters).
+   ===================================================================== */
+
+/* ---------- the spectrum ---------- */
+.spectrum { display: grid; gap: 0.35rem; margin-bottom: 0.8rem; }
+.band { display: grid; grid-template-columns: 4.2rem 1fr auto; gap: 0.7rem; align-items: center; padding: 0.45rem 0.7rem; border-radius: 14px;
+  background: linear-gradient(90deg, color-mix(in oklab, var(--c) 38%, transparent), color-mix(in oklab, var(--c) 10%, transparent) 70%), rgba(0, 0, 0, 0.25);
+  border: 2px solid color-mix(in oklab, var(--c) 45%, transparent); }
+.band.locked { opacity: 0.5; filter: grayscale(0.6); }
+.band.focused { border-color: var(--c); box-shadow: 0 0 18px 2px color-mix(in oklab, var(--c) 55%, transparent); animation: bandHum 2.4s ease-in-out infinite; }
+@keyframes bandHum { 50% { box-shadow: 0 0 26px 6px color-mix(in oklab, var(--c) 45%, transparent); } }
+.reduced-motion .band.focused { animation: none; }
+.band-oom { font-family: var(--font-display); font-size: 1.7rem; line-height: 1; text-align: center; color: var(--c); text-shadow: var(--outline-sm); }
+.band-oom small { font-size: 0.85rem; vertical-align: 0.55rem; color: var(--text-dim); }
+.band-body { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; font-size: 0.85rem; }
+.band-body b { font-weight: 800; }
+.band-body b .num { margin-left: 0.35rem; color: var(--text-dim); }
+.band-body small { color: var(--text-dim); font-weight: 600; }
+.band-bar { height: 0.45rem; border-radius: 999px; background: rgba(0, 0, 0, 0.4); overflow: hidden; border: 1.5px solid var(--ink); }
+.band-bar i { display: block; height: 100%; background: var(--c); }
+
+/* ---------- the tarot ---------- */
+.pack-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem; }
+.drawn { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.drawn-card { padding: 0.2rem 0.55rem; border-radius: 999px; font-size: 0.78rem; font-weight: 800; background: color-mix(in oklab, var(--magenta) 35%, var(--panel-deep)); animation: cardLand 0.6s var(--back-out) both; }
+.reduced-motion .drawn-card { animation: none; }
+.deck { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.45rem; margin-bottom: 0.4rem; }
+.deck-slot { position: relative; min-height: 11.5rem; border-radius: 14px; padding: 1.3rem 0.45rem 0.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; text-align: center; font-size: 0.75rem;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--c) 30%, var(--panel-deep)), var(--panel-deep)); border: 2.5px solid color-mix(in oklab, var(--c) 70%, var(--ink)); }
+.deck-slot.empty { border-style: dashed; border-color: rgba(255, 255, 255, 0.15); background: rgba(0, 0, 0, 0.2); justify-content: center; }
+.deck-slot.off { filter: grayscale(0.85) brightness(0.7); }
+.deck-slot.can-drop { outline: 2px dashed var(--magenta); outline-offset: 2px; }
+.deck-slot b { font-family: var(--font-display); font-weight: 400; font-size: 0.95rem; line-height: 1.1; }
+.deck-slot .slot-no { position: absolute; top: 0.3rem; left: 0.5rem; color: var(--text-dim); font-weight: 800; }
+.deck-slot .now { color: var(--lime); font-weight: 700; }
+.deck-slot.off .now { color: var(--red); }
+.deck-slot .acts { color: var(--cyan); font-weight: 700; }
+.deck-slot .twice { color: var(--gold); font-weight: 800; }
+.deck-slot .btn { margin-top: auto; }
+.tarot-art .icon { width: 2.2rem; height: 2.2rem; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: 0.35rem; }
+.tarot-card { display: flex; flex-direction: column; gap: 0.15rem; padding: 0.4rem 0.5rem; border-radius: 10px; text-align: left; font: inherit; font-size: 0.75rem; color: var(--text); cursor: pointer;
+  background: color-mix(in oklab, var(--c) 14%, rgba(0, 0, 0, 0.3)); border: 2px solid color-mix(in oklab, var(--c) 40%, transparent); }
+.tarot-card:disabled { cursor: default; opacity: 0.45; }
+.tarot-card b { font-weight: 800; font-size: 0.82rem; }
+.tarot-card small { color: var(--text-dim); font-weight: 600; }
+.tarot-card.in-deck { box-shadow: inset 0 0 0 2px var(--c); }
+.tarot-card.picked { border-color: var(--magenta); box-shadow: 0 0 12px 2px rgba(255, 79, 193, 0.5); }
+
+@media (max-width: 900px) {
+  .band { grid-template-columns: 3.2rem 1fr; }
+  .band .btn { grid-column: 1 / -1; }
+  .deck { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .deck-slot { min-height: 8rem; }
+}
+.seed-row[data-spectral-up] { grid-template-columns: 1fr auto; }

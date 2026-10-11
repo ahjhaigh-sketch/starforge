@@ -6,7 +6,7 @@ import { chromium } from '@playwright/test';
 
 const seconds = Number(process.argv[2] ?? 120);
 const base = process.argv[3] ?? 'http://localhost:4173';
-const PANELS = ['upgrades', 'medals', 'stats', 'constants', 'quests', 'orbitals', 'mastery', 'novatree', 'automation', 'ascent', 'belt', 'level', 'drill', 'starforge', 'fusion', 'attune', 'merchant', 'expeditions', 'nebula', 'runes', 'nebulatree', 'index', 'starring', 'mutations', 'auras', 'wyrms', 'nursery'];
+const PANELS = ['upgrades', 'medals', 'stats', 'constants', 'quests', 'orbitals', 'mastery', 'novatree', 'automation', 'ascent', 'belt', 'level', 'drill', 'starforge', 'fusion', 'attune', 'merchant', 'expeditions', 'nebula', 'runes', 'nebulatree', 'index', 'starring', 'mutations', 'auras', 'wyrms', 'nursery', 'spectral', 'tarot'];
 
 const browser = await chromium.launch();
 let failed = false;
@@ -36,8 +36,8 @@ for (const view of [
     commands.devAdd('alloy.iron', 500);
     commands.devAdd('ore.gold', 2000);
     // Phase 8: three Nebulas behind us, so the shrines and the Nebula Tree are open
-    s.stats.nebulasAll = 4;
-    s.stats.nebulas = 4;
+    s.stats.nebulasAll = 6;
+    s.stats.nebulas = 6;
     commands.devAdd('essence', 5000);
     // Phase 9: dice and Rune Shards to spend
     commands.devAdd('auraDice', 5000);
@@ -129,6 +129,19 @@ for (const view of [
         await page.waitForTimeout(1200);
         const fuse = page.locator('[data-fuse]:not([disabled])').first();
         if (await fuse.count()) await fuse.click({ force: true });
+      }
+      if (panel === 'spectral') {
+        const focus = page.locator('[data-focus]').first();
+        if (await focus.count()) await focus.click({ force: true });
+      }
+      if (panel === 'tarot') {
+        await page.getByTestId('open-pack').click({ force: true });
+        const card = page.locator('.tarot-card.owned').first();
+        if (await card.count()) {
+          await card.click({ force: true });
+          const place = page.locator('[data-place]').first();
+          if (await place.count()) await place.click({ force: true });
+        }
       }
       if (panel === 'nursery') {
         const plantBtn = page.locator('[data-plant]').first();

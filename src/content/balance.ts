@@ -407,6 +407,34 @@ export const BALANCE = {
     /** A Wyrm on the team catches a comet this long after it appears. */
     catchSeconds: 2.5,
   },
+  /** Phase 11: Spectral Focus (Upgradex's Wavelengths). */
+  spectral: {
+    nebulas: 5,
+    /** Energy a second for the focused colour: (1 + lifetime Essence)^0.25 x 2^Prism Lens. */
+    essencePow: 0.25,
+    /** A colour opens when the one before it reaches this much energy. */
+    unlockAt: 1000,
+    /** Prism Lens: x2 energy a level, 100 x 20^n Essence (so the rate grows like Essence^0.23, not ^0.39). Afterglow: unfocused colours build at 5% a level, up to 10 levels, 1,000 x 10^n. */
+    lens: [100, 20, 2] as [number, number, number],
+    afterglow: [1000, 10, 0.05] as [number, number, number],
+    afterglowMax: 10,
+    /** Violet: every 3 orders of magnitude add one effective order of magnitude to the Supernova and Nebula formula inputs. */
+    violetEvery: 3,
+  },
+  /** Phase 11: Tarot of the Void (EUT's Cards). */
+  tarot: {
+    nebulas: 6,
+    /** Packs cost Essence: 50 x 1.6^(packs opened). */
+    packBase: 50,
+    packGrowth: 1.6,
+    /** Deck slots: 5, plus one at 30 and at 50 cards owned. */
+    slots: 5,
+    slotCards: [30, 50],
+    /** The Gambler: this chance of x4 Essence each Nebula, else x0.44. */
+    gambleChance: 0.44,
+    gambleWin: 4,
+    gambleLose: 0.44,
+  },
   /** Phase 10: the Star Nursery. */
   nursery: {
     nebulas: 4,

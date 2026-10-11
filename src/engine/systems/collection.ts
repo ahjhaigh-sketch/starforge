@@ -12,6 +12,7 @@ import { mutationsFound } from './mutations';
 import { reqMet } from './unlocks';
 import { WYRM_FORMS, WYRM_SPECIES } from '../../content/wyrms';
 import { STAR_SPECIES } from '../../content/nursery';
+import { CARDS } from '../../content/nebulaExtras';
 
 /**
  * The Index (Game design: "Across the whole game"): a collection book of every rune, aura,
@@ -44,6 +45,8 @@ export function pageCount(s: GameState, id: string): { found: number; total: num
       return { found: s.wyrms.found.length, total: WYRM_SPECIES.length * WYRM_FORMS.length };
     case 'species':
       return { found: s.nursery.found.length, total: STAR_SPECIES.length };
+    case 'cards':
+      return { found: s.tarot.owned.length, total: CARDS.length };
     default:
       return { found: 0, total: 0 };
   }

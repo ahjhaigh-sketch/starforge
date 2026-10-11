@@ -13,6 +13,7 @@ import './ui/extras.css';
 import './ui/runes.css';
 import './ui/runedepth.css';
 import './ui/wyrms.css';
+import './ui/nebulaextras.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

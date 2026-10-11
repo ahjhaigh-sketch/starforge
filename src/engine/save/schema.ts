@@ -100,6 +100,16 @@ export const plainSaveSchema = z.looseObject({
       rng: z.tuple([finite, finite, finite, finite]),
     })
     .optional(),
+  spectral: z.looseObject({ energy: decRecord, focus: z.string().nullable(), upgrades: z.record(z.string(), z.number().int().min(0)) }).optional(),
+  tarot: z
+    .looseObject({
+      owned: z.array(z.string()),
+      deck: z.array(z.string().nullable()).max(7),
+      packs: z.number().int().min(0),
+      gamble: finite,
+      rng: z.tuple([finite, finite, finite, finite]),
+    })
+    .optional(),
   nursery: z
     .looseObject({
       plots: z.array(z.looseObject({ species: z.string().nullable(), t: finite })).max(12),

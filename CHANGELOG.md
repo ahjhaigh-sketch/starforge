@@ -1,5 +1,25 @@
 # Changelog
 
+## Phase 11: Spectral Focus and Tarot of the Void
+- Spectral Focus opens at 5 Nebulas: the nebula's seven colours, red to violet.
+  - Focus one at a time and it builds energy: (1 + lifetime Essence)^0.25 a second, doubled by each level of Prism Lens (100 x 20 per level).
+  - Afterglow lets the colours out of focus keep building at 5% a level (up to 50%).
+  - Each colour opens when the one before reaches 1,000 energy.
+  - Every order of magnitude of a colour's energy is one more step of its bonus, exactly at 10, 100, 1,000 and so on: Red Stardust x1.1, Orange shards x1.08, Yellow Essence x1.05, Green ore and alloy x1.1, Blue rune bulk x1.1, Indigo Wyrm XP and Embers x1.1.
+  - Violet adds one effective order of magnitude to the Supernova and Nebula formula inputs for every three of its own. It shows in Stats like every other bonus.
+- Tarot of the Void opens at 6 Nebulas, with 60 cards in six rarities.
+  - Packs cost Essence (50 x 1.6 for each pack so far), with every buy amount. Each gives a card from the lowest rarity you haven't finished, never a duplicate.
+  - The deck has 5 slots, 6 at 30 cards and 7 at 50. Where a card sits matters, worked out left to right:
+    - The Mirror copies the card on its left and disables the one on its right.
+    - The Tower is x8 Stardust but disables both neighbours.
+    - The Lovers make their neighbours count twice.
+    - The Magician is strongest leftmost, The Chariot in the last slot, and The Hermit with empty neighbours. The Fool grows with empty slots.
+  - The Gambler rolls Essence x4 (44%) or x0.44 again after every Nebula.
+  - Seven Sins are devil's deals, a big boost with a cost (Sloth: +4 h offline cap).
+- The Index's Tarot cards page opens. 5 new medals. Legendary and Sin cards get a toast.
+- Multipliers in the Phase 9 to 11 panels now read like "x1.69" instead of "x1.6".
+- Save version 12, with a migration test that loads a real version 11 save.
+
 ## Phase 10: Void Wyrms and the Star Nursery
 - Void Wyrms arrive with the third Nebula.
   - Eggs cost Essence (10 x 1.5 for each egg so far), with every buy amount. A hatch shakes, cracks and reveals the rarest Wyrm in the batch; very rare ones get the banner.

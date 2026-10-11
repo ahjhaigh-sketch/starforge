@@ -52,6 +52,8 @@ export const SYSTEMS: readonly SystemDef[] = [
   { id: 'auras', name: 'Auras', icon: 'aura', color: '#1A9DB8', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 4, noun: 'Nebula' }, panel: 'auras', built: true, blurb: 'Roll Aura Dice and wear one Celestial Aura.' },
   { id: 'wyrms', name: 'Wyrms', icon: 'wyrm', color: '#2E9C78', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 3, noun: 'Nebula' }, panel: 'wyrms', built: true, blurb: 'Hatch, train and fuse Void Wyrms.' },
   { id: 'nursery', name: 'Nursery', icon: 'nursery', color: '#C23FA0', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 4, noun: 'Nebula' }, panel: 'nursery', built: true, blurb: 'Grow and crossbreed 25 kinds of star.' },
+  { id: 'spectral', name: 'Spectral', icon: 'prism', color: '#B06BFF', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 5, noun: 'Nebula' }, panel: 'spectral', built: true, blurb: "Focus the nebula's seven colours for a bonus at every order of magnitude." },
+  { id: 'tarot', name: 'Tarot', icon: 'card', color: '#FF4F6E', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 6, noun: 'Nebula' }, panel: 'tarot', built: true, blurb: 'Collect 60 cards; where they sit in your deck matters.' },
 ];
 
 export const SYSTEM_BY_ID: ReadonlyMap<string, SystemDef> = new Map(SYSTEMS.map((x) => [x.id, x]));

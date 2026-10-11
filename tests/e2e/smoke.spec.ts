@@ -1091,3 +1091,84 @@ test('the Star Nursery: crossbreeding follows the table, and a planted seed ripe
   await expect.poll(() => page.evaluate(() => (window as unknown as Sf10).sf.game.state.nursery.found.length)).toBe(1);
   expect(errors).toEqual([]);
 });
+
+// ---------- Phase 11: Spectral Focus and Tarot of the Void ----------
+
+type Sf11 = {
+  sf: {
+    game: {
+      state: {
+        unlocked: string[];
+        stats: Record<string, number>;
+        spectral: { energy: Record<string, unknown>; focus: string | null };
+        tarot: { owned: string[]; deck: Array<string | null> };
+        currencies: Record<string, { constructor: new (x: number) => unknown }>;
+      };
+    };
+    commands: { devAdd(c: string, n: number): void };
+  };
+};
+
+test('Spectral Focus: focus a colour; its bonus steps up exactly at each order of magnitude', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const s = (window as unknown as Sf11).sf.game.state;
+    s.stats.nebulasAll = 5;
+    s.stats.nebulas = 5;
+    s.unlocked.push('stats');
+  });
+  await openRail(page, 'spectral');
+  const panel = page.locator('[data-panel="spectral"]');
+  await panel.locator('[data-focus="red"]').click();
+  expect(await page.evaluate(() => (window as unknown as Sf11).sf.game.state.spectral.focus)).toBe('red');
+  await page.evaluate(() => {
+    const s = (window as unknown as Sf11).sf.game.state;
+    const D = s.currencies.stardust!.constructor;
+    s.spectral.focus = null;
+    s.spectral.energy.red = new D(999);
+  });
+  await expect(panel.locator('[data-color="red"] .band-oom')).toContainText('2');
+  await page.evaluate(() => {
+    const s = (window as unknown as Sf11).sf.game.state;
+    const D = s.currencies.stardust!.constructor;
+    s.spectral.energy.red = new D(1000);
+  });
+  await expect(panel.locator('[data-color="red"] .band-oom')).toContainText('3');
+  await expect(panel.locator('[data-color="orange"]')).not.toHaveClass(/locked/);
+  await openRail(page, 'stats');
+  await expect(page.locator('[data-panel="stats"]')).toContainText('Spectral: Red');
+  expect(errors).toEqual([]);
+});
+
+test('Tarot of the Void: open a pack, and The Mirror copies left and disables right in the deck', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf11).sf;
+    game.state.stats.nebulasAll = 6;
+    game.state.stats.nebulas = 6;
+    commands.devAdd('essence', 1000);
+  });
+  await openRail(page, 'tarot');
+  const panel = page.locator('[data-panel="tarot"]');
+  await panel.getByTestId('open-pack').click();
+  await expect(panel.getByTestId('drawn')).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as Sf11).sf.game.state.tarot.owned.length)).toBe(1);
+  await page.evaluate(() => {
+    (window as unknown as Sf11).sf.game.state.tarot.owned = ['card.ace.dust', 'card.mirror', 'card.ace.shards'];
+  });
+  for (const [card, slot] of [
+    ['card.ace.dust', 0],
+    ['card.mirror', 1],
+    ['card.ace.shards', 2],
+  ] as const) {
+    await panel.locator(`[data-card="${card}"]`).click();
+    await panel.locator(`[data-place="${slot}"]`).click();
+  }
+  expect(await page.evaluate(() => (window as unknown as Sf11).sf.game.state.tarot.deck.slice(0, 3))).toEqual(['card.ace.dust', 'card.mirror', 'card.ace.shards']);
+  await expect(panel.locator('[data-slot="1"]')).toContainText('Acting as Ace of Dust');
+  await expect(panel.locator('[data-slot="2"]')).toHaveClass(/off/);
+  await expect(panel.locator('[data-slot="2"]')).toContainText('Disabled');
+  expect(errors).toEqual([]);
+});

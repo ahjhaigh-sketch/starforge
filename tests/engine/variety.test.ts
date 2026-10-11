@@ -107,7 +107,7 @@ describe('medals and goals', () => {
       s.engines[e.id] = 100;
       s.enginesEver[e.id] = 100;
     }
-    s.stats = { taps: 2e9, crits: 2e8, comets: 20_000, enginesBought: 1e8, evolves: 11, maxCombo: 60, supernovas: 30, harvested: 1e5, beltTier: 6, cores: 20, level: 40, smelts: 1e4, relics: 50, elements: 118, fusionBest: 20, perfects: 300, chaosRolls: 30, deals: 60, trips: 600, nebulasAll: 10, runesFound: 100, runesRolled: 1e13, starsEarned: 12, runesCrafted: 5, aurasFound: 30, mutationsFound: 60, wyrmsHatched: 150, wyrmFusions: 3, wyrmCatches: 30, nurseryHarvests: 10, crossbreeds: 2, speciesGrown: 25 };
+    s.stats = { taps: 2e9, crits: 2e8, comets: 20_000, enginesBought: 1e8, evolves: 11, maxCombo: 60, supernovas: 30, harvested: 1e5, beltTier: 6, cores: 20, level: 40, smelts: 1e4, relics: 50, elements: 118, fusionBest: 20, perfects: 300, chaosRolls: 30, deals: 60, trips: 600, nebulasAll: 10, runesFound: 100, runesRolled: 1e13, starsEarned: 12, runesCrafted: 5, aurasFound: 30, mutationsFound: 60, wyrmsHatched: 150, wyrmFusions: 3, wyrmCatches: 30, nurseryHarvests: 10, crossbreeds: 2, speciesGrown: 25, spectralBest: 10, spectralColors: 7, cardsDrawn: 60 };
     s.upgrades = UPGRADES.map((u) => u.id);
     invalidateStats();
     const seen: string[] = [];

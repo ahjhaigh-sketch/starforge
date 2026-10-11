@@ -30,6 +30,7 @@ import { AttunePanel, FusionPanel, MerchantPanel, ShipsPanel } from './screens/E
 import { MythicBanner, NebulaConfirmPanel, NebulaPanel, NebulaTreePanel, RunesPanel } from './screens/NebulaPanels';
 import { AurasPanel, IndexPanel, MutationsPanel, StarringPanel } from './screens/RuneDepthPanels';
 import { NurseryPanel, WyrmsPanel } from './screens/WyrmPanels';
+import { SpectralPanel, TarotPanel } from './screens/NebulaExtrasPanels';
 import { useUi } from './store';
 
 /** Shown while time away is being simulated; fades in only if that takes a moment. */
@@ -104,6 +105,8 @@ export function App() {
       <IndexPanel />
       <WyrmsPanel />
       <NurseryPanel />
+      <SpectralPanel />
+      <TarotPanel />
       <SettingsPanel />
       <PanelHost />
       <ToastHost />

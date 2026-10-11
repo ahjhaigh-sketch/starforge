@@ -4,6 +4,7 @@ import { SECTOR_BY_ID } from '../content/extras';
 import { RUNE_BY_ID, SHRINE_BY_ID } from '../content/runes';
 import { AURA_BY_ID, MUTATION_BY_ID } from '../content/runeDepth';
 import { WYRM_BY_ID } from '../content/wyrms';
+import { CARD_BY_ID } from '../content/nebulaExtras';
 import { SYSTEM_BY_ID } from '../content/systems';
 import { TIERS } from '../content/tiers';
 import { events } from '../engine/events';
@@ -131,6 +132,10 @@ export function installNotifications(): void {
       const m = MUTATION_BY_ID.get(e.mut);
       const body = e.target === 'rune' ? `A ${m?.name} copy of ${RUNE_BY_ID.get(e.id)?.name ?? 'a rune'} counts as ${m?.mult} copies.` : `A ${m?.name} ${e.id} asteroid gives x${m?.mult} ore and XP.`;
       if (m) events.emit({ t: 'toast', title: `First ${m.name} mutation`, body, icon: 'mutation' });
+    } else if (e.t === 'card') {
+      const c = CARD_BY_ID.get(e.id);
+      // Legendary and Void cards are news; the rest show in the pack row
+      if (c && c.rarity >= 4) events.emit({ t: 'toast', title: `${c.rarity === 5 ? 'A Sin' : 'A Legendary card'}: ${c.name}`, body: c.text, icon: 'card' });
     } else if (e.t === 'hatch') {
       const w = WYRM_BY_ID.get(e.best);
       // only the notable hatches: everyday ones show in the hatchery itself

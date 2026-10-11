@@ -62,6 +62,12 @@ const migrations: Record<number, (d: PlainSave) => void> = {
     d.wyrms ??= { stacks: {}, levels: {}, team: [], eggs: 0, found: [], catchAcc: 0, rng: derive(0x77c3_9a01) };
     d.nursery ??= { plots: [], seeds: {}, upgrades: {}, found: [], rng: derive(0x5eed_0b10) };
   },
+  // 12 (Phase 11): Spectral Focus and Tarot of the Void.
+  12: (d) => {
+    const base = (d.rng as number[] | undefined) ?? [1, 2, 3, 4];
+    d.spectral ??= { energy: {}, focus: null, upgrades: {} };
+    d.tarot ??= { owned: [], deck: [], packs: 0, gamble: 1, rng: seedRng(((base[0] ?? 1) ^ 0x7a20_7c4d) >>> 0) };
+  },
 };
 
 export function migrate(version: number, data: PlainSave): PlainSave {

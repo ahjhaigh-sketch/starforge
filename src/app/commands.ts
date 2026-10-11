@@ -25,6 +25,8 @@ import { craftRune, salvage, starUp } from '../engine/systems/starring';
 import { type AuraRoll, equipAura, rollAuras } from '../engine/systems/auras';
 import { buyEggs, equipWyrm, fuseWyrms, type HatchResult, trainWyrm, unequipWyrm } from '../engine/systems/wyrms';
 import { buyNurseryUpgrade, buySeeds, crossbreed, harvestPlot, plant, uprootPlot } from '../engine/systems/nursery';
+import { buySpectral, setFocus } from '../engine/systems/spectral';
+import { openPacks, placeCard, removeCard } from '../engine/systems/tarot';
 import { buyForgeUpgrade, buyRelic, equipRelic, setForgeGrade, setForgeOn, setForgeShare, unequipRelic } from '../engine/systems/forge';
 import { backupNow, readBackup } from './backups';
 import { D } from '../engine/decimal';
@@ -325,6 +327,32 @@ export const commands = {
     const ok = harvestPlot(game.state, plot) !== null;
     done();
     return ok;
+  },
+  /** Spectral Focus. */
+  setFocus(id: string | null): boolean {
+    const ok = setFocus(game.state, id);
+    done();
+    return ok;
+  },
+  buySpectral(id: 'lens' | 'afterglow'): boolean {
+    const ok = buySpectral(game.state, id);
+    done();
+    return ok;
+  },
+  /** Tarot of the Void: packs with the buy amount; cards in and out of the deck. */
+  openPacks(): string[] {
+    const drawn = openPacks(game.state).map((c) => c.id);
+    done();
+    return drawn;
+  },
+  placeCard(id: string, slot: number): boolean {
+    const ok = placeCard(game.state, id, slot);
+    done();
+    return ok;
+  },
+  removeCard(slot: number) {
+    removeCard(game.state, slot);
+    done();
   },
   uprootPlot(plot: number): boolean {
     const ok = uprootPlot(game.state, plot);

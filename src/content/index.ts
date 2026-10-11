@@ -14,6 +14,8 @@ import { registerAuras } from '../engine/systems/auras';
 import { registerIndex } from '../engine/systems/collection';
 import { registerWyrms } from '../engine/systems/wyrms';
 import { registerNursery } from '../engine/systems/nursery';
+import { registerSpectral } from '../engine/systems/spectral';
+import { registerTarot } from '../engine/systems/tarot';
 import { registerStarsmith } from '../engine/systems/starsmith';
 import { registerComets } from '../engine/systems/comets';
 import { registerNovaTree } from '../engine/systems/novaTree';
@@ -58,5 +60,7 @@ export function registerContent(): void {
   registerIndex();
   registerWyrms();
   registerNursery();
+  registerSpectral();
+  registerTarot();
   registerUnlocks();
 }

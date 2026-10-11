@@ -13,7 +13,7 @@ import { mutEffLog, mutationsOpen } from '../engine/systems/mutations';
 import { copies, runeLevel, shrineOpen } from '../engine/systems/runes';
 import { canStar, craftable, craftPlan, maxStars, salvagePreview, starringOpen, starsOf, starTarget, surplus } from '../engine/systems/starring';
 import { reqText } from '../engine/systems/unlocks';
-import { format, formatCount } from '../ui/format';
+import { format, formatMult, formatCount } from '../ui/format';
 import { game } from './game';
 import { oddsText, rarityName } from './runeReports';
 
@@ -153,7 +153,7 @@ export function aurasReport(): AurasReport {
     count: format(plan.count, n()),
     can: plan.canAfford,
     auto: s.auras.auto,
-    luck: `x${format(stat(s, 'auraLuck'), n())}`,
+    luck: `${formatMult(stat(s, 'auraLuck'), n())}`,
     equipped: AURAS.find((a) => a.id === s.auras.equipped)?.name ?? 'None',
     found: AURAS.filter((a) => auraCopies(s, a.id).gt(0)).length,
     total: AURAS.length,
@@ -188,7 +188,7 @@ export function mutationsReport(): MutationsReport {
   return {
     open: mutationsOpen(s),
     req: `${RD.opens.mutations} Nebulas`,
-    luck: `x${format(stat(s, 'mutationLuck'), n())}`,
+    luck: `${formatMult(stat(s, 'mutationLuck'), n())}`,
     rows: MUTATIONS.map((m) => {
       let runes = D(0);
       for (const rec of Object.values(s.mutations.runes)) runes = runes.add(rec[m.id] ?? 0);
@@ -267,7 +267,7 @@ export function indexReport(page: string): IndexReport {
       total,
       share: total > 0 ? found / total : 0,
       milestones: k,
-      bonus: `x${format(D(p.per).pow(k), n())} ${word(p.stat)} (x${p.per} at 10%, 25%, 50%, 75% and 100%)`,
+      bonus: `${formatMult(D(p.per).pow(k), n())} ${word(p.stat)} (x${p.per} at 10%, 25%, 50%, 75% and 100%)`,
     };
   });
   const id = pages.find((p) => p.id === page && p.open)?.id ?? 'runes';
