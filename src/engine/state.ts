@@ -2,7 +2,7 @@ import { D, type Decimal } from './decimal';
 import { seedRng, type RngState } from './rng';
 
 /** Bump with every change to the save's shape, and add a migration + an old-save fixture test. */
-export const SAVE_VERSION = 12;
+export const SAVE_VERSION = 13;
 /** A new Fusion board is 3 x 3 (BALANCE.fusion.baseSize). */
 const BALANCE_FUSION_CELLS = 9;
 
@@ -149,6 +149,13 @@ export interface GameState {
   spectral: { energy: Record<string, Decimal>; focus: string | null; upgrades: Record<string, number> };
   /** Tarot of the Void: cards owned, the deck (null = empty slot), packs opened, the Gambler's current roll. */
   tarot: { owned: string[]; deck: Array<string | null>; packs: number; gamble: number; rng: RngState };
+  /** The Singularity: the Event Horizon key (bought once with Embers) and the auto-Nebula threshold. */
+  singularity: { key: boolean; autoAt: Decimal };
+  singularityTree: Record<string, number>;
+  /** The Black Hole: mass, the share of Stardust fed to it; the Prism Wheel; the Dark Matter Reactor. */
+  blackHole: { mass: Decimal; dustShare: number };
+  wheel: { on: boolean; shares: number[]; banks: Record<string, Decimal> };
+  reactor: { charge: Decimal };
   settings: Settings;
 }
 
@@ -244,6 +251,11 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     nursery: { plots: [], seeds: {}, upgrades: {}, found: [], rng: seedRng(seed ^ 0x5eed_0b10) },
     spectral: { energy: {}, focus: null, upgrades: {} },
     tarot: { owned: [], deck: [], packs: 0, gamble: 1, rng: seedRng(seed ^ 0x7a20_7c4d) },
+    singularity: { key: false, autoAt: D(0) },
+    singularityTree: {},
+    blackHole: { mass: D(0), dustShare: 0 },
+    wheel: { on: false, shares: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], banks: {} },
+    reactor: { charge: D(0) },
     settings: defaultSettings(),
   };
 }

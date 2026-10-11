@@ -14,6 +14,7 @@ import './ui/runes.css';
 import './ui/runedepth.css';
 import './ui/wyrms.css';
 import './ui/nebulaextras.css';
+import './ui/singularity.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

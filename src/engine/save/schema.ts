@@ -101,6 +101,11 @@ export const plainSaveSchema = z.looseObject({
     })
     .optional(),
   spectral: z.looseObject({ energy: decRecord, focus: z.string().nullable(), upgrades: z.record(z.string(), z.number().int().min(0)) }).optional(),
+  singularity: z.looseObject({ key: z.boolean(), autoAt: dec }).optional(),
+  singularityTree: z.record(z.string(), z.number().int().min(0)).optional(),
+  blackHole: z.looseObject({ mass: dec, dustShare: finite }).optional(),
+  wheel: z.looseObject({ on: z.boolean(), shares: z.array(finite.refine((n) => n >= 0, 'shares are never negative')).length(8), banks: decRecord }).optional(),
+  reactor: z.looseObject({ charge: dec }).optional(),
   tarot: z
     .looseObject({
       owned: z.array(z.string()),

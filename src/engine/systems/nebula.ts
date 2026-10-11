@@ -37,6 +37,9 @@ export function nextEssenceAt(s: GameState): Decimal {
 
 export const novaFree = (s: GameState) => milestoneReached(s, 'nebula', 'novaFree');
 
+/** Singularity milestone 10: a Nebula resets nothing (checked here so the Nebula layer needn't import the Singularity). */
+const singularityNebulaFree = (s: GameState) => milestoneReached(s, 'singularity', 'nebulaFree');
+
 /** The Nova Tree's root and the first node of each arm (kept with Remembered Spiral). */
 const NOVA_CORE = ['root', 'forge.1', 'strike.1', 'dream.1'];
 
@@ -61,6 +64,7 @@ export function registerNebula(): void {
       {
         id: 'stardustLayer',
         label: 'Everything a Supernova resets, and your Stellar Constants',
+        keptBy: (s) => (singularityNebulaFree(s) ? 'Milestone: 10 Singularities' : null),
         reset: (s) => {
           for (const p of layer('supernova')?.parts ?? []) p.reset(s);
           for (const c of CONSTANTS) if (c.set === 'stellar') s.constants[c.id] = 0;
@@ -70,6 +74,7 @@ export function registerNebula(): void {
       {
         id: 'shards',
         label: 'Nova Shards',
+        keptBy: (s) => (singularityNebulaFree(s) ? 'Milestone: 10 Singularities' : null),
         reset: (s) => {
           const keep = Math.min(0.9, nebulaFlag(s, 'keepShards'));
           s.currencies.shards = (s.currencies.shards ?? ZERO).mul(keep).floor();
@@ -85,11 +90,12 @@ export function registerNebula(): void {
           for (const id of keep) if (s.novaTree[id]) kept[id] = s.novaTree[id]!;
           s.novaTree = kept;
         },
-        keptBy: (s) => (milestoneReached(s, 'nebula', 'keepTree') ? 'Milestone: 5 Nebulas' : null),
+        keptBy: (s) => (singularityNebulaFree(s) ? 'Milestone: 10 Singularities' : milestoneReached(s, 'nebula', 'keepTree') ? 'Milestone: 5 Nebulas' : null),
       },
       {
         id: 'supernovas',
         label: 'Your Supernova count (milestones are kept from the first Nebula)',
+        keptBy: (s) => (singularityNebulaFree(s) ? 'Milestone: 10 Singularities' : null),
         reset: (s) => {
           s.stats.supernovas = Math.floor(nebulaFlag(s, 'startNovas'));
         },
@@ -108,11 +114,14 @@ export function registerNebula(): void {
       { at: 2, id: 'autoNova', text: 'Auto-Supernova when the gain reaches a number you set' },
       { at: 3, id: 'wyrms', text: 'Void Wyrms arrive' },
       { at: 5, id: 'keepTree', text: 'Keep the Nova Tree' },
-      { at: 8, id: 'singularity', text: 'The Singularity appears' },
+      { at: 8, id: 'singularity', text: 'The Singularity appears: buy the Event Horizon key with Embers' },
       { at: 10, id: 'novaFree', text: 'Supernova resets nothing; 1/50 of its gain trickles in every second' },
     ],
+    // a Singularity keeps Nebula milestones from its first one (Singularity milestone 1)
+    milestoneFloor: (s) => (milestoneReached(s, 'singularity', 'keepNebula') ? (s.stats.nebulasBest ?? 0) : 0),
     onReset: (s) => {
       s.stats.nebulasAll = (s.stats.nebulasAll ?? 0) + 1;
+      s.stats.nebulasBest = Math.max(s.stats.nebulasBest ?? 0, s.stats.nebulas ?? 0);
     },
   });
 

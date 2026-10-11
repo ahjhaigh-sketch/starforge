@@ -1,5 +1,37 @@
 # Changelog
 
+## Phase 12: the Singularity
+- The Singularity is the third reset. It needs the Event Horizon key and a million Essence gathered in the Singularity run.
+  - The key costs 100M Embers, is on sale from Nebula milestone 8, and is yours for good.
+  - It gives Dark Matter = 1.05^(log10 of that Essence - 6), times Dark Matter gain. The plan's (Essence / 1e6)^0.3 would have handed out e26 at once, because Essence passes e90 by Nebula 8; this gives about 70 at first. The plan doc is updated.
+  - It resets the Nebula layer and everything below it: Essence, the Nebula Tree, Nebula Constants, Spectral energy and the Nebula count. Collections stay: runes, auras, mutations, Wyrms, the Nursery, tarot cards, relics, the Codex.
+  - Lifetime Dark Matter multiplies Essence by (1 + DM)^0.35.
+- Singularity milestones:
+  - 1: keep Nebula milestones;
+  - 2: auto-Nebula at a gain you type;
+  - 3: keep the Nebula Tree;
+  - 5: the Reactor opens;
+  - 8: the Antimatter Mirror appears on the rails;
+  - 10: a Nebula resets nothing and 1/50 of its gain trickles in each second.
+- The Singularity Tree has 100 nodes in four rings round an accretion disk, each split into four sectors:
+  - Mass: the Black Hole and game speed;
+  - Matter: Dark Matter and Essence;
+  - Fate: runes, plus five Luck Root nodes that take it to 1.5;
+  - Memory: Essence, Spectral energy and a Nebula head start kept through a Singularity.
+  It runs on a new tree engine that the Galactic Tree will reuse.
+- Void Constants: Mass, Spin (game speed), Horizon (Dark Matter) and Reactor Charge.
+- The Black Hole wakes with the first Singularity and sits behind the star, drawn by a light-bending shader: lensed stars, a photon ring, and an accretion disk in the stage's colour.
+  - Feed it Dark Matter, or up to 50% of your Stardust production.
+  - Its mass passes 8 colour stages (amber to rainbow, at 1 to 10M mass), each with a perk.
+  - It speeds up the whole game: 1 + 0.04 x log10(1 + mass), plus Spin. Game speed applies inside every step, so time away moves the game exactly as much as time played. Comets keep a real-time catch window.
+- The Prism Wheel opens at the rainbow stage.
+  - Drag the handles (or use the arrow keys) to split 80% of each Singularity's Dark Matter between eight banks. The shares always add up to exactly 80%.
+  - Each bank boosts its currency by (1 + bank)^0.5.
+- The Dark Matter Reactor opens at 5 Singularities. Fed Dark Matter becomes charge, and Dark Matter gain is x(1 + charge)^0.15.
+- Also: a Singularity reset bar, a Dark Matter pill, six panels, 4 medals, and Black Hole stage toasts.
+- The simulator plays on through Singularities with SIM_SINGULARITIES. Its first run found loops (Dark Matter buying Dark Matter multipliers) that bought the whole tree by Singularity 10. Tree prices now grow x3 a ring step, the Dark Matter nodes are smaller, Horizon no longer doubles, and the Reactor is gentler.
+- Save version 13, with a migration test that loads a real version 12 save.
+
 ## Phase 11: Spectral Focus and Tarot of the Void
 - Spectral Focus opens at 5 Nebulas: the nebula's seven colours, red to violet.
   - Focus one at a time and it builds energy: (1 + lifetime Essence)^0.25 a second, doubled by each level of Prism Lens (100 x 20 per level).

@@ -31,6 +31,7 @@ import { MythicBanner, NebulaConfirmPanel, NebulaPanel, NebulaTreePanel, RunesPa
 import { AurasPanel, IndexPanel, MutationsPanel, StarringPanel } from './screens/RuneDepthPanels';
 import { NurseryPanel, WyrmsPanel } from './screens/WyrmPanels';
 import { SpectralPanel, TarotPanel } from './screens/NebulaExtrasPanels';
+import { BlackHolePanel, PrismWheelPanel, ReactorPanel, SingularityConfirmPanel, SingularityPanel, SingularityTreePanel } from './screens/SingularityPanels';
 import { useUi } from './store';
 
 /** Shown while time away is being simulated; fades in only if that takes a moment. */
@@ -107,6 +108,12 @@ export function App() {
       <NurseryPanel />
       <SpectralPanel />
       <TarotPanel />
+      <SingularityPanel />
+      <SingularityConfirmPanel />
+      <SingularityTreePanel />
+      <BlackHolePanel />
+      <PrismWheelPanel />
+      <ReactorPanel />
       <SettingsPanel />
       <PanelHost />
       <ToastHost />

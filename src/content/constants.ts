@@ -45,6 +45,7 @@ export interface ConstantSetDef {
 export const CONSTANT_SETS: readonly ConstantSetDef[] = [
   { id: 'stellar', name: 'Stellar Constants', layer: 'stardust', req: { kind: 'tier', tier: 2 } },
   { id: 'nebula', name: 'Nebula Constants', layer: 'nebula', req: { kind: 'count', stat: 'nebulasAll', count: 1, noun: 'Nebula' } },
+  { id: 'void', name: 'Void Constants', layer: 'singularity', req: { kind: 'count', stat: 'singularitiesAll', count: 1, noun: 'Singularity' } },
 ];
 
 export const CONSTANTS: readonly ConstantDef[] = [
@@ -162,6 +163,55 @@ export const CONSTANTS: readonly ConstantDef[] = [
     effects: [{ stat: 'nurseryYield', a: 0.1, doubles: true, what: 'Nursery harvests' }],
     req: { kind: 'count', stat: 'nebulasAll', count: BALANCE.nursery.nebulas, noun: 'Nebula' },
     desc: 'More Essence from every Star Nursery harvest.',
+  },
+  // Void Constants: bought with Dark Matter, kept through every Singularity.
+  {
+    id: 'void.mass',
+    set: 'void',
+    name: 'Mass',
+    icon: 'blackhole',
+    color: '#FFB347',
+    currency: 'darkMatter',
+    base: 2,
+    growth: BALANCE.constants.mass,
+    effects: [{ stat: 'massGain', a: 0.1, doubles: true, what: 'Black Hole mass' }],
+    desc: 'The Black Hole grows faster from everything you feed it.',
+  },
+  {
+    id: 'void.spin',
+    set: 'void',
+    name: 'Spin',
+    icon: 'blackhole',
+    color: '#2EE6FF',
+    currency: 'darkMatter',
+    base: 5,
+    growth: BALANCE.constants.spin,
+    effects: [{ stat: 'gameSpeed', a: 0.01, doubles: false, what: 'Game speed' }],
+    desc: 'The whole game runs 1% faster a level, offline too.',
+  },
+  {
+    id: 'void.horizon',
+    set: 'void',
+    name: 'Horizon',
+    icon: 'blackhole',
+    color: '#6E5CC4',
+    currency: 'darkMatter',
+    base: 3,
+    growth: BALANCE.constants.horizon,
+    effects: [{ stat: 'darkMatterGain', a: 0.1, doubles: false, what: 'Dark Matter' }],
+    desc: 'More Dark Matter from every Singularity.',
+  },
+  {
+    id: 'void.charge',
+    set: 'void',
+    name: 'Reactor Charge',
+    icon: 'reactor',
+    color: '#FF4F6E',
+    currency: 'darkMatter',
+    base: 10,
+    growth: BALANCE.constants.charge,
+    effects: [{ stat: 'reactorPower', a: 0.05, doubles: false, what: 'Reactor strength' }],
+    desc: "The Reactor's charge counts for more.",
   },
 ];
 

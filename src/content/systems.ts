@@ -54,6 +54,11 @@ export const SYSTEMS: readonly SystemDef[] = [
   { id: 'nursery', name: 'Nursery', icon: 'nursery', color: '#C23FA0', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 4, noun: 'Nebula' }, panel: 'nursery', built: true, blurb: 'Grow and crossbreed 25 kinds of star.' },
   { id: 'spectral', name: 'Spectral', icon: 'prism', color: '#B06BFF', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 5, noun: 'Nebula' }, panel: 'spectral', built: true, blurb: "Focus the nebula's seven colours for a bonus at every order of magnitude." },
   { id: 'tarot', name: 'Tarot', icon: 'card', color: '#FF4F6E', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 6, noun: 'Nebula' }, panel: 'tarot', built: true, blurb: 'Collect 60 cards; where they sit in your deck matters.' },
+  { id: 'singularity', name: 'Singularity', icon: 'darkmatter', color: '#6E5CC4', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 8, noun: 'Nebula' }, panel: 'singularity', built: true, blurb: 'The third reset layer: fall in for Dark Matter.' },
+  { id: 'singularitytree', name: 'Sing. Tree', icon: 'tree', color: '#6E5CC4', rail: 'right', req: { kind: 'count', stat: 'singularitiesAll', count: 1, noun: 'Singularity' }, panel: 'singularitytree', built: true, blurb: 'Spend Dark Matter on 100 nodes in rings round the disk.' },
+  { id: 'blackhole', name: 'Black Hole', icon: 'blackhole', color: '#3A2470', rail: 'right', req: { kind: 'count', stat: 'singularitiesAll', count: 1, noun: 'Singularity' }, panel: 'blackhole', built: true, blurb: 'Feed it; its mass passes 8 colour stages and speeds up the game.' },
+  { id: 'reactor', name: 'Reactor', icon: 'reactor', color: '#FF4F6E', rail: 'right', req: { kind: 'count', stat: 'singularitiesAll', count: 5, noun: 'Singularity' }, panel: 'reactor', built: true, blurb: 'Feed Dark Matter in for more Dark Matter later.' },
+  { id: 'prismwheel', name: 'Prism Wheel', icon: 'wheel', color: '#FF4FC1', rail: 'right', req: { kind: 'count', stat: 'bhStageBest', count: 8, noun: 'Black Hole stage' }, panel: 'prismwheel', built: true, blurb: 'Split Dark Matter into eight boosts on a wheel you drag.' },
 ];
 
 export const SYSTEM_BY_ID: ReadonlyMap<string, SystemDef> = new Map(SYSTEMS.map((x) => [x.id, x]));

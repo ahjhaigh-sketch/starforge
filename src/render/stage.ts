@@ -8,6 +8,8 @@ import { OrbitalsView } from './orbitals';
 import { StarCore } from './star';
 import { initStarfield, resizeStarfield, setNebulaClouds, updateClouds, updateStarfield } from './starfield';
 import { WyrmSky } from './wyrms';
+import { BlackHoleView } from './blackhole';
+import { BH_STAGES } from '../engine/systems/blackhole';
 
 /**
  * PixiJS draws behind the whole UI: the sky, the Star Core and particles. One canvas, fixed to
@@ -19,6 +21,8 @@ let star: StarCore | null = null;
 let orbitals: OrbitalsView | null = null;
 let anchor: Element | null = null;
 let wyrms: WyrmSky | null = null;
+let hole: BlackHoleView | null = null;
+let holeMass = 0;
 /** Wyrms swimming in the sky right now (tests and the dev panel). */
 export const swimmingWyrms = () => wyrms?.count ?? 0;
 let still = false;
@@ -68,7 +72,9 @@ export async function initRender(): Promise<boolean> {
   sky.addChild(wyrms.root);
   star = new StarCore();
   orbitals = new OrbitalsView();
-  mid.addChild(orbitals.behind, star.root, orbitals.infront);
+  hole = new BlackHoleView();
+  // the Black Hole sits behind everything at the star: orbits and the star are in front of it
+  mid.addChild(hole.mesh, orbitals.behind, star.root, orbitals.infront);
   initParticles(fx);
 
   const apply = () => {
@@ -81,6 +87,8 @@ export async function initRender(): Promise<boolean> {
     star!.setTier(s.tierIndex, false);
     setNebulaClouds(s.nebulasAll);
     wyrms!.set(s.wyrmSky, app!.screen.width, app!.screen.height);
+    hole!.setStage(s.bhStage, BH_STAGES[Math.max(0, s.bhStage - 1)]?.color ?? '#FFB347');
+    holeMass = s.bhMassLog;
   };
   star.setTier(snapshotStore.getState().tierIndex, true);
   apply();
@@ -127,6 +135,7 @@ export async function initRender(): Promise<boolean> {
     const r = anchorRect();
     if (r && r.width > 0) {
       star.update(dt, r.left + r.width / 2, r.top + r.height / 2, r.width, still);
+      hole?.update(dt, r.left + r.width / 2, r.top + r.height / 2, star.lastRadius, holeMass, still);
       orbitals?.update(dt, r.left + r.width / 2, r.top + r.height / 2, star.lastRadius, still);
     }
     updateParticles(dt);

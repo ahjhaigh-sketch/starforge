@@ -1,4 +1,4 @@
-import { invalidateStats } from './stats';
+import { invalidateStats, stat } from './stats';
 import type { GameState } from './state';
 
 /** Passed to every system each tick. Offline catch-up scales gains by the offline efficiency. */
@@ -36,10 +36,20 @@ export function every(s: GameState, dt: number, hz: number): boolean {
   return Math.floor(s.playtime * hz) !== Math.floor((s.playtime - dt) * hz);
 }
 
-/** The only place simulated time advances. */
+/**
+ * The only place simulated time advances. Game speed (the Black Hole, Spin) stretches every step
+ * here, so a minute played and a minute away move the game the same amount.
+ */
 export function tick(s: GameState, dt: number, ctx: TickContext = ONLINE): void {
   if (!(dt > 0)) return;
   invalidateStats();
-  s.playtime += dt;
-  for (const sys of systems) sys.tick(s, dt, ctx);
+  const g = dt * gameSpeed(s);
+  s.playtime += g;
+  for (const sys of systems) sys.tick(s, g, ctx);
+}
+
+/** How much faster than real time the game runs (never slower). */
+export function gameSpeed(s: GameState): number {
+  const v = stat(s, 'gameSpeed').toNumber();
+  return Number.isFinite(v) ? Math.max(1, v) : 1;
 }

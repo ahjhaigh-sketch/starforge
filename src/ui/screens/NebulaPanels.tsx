@@ -148,7 +148,7 @@ export function NebulaTreePanel() {
   return (
     <Panel id="nebulatree" title="Nebula Tree" color="#1E8FA8" size="wide">
       <div className="tree-head">
-        <p>Spend Nebula Essence on a drifting cloud of four wisps: Veil (runes), Bloom (Essence, shards and what a Nebula keeps), Drift (Stardust, taps, time away) and Lattice (the Belt, Starforge and ships). It is never reset.</p>
+        <p>Spend Nebula Essence on a drifting cloud of four wisps: Veil (runes), Bloom (Essence, shards and what a Nebula keeps), Drift (Stardust, taps, time away) and Lattice (the Belt, Starforge and ships). A Singularity resets it (from 3 Singularities it stays).</p>
         {r && <EssenceChip value={r.essence} />}
       </div>
       {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={(id) => commands.buyNebulaNode(id)} currencyLabel="Essence" legend={NODE_LEGEND} />}

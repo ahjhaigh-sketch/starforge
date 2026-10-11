@@ -28,6 +28,8 @@ export interface LayerMilestone {
 export interface ResetBefore {
   tier: number;
   runStardust: Decimal;
+  /** What this reset gave (the layer's currency). */
+  gained: Decimal;
 }
 
 export interface LayerDef {
@@ -106,7 +108,7 @@ export function performReset(s: GameState, id: string): Decimal | null {
   const amount = def.gain(s);
   // decide what is kept BEFORE anything changes, so parts can't affect each other's rules
   const keep = def.parts.map((p) => !!p.keptBy?.(s));
-  const before: ResetBefore = { tier: s.tier, runStardust: s.totals.run.stardust ?? D(0) };
+  const before: ResetBefore = { tier: s.tier, runStardust: s.totals.run.stardust ?? D(0), gained: amount };
   gain(s, def.currency, amount);
   s.stats[def.counter] = resetsDone(s, def) + 1;
   def.parts.forEach((p, i) => {

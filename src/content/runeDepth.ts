@@ -140,7 +140,7 @@ export const INDEX_PAGES: readonly IndexPage[] = [
   { id: 'wyrms', name: 'Void Wyrms', icon: 'wyrm', stat: 'wyrmXp', per: 1.5, built: true, req: { kind: 'count', stat: 'wyrmsHatched', count: 1, noun: 'Void Wyrm hatched' } },
   { id: 'species', name: 'Star species', icon: 'nursery', stat: 'essenceGain', per: 1.5, built: true, req: { kind: 'count', stat: 'nurseryHarvests', count: 1, noun: 'nursery harvest' } },
   { id: 'cards', name: 'Tarot cards', icon: 'card', stat: 'shardGain', per: 1.5, built: true, req: { kind: 'count', stat: 'cardsDrawn', count: 1, noun: 'Tarot card' } },
-  { id: 'galaxies', name: 'Galaxies', icon: 'mystery', stat: 'productionMult', per: 2, built: false, req: { kind: 'count', stat: 'galactics', count: 1, noun: 'Galactic Rebirth' } },
+  { id: 'galaxies', name: 'Galaxies', icon: 'mystery', stat: 'productionMult', per: 2, built: false, req: { kind: 'count', stat: 'galacticsAll', count: 1, noun: 'Galactic Rebirth' } },
 ];
 
 export const INDEX_PAGE_BY_ID: ReadonlyMap<string, IndexPage> = new Map(INDEX_PAGES.map((p) => [p.id, p]));

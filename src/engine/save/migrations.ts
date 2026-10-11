@@ -68,6 +68,13 @@ const migrations: Record<number, (d: PlainSave) => void> = {
     d.spectral ??= { energy: {}, focus: null, upgrades: {} };
     d.tarot ??= { owned: [], deck: [], packs: 0, gamble: 1, rng: seedRng(((base[0] ?? 1) ^ 0x7a20_7c4d) >>> 0) };
   },
+  // 13 (Phase 12): the Singularity, its tree, the Black Hole, the Prism Wheel and the Reactor. Every
+  // new field has a default, so this records the change; the best Nebula run starts from the count so far.
+  13: (d) => {
+    const stats = (d.stats ?? {}) as Record<string, number>;
+    stats.nebulasBest = Math.max(stats.nebulasBest ?? 0, stats.nebulas ?? 0);
+    d.stats = stats;
+  },
 };
 
 export function migrate(version: number, data: PlainSave): PlainSave {

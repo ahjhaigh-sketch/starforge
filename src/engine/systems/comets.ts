@@ -4,7 +4,7 @@ import { events } from '../events';
 import { nextFloat } from '../rng';
 import { cur, gain, type GameState } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
-import { registerSystem, type TickContext } from '../tick';
+import { gameSpeed, registerSystem, type TickContext } from '../tick';
 import { tapValue } from './stardust';
 
 /**
@@ -107,7 +107,8 @@ export function registerComets(): void {
       s.comet.nextAt = s.playtime + nextGap(s);
       // Comets need a click, so none appear during any catch-up; the schedule just moves on.
       if (ctx.catchUp) return;
-      s.comet.until = s.playtime + c.flight;
+      // the catch window is real seconds (the comet's flight on screen), whatever the game speed
+      s.comet.until = s.playtime + c.flight * gameSpeed(s);
       events.emit({ t: 'comet', kind: 'spawn' });
     },
   });

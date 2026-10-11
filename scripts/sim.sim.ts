@@ -118,6 +118,8 @@ let NC: typeof import('../src/content/nursery');
 let SPX: typeof import('../src/engine/systems/spectral');
 let TAR: typeof import('../src/engine/systems/tarot');
 let NX: typeof import('../src/content/nebulaExtras');
+let SG: typeof import('../src/engine/systems/singularity');
+let BH: typeof import('../src/engine/systems/blackhole');
 let PLANET_TYPES: (typeof import('../src/content/early'))['PLANET_TYPES'];
 
 async function loadGame(): Promise<void> {
@@ -165,12 +167,16 @@ async function loadGame(): Promise<void> {
   SPX = await import('../src/engine/systems/spectral');
   TAR = await import('../src/engine/systems/tarot');
   NX = await import('../src/content/nebulaExtras');
+  SG = await import('../src/engine/systems/singularity');
+  BH = await import('../src/engine/systems/blackhole');
 }
 
 const TAPS_PER_SECOND = 4;
 const MAX_HOURS = 120;
 /** The bot plays until this many Nebulas (the plan's first Singularity comes at about 8). */
 const STOP_AT_NEBULAS = Number(process.env.SIM_NEBULAS ?? 8);
+/** With SIM_SINGULARITIES the bot plays on through that many Singularities (the plan's first Galactic Rebirth comes at about 10). */
+const STOP_AT_SINGULARITIES = Number(process.env.SIM_SINGULARITIES ?? 0);
 /** How often (game seconds) the bot looks after the Belt and the Starforge. */
 const SIDE_EVERY = 5;
 
@@ -306,6 +312,11 @@ function sideSystems(s: GameState): void {
       }
     });
   }
+  // Phase 12: feed the Black Hole a fifth of Stardust, turn the wheel on once it opens
+  if (BH.bhOpen(s)) {
+    BH.setDustShare(s, 0.2);
+    if (BH.wheelOpen(s)) s.wheel.on = true;
+  }
   // Phase 11: focus the weakest open colour, buy Prism Lens and Afterglow, packs, and deal the strongest plain cards
   if (SPX.spectralOpen(s)) {
     const open = NX.SPECTRAL.filter((c) => SPX.colorOpen(s, c.id));
@@ -339,6 +350,26 @@ function sideSystems(s: GameState): void {
   if (drone.canAfford && drone.cost.lt(cur(s, 'ore').mul(0.3))) buyDrillDrone(s);
   if (bitPlan(s).canAfford) buyDrillBit(s);
   invalidateStats();
+}
+
+/** Dark Matter: Void Constants under 15%, the cheapest Singularity Tree nodes, then a tenth into the Reactor. */
+function spendDarkMatter(s: GameState): void {
+  for (const id of ['void.horizon', 'void.mass', 'void.spin', 'void.charge']) {
+    const c = CONSTANTS.find((x) => x.id === id)!;
+    if (constantOpen(s, c) && constantPlan(s, c, 1).cost.lt(cur(s, 'darkMatter').mul(0.15))) buyConstant(s, id, 1);
+  }
+  const tree = SG.singularityTree;
+  for (let i = 0; i < 200; i++) {
+    const pick = tree.def.nodes.filter((n) => tree.canBuy(s, n)).sort((a, b) => Number(!!a.repeat) - Number(!!b.repeat) || tree.cost(s, a).cmp(tree.cost(s, b)))[0];
+    if (!pick || !tree.buy(s, pick.id)) break;
+  }
+  if (BH.reactorOpen(s)) {
+    const keep = s.settings.buyAmount;
+    s.settings.buyAmount = 'custom';
+    s.settings.customBuyAmount = Math.floor(cur(s, 'darkMatter').mul(0.1).min(1e15).toNumber());
+    if (s.settings.customBuyAmount >= 1) BH.feedReactor(s);
+    s.settings.buyAmount = keep;
+  }
 }
 
 /** Essence: Nebula Constants first (rune speed and bulk, Drift), then the cheapest Nebula Tree node. */
@@ -437,11 +468,35 @@ it('balance simulation', async () => {
     [5, 'Nebula 5 (keep the tree)'],
     [8, 'Nebula 8 (Singularity)'],
   ]);
-  while (s.playtime < MAX_HOURS * 3600 && (s.stats.nebulasAll ?? 0) < STOP_AT_NEBULAS) {
+  let singularityStart = 0;
+  const singularityLengths: number[] = [];
+  const playing = () => (STOP_AT_SINGULARITIES > 0 ? (s.stats.singularitiesAll ?? 0) < STOP_AT_SINGULARITIES : (s.stats.nebulasAll ?? 0) < STOP_AT_NEBULAS);
+  while (s.playtime < MAX_HOURS * 3600 && playing()) {
+    // Phase 12: buy the key, then fall in when it at least doubles lifetime Dark Matter (or the run drags past an hour)
+    if (SG.keyOnSale(s) && !s.singularity.key) SG.buyKey(s);
+    if (SG.singularityReady(s)) {
+      const g = SG.singularityGain(s);
+      const life = s.totals.all.darkMatter ?? D(0);
+      if ((s.stats.singularitiesAll ?? 0) === 0 || g.gte(life) || s.playtime - singularityStart > 3600) {
+        singularityLengths.push(s.playtime - singularityStart);
+        performReset(s, 'singularity');
+        singularityStart = s.playtime;
+        nebulaStart = s.playtime;
+        runStart = s.playtime;
+        bestRate = D(0);
+        spendDarkMatter(s);
+        spendEssence(s);
+        spendShards(s);
+        const k = s.stats.singularitiesAll ?? 0;
+        if (k === 1 || k === 3 || k === 5 || k === 10 || k === STOP_AT_SINGULARITIES) record(`Singularity ${k}`);
+        continue;
+      }
+    }
     if (process.env.SIM_DEBUG_RUN && s.playtime - traceAt >= 600 && (s.stats.nebulasAll ?? 0) >= Number(process.env.SIM_DEBUG_RUN)) (traceAt = s.playtime) && console.log(`R ${hms(s.playtime)} N${s.stats.nebulasAll} sn ${s.stats.supernovas} shards ${fmt(cur(s, 'shards'))} raw ${fmt(rawShardGain(s))} ready ${nebulaReady(s)} essGain ${nebulaReady(s) ? fmt(nebulaGain(s)) : '-'} lifeE ${fmt(s.totals.all.essence ?? D(0))} tier ${s.tier}`);
     if (nebulaReady(s)) {
       const g = nebulaGain(s);
-      const lifetime = s.totals.all.essence ?? D(0);
+      // after a Singularity, Essence from earlier Singularity runs is out of reach: double this run's
+      const lifetime = ((s.stats.singularitiesAll ?? 0) > 0 ? s.totals.run.essence : s.totals.all.essence) ?? D(0);
       if ((s.stats.nebulasAll ?? 0) === 0 || g.gte(lifetime) || s.playtime - nebulaStart > 6 * 3600) {
         nebulaLengths.push(s.playtime - nebulaStart);
         performReset(s, 'nebula');
@@ -508,7 +563,9 @@ it('balance simulation', async () => {
   console.table(rows);
   const avg = (a: number[]) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
   console.log(`Run length, game time: first ${hms(runLengths[0] ?? 0)}, runs 2-5 avg ${hms(avg(runLengths.slice(1, 5)))}, 6-12 avg ${hms(avg(runLengths.slice(5, 12)))}, 13-30 avg ${hms(avg(runLengths.slice(12)))}`);
+  if (singularityLengths.length) console.log(`Singularity runs, game time: first ${hms(singularityLengths[0] ?? 0)}, then ${singularityLengths.slice(1).map(hms).join(', ')}`);
   console.log(`Nebula runs, game time: first ${hms(nebulaLengths[0] ?? 0)}, then ${nebulaLengths.slice(1).map(hms).join(', ')}`);
   console.log(`Ended at ${s.stats.supernovasAll} Supernovas and ${s.stats.nebulasAll ?? 0} Nebulas, ${hms(s.playtime)} played, Nebula Tree ${nebulaShare(s)} bought, raw next gain ${fmt(rawShardGain(s))}.`);
   console.log(`Wyrms: team of ${s.wyrms.team.length}, ${s.stats.wyrmsHatched ?? 0} hatched, ${s.wyrms.found.length}/60 variants. Nursery: ${s.nursery.found.length}/25 species grown, ${s.stats.nurseryHarvests ?? 0} harvests. Auras ${s.stats.aurasFound ?? 0}/30, stars ${s.stats.starsEarned ?? 0}. Spectral best 10^${s.stats.spectralBest ?? 0}, ${s.stats.spectralColors ?? 0} colours; tarot ${s.tarot.owned.length}/60.`);
+  console.log(`Singularities ${s.stats.singularitiesAll ?? 0}, Dark Matter (lifetime) ${fmt(s.totals.all.darkMatter ?? D(0))}, Black Hole stage ${BH.bhStage(s)} (mass ${fmt(s.blackHole.mass)}), game speed x${(stat(s, 'gameSpeed').toNumber()).toFixed(2)}, Singularity Tree ${Object.keys(s.singularityTree).length}/100, Embers ${fmt(cur(s, 'embers'))}.`);
 }, 600_000);

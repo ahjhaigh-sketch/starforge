@@ -6,7 +6,7 @@ import { chromium } from '@playwright/test';
 
 const seconds = Number(process.argv[2] ?? 120);
 const base = process.argv[3] ?? 'http://localhost:4173';
-const PANELS = ['upgrades', 'medals', 'stats', 'constants', 'quests', 'orbitals', 'mastery', 'novatree', 'automation', 'ascent', 'belt', 'level', 'drill', 'starforge', 'fusion', 'attune', 'merchant', 'expeditions', 'nebula', 'runes', 'nebulatree', 'index', 'starring', 'mutations', 'auras', 'wyrms', 'nursery', 'spectral', 'tarot'];
+const PANELS = ['upgrades', 'medals', 'stats', 'constants', 'quests', 'orbitals', 'mastery', 'novatree', 'automation', 'ascent', 'belt', 'level', 'drill', 'starforge', 'fusion', 'attune', 'merchant', 'expeditions', 'nebula', 'runes', 'nebulatree', 'index', 'starring', 'mutations', 'auras', 'wyrms', 'nursery', 'spectral', 'tarot', 'singularity', 'singularitytree', 'blackhole', 'reactor', 'prismwheel'];
 
 const browser = await chromium.launch();
 let failed = false;
@@ -45,6 +45,11 @@ for (const view of [
     // Phase 10: Essence for eggs and seeds, Iron alloy for training
     commands.devAdd('essence', 1e6);
     commands.devAdd('alloy.iron', 1e5);
+    // Phase 12: past the first Singularities, the Black Hole at its rainbow stage
+    s.stats.singularitiesAll = 6;
+    s.stats.bhStageBest = 8;
+    s.blackHole.mass = new (s.currencies.stardust.constructor)(2e7);
+    commands.devAdd('darkMatter', 1e6);
   });
   const end = Date.now() + seconds * 1000;
   let round = 0;
@@ -130,6 +135,13 @@ for (const view of [
         const fuse = page.locator('[data-fuse]:not([disabled])').first();
         if (await fuse.count()) await fuse.click({ force: true });
       }
+      if (panel === 'blackhole') await page.getByTestId('feed-dm').click({ force: true });
+      if (panel === 'reactor') await page.getByTestId('feed-reactor').click({ force: true });
+      if (panel === 'prismwheel') {
+        await page.locator('[data-handle="2"]').focus();
+        await page.keyboard.press('ArrowRight');
+      }
+      if (panel === 'singularitytree') await page.locator('[data-node="score"]').click({ force: true });
       if (panel === 'spectral') {
         const focus = page.locator('[data-focus]').first();
         if (await focus.count()) await focus.click({ force: true });

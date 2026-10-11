@@ -17,6 +17,44 @@ function startNebula(open: (id: string) => void): void {
   else commands.reset('nebula');
 }
 
+function startSingularity(open: (id: string) => void): void {
+  if (snapshotStore.getState().confirmResets) open('singularityConfirm');
+  else commands.reset('singularity');
+}
+
+function SingularityBar() {
+  const visible = useSnap((s) => s.singularityVisible);
+  const ready = useSnap((s) => s.singularityReady);
+  const gain = useSnap((s) => s.singularityGain);
+  const req = useSnap((s) => s.singularityReq);
+  const pct = useSnap((s) => s.singularityPct);
+  const open = useUi((s) => s.open);
+  if (!visible) return null;
+  return (
+    <button
+      type="button"
+      className={cx('nova nebula-bar singularity-bar chunk pop', ready ? 'ready' : 'locked')}
+      style={tint('#3A2470')}
+      onClick={() => (ready ? startSingularity(open) : open('singularity'))}
+      aria-label={ready ? `Go Singularity for ${gain} Dark Matter` : `Singularity. ${req}.`}
+      data-testid="singularity"
+    >
+      <span className="fill" style={{ width: `${pct}%` }} />
+      <span className="inner">
+        {!ready && <Icon name="lock" className="nova-lock" />}
+        <span className="title ol">SINGULARITY</span>
+        {ready && (
+          <span className="gain ol">
+            {gain}
+            <Icon name="darkmatter" />
+          </span>
+        )}
+        <span className="req ol-sm">{req}</span>
+      </span>
+    </button>
+  );
+}
+
 function NebulaBar() {
   const visible = useSnap((s) => s.nebulaVisible);
   const ready = useSnap((s) => s.nebulaReady);
@@ -110,6 +148,7 @@ export function BottomBar() {
         </span>
       </button>
       <NebulaBar />
+      <SingularityBar />
     </div>
   );
 }

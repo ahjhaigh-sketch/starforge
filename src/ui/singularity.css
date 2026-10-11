@@ -1,0 +1,41 @@
+/* =====================================================================
+   Phase 12: the Singularity, the Black Hole, the Prism Wheel, the Reactor.
+   ===================================================================== */
+
+.singularity-bar { margin-top: 0.35rem; height: 2.6rem; }
+.singularity-bar .title { font-size: 1.15rem; letter-spacing: 0.04em; }
+
+/* ---------- the Black Hole ---------- */
+.bh-stages { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 0.35rem; margin: 0.7rem 0; }
+.bh-stage { border-radius: 12px; --stroke: 2.5px; padding: 0.45rem 0.35rem; display: flex; flex-direction: column; gap: 0.15rem; text-align: center; font-size: 0.72rem; opacity: 0.45; filter: saturate(0.4); }
+.bh-stage.reached { opacity: 1; filter: none; box-shadow: 0 0 14px 1px color-mix(in oklab, var(--c) 55%, transparent); }
+.bh-stage b { font-family: var(--font-display); font-weight: 400; font-size: 0.95rem; }
+.bh-stage[data-stage='8'] { background-image: linear-gradient(135deg, #ff5f6d, #ffc371, #5fd39b, #4fb6ff, #b06bff); }
+.bh-feed { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+.bh-feed .well { padding: 0.7rem 0.9rem; display: flex; flex-direction: column; gap: 0.45rem; }
+.bh-feed .section-h { margin: 0; }
+.bh-feed input[type='range'] { width: 100%; accent-color: var(--violet); }
+.bh-feed .slider { display: grid; gap: 0.2rem; font-weight: 700; font-size: 0.85rem; }
+
+/* ---------- the Prism Wheel ---------- */
+.wheel-cols { display: grid; grid-template-columns: minmax(14rem, 20rem) 1fr; gap: 0.8rem; align-items: start; }
+.wheel-box { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; }
+.wheel { width: 100%; max-width: 20rem; touch-action: none; user-select: none; }
+.wheel-handle { fill: #fff; stroke: #140b2e; stroke-width: 3; cursor: grab; }
+.wheel-handle:focus-visible { outline: none; stroke: var(--cyan); stroke-width: 5; }
+.wheel-centre { font-family: var(--font-display); font-size: 22px; fill: #fff; stroke: #140b2e; stroke-width: 4px; paint-order: stroke; }
+.wheel-list { padding: 0.7rem 0.9rem; display: grid; gap: 0.3rem; }
+.wheel-row { grid-template-columns: auto 1fr; }
+
+/* ---------- the Reactor ---------- */
+.reactor { display: flex; flex-direction: column; align-items: center; gap: 0.55rem; }
+.reactor-core { width: 7.5rem; height: 7.5rem; border-radius: 50%; display: grid; place-items: center; font-size: 1.5rem;
+  background: radial-gradient(circle at 40% 35%, #fff 0 8%, var(--c) 30%, color-mix(in oklab, var(--c) 40%, black) 75%);
+  box-shadow: 0 0 30px 6px color-mix(in oklab, var(--c) 50%, transparent); animation: reactorPulse 2.2s ease-in-out infinite; }
+@keyframes reactorPulse { 50% { box-shadow: 0 0 44px 12px color-mix(in oklab, var(--c) 40%, transparent); } }
+.reduced-motion .reactor-core { animation: none; }
+
+@media (max-width: 900px) {
+  .bh-stages { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .bh-feed, .wheel-cols { grid-template-columns: 1fr; }
+}

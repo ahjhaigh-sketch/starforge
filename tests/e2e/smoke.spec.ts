@@ -1172,3 +1172,84 @@ test('Tarot of the Void: open a pack, and The Mirror copies left and disables ri
   await expect(panel.locator('[data-slot="2"]')).toContainText('Disabled');
   expect(errors).toEqual([]);
 });
+
+// ---------- Phase 12: the Singularity ----------
+
+type Sf12 = {
+  sf: {
+    game: {
+      state: {
+        unlocked: string[];
+        stats: Record<string, number>;
+        singularity: { key: boolean };
+        blackHole: { mass: unknown; dustShare: number };
+        wheel: { on: boolean; shares: number[] };
+        currencies: Record<string, { toNumber(): number; constructor: new (x: number | string) => unknown }>;
+      };
+    };
+    commands: { devAdd(c: string, n: number): void };
+  };
+};
+
+test('the Singularity: buy the key with Embers, fall in, Dark Matter arrives and the Black Hole wakes', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf12).sf;
+    game.state.stats.nebulasAll = 8;
+    game.state.stats.nebulas = 8;
+    commands.devAdd('embers', 1e8);
+  });
+  await openRail(page, 'singularity');
+  const panel = page.locator('[data-panel="singularity"]');
+  await panel.getByTestId('buy-key').click();
+  expect(await page.evaluate(() => (window as unknown as Sf12).sf.game.state.singularity.key)).toBe(true);
+  await page.evaluate(() => (window as unknown as Sf12).sf.commands.devAdd('essence', 1e94));
+  await panel.getByTestId('go-singularity').click();
+  const confirm = page.locator('[data-panel="singularityConfirm"]');
+  await expect(confirm).toHaveClass(/open/);
+  await expect(confirm).toContainText('Runes, auras, mutations');
+  await confirm.getByRole('button', { name: 'Go Singularity' }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf12).sf.game.state.stats.singularitiesAll)).toBe(1);
+  expect(await page.evaluate(() => (window as unknown as Sf12).sf.game.state.currencies.darkMatter!.toNumber())).toBeGreaterThan(10);
+  await expect(page.locator('.hud .pill[aria-label="Dark Matter"]')).toBeVisible();
+  await openRail(page, 'blackhole');
+  const hole = page.locator('[data-panel="blackhole"]');
+  await hole.getByTestId('feed-dm').click();
+  await expect.poll(() => page.evaluate(() => Number(String((window as unknown as Sf12).sf.game.state.blackHole.mass)))).toBeGreaterThan(0);
+  await hole.getByTestId('dust-share').fill('20');
+  expect(await page.evaluate(() => (window as unknown as Sf12).sf.game.state.blackHole.dustShare)).toBeCloseTo(0.2, 6);
+  expect(errors).toEqual([]);
+});
+
+test('the Prism Wheel: dragging and arrow keys move share between colours, and the total stays 80%', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const s = (window as unknown as Sf12).sf.game.state;
+    s.stats.singularitiesAll = 1;
+    s.stats.bhStageBest = 8;
+    s.blackHole.mass = new (s.currencies.stardust!.constructor)(1e7);
+  });
+  await openRail(page, 'prismwheel');
+  const panel = page.locator('[data-panel="prismwheel"]');
+  const handle = panel.locator('[data-handle="0"]');
+  await handle.focus();
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowRight');
+  let shares = await page.evaluate(() => (window as unknown as Sf12).sf.game.state.wheel.shares);
+  expect(shares[0]).toBeCloseTo(0.12, 6);
+  expect(shares[1]).toBeCloseTo(0.08, 6);
+  const box = (await handle.boundingBox())!;
+  const wheel = (await panel.locator('svg.wheel').boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(wheel.x + wheel.width * 0.85, wheel.y + wheel.height * 0.5, { steps: 6 });
+  await page.mouse.up();
+  shares = await page.evaluate(() => (window as unknown as Sf12).sf.game.state.wheel.shares);
+  expect(shares.reduce((a, b) => a + b, 0)).toBeCloseTo(0.8, 9);
+  expect(shares[0]).toBeGreaterThan(0.15);
+  await panel.getByTestId('wheel-on').click();
+  expect(await page.evaluate(() => (window as unknown as Sf12).sf.game.state.wheel.on)).toBe(true);
+  expect(errors).toEqual([]);
+});

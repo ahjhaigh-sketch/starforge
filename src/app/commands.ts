@@ -27,6 +27,8 @@ import { buyEggs, equipWyrm, fuseWyrms, type HatchResult, trainWyrm, unequipWyrm
 import { buyNurseryUpgrade, buySeeds, crossbreed, harvestPlot, plant, uprootPlot } from '../engine/systems/nursery';
 import { buySpectral, setFocus } from '../engine/systems/spectral';
 import { openPacks, placeCard, removeCard } from '../engine/systems/tarot';
+import { buyKey, singularityTree } from '../engine/systems/singularity';
+import { feedDarkMatter, feedReactor, moveBoundary, setDustShare, setShare } from '../engine/systems/blackhole';
 import { buyForgeUpgrade, buyRelic, equipRelic, setForgeGrade, setForgeOn, setForgeShare, unequipRelic } from '../engine/systems/forge';
 import { backupNow, readBackup } from './backups';
 import { D } from '../engine/decimal';
@@ -325,6 +327,48 @@ export const commands = {
   },
   harvestPlot(plot: number): boolean {
     const ok = harvestPlot(game.state, plot) !== null;
+    done();
+    return ok;
+  },
+  /** The Singularity: the Event Horizon key, auto-Nebula, the tree. */
+  buyKey(): boolean {
+    const ok = buyKey(game.state);
+    done();
+    return ok;
+  },
+  setAutoNebula(essence: number) {
+    game.state.singularity.autoAt = D(Math.max(0, Number.isFinite(essence) ? Math.floor(essence) : 0));
+    done();
+  },
+  buySingularityNode(id: string): boolean {
+    const ok = singularityTree.buy(game.state, id);
+    done();
+    return ok;
+  },
+  /** The Black Hole, the Prism Wheel and the Reactor. */
+  feedBlackHole(): boolean {
+    const ok = feedDarkMatter(game.state);
+    done();
+    return ok;
+  },
+  setDustShare(share: number) {
+    setDustShare(game.state, share);
+    done();
+  },
+  setWheelOn(on: boolean) {
+    game.state.wheel.on = on;
+    done();
+  },
+  moveWheelBoundary(k: number, delta: number) {
+    moveBoundary(game.state, k, delta);
+    done();
+  },
+  setWheelShare(i: number, v: number) {
+    setShare(game.state, i, v);
+    done();
+  },
+  feedReactor(): boolean {
+    const ok = feedReactor(game.state);
     done();
     return ok;
   },

@@ -21,6 +21,9 @@ import {
 } from '../engine/systems/stardust';
 import { reqProgress, reqText } from '../engine/systems/unlocks';
 import { attuneHud } from './extrasReports';
+import { keyOnSale, runEssence, singularityGain, singularityReady } from '../engine/systems/singularity';
+import { bhOpen, bhStage } from '../engine/systems/blackhole';
+import { gameSpeed } from '../engine/tick';
 import { wyrmSky } from './wyrmReports';
 import { nebulaGain, nebulaReady, runShards } from '../engine/systems/nebula';
 import { BUFF_KINDS, buffLeft, cometOnScreen } from '../engine/systems/comets';
@@ -162,6 +165,17 @@ export interface Snapshot {
   essenceVisible: boolean;
   /** Nebulas ever: cyan clouds drift into the sky after the first. */
   nebulasAll: number;
+  /** The Singularity on the reset bar, Dark Matter in the top bar, the Black Hole behind the star. */
+  singularityVisible: boolean;
+  singularityReady: boolean;
+  singularityGain: string;
+  singularityReq: string;
+  singularityPct: number;
+  darkMatter: string;
+  darkMatterVisible: boolean;
+  bhStage: number;
+  bhMassLog: number;
+  gameSpeed: number;
   /** The Wyrm team for the sky ("colour:rank:form|..."). */
   wyrmSky: string;
   novaReady: boolean;
@@ -407,6 +421,12 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     essence: format(cur(s, 'essence'), n),
     essenceVisible: (s.stats.nebulasAll ?? 0) > 0 || cur(s, 'essence').gt(0),
     nebulasAll: s.stats.nebulasAll ?? 0,
+    ...singularityBar(s, n),
+    darkMatter: format(cur(s, 'darkMatter'), n),
+    darkMatterVisible: (s.stats.singularitiesAll ?? 0) > 0 || cur(s, 'darkMatter').gt(0),
+    bhStage: bhOpen(s) ? Math.max(1, bhStage(s)) : 0,
+    bhMassLog: Math.floor(s.blackHole.mass.add(1).log10().toNumber() * 10) / 10,
+    gameSpeed: Math.round(gameSpeed(s) * 100) / 100,
     wyrmSky: wyrmSky(),
     novaPct: novaReady ? 100 : Math.floor((s.tier >= nova.tier ? 0.5 + novaDust * 0.5 : novaTier * 0.5) * 100),
     novaReq: novaReady
@@ -437,6 +457,20 @@ export function publish(): void {
 /** Select ONE primitive field (or a stable row/list): a new object per call loops forever. */
 export function useSnap<T>(selector: (s: Snapshot) => T): T {
   return useStore(snapshotStore, selector);
+}
+
+/** The Singularity on the reset bar: visible from Nebula milestone 8 (or after the first Singularity). */
+function singularityBar(s: GameState, n: Notation): { singularityVisible: boolean; singularityReady: boolean; singularityGain: string; singularityReq: string; singularityPct: number } {
+  const visible = keyOnSale(s);
+  const ready = singularityReady(s);
+  const ne = runEssence(s);
+  const pct = ready ? 100 : !s.singularity.key ? Math.floor(Math.min(1, cur(s, 'embers').div(BALANCE.singularity.keyEmbers).toNumber()) * 100) : Math.floor(Math.min(1, ne.add(1).log10().toNumber() / 6) * 100);
+  const req = ready
+    ? 'Dark Matter buys the Singularity Tree and boosts all Essence'
+    : !s.singularity.key
+      ? `Buy the Event Horizon key: ${format(BALANCE.singularity.keyEmbers, n)} Embers (${format(cur(s, 'embers'), n)})`
+      : `Gather ${format(BALANCE.singularity.runEssence, n)} Essence this Singularity run (${format(ne, n)})`;
+  return { singularityVisible: visible, singularityReady: ready, singularityGain: ready ? `+${format(singularityGain(s), n)}` : '', singularityReq: req, singularityPct: pct };
 }
 
 /** The Nebula on the reset bar: visible once a run reaches 30 Supernovas, or after the first Nebula. */

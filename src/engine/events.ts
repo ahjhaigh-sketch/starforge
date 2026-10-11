@@ -24,6 +24,8 @@ export type GameEvent =
   | { t: 'hatch'; count: number; best: string }
   /** A tarot card was drawn from a pack. */
   | { t: 'card'; id: string }
+  /** The Black Hole reached a colour stage (1 amber to 8 rainbow). */
+  | { t: 'bhStage'; stage: number }
   /** A shrine gained a star. */
   | { t: 'star'; shrine: string; stars: number }
   /** `priority`: big news (a new tier, a reset) that smaller toasts must never push out. */

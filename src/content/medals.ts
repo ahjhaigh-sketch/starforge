@@ -96,6 +96,11 @@ export const MEDALS: readonly MedalDef[] = [
   { id: 'cards.1', name: "First Draw", desc: "Draw a tarot card.", icon: 'card', req: { kind: 'count', stat: 'cardsDrawn', count: 1, noun: 'card' } },
   { id: 'cards.30', name: "Half a Deck", desc: "Own 30 tarot cards.", icon: 'card', req: { kind: 'count', stat: 'cardsDrawn', count: 30, noun: 'card' } },
   { id: 'cards.60', name: "The Whole Void", desc: "Own all 60 tarot cards.", icon: 'card', req: { kind: 'count', stat: 'cardsDrawn', count: 60, noun: 'card' } },
+  // Phase 12: the Singularity
+  { id: 'singularity.1', name: "Event Horizon", desc: "Go Singularity.", icon: 'darkmatter', req: { kind: 'count', stat: 'singularitiesAll', count: 1, noun: 'Singularity' } },
+  { id: 'singularity.10', name: "Frequent Faller", desc: "Go Singularity 10 times.", icon: 'darkmatter', req: { kind: 'count', stat: 'singularitiesAll', count: 10, noun: 'Singularity' } },
+  { id: 'bh.4', name: "Red Giant Hunger", desc: "Bring the Black Hole to its red stage.", icon: 'blackhole', req: { kind: 'count', stat: 'bhStageBest', count: 4, noun: 'Black Hole stage' } },
+  { id: 'bh.8', name: "Rainbow Abyss", desc: "Bring the Black Hole to its rainbow stage.", icon: 'blackhole', req: { kind: 'count', stat: 'bhStageBest', count: 8, noun: 'Black Hole stage' } },
   { id: 'nursery.25', name: "Stellar Gardener", desc: "Grow all 25 star species.", icon: 'nursery', req: { kind: 'count', stat: 'speciesGrown', count: 25, noun: 'species' } },
   // Phase 7: Comet Fusion, Attunements, the Merchant and starships
   { id: 'fusion.5', name: "Comet Smith", desc: "Fuse a level 5 comet.", icon: 'comet', req: { kind: 'count', stat: 'fusionBest', count: 5, noun: 'fusion level' } },

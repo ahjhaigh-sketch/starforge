@@ -5,6 +5,7 @@ import { RUNE_BY_ID, SHRINE_BY_ID } from '../content/runes';
 import { AURA_BY_ID, MUTATION_BY_ID } from '../content/runeDepth';
 import { WYRM_BY_ID } from '../content/wyrms';
 import { CARD_BY_ID } from '../content/nebulaExtras';
+import { BH_STAGES } from '../engine/systems/blackhole';
 import { SYSTEM_BY_ID } from '../content/systems';
 import { TIERS } from '../content/tiers';
 import { events } from '../engine/events';
@@ -132,6 +133,11 @@ export function installNotifications(): void {
       const m = MUTATION_BY_ID.get(e.mut);
       const body = e.target === 'rune' ? `A ${m?.name} copy of ${RUNE_BY_ID.get(e.id)?.name ?? 'a rune'} counts as ${m?.mult} copies.` : `A ${m?.name} ${e.id} asteroid gives x${m?.mult} ore and XP.`;
       if (m) events.emit({ t: 'toast', title: `First ${m.name} mutation`, body, icon: 'mutation' });
+    } else if (e.t === 'bhStage') {
+      const st = BH_STAGES[e.stage - 1];
+      if (st) events.emit({ t: 'toast', title: `The Black Hole turns ${st.name}`, body: st.perk + '.', icon: 'blackhole', priority: true });
+    } else if (e.t === 'milestone' && e.id === 'singularity.key') {
+      events.emit({ t: 'toast', title: 'The Event Horizon key', body: 'Gather a million Essence this run, then fall into the Singularity.', icon: 'darkmatter', priority: true });
     } else if (e.t === 'card') {
       const c = CARD_BY_ID.get(e.id);
       // Legendary and Void cards are news; the rest show in the pack row

@@ -249,7 +249,7 @@ export const BALANCE = {
     quickBurnSeconds: 900,
   },
   /** Cost growth per level of each Stellar Constant (between 1.05 and 2, Math and balance tab). */
-  constants: { gravity: 1.3, light: 1.3, heat: 1.35, orbit: 1.35, runeSpeed: 1.8, runeBulk: 1.6, resonance: 2, drift: 1.9, bloom: 1.7 },
+  constants: { gravity: 1.3, light: 1.3, heat: 1.35, orbit: 1.35, runeSpeed: 1.8, runeBulk: 1.6, resonance: 2, drift: 1.9, bloom: 1.7, mass: 1.5, spin: 1.8, horizon: 1.6, charge: 1.7 },
   novaTree: {
     /** Node price along an arm: armBase x armGrowth^depth (depth 0 to 22). */
     armBase: 3,
@@ -406,6 +406,43 @@ export const BALANCE = {
     emberGrowth: 1.6,
     /** A Wyrm on the team catches a comet this long after it appears. */
     catchSeconds: 2.5,
+  },
+  /** Phase 12: the Singularity, the third reset (Math and balance: "Reset layers"). */
+  singularity: {
+    /**
+     * It needs the Event Horizon key and NE (Essence gathered this Singularity run) of at least 1e6.
+     * Dark Matter = floor(1.05^(log10(NE) - 6)) x Dark Matter gain. Essence runs past e90 by
+     * Nebula 8 here, so the plan's (NE / 1e6)^0.3 would hand out e26 at once; this gives about 70
+     * at the first Singularity and about x3.6 for every 26 more orders of magnitude of Essence.
+     */
+    runEssence: 1e6,
+    gainBase: 1.05,
+    /** Lifetime Dark Matter boosts Essence: x(1 + DM)^0.35. */
+    passivePow: 0.35,
+    /** The Event Horizon key costs Embers; it shows from Nebula milestone 8. */
+    keyEmbers: 1e8,
+    /** Milestone 10: a Nebula resets nothing and 1/50 of its gain trickles in every second. */
+    trickle: 1 / 50,
+    /** Singularity Tree prices in Dark Matter: base x growth^ring step. */
+    treeBase: 1,
+    treeGrowth: 3,
+  },
+  /** Phase 12: the Black Hole, the Prism Wheel and the Dark Matter Reactor. */
+  blackHole: {
+    /** Mass for each of the 8 stages (amber, blue, violet, red, green, pink, black, rainbow): 10^(stage - 1). */
+    stageBase: 10,
+    /** Feeding Dark Matter: mass per DM fed. Feeding Stardust: mass a second = share x log10(1 + Stardust a second). */
+    massPerDM: 10,
+    dustPow: 1,
+    maxDustShare: 0.5,
+    /** Game speed = 1 + 0.04 x log10(1 + mass), plus Spin. */
+    speedPerOoM: 0.04,
+    /** The Prism Wheel (stage 8): its shares always add up to this share of Dark Matter income. */
+    wheelLimit: 0.8,
+    /** Each colour's bank of Dark Matter boosts its currency: x(1 + bank)^0.5. */
+    wheelPow: 0.5,
+    /** The Reactor: Dark Matter gain x(1 + charge)^(0.15 x Reactor power). */
+    reactorPow: 0.15,
   },
   /** Phase 11: Spectral Focus (Upgradex's Wavelengths). */
   spectral: {
