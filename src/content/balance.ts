@@ -441,8 +441,13 @@ export const BALANCE = {
     wheelLimit: 0.8,
     /** Each colour's bank of Dark Matter boosts its currency: x(1 + bank)^0.5. */
     wheelPow: 0.5,
-    /** The Reactor: Dark Matter gain x(1 + charge)^(0.15 x Reactor power). */
+    /**
+     * The Reactor: Dark Matter gain x(1 + charge)^(0.15 x Reactor power), with Reactor power counted up to x2.
+     * Uncapped, Reactor Charge levels (bought with Dark Matter) raised the exponent without end and the
+     * Dark Matter loop ran away past 10 Singularities (sim, Phase 14).
+     */
     reactorPow: 0.15,
+    reactorPowerCap: 2,
   },
   /** Phase 13: Trials, the Spire and the Void Leviathans (Game design: "Singularity"). */
   trials: {
@@ -499,6 +504,53 @@ export const BALANCE = {
     /** Scale Tree prices: 10 x 2.5^step. */
     treeBase: 10,
     treeGrowth: 2.5,
+  },
+  /** Phase 14: the Antimatter Mirror (Singularity milestone 8). */
+  mirror: {
+    /** The anti-star makes this much Antimatter a second by itself, so the first engine is ten seconds away. */
+    anchorProd: 1,
+    /** Antimatter engine k: price 10 x 16^k, output 0.05 x 6^k a second. */
+    engineCostBase: 10,
+    engineCostGrowth: 16,
+    engineProdBase: 0.05,
+    engineProdGrowth: 6,
+    /** Inverted: milestones slow price growth (x1.3 a purchase at first, x1.06 past 1,000 owned). */
+    brackets: [
+      { from: 0, ratio: 1.3 },
+      { from: 10, ratio: 1.25 },
+      { from: 25, ratio: 1.2 },
+      { from: 50, ratio: 1.16 },
+      { from: 100, ratio: 1.13 },
+      { from: 200, ratio: 1.1 },
+      { from: 400, ratio: 1.08 },
+      { from: 1000, ratio: 1.06 },
+    ],
+    /** Each Mastery rank of an engine's Stardust twin: +10% on it (+20% with Twin Bond). */
+    twinBoost: 0.1,
+    /**
+     * Collapse d (1 to 11) costs 1,000 x 16^(d - 1) Antimatter, scraps the Antimatter engines and gives Antimatter
+     * x3 for good (x4 with Deep Reflection). Without the scrapping, collapses chained: a pacing model put all
+     * eleven within three minutes of each other. With it, the key comes about 45 minutes after the Mirror opens.
+     */
+    depthCost: 1000,
+    depthGrowth: 16,
+    depthMult: 3,
+    deepMult: 4,
+    /** Mirror upgrades in order; the last is the Mirror Key. */
+    upgradeCosts: [50, 2e3, 5e4, 1e6, 1e8, 1e10, 1e12, 1e14, 1.2e15],
+  },
+  /** Phase 14: the Wormhole Network (6 Singularities). */
+  wormholes: {
+    singularities: 6,
+    /** A link from A to B with share p: A x(1 - p), B x(1 + p x log10(1 + A's multiplier)). */
+    shareStep: 0.05,
+    shareDefault: 0.2,
+    /** At most this much of one system's output can leave through its wormholes. */
+    maxOut: 0.5,
+    /** Opening link n costs 1,000 x 10^n Dark Matter; at most 8 links. */
+    linkCost: 1000,
+    linkGrowth: 10,
+    maxLinks: 8,
   },
   /** Phase 11: Spectral Focus (Upgradex's Wavelengths). */
   spectral: {

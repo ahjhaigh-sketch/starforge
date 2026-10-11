@@ -107,6 +107,9 @@ export const MEDALS: readonly MedalDef[] = [
   { id: 'spire.50', name: "Cloud Climber", desc: "Reach floor 50 of the Spire.", icon: 'spire', req: { kind: 'count', stat: 'spireBest', count: 50, noun: 'Spire floor' } },
   { id: 'lev.1', name: "Whale Watcher", desc: "Beat a Void Leviathan.", icon: 'leviathan', req: { kind: 'count', stat: 'leviathansBeaten', count: 1, noun: 'Leviathan' } },
   { id: 'lev.12', name: "Mother of All", desc: "Beat all 12 Void Leviathans.", icon: 'leviathan', req: { kind: 'count', stat: 'leviathansBeaten', count: 12, noun: 'Leviathan' } },
+  { id: 'mirror.engines', name: "Through the Looking Glass", desc: "Buy 100 Antimatter engines.", icon: 'antimatter', req: { kind: 'count', stat: 'amEnginesBought', count: 100, noun: 'Antimatter engine' } },
+  { id: 'mirror.depth', name: "Inside Out", desc: "Collapse the anti-star all the way to a Protostar.", icon: 'antimatter', req: { kind: 'count', stat: 'mirrorDepth', count: 11, noun: 'collapse' } },
+  { id: 'wormhole.1', name: "Shortcut", desc: "Open a wormhole.", icon: 'wormhole', req: { kind: 'count', stat: 'wormholesOpened', count: 1, noun: 'wormhole' } },
   { id: 'nursery.25', name: "Stellar Gardener", desc: "Grow all 25 star species.", icon: 'nursery', req: { kind: 'count', stat: 'speciesGrown', count: 25, noun: 'species' } },
   // Phase 7: Comet Fusion, Attunements, the Merchant and starships
   { id: 'fusion.5', name: "Comet Smith", desc: "Fuse a level 5 comet.", icon: 'comet', req: { kind: 'count', stat: 'fusionBest', count: 5, noun: 'fusion level' } },

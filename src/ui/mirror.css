@@ -1,0 +1,66 @@
+/* =====================================================================
+   Phase 14: the Antimatter Mirror and the Wormhole Network.
+   ===================================================================== */
+
+/* ---------- the Mirror ---------- */
+.mirror-cols { display: grid; grid-template-columns: minmax(13rem, 17rem) 1fr; gap: 0.8rem; align-items: start; margin-bottom: 0.7rem; }
+.anti-star-box { padding: 0.9rem; display: flex; flex-direction: column; align-items: center; gap: 0.45rem; text-align: center; font-weight: 600; }
+/* the anti-star: the tier's colour turned inside out, a dark core ringed by light, split by the mirror line */
+.anti-star { width: 8.5rem; height: 8.5rem; border-radius: 50%; position: relative; border: 4px solid var(--ink);
+  background: radial-gradient(circle at 50% 50%, #05020f 0 46%, color-mix(in oklab, var(--c) 35%, #05020f) 58%, color-mix(in oklab, var(--c) 80%, white) 76%, var(--c) 100%);
+  box-shadow: 0 0 26px 4px color-mix(in oklab, var(--c) 45%, transparent), inset 0 0 18px 2px color-mix(in oklab, var(--c) 60%, transparent);
+  animation: antiPulse 3s ease-in-out infinite; }
+.anti-star::after { content: ''; position: absolute; left: 50%; top: -6%; bottom: -6%; border-left: 2px dashed rgba(255, 255, 255, 0.55); }
+@keyframes antiPulse { 50% { transform: scale(0.96); box-shadow: 0 0 34px 6px color-mix(in oklab, var(--c) 35%, transparent), inset 0 0 26px 4px color-mix(in oklab, var(--c) 70%, transparent); } }
+.reduced-motion .anti-star { animation: none; }
+.anti-name { font-family: var(--font-display); font-weight: 400; font-size: 1.25rem; text-shadow: var(--outline-sm); }
+.depth-pips { display: inline-flex; gap: 3px; }
+.depth-pips i { width: 0.65rem; height: 0.65rem; border-radius: 50%; border: 2px solid var(--ink); background: #3a3f6f; }
+.depth-pips i.on { background: #9fe7ff; box-shadow: 0 0 6px #9fe7ff; }
+.mirror-engines { display: flex; flex-direction: column; gap: 0.4rem; }
+.am-row { border-radius: 14px; --stroke: 2.5px; padding: 0.45rem 0.6rem; display: grid; grid-template-columns: 2.2rem 1fr auto; gap: 0.55rem; align-items: center; color: #fff; text-shadow: var(--outline-sm);
+  background-color: color-mix(in oklab, var(--c) 30%, #1c1640); }
+.am-row > .icon { width: 2.2rem; height: 2.2rem; transform: scaleX(-1); }
+.am-row.mystery { opacity: 0.6; }
+.am-info { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.am-info b { font-family: var(--font-display); font-weight: 400; font-size: 1rem; }
+.am-info .num { font-size: 0.74rem; font-weight: 800; }
+.am-info .dim { color: var(--text-dim); text-shadow: none; }
+.mirror-upgrades { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 0.45rem; }
+.mu-tile { border-radius: 14px; --stroke: 2.5px; padding: 0.5rem 0.6rem; display: flex; flex-direction: column; gap: 0.2rem; text-align: left; color: #fff; text-shadow: var(--outline-sm); font-size: 0.76rem; font-weight: 600; }
+.mu-tile b { font-family: var(--font-display); font-weight: 400; font-size: 0.98rem; }
+.mu-tile .num { font-weight: 800; margin-top: auto; }
+.mu-tile.owned { opacity: 0.7; }
+.mu-tile.owned b::after { content: ' (owned)'; font-family: var(--font-body); font-size: 0.72rem; color: var(--lime); }
+.mu-tile.locked { opacity: 0.5; }
+.mu-tile.key { color: var(--ink); text-shadow: none; }
+.mu-tile:disabled { cursor: default; transform: none; }
+
+/* ---------- the Wormhole Network ---------- */
+.wh-cols { display: grid; grid-template-columns: minmax(16rem, 26rem) 1fr; gap: 0.8rem; align-items: start; }
+.wh-map { width: 100%; max-width: 26rem; user-select: none; }
+.wh-node { cursor: pointer; outline: none; }
+.wh-node circle { stroke: #140b2e; stroke-width: 4; transition: transform 120ms ease; }
+.wh-node:hover circle, .wh-node:focus-visible circle { transform: scale(1.1); }
+.wh-node:focus-visible circle { stroke: var(--cyan); }
+.wh-node.from circle { stroke: var(--gold); stroke-width: 6; }
+.wh-node.to circle { stroke: var(--magenta); stroke-width: 6; }
+.wh-ico .icon { display: block; width: 30px; height: 30px; }
+.wh-name, .wh-mult, .wh-share { text-anchor: middle; font-family: var(--font-body); font-weight: 800; fill: #fff; stroke: #140b2e; stroke-width: 3px; paint-order: stroke; }
+.wh-name { font-size: 12px; }
+.wh-mult { font-size: 10px; fill: var(--text-dim); }
+.wh-share { font-size: 11px; fill: #9fe7ff; }
+.wh-link path { fill: none; stroke: #9fe7ff; opacity: 0.85; stroke-linecap: round; }
+.wh-pending { fill: none; stroke: var(--gold); stroke-width: 2; stroke-dasharray: 6 5; }
+.wh-side { display: flex; flex-direction: column; gap: 0.5rem; }
+.wh-open { padding: 0.7rem 0.9rem; display: flex; flex-direction: column; gap: 0.45rem; font-weight: 600; }
+.wh-open .btn { align-self: flex-start; }
+.wh-row { padding: 0.55rem 0.8rem; display: grid; grid-template-columns: 1fr auto; gap: 0.3rem 0.6rem; align-items: center; font-weight: 600; }
+.wh-row > b { grid-column: 1 / -1; font-family: var(--font-display); font-weight: 400; font-size: 1rem; text-shadow: var(--outline-sm); }
+.wh-row .slider { display: grid; gap: 0.2rem; font-size: 0.8rem; }
+.wh-row input[type='range'] { width: 100%; accent-color: #9fe7ff; }
+
+@media (max-width: 900px) {
+  .mirror-cols, .wh-cols { grid-template-columns: 1fr; }
+  .wh-map { margin: 0 auto; }
+}

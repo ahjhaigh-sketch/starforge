@@ -1,5 +1,25 @@
 # Changelog
 
+## Phase 14: the Antimatter Mirror and the Wormhole Network
+- A shared engine kit (`src/engine/engineKit.ts`) now runs the Stardust layer's engines: prices in brackets with closed-form bulk cost and Max, the "???" reveal, buying, milestones, the per-second stat and the production tick. Stardust is its first user, with the same numbers as before (the simulator's results are identical).
+- The Antimatter Mirror appears at 8 Singularities (Singularity milestone 8). It is the same kit with different data, under inverted rules:
+  - 10 Antimatter engines, the Stardust top ten in reverse (the Anti-Lantern first);
+  - milestones slow price growth instead of doubling output (x1.3 a purchase at first, x1.06 past 1,000 owned);
+  - each Antimatter engine gets +10% per Mastery rank of its Stardust twin;
+  - the anti-star collapses down the Star Tiers (White Hole to Protostar) instead of evolving up. Each collapse gives Antimatter x3 for good and scraps the Antimatter engines.
+  - The anti-star makes 1 Antimatter a second by itself. A Singularity never resets the Mirror.
+- Nine Mirror upgrades bring Antimatter back to the main game (Dark Matter, Essence, game speed). The last, the Mirror Key, opens the way to Galactic Rebirth.
+- Pacing: without the scrapping, collapses chained once the first was affordable, and a pacing model put all eleven within three minutes. Now the key comes about an hour after the Mirror opens.
+- The Wormhole Network opens at 6 Singularities: a ring of ten systems (Stardust, taps, shards, Dark Matter, ore, alloy, Essence, Antimatter, Embers, rune bulk).
+  - Pick one system, then another, and spend Dark Matter (1,000 x 10 per wormhole open) to link them.
+  - The first gives up a share of its orders of magnitude (its multiplier to the power 1 - share). The second gains x(1 + share x log10 of the first's multiplier), a quarter of that for Dark Matter and half for Essence, Antimatter and rune bulk.
+  - Shares move in 5% steps, at most 50% can leave a system, and there are up to 8 wormholes. Both ends show in the stat breakdowns as "Wormhole: A to B".
+  - Inputs are read once a tick, so loops settle instead of recursing.
+- Balance fix found by the simulator: Reactor strength (from Reactor Charge, bought with Dark Matter) now counts up to x2. Uncapped, it kept raising the Reactor's exponent, and Dark Matter ran away past 10 Singularities (2.4e15 lifetime and the whole Singularity Tree bought by 16).
+- Also: an Antimatter pill in the top bar, two panels (the anti-star, the engines with buy amounts, the upgrades; the wormhole map with keyboard support and share sliders), two icons, 3 medals, and the Ascent map.
+- The simulator spends Antimatter on collapses, upgrades and engines, and opens three wormholes.
+- Save version 15, with a migration test that loads a real version 14 save.
+
 ## Phase 13: Trials, the Spire and the Void Leviathans
 - Trials open at 2 Singularities: 20 optional restricted runs. None is ever needed to progress.
   - Entering one restarts the Supernova run (keeping what a Supernova keeps) and switches its debuff on. Debuffs live in the stat pipeline, labelled "Trial: <name>", and count only while the Trial runs: leave, finish or reset and they are gone at once.

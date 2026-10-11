@@ -2,7 +2,7 @@ import { BALANCE } from '../content/balance';
 import { cur } from '../engine/state';
 import { layer, milestoneReached, resetsDone } from '../engine/layers';
 import { stat } from '../engine/stats';
-import { BH_STAGES, bhOpen, bhStage, dustMassRate, feedPlan, reactorMult, reactorOpen, reactorPlan, WHEEL, wheelBank, wheelOpen } from '../engine/systems/blackhole';
+import { BH_STAGES, bhOpen, bhStage, dustMassRate, feedPlan, reactorMult, reactorOpen, reactorPower, reactorPlan, WHEEL, wheelBank, wheelOpen } from '../engine/systems/blackhole';
 import { keyOnSale, nextDarkMatterAt, runEssence, singularityGain, singularityReady } from '../engine/systems/singularity';
 import { gameSpeed } from '../engine/tick';
 import { format, formatMult } from '../ui/format';
@@ -127,7 +127,7 @@ export function reactorReport(): ReactorReport {
     open: reactorOpen(s),
     charge: format(s.reactor.charge, n()),
     mult: formatMult(reactorMult(s), n()),
-    power: formatMult(stat(s, 'reactorPower'), n()),
+    power: `${formatMult(reactorPower(s), n())}${stat(s, 'reactorPower').toNumber() > BALANCE.blackHole.reactorPowerCap ? ' (the most that counts)' : ''}`,
     darkMatter: format(cur(s, 'darkMatter'), n()),
     count: format(plan.count, n()),
     cost: format(plan.cost, n()),

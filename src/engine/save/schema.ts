@@ -119,6 +119,10 @@ export const plainSaveSchema = z.looseObject({
   spire: z.looseObject({ floor: z.number().int().min(0), damage: dec, climbing: z.boolean(), banner: z.string().nullable() }).optional(),
   leviathans: z.looseObject({ kills: z.record(z.string(), z.number().int().min(0)), current: z.number().int().min(0), damage: dec, fighting: z.boolean() }).optional(),
   scaleTree: z.record(z.string(), z.number().int().min(0)).optional(),
+  mirror: z
+    .looseObject({ engines: z.record(z.string(), z.number().int().min(0)), ever: z.record(z.string(), z.number().int().min(0)), depth: z.number().int().min(0), upgrades: z.array(z.string()) })
+    .optional(),
+  wormholes: z.looseObject({ links: z.array(z.looseObject({ from: z.string(), to: z.string(), share: z.number().min(0).max(1) })) }).optional(),
   tarot: z
     .looseObject({
       owned: z.array(z.string()),

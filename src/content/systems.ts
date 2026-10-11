@@ -63,6 +63,8 @@ export const SYSTEMS: readonly SystemDef[] = [
   { id: 'spire', name: 'Spire', icon: 'spire', color: '#8C97C2', rail: 'right', req: { kind: 'count', stat: 'singularitiesAll', count: 3, noun: 'Singularity' }, panel: 'spire', built: true, blurb: 'Climb an endless tower; every floor is a little harder and pays for good.' },
   { id: 'leviathans', name: 'Leviathans', icon: 'leviathan', color: '#2B7FD0', rail: 'right', req: { kind: 'count', stat: 'singularitiesAll', count: 4, noun: 'Singularity' }, panel: 'leviathans', built: true, blurb: 'Wear down 12 Void Leviathans with taps, Wyrms and output.' },
   { id: 'scaletree', name: 'Scale Tree', icon: 'scale', color: '#1A9DB8', rail: 'right', req: { kind: 'count', stat: 'leviathanKills', count: 1, noun: 'Leviathan kill' }, panel: 'scaletree', built: true, blurb: 'Spend Leviathan scales on a small tree of big boosts.' },
+  { id: 'wormholes', name: 'Wormholes', icon: 'wormhole', color: '#5B45C2', rail: 'right', req: { kind: 'count', stat: 'singularitiesAll', count: 6, noun: 'Singularity' }, panel: 'wormholes', built: true, blurb: 'Link systems on a map so one feeds another.' },
+  { id: 'mirror', name: 'Mirror', icon: 'antimatter', color: '#2A6F8F', rail: 'right', req: { kind: 'count', stat: 'singularitiesAll', count: 8, noun: 'Singularity' }, panel: 'mirror', built: true, blurb: 'An inverted Stardust layer with 10 Antimatter engines; its last upgrade is the key to the Galaxy.' },
 ];
 
 export const SYSTEM_BY_ID: ReadonlyMap<string, SystemDef> = new Map(SYSTEMS.map((x) => [x.id, x]));

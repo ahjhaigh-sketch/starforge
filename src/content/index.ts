@@ -21,6 +21,8 @@ import { registerBlackHole } from '../engine/systems/blackhole';
 import { registerTrials } from '../engine/systems/trials';
 import { registerSpire } from '../engine/systems/spire';
 import { registerLeviathans } from '../engine/systems/leviathans';
+import { registerMirror } from '../engine/systems/mirror';
+import { registerWormholes } from '../engine/systems/wormholes';
 import { registerStarsmith } from '../engine/systems/starsmith';
 import { registerComets } from '../engine/systems/comets';
 import { registerNovaTree } from '../engine/systems/novaTree';
@@ -72,5 +74,7 @@ export function registerContent(): void {
   registerTrials();
   registerSpire();
   registerLeviathans();
+  registerMirror();
+  registerWormholes();
   registerUnlocks();
 }

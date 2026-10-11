@@ -211,7 +211,7 @@ export const CONSTANTS: readonly ConstantDef[] = [
     base: 10,
     growth: BALANCE.constants.charge,
     effects: [{ stat: 'reactorPower', a: 0.05, doubles: false, what: 'Reactor strength' }],
-    desc: "The Reactor's charge counts for more.",
+    desc: "The Reactor's charge counts for more, up to twice as much.",
   },
 ];
 

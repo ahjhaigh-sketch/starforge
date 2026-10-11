@@ -144,6 +144,7 @@ const STAGES: Array<{ name: string; ids: string[] }> = [
   { name: 'Nebula depths', ids: ['starring', 'mutations', 'auras', 'nursery', 'spectral', 'tarot'] },
   { name: 'Singularity', ids: ['singularity', 'singularitytree', 'blackhole', 'reactor', 'prismwheel'] },
   { name: 'Challenges', ids: ['trials', 'spire', 'leviathans', 'scaletree'] },
+  { name: 'Mirror and Wormholes', ids: ['wormholes', 'mirror'] },
 ];
 
 /** Every system id on the Ascent map (a test checks that each built system is on it). */

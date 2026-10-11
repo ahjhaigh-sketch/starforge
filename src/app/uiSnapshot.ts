@@ -27,6 +27,7 @@ import { gameSpeed } from '../engine/tick';
 import { LEVIATHANS, SPIRE_BANNERS, TRIAL_BY_ID } from '../content/challenges';
 import { goalMet, inTrial, trialGoal } from '../engine/systems/trials';
 import { fighting, leviathanHp, leviathansUnlocked } from '../engine/systems/leviathans';
+import { antimatterRate, mirrorOpen } from '../engine/systems/mirror';
 import { wyrmSky } from './wyrmReports';
 import { nebulaGain, nebulaReady, runShards } from '../engine/systems/nebula';
 import { BUFF_KINDS, buffLeft, cometOnScreen } from '../engine/systems/comets';
@@ -179,6 +180,10 @@ export interface Snapshot {
   bhStage: number;
   bhMassLog: number;
   gameSpeed: number;
+  /** The Antimatter pill in the top bar (once the Mirror is open). */
+  antimatter: string;
+  antimatterRate: string;
+  antimatterVisible: boolean;
   /** Fog of the Void hides the numbers; the Trial chip; the Leviathan boss bar; the Spire banner. */
   fog: boolean;
   trialLabel: string;
@@ -447,6 +452,9 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     wyrmSky: wyrmSky(),
     fog,
     ...challengeHud(s, n),
+    antimatter: format(cur(s, 'antimatter'), n),
+    antimatterRate: formatRate(antimatterRate(s), n),
+    antimatterVisible: mirrorOpen(s),
     novaPct: novaReady ? 100 : Math.floor((s.tier >= nova.tier ? 0.5 + novaDust * 0.5 : novaTier * 0.5) * 100),
     novaReq: novaReady
       ? `Next shard at ${format(nextShardAt(s), n)} Stardust`

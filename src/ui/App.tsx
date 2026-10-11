@@ -33,6 +33,7 @@ import { NurseryPanel, WyrmsPanel } from './screens/WyrmPanels';
 import { SpectralPanel, TarotPanel } from './screens/NebulaExtrasPanels';
 import { BlackHolePanel, PrismWheelPanel, ReactorPanel, SingularityConfirmPanel, SingularityPanel, SingularityTreePanel } from './screens/SingularityPanels';
 import { ChallengeHud, LeviathansPanel, ScaleTreePanel, SpirePanel, TrialsPanel } from './screens/ChallengePanels';
+import { MirrorPanel, WormholesPanel } from './screens/MirrorPanels';
 import { useUi } from './store';
 
 /** Shown while time away is being simulated; fades in only if that takes a moment. */
@@ -120,6 +121,8 @@ export function App() {
       <SpirePanel />
       <LeviathansPanel />
       <ScaleTreePanel />
+      <MirrorPanel />
+      <WormholesPanel />
       <SettingsPanel />
       <PanelHost />
       <ToastHost />

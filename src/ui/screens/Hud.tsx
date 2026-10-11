@@ -11,6 +11,7 @@ const shardValue = (s: { shards: string }) => s.shards;
 const oreValue = (s: { ore: string }) => s.ore;
 const essenceValue = (s: { essence: string }) => s.essence;
 const darkMatterValue = (s: { darkMatter: string }) => s.darkMatter;
+const antimatterValue = (s: { antimatter: string }) => s.antimatter;
 
 const BUFF_COLORS: Record<string, string> = { frenzy: '#FF7A2E', tapstorm: '#2EE6FF', wish: '#B06BFF' };
 
@@ -35,12 +36,14 @@ export function Hud() {
   const oreVisible = useSnap((s) => s.oreVisible);
   const essenceVisible = useSnap((s) => s.essenceVisible);
   const darkMatterVisible = useSnap((s) => s.darkMatterVisible);
+  const antimatterVisible = useSnap((s) => s.antimatterVisible);
   return (
     <header className="hud">
       <CurrencyPill icon="stardust" label="Stardust" value={dustValue} rate={dustRate} />
       {shardsVisible && <CurrencyPill icon="shard" label="Nova Shards" color="#5A2A8C" value={shardValue} />}
       {essenceVisible && <CurrencyPill icon="nebula" label="Nebula Essence" color="#1E6F88" value={essenceValue} />}
       {darkMatterVisible && <CurrencyPill icon="darkmatter" label="Dark Matter" color="#3A2470" value={darkMatterValue} />}
+      {antimatterVisible && <CurrencyPill icon="antimatter" label="Antimatter" color="#2A6F8F" value={antimatterValue} />}
       {oreVisible && <CurrencyPill icon="belt" label="Ore" color="#3B4370" value={oreValue} />}
       <div className="tag-pill chunk tier-pill" style={tint('var(--panel)')} title={`Star Tier ${tierIndex + 1} of 12`}>
         <span className="tier-dot" style={{ background: tierColor, color: tierColor }} />

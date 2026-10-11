@@ -32,6 +32,8 @@ import { feedDarkMatter, feedReactor, moveBoundary, setDustShare, setShare } fro
 import { autoTrialsOpen, completeTrial, enterTrial, exitTrial } from '../engine/systems/trials';
 import { flyBanner, setClimbing } from '../engine/systems/spire';
 import { chooseLeviathan, scaleTree, setFighting } from '../engine/systems/leviathans';
+import { buyMirrorUpgrade, collapse, MIRROR_ENGINES, nextPriceStep } from '../engine/systems/mirror';
+import { closeLink, openLink, setLinkShare } from '../engine/systems/wormholes';
 import { buyForgeUpgrade, buyRelic, equipRelic, setForgeGrade, setForgeOn, setForgeShare, unequipRelic } from '../engine/systems/forge';
 import { backupNow, readBackup } from './backups';
 import { D } from '../engine/decimal';
@@ -418,6 +420,39 @@ export const commands = {
     const ok = scaleTree.buy(game.state, id);
     done();
     return ok;
+  },
+  /** The Antimatter Mirror: engines with the buy amount, collapses and upgrades. */
+  buyAmEngine(id: string): boolean {
+    const s = game.state;
+    const own = MIRROR_ENGINES.owned(s, id);
+    const plan = planPurchase(MIRROR_ENGINES.curve(id), own, cur(s, 'antimatter'), s.settings.buyAmount, s.settings.customBuyAmount, stat(s, 'amCostMult'), nextPriceStep(own));
+    const ok = plan.canAfford && MIRROR_ENGINES.buy(s, id, plan.count);
+    done();
+    return ok;
+  },
+  collapseMirror(): boolean {
+    const ok = collapse(game.state);
+    done();
+    return ok;
+  },
+  buyMirrorUpgrade(id: string): boolean {
+    const ok = buyMirrorUpgrade(game.state, id);
+    done();
+    return ok;
+  },
+  /** The Wormhole Network. */
+  openWormhole(from: string, to: string): boolean {
+    const ok = openLink(game.state, from, to);
+    done();
+    return ok;
+  },
+  setWormholeShare(index: number, share: number) {
+    setLinkShare(game.state, index, share);
+    done();
+  },
+  closeWormhole(index: number) {
+    closeLink(game.state, index);
+    done();
   },
   /** Spectral Focus. */
   setFocus(id: string | null): boolean {

@@ -124,6 +124,10 @@ let TR: typeof import('../src/engine/systems/trials');
 let SP: typeof import('../src/engine/systems/spire');
 let LV: typeof import('../src/engine/systems/leviathans');
 let CH: typeof import('../src/content/challenges');
+let MR: typeof import('../src/engine/systems/mirror');
+let WH: typeof import('../src/engine/systems/wormholes');
+let MC: typeof import('../src/content/mirror');
+let COST: typeof import('../src/engine/cost');
 let PLANET_TYPES: (typeof import('../src/content/early'))['PLANET_TYPES'];
 
 async function loadGame(): Promise<void> {
@@ -177,6 +181,10 @@ async function loadGame(): Promise<void> {
   SP = await import('../src/engine/systems/spire');
   LV = await import('../src/engine/systems/leviathans');
   CH = await import('../src/content/challenges');
+  MR = await import('../src/engine/systems/mirror');
+  WH = await import('../src/engine/systems/wormholes');
+  MC = await import('../src/content/mirror');
+  COST = await import('../src/engine/cost');
 }
 
 const TAPS_PER_SECOND = 4;
@@ -320,6 +328,24 @@ function sideSystems(s: GameState): void {
       }
     });
   }
+  // Phase 14: the Mirror spends on collapses and upgrades first, then the costliest engines it can afford
+  if (MR.mirrorOpen(s)) {
+    if (!s.stats.mirrorOpenedAt) s.stats.mirrorOpenedAt = Math.round(s.playtime);
+    while (MR.collapse(s));
+    for (const u of MC.MIRROR_UPGRADES) MR.buyMirrorUpgrade(s, u.id);
+    for (const e of [...MC.ANTIMATTER_ENGINES].reverse()) {
+      const own = MR.MIRROR_ENGINES.owned(s, e.id);
+      const n = COST.maxBuy(MR.MIRROR_ENGINES.curve(e.id), own, cur(s, 'antimatter').div(stat(s, 'amCostMult')));
+      if (n > 0) MR.MIRROR_ENGINES.buy(s, e.id, n);
+    }
+  }
+  // Phase 14: wormholes from what the bot doesn't need into what it does, once each costs under 5% of Dark Matter
+  if (WH.wormholesOpen(s)) {
+    for (const [from, to, share] of SIM_WORMHOLES) {
+      if (s.wormholes.links.some((l) => l.from === from && l.to === to)) continue;
+      if (WH.linkCost(s).lt(cur(s, 'darkMatter').mul(0.05))) WH.openLink(s, from, to, share);
+    }
+  }
   // Phase 13: always climb the Spire and hunt Leviathans; scales go on the cheapest Scale Tree node
   if (SP.spireOpen(s)) SP.setClimbing(s, true);
   if (LV.leviathansOpen(s)) {
@@ -370,6 +396,13 @@ function sideSystems(s: GameState): void {
 }
 
 /** Dark Matter: Void Constants under 15%, the cheapest Singularity Tree nodes, then a tenth into the Reactor. */
+/** The bot's wormhole plan: ore and alloy feed Dark Matter and Essence, Embers feed Antimatter. */
+const SIM_WORMHOLES: Array<[string, string, number]> = [
+  ['ore', 'darkmatter', 0.5],
+  ['alloy', 'essence', 0.5],
+  ['embers', 'antimatter', 0.5],
+];
+
 function spendDarkMatter(s: GameState): void {
   for (const id of ['void.horizon', 'void.mass', 'void.spin', 'void.charge']) {
     const c = CONSTANTS.find((x) => x.id === id)!;
@@ -487,6 +520,7 @@ it('balance simulation', async () => {
   ]);
   let singularityStart = 0;
   let nanSeen = false;
+  let keyRecorded = false;
   /** Trials the bot failed, and the Singularity count when it did (it tries again after the next one). */
   const trialFailed = new Map<string, number>();
   const singularityLengths: number[] = [];
@@ -557,6 +591,10 @@ it('balance simulation', async () => {
     if (s.playtime - lastSide >= SIDE_EVERY) {
       sideSystems(s);
       lastSide = s.playtime;
+      if (!keyRecorded && MR.mirrorKey(s)) {
+        keyRecorded = true;
+        record('Mirror Key');
+      }
     }
     // a Trial whose goal is met is claimed at once, as a player would
     if (TR.goalMet(s)) {
@@ -605,6 +643,12 @@ it('balance simulation', async () => {
   console.table(rows);
   const avg = (a: number[]) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
   console.log(`Run length, game time: first ${hms(runLengths[0] ?? 0)}, runs 2-5 avg ${hms(avg(runLengths.slice(1, 5)))}, 6-12 avg ${hms(avg(runLengths.slice(5, 12)))}, 13-30 avg ${hms(avg(runLengths.slice(12)))}`);
+  if (process.env.SIM_DEBUG_DM) {
+    const { breakdown } = await import('../src/engine/stats');
+    for (const id of ['darkMatterGain', 'essenceGain', 'gameSpeed']) console.log(`[dm] ${id}: ${breakdown(s, id).filter((l) => l.value.toNumber() !== 1).map((l) => `${l.label} ${l.op} ${fmt(l.value)}`).join('; ')}`);
+    console.log(`[dm] reactor charge ${fmt(s.reactor.charge)}, strength ${stat(s, 'reactorPower').toNumber().toFixed(2)}, void.charge level ${s.constants['void.charge'] ?? 0}, horizon ${s.constants['void.horizon'] ?? 0}, antimatter ${fmt(cur(s, 'antimatter'))}`);
+  }
+  if (MR.mirrorOpen(s)) console.log(`Mirror (opened ${hms(s.stats.mirrorOpenedAt ?? 0)}): depth ${s.mirror.depth}/11, ${s.mirror.upgrades.length}/9 upgrades${MR.mirrorKey(s) ? ' (key)' : ''}, Antimatter ${fmt(cur(s, 'antimatter'))} at ${fmt(MR.antimatterRate(s))}/s, ${Object.values(s.mirror.engines).reduce((a, b) => a + b, 0)} engines. Wormholes: ${s.wormholes.links.map((l) => `${l.from}>${l.to}`).join(', ') || 'none'}.`);
   if (TR.trialsOpen(s)) console.log(`Trials: ${TR.totalTrialLevels(s)} levels (${CH.TRIALS.filter((t) => TR.trialLevel(s, t.id) >= t.levels).length} mastered), Fast Nova ${CH.FAST_RANKS[s.trials.fastBest]?.name ?? 'none'}. Spire floor ${s.spire.floor}. Leviathans beaten ${s.stats.leviathansBeaten ?? 0}/12 (${s.stats.leviathanKills ?? 0} kills), Scale Tree ${Object.keys(s.scaleTree).length}/14, scales ${fmt(cur(s, 'scales'))}.`);
   if (singularityLengths.length) console.log(`Singularity runs, game time: first ${hms(singularityLengths[0] ?? 0)}, then ${singularityLengths.slice(1).map(hms).join(', ')}`);
   console.log(`Nebula runs, game time: first ${hms(nebulaLengths[0] ?? 0)}, then ${nebulaLengths.slice(1).map(hms).join(', ')}`);

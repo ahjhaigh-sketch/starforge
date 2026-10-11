@@ -1352,3 +1352,76 @@ test('the Spire climbs while on, and the Leviathan hunt takes taps; scales buy t
   await expect.poll(() => page.evaluate(() => (window as unknown as Sf13).sf.game.state.scaleTree['scale.root'] ?? 0)).toBe(1);
   expect(errors).toEqual([]);
 });
+
+// ---------- Phase 14: the Antimatter Mirror and the Wormhole Network ----------
+
+type Sf14 = {
+  sf: {
+    game: {
+      state: {
+        stats: Record<string, number>;
+        mirror: { engines: Record<string, number>; depth: number; upgrades: string[] };
+        wormholes: { links: Array<{ from: string; to: string; share: number }> };
+        currencies: Record<string, { toNumber(): number }>;
+      };
+    };
+    commands: { devAdd(c: string, n: number): void };
+    breakdown(s: unknown, id: string): Array<{ label: string }>;
+  };
+};
+
+test('the Antimatter Mirror: buy an engine with the buy amount, collapse, and the Antimatter pill shows', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const s = (window as unknown as Sf14).sf.game.state;
+    s.stats.singularities = 8;
+    s.stats.singularitiesAll = 8;
+  });
+  await openRail(page, 'mirror');
+  const panel = page.locator('[data-panel="mirror"]');
+  await expect(page.locator('.hud .pill[aria-label="Antimatter"]')).toBeVisible();
+  await page.evaluate(() => (window as unknown as Sf14).sf.commands.devAdd('antimatter', 1e6));
+  await panel.getByRole('button', { name: 'x10', exact: true }).click();
+  await panel.locator('[data-am="am.lantern"]').getByRole('button', { name: /Buy 10 Anti-Lantern/ }).click();
+  expect(await page.evaluate(() => (window as unknown as Sf14).sf.game.state.mirror.engines['am.lantern'])).toBe(10);
+  await panel.getByTestId('mirror-collapse').click();
+  expect(await page.evaluate(() => (window as unknown as Sf14).sf.game.state.mirror.depth)).toBe(1);
+  // collapsing scraps the engines
+  expect(await page.evaluate(() => (window as unknown as Sf14).sf.game.state.mirror.engines['am.lantern'] ?? 0)).toBe(0);
+  await expect(panel.locator('.anti-name')).toContainText('Anti-Blazar');
+  await panel.locator('[data-mu="mu.spark"]').click();
+  expect(await page.evaluate(() => (window as unknown as Sf14).sf.game.state.mirror.upgrades)).toContain('mu.spark');
+  expect(errors).toEqual([]);
+});
+
+test('the Wormhole Network: pick two systems, open a wormhole, and it shows in both breakdowns', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { sf } = window as unknown as Sf14;
+    sf.game.state.stats.singularitiesAll = 6;
+    sf.commands.devAdd('darkMatter', 1e6);
+  });
+  await openRail(page, 'wormholes');
+  const panel = page.locator('[data-panel="wormholes"]');
+  await panel.locator('[data-node="ore"]').click();
+  // keyboard works on the map too
+  await panel.locator('[data-node="essence"]').focus();
+  await page.keyboard.press('Enter');
+  await panel.getByTestId('wh-open').click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf14).sf.game.state.wormholes.links.length)).toBe(1);
+  const has = (id: string) =>
+    page.evaluate((x) => {
+      const { sf } = window as unknown as Sf14;
+      return sf.breakdown(sf.game.state, x).some((l) => l.label === 'Wormhole: Ore to Essence');
+    }, id);
+  expect(await has('oreGain')).toBe(true);
+  expect(await has('essenceGain')).toBe(true);
+  const row = panel.locator('[data-link="ore>essence"]');
+  await row.locator('input[type="range"]').fill('45');
+  expect(await page.evaluate(() => (window as unknown as Sf14).sf.game.state.wormholes.links[0]!.share)).toBeCloseTo(0.45, 6);
+  await row.getByRole('button', { name: 'Close' }).click();
+  expect(await has('essenceGain')).toBe(false);
+  expect(errors).toEqual([]);
+});

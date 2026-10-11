@@ -78,6 +78,8 @@ const migrations: Record<number, (d: PlainSave) => void> = {
   // 14 (Phase 13): Trials, the Spire, the Void Leviathans and the Scale Tree. Every field is new and has
   // a default, so nothing moves; this records the change.
   14: () => {},
+  // 15 (Phase 14): the Antimatter Mirror and the Wormhole Network. New fields with defaults; nothing moves.
+  15: () => {},
 };
 
 export function migrate(version: number, data: PlainSave): PlainSave {

@@ -1,13 +1,13 @@
 import { BALANCE } from '../../content/balance';
-import { ENGINE_BY_ID, ENGINES } from '../../content/engines';
+import { ENGINES } from '../../content/engines';
 import { TIERS, tierCost } from '../../content/tiers';
-import { bulkCost, type CostCurve } from '../cost';
+import type { CostCurve } from '../cost';
+import { makeEngineLayer } from '../engineKit';
 import { D, type Decimal, ZERO } from '../decimal';
 import { events } from '../events';
 import { nextFloat } from '../rng';
 import { cur, gain, type GameState, spend } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
-import { registerSystem, type TickContext } from '../tick';
 import { giveXp } from './starsmith';
 
 /**
@@ -17,68 +17,49 @@ import { giveXp } from './starsmith';
 
 // ---------- engines ----------
 
-const curves = new Map<string, CostCurve>();
-
-export function engineCurve(id: string): CostCurve {
-  let c = curves.get(id);
-  if (!c) {
-    const def = ENGINE_BY_ID.get(id);
-    if (!def) throw new Error(`Unknown engine ${id}`);
-    const e = BALANCE.engines;
-    c = { base: def.baseCost, brackets: [{ from: 0, ratio: e.ratio }, { from: e.steepFrom, ratio: e.steepRatio }] };
-    curves.set(id, c);
-  }
-  return c;
-}
-
-export const owned = (s: GameState, id: string): number => s.engines[id] ?? 0;
-
+/** The Stardust layer's engines run on the shared engine kit (the Antimatter Mirror is its second user). */
 const WITH_HELIUM = [...BALANCE.engines.milestones, BALANCE.codex.heliumMilestone].sort((a, b) => a - b);
 
 /** Engine milestone counts: helium in the Codex adds one more. */
 export const engineMilestones = (s?: GameState): readonly number[] => (s && (s.codex.he ?? 0) > 0 ? WITH_HELIUM : BALANCE.engines.milestones);
 
+export const STARDUST_ENGINES = makeEngineLayer({
+  id: 'stardust',
+  label: 'Stardust',
+  currency: 'stardust',
+  engines: ENGINES,
+  brackets: [
+    { from: 0, ratio: BALANCE.engines.ratio },
+    { from: BALANCE.engines.steepFrom, ratio: BALANCE.engines.steepRatio },
+  ],
+  owned: (s) => s.engines,
+  ever: (s) => s.enginesEver,
+  stats: { engineMult: 'engineMult.', layerMult: 'productionMult', perSec: 'stardustPerSec', costMult: 'engineCostMult', milestoneBase: 'milestoneBase' },
+  milestones: engineMilestones,
+  onBuy: (s, _id, count) => {
+    s.stats.enginesBought = (s.stats.enginesBought ?? 0) + count;
+    giveXp(s, BALANCE.starsmith.xp.engine * count);
+  },
+  order: 10,
+});
+
+export const engineCurve = (id: string): CostCurve => STARDUST_ENGINES.curve(id);
+export const owned = (s: GameState, id: string): number => STARDUST_ENGINES.owned(s, id);
+
 /** How many output doublings an engine has at `n` owned. */
-export function milestonesReached(n: number, s?: GameState): number {
-  let m = 0;
-  for (const at of engineMilestones(s)) if (n >= at) m++;
-  return m;
-}
+export const milestonesReached = (n: number, s?: GameState): number => STARDUST_ENGINES.milestonesReached(n, s);
 
 /** The next milestone above `n`, and the one before it (for the progress bar). Null past the last. */
-export function milestoneSpan(n: number, s?: GameState): { from: number; to: number } | null {
-  const ms = engineMilestones(s);
-  for (let i = 0; i < ms.length; i++) if (n < ms[i]!) return { from: i === 0 ? 0 : ms[i - 1]!, to: ms[i]! };
-  return null;
-}
+export const milestoneSpan = (n: number, s?: GameState): { from: number; to: number } | null => STARDUST_ENGINES.milestoneSpan(n, s);
 
 /** Stardust per second from ONE of this engine, with every multiplier. */
-export function engineEach(s: GameState, id: string): Decimal {
-  const def = ENGINE_BY_ID.get(id)!;
-  return D(def.baseProd).mul(stat(s, `engineMult.${id}`)).mul(stat(s, 'productionMult'));
-}
+export const engineEach = (s: GameState, id: string): Decimal => STARDUST_ENGINES.each(s, id);
 
 /** An engine is shown once the one before it has ever been owned; the next one is a "???" row. */
-export function engineRevealed(s: GameState, index: number): boolean {
-  if (index === 0) return true;
-  const prev = ENGINES[index - 1];
-  return !!prev && (s.enginesEver[prev.id] ?? 0) > 0;
-}
+export const engineRevealed = (s: GameState, index: number): boolean => STARDUST_ENGINES.revealed(s, index);
 
 /** Buys exactly `count` of an engine if the Stardust covers the exact total. */
-export function buyEngine(s: GameState, id: string, count: number): boolean {
-  if (count < 1 || !ENGINE_BY_ID.has(id)) return false;
-  const index = ENGINES.findIndex((e) => e.id === id);
-  if (!engineRevealed(s, index)) return false;
-  const price = bulkCost(engineCurve(id), owned(s, id), count).mul(stat(s, 'engineCostMult'));
-  if (!spend(s, 'stardust', price)) return false;
-  s.engines[id] = owned(s, id) + count;
-  s.enginesEver[id] = (s.enginesEver[id] ?? 0) + count;
-  s.stats.enginesBought = (s.stats.enginesBought ?? 0) + count;
-  giveXp(s, BALANCE.starsmith.xp.engine * count);
-  events.emit({ t: 'purchase', kind: 'engine', id, amount: count });
-  return true;
-}
+export const buyEngine = (s: GameState, id: string, count: number): boolean => STARDUST_ENGINES.buy(s, id, count);
 
 // ---------- star tiers ----------
 
@@ -208,40 +189,8 @@ export function registerStardust(): void {
       value: () => D(BALANCE.tap.critChance),
       active: (s) => s.tier >= BALANCE.tap.critTier,
     },
-    {
-      id: 'engines.sps',
-      stat: 'stardustPerSec',
-      op: 'add',
-      label: 'Engines',
-      value: (s) => {
-        let total = ZERO;
-        for (const e of ENGINES) {
-          const n = owned(s, e.id);
-          if (n > 0) total = total.add(D(e.baseProd).mul(n).mul(stat(s, `engineMult.${e.id}`)));
-        }
-        return total;
-      },
-    },
-    { id: 'prod.sps', stat: 'stardustPerSec', op: 'mul', label: 'Production multiplier', value: (s) => stat(s, 'productionMult') },
   );
-  for (const e of ENGINES) {
-    defineStat({ id: `engineMult.${e.id}`, label: `${e.name} multiplier`, base: () => D(1) });
-    registerSources({
-      id: `milestones.${e.id}`,
-      stat: `engineMult.${e.id}`,
-      op: 'mul',
-      label: 'Milestones',
-      value: (s) => stat(s, 'milestoneBase').pow(milestonesReached(owned(s, e.id), s)),
-    });
-  }
-  registerSystem({
-    id: 'stardust.production',
-    order: 10,
-    tick: (s: GameState, dt: number, ctx: TickContext) => {
-      const sps = stat(s, 'stardustPerSec');
-      if (sps.gt(0)) gain(s, 'stardust', sps.mul(dt * ctx.gainScale));
-    },
-  });
+  STARDUST_ENGINES.register();
 }
 
 export const stardust = (s: GameState): Decimal => cur(s, 'stardust');

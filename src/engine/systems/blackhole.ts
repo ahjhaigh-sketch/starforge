@@ -132,7 +132,9 @@ export const wheelBank = (s: GameState, id: string): Decimal => s.wheel.banks[id
 
 // ---------- the Reactor ----------
 
-export const reactorMult = (s: GameState): Decimal => s.reactor.charge.add(1).pow(B.reactorPow * stat(s, 'reactorPower').toNumber());
+/** Reactor strength as it counts: up to x2. */
+export const reactorPower = (s: GameState): number => Math.min(B.reactorPowerCap, stat(s, 'reactorPower').toNumber());
+export const reactorMult = (s: GameState): Decimal => s.reactor.charge.add(1).pow(B.reactorPow * reactorPower(s));
 
 export const reactorPlan = (s: GameState): FlatPlan => planFlat(ONE, cur(s, 'darkMatter').floor(), s.settings.buyAmount, s.settings.customBuyAmount);
 
