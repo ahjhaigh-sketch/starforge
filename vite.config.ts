@@ -12,5 +12,7 @@ export default defineConfig({
   test: {
     include: ['tests/**/*.test.ts'],
     environment: 'node',
+    // several tests play hours of game time in 50 ms ticks; CI machines are a few times slower
+    testTimeout: 30_000,
   },
 });
