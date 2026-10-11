@@ -1,0 +1,51 @@
+name: Release
+
+# The Windows app (Tauri). On a version tag (v1.0.0) it builds the installer and attaches it to a
+# GitHub Release named after the tag. On pushes to main that change src-tauri/ or this file it only
+# builds (the installer is kept as a workflow artifact), so a broken .exe build shows up before a
+# release does.
+on:
+  push:
+    tags: ['v*']
+    branches: [main]
+    paths: ['src-tauri/**', '.github/workflows/release.yml']
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npx vitest run
+      - uses: tauri-apps/tauri-action@v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
+          releaseName: Starforge ${{ github.ref_name }}
+          releaseBody: |
+            Starforge for Windows: download **Starforge_*_x64-setup.exe** below and run it (no administrator rights needed).
+            It uses the Edge engine already in Windows 10 and 11, so the installer is small. The installer is not code-signed, so Windows SmartScreen may warn: choose More info, then Run anyway.
+            The game is saved inside the app and also to a save file in your AppData folder (Roaming, io.github.ahjhaigh-sketch.starforge).
+            The browser version is at https://ahjhaigh-sketch.github.io/starforge/ (saves don't carry over between them: use Settings, Export and Import).
+          releaseDraft: false
+          prerelease: false
+          uploadUpdaterJson: false
+          uploadWorkflowArtifacts: true

@@ -112,10 +112,44 @@ describe('the Asteroid Belt', () => {
 
   it('fills the field up to its cap, one every 2.5 s', () => {
     const s = beltRun();
-    for (let i = 0; i < 20 * 10; i++) tick(s, 0.05);
-    expect(s.belt.field.length).toBe(4); // 10 s
+    for (let i = 0; i < 20 * 10 + 4; i++) tick(s, 0.05); // the Belt looks 5 times a second
+    expect(s.belt.field.length).toBe(4); // 10.2 s
     for (let i = 0; i < 20 * 60; i++) tick(s, 0.05);
     expect(s.belt.field.length).toBe(BALANCE.belt.baseCap);
+  });
+
+  it('Void asteroids also give Dark Matter, from the first Singularity (Game design: Rarities)', () => {
+    const voidR = RARITIES.findIndex((r) => r.id === 'void');
+    const s = beltRun();
+    s.belt.field = [{ id: 1, r: voidR }];
+    harvest(s, [1]);
+    expect(cur(s, 'darkMatter').toNumber()).toBe(0);
+    s.stats.singularitiesAll = 1;
+    invalidateStats();
+    s.belt.field = [{ id: 2, r: voidR }, { id: 3, r: 0 }];
+    harvest(s, [2, 3]);
+    expect(cur(s, 'darkMatter').toNumber()).toBe(stat(s, 'darkMatterGain').toNumber());
+  });
+
+  it('a step with thousands of asteroids through the field counts them in closed form, and pays about what one by one would', () => {
+    const one = beltRun(11);
+    const many = beltRun(11);
+    for (const s of [one, many]) {
+      s.belt.tier = 6;
+      s.belt.upgrades = { growth: 400, amount: 50 };
+      invalidateStats();
+    }
+    // the same ten minutes: in 50 ms ticks (each asteroid made and swept), and in one step (counted)
+    for (let i = 0; i < 12_000; i++) tick(one, 0.05);
+    tick(many, 600);
+    const a = cur(one, 'ore').toNumber();
+    const b = cur(many, 'ore').toNumber();
+    const h1 = one.stats.harvested ?? 0;
+    const h2 = many.stats.harvested ?? 0;
+    expect(h2).toBeGreaterThan(1000);
+    expect(Math.abs(h2 - h1) / h1).toBeLessThan(0.05);
+    // rare asteroids are worth up to 10,000 common ones, so ore is noisier than the count
+    expect(Math.abs(b - a) / a).toBeLessThan(0.35);
   });
 
   it('harvests ore, XP and a little Stardust, and ignores ids that are gone', () => {

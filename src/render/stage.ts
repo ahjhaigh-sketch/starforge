@@ -1,6 +1,7 @@
 import { Application, Container } from 'pixi.js';
 import { onFrame } from '../app/clock';
 import { snapshotStore } from '../app/uiSnapshot';
+import { useUi } from '../ui/store';
 import { TIERS } from '../content/tiers';
 import { events } from '../engine/events';
 import { isEchoLayer, layer } from '../engine/layers';
@@ -38,10 +39,19 @@ export let renderMs = 0;
 
 const colorNum = (hex: string) => parseInt(hex.slice(1), 16);
 
+/**
+ * Where the star sits on the page. Reading it forces a layout, and the page changes ten times a
+ * second, so the frame loop reads a copy at most 4 times a second (and at once after a resize).
+ */
+let anchorCache: { rect: DOMRect | null; at: number } = { rect: null, at: -Infinity };
 function anchorRect(): DOMRect | null {
+  const now = performance.now();
+  if (now - anchorCache.at < 250 && anchor?.isConnected) return anchorCache.rect;
   if (!anchor || !anchor.isConnected) anchor = document.querySelector('[data-star-anchor]');
-  return anchor ? anchor.getBoundingClientRect() : null;
+  anchorCache = { rect: anchor ? anchor.getBoundingClientRect() : null, at: now };
+  return anchorCache.rect;
 }
+if (typeof window !== 'undefined') window.addEventListener('resize', () => (anchorCache.at = -Infinity));
 
 export async function initRender(): Promise<boolean> {
   try {
@@ -109,7 +119,7 @@ export async function initRender(): Promise<boolean> {
 
   events.on((e) => {
     if (e.t === 'reset' && star) {
-      if (isEchoLayer(e.layer)) return;
+      if (isEchoLayer(e.layer) || e.auto) return;
       star.collapse();
       // 140 particles in the layer's colour (and white); the Big Crunch bursts as the universe comes back
       const color = colorNum(layer(e.layer)?.color ?? '#FF4FC1');
@@ -142,8 +152,20 @@ export async function initRender(): Promise<boolean> {
     star.flashWhite(0.7 * flashScale);
   });
 
-  onFrame((dt) => {
+  // behind an open panel the sky is blurred and dimmed: draw it every 8th frame, with the time saved
+  // up, not every frame (each new frame made the blur start over; found by the speed budgets on a phone)
+  let behind = 0;
+  let savedDt = 0;
+  onFrame((frameDt) => {
     if (!app || !star) return;
+    let dt = frameDt;
+    if (useUi.getState().panel) {
+      savedDt += frameDt;
+      if (++behind < 8) return;
+      dt = Math.min(savedDt, 0.25);
+    }
+    behind = 0;
+    savedDt = 0;
     const t0 = performance.now();
     const { width, height } = app.screen;
     resizeStarfield(width, height);

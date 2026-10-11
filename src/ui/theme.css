@@ -19,6 +19,9 @@
   --violet: #9b7cff;
   --text: #ffffff;
   --text-dim: #c9c2f2;
+  /* small text in red or slate: lighter, so it keeps 4.5:1 contrast on panels (WCAG AA) */
+  --red-text: #ff9aab;
+  --slate-text: #b4bce0;
 
   --r-btn: 14px;
   --r-panel: 22px;
@@ -102,8 +105,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .num { font-family: var(--font-num); font-weight: 800; font-variant-numeric: tabular-nums; }
 .display { font-family: var(--font-display); font-weight: 400; letter-spacing: 0.03em; }
 .dim { color: var(--text-dim); }
-.punch { animation: punch 0.18s var(--back-out); }
-@keyframes punch { 0% { transform: scale(1); } 45% { transform: scale(1.08); } 100% { transform: scale(1); } }
 
 /* ---------- buttons ---------- */
 .btn {

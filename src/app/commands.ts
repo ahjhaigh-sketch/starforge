@@ -739,6 +739,8 @@ export const commands = {
     wipeSave();
     game.state = createInitialState();
     game.tapRuntime = createTapRuntime();
+    // the fresh game goes straight into the slots (and the Windows app's save file), so the wiped one can't come back
+    saveNow();
     done();
   },
   // ---- dev tools (only reachable with ?dev=1) ----

@@ -955,6 +955,24 @@ it('balance simulation', async () => {
       }
     }
   }
+  // SIM_SAVE=<path>: the bot's game as a save code (a late-game fixture for the speed budgets)
+  if (process.env.SIM_SAVE) {
+    const { exportSave } = await import('../src/engine/save/store');
+    const { writeFileSync } = await import('node:fs');
+    const r = exportSave(s);
+    if (r.ok) writeFileSync(process.env.SIM_SAVE, r.code + '\n');
+    else {
+      // every plain number past 2^53 (only the first fails validation), so they can all be fixed at once
+      const { toPlain } = await import('../src/engine/save/serialize');
+      const big: string[] = [];
+      const walk = (v: unknown, path: string) => {
+        if (typeof v === 'number' && Math.abs(v) > Number.MAX_SAFE_INTEGER) big.push(`${path}=${v.toExponential(2)}`);
+        else if (v && typeof v === 'object') for (const [k, x] of Object.entries(v)) walk(x, path ? `${path}.${k}` : k);
+      };
+      walk(toPlain(s), '');
+      console.log(`SIM_SAVE failed: ${r.error}; numbers past 2^53: ${big.join(', ')}`);
+    }
+  }
   console.log('\n=== Starforge balance simulation ===');
   console.log(`Bot: ${TAPS_PER_SECOND} taps/s, catches every comet, best-value engines, Supernova when it at least doubles lifetime shards (from 20 Supernovas: once shards per second peak).`);
   console.log(`First Supernova after ${firstSnPurchases} engine purchases and ${firstSnTiers} Star Tiers (target: about 60 and 3).`);

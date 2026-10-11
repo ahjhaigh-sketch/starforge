@@ -5,7 +5,7 @@ import { events } from '../events';
 import { nextPoisson } from '../rng';
 import { cur, type GameState, type ShrineState, spend } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
-import { registerSystem, type TickContext } from '../tick';
+import { registerSystem, type TickContext, upkeepDue } from '../tick';
 import { earnDice } from './auras';
 import { effectiveCopies, mutateRunes } from './mutations';
 import { reqMet } from './unlocks';
@@ -25,6 +25,9 @@ export { effLog10 };
  * - level = min(cap, floor(sqrt(copies))); each stat gets (1 + a x level x Resonance).
  */
 const R = BALANCE.runes;
+
+/** Game seconds of auto-rolling waiting to land (not saved: under a quarter of a real second). */
+const pending = new WeakMap<GameState, number>();
 
 export const runesOpen = (s: GameState) => (s.stats.nebulasAll ?? 0) >= 1;
 export const shrineOpen = (s: GameState, sh: ShrineDef) => runesOpen(s) && reqMet(s, sh.req);
@@ -216,10 +219,17 @@ export function registerRunes(): void {
     order: 40,
     tick: (s: GameState, dt: number, ctx: TickContext) => {
       if (!runesOpen(s)) return;
+      // rolls are closed-form, so they gather up and land at most 4 times a real second
+      const due = (pending.get(s) ?? 0) + dt * ctx.gainScale;
+      if (!upkeepDue(s, 'runes', ctx, 0.25)) {
+        pending.set(s, due);
+        return;
+      }
+      pending.set(s, 0);
       for (const sh of SHRINES) {
         const st = s.runes.shrines[sh.id];
         // auto-roll keeps going offline, from the same seeded stream (at the offline efficiency)
-        if (st?.auto && shrineOpen(s, sh)) autoRoll(s, sh.id, dt * ctx.gainScale);
+        if (st?.auto && shrineOpen(s, sh)) autoRoll(s, sh.id, due);
       }
     },
   });

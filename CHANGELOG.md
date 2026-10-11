@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.0.0 (Phase 19: release)
+- **Install it.** Starforge is an installable app: after one visit it plays offline. A new version never takes over by itself: a banner offers "Save and update", which saves first. Settings shows the version, an Install button where the browser offers one, and the credits.
+- **Windows.** A Windows app built with Tauri: a small per-user installer, attached to each GitHub Release by a workflow that runs on version tags. Saves stay inside the app and are also written to a save file in AppData, which the game loads if the app's own storage is ever cleared. Version numbers and the app identifier are pinned by tests.
+- **Accessibility.**
+  - Tab stays inside an open panel, and Esc gives focus back to whatever opened it.
+  - Every button has a name; the star taps from the keyboard.
+  - All text keeps WCAG AA contrast (lighter red and slate for small text).
+  - A new game follows the system's reduce-motion setting.
+- **Speed budgets.** `npm run budgets` measures every budget on the Tech tab against the production build and a late-game save from the simulator. They all pass: 482 KB of code, a first load of 1.0 s on 4G, a 1.6 ms tick, 60 fps on desktop and 34 to 37 on a slowed phone, eight hours away caught up in under 250 ms, and the 200-node tree panning at 33 fps on a slowed phone. Getting there fixed:
+  - The late-game tick took 14 ms. Eternity re-scanned whole trees for every repeat level it bought. At 40 times game speed, stat rebuilds, automation, rune rolls and wormhole reads ran every tick; they now run at most 4 or 5 times a real second and catch up on the game time in between.
+  - Eight hours away took 26 s to catch up. Asteroids swept within a step are now counted in closed form, and the boot catch-up takes fewer, longer steps if it must, to finish within a quarter of a second (tests keep fixed steps).
+  - Every automated reset played the full cinematic, a toast and a chord, several times a second late in the game. Automated resets are now quiet; milestones still get their toast.
+  - Number punches forced a page layout each, and dozens of glowing buttons repainted every frame. Punches are now transform animations, and the glows pulse in opacity on their own layer.
+  - Behind an open panel the sky is drawn every 8th frame (it's blurred and dimmed there), tree nodes redraw only when they change, and the Belt and Nursery look 5 times a second instead of 20.
+- **Fixed:** late in the game, Element Codex samples and star seeds could pass 2^53, which the save validator refused, so the game silently stopped saving. Both now stop at 2^50, and the save now accepts counts of any size, so a counter that outgrows plain numbers loses precision instead of stopping saves.
+- **Fixed** in a code review before release:
+  - Star Quests now keep their progress through resets. Before, an engine, tier or Stardust quest open at a reset started over from where the reset left things.
+  - Some mixes of Universe rules and Spark Hoards paid a fifth of a Spark less, lost to floating point.
+  - A tab hidden for over a minute, late in the game, froze for seconds when shown again. It now catches up within the same time budget.
+  - The Multiverse now counts as a reset for Eternity's "gains slowing" check.
+  - Wiping the save in the Windows app also overwrites its save file, so the wiped game can't come back.
+  - A panel no longer takes focus away from something already focused inside it.
+- Void asteroids also give Dark Matter, from the first Singularity (the Game design's rarity table; they gave only their grade of ore). The Mutations panel no longer lists Wyrm and Nursery mutations as coming later: both arrived in Phase 10.
+- New icon, drawn for the installable app and the Windows app.
+
 ## Phase 18: the Multiverse
 - The Multiverse is the sixth and last reset. Ten Big Crunches in a universe pay 6 Multiverse Sparks (more from Spark Hoards, milestone 6 and the Universe Forge's rules). It resets every earlier layer; Trials, the Spire, the Leviathans, the Scale Tree, every collection, relics, the Codex, Mastery, the Starsmith Level, medals and Omni Constants stay.
   - Milestones: 1 Omni Constants and the ending; 2 the Forge takes 4 rules; 4 every rule; 6 +1 Spark; 10 every universe starts with all ten Eternity upgrades.

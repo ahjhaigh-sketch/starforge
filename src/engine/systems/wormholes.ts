@@ -4,7 +4,7 @@ import { D, type Decimal } from '../decimal';
 import { events } from '../events';
 import { type GameState, spend } from '../state';
 import { invalidateStats, registerSources, stat, type StatSource } from '../stats';
-import { registerSystem } from '../tick';
+import { registerSystem, type TickContext, upkeepDue } from '../tick';
 
 /**
  * The Wormhole Network (Game design: "Singularity"). From 6 Singularities.
@@ -12,8 +12,8 @@ import { registerSystem } from '../tick';
  * wormhole from A to B with a share p (5% steps): A's multiplier is raised to the power (1 - p),
  * and B's is multiplied by (1 + p x log10(1 + A))^weight. At most half of a system's orders of
  * magnitude can leave it. Both sides show in the stat breakdowns as "Wormhole: A to B".
- * Inputs (log10 of each system's multiplier) are read once a tick and kept, so a loop of links
- * never recurses inside the stat pipeline; through the log it settles within a few ticks.
+ * Inputs (log10 of each system's multiplier) are read 5 times a second and kept, so a loop of links
+ * never recurses inside the stat pipeline; through the log it settles within a few reads.
  */
 const W = BALANCE.wormholes;
 
@@ -97,8 +97,9 @@ export function registerWormholes(): void {
   registerSystem({
     id: 'wormholes',
     order: 2,
-    tick: (s: GameState) => {
-      if (s.wormholes.links.length > 0) refreshInputs(s);
+    tick: (s: GameState, _dt: number, ctx: TickContext) => {
+      // as often as stats are rebuilt (5 times a real second): in between the inputs can't change
+      if (s.wormholes.links.length > 0 && upkeepDue(s, 'wormholes', ctx, 0.2)) refreshInputs(s);
     },
   });
 }

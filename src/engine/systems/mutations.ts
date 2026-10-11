@@ -138,16 +138,32 @@ export function rollAsteroidMutation(s: GameState): number {
 /** What an asteroid with this mutation is worth, as a multiple. */
 export const asteroidMutMult = (m: number | undefined) => (m ? (MUTATIONS[m - 1]?.mult ?? 1) : 1);
 
-/** Counts a harvested mutated asteroid for the Index and the Mutations panel. */
-export function recordAsteroidMutation(s: GameState, rarity: number, m: number | undefined): void {
-  if (!m) return;
+/**
+ * Mutations among `count` asteroids at once (the Belt's pass-through): rarest first, each one
+ * draw from the mutation stream, as rollAsteroidMutation would give one by one on average.
+ */
+export function drawAsteroidMutations(s: GameState, count: number): Array<{ m: number; count: number }> {
+  const out: Array<{ m: number; count: number }> = [];
+  if (!mutationsOpen(s)) return out;
+  let left = count;
+  for (let i = MUTATIONS.length - 1; i >= 0 && left > 0; i--) {
+    const k = Math.min(left, drawHits(s.mutations.rng, D(left), -mutEffLog(s, MUTATIONS[i]!), 1000).toNumber());
+    if (k > 0) out.push({ m: i + 1, count: k });
+    left -= k;
+  }
+  return out;
+}
+
+/** Counts harvested mutated asteroids for the Index and the Mutations panel. */
+export function recordAsteroidMutation(s: GameState, rarity: number, m: number | undefined, count = 1): void {
+  if (!m || count <= 0) return;
   const mut = MUTATIONS[m - 1];
   const r = RARITIES[rarity];
   if (!mut || !r) return;
   const key = `${r.id}.${mut.id}`;
   const firstOfKind = !seenMutation(s, mut.id);
   const first = !s.mutations.asteroids[key];
-  s.mutations.asteroids[key] = (s.mutations.asteroids[key] ?? 0) + 1;
+  s.mutations.asteroids[key] = (s.mutations.asteroids[key] ?? 0) + count;
   if (first) {
     s.stats.mutationsFound = (s.stats.mutationsFound ?? 0) + 1;
     events.emit({ t: 'mutation', target: 'asteroid', id: r.id, mut: mut.id, firstOfKind });

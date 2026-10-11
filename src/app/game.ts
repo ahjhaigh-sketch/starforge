@@ -15,6 +15,8 @@ export const game: {
   devMode: boolean;
   /** Average engine tick time in ms (dev panel). */
   tickMs: number;
+  /** How long the boot catch-up took, in ms (the speed budgets check it). */
+  catchUpMs: number;
 } = {
   state: createInitialState(),
   tapRuntime: createTapRuntime(),
@@ -23,4 +25,5 @@ export const game: {
   bootReport: null,
   devMode: false,
   tickMs: 0,
+  catchUpMs: 0,
 };

@@ -5,11 +5,12 @@ import { planLimited, type PurchasePlan } from '../buy';
 import { bulkCost, type CostCurve, priceAt } from '../cost';
 import { D, type Decimal, ZERO } from '../decimal';
 import { events } from '../events';
+import { drawHits } from '../odds';
 import { nextFloat } from '../rng';
 import { cur, gain, type GameState, spend } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
-import { registerSystem, type TickContext } from '../tick';
-import { asteroidMutMult, recordAsteroidMutation, rollAsteroidMutation } from './mutations';
+import { pacedDt, registerSystem, type TickContext } from '../tick';
+import { asteroidMutMult, drawAsteroidMutations, recordAsteroidMutation, rollAsteroidMutation } from './mutations';
 import { addXp } from './starsmith';
 
 /**
@@ -46,6 +47,72 @@ export function rollRarity(s: GameState): number {
   return 0;
 }
 
+/** The Void rarity: from the first Singularity its asteroids also give Dark Matter (Game design: Rarities). */
+const VOID = RARITIES.findIndex((r) => r.id === 'void');
+/** Dark Matter from `worth` Void asteroids (a mutated one counts its mutation's size): one base unit each, as a Singularity's gain is counted in. */
+const voidDarkMatter = (s: GameState, worth: number): Decimal => ((s.stats.singularitiesAll ?? 0) > 0 ? stat(s, 'darkMatterGain').mul(worth) : ZERO);
+
+/** The chance a new asteroid has each rarity (rollRarity's odds: the rarest is checked first). */
+function rarityShares(s: GameState): number[] {
+  const luck = stat(s, 'beltLuck').toNumber();
+  const shares = RARITIES.map(() => 0);
+  let left = 1;
+  for (let i = RARITIES.length - 1; i > 0; i--) {
+    const p = Math.min(1, luck / RARITIES[i]!.oneIn);
+    shares[i] = left * p;
+    left *= 1 - p;
+  }
+  shares[0] = left;
+  return shares;
+}
+
+/** Past this many arrivals in one step, the ones drones sweep in that same step are counted, not made. */
+const ONE_BY_ONE = 64;
+
+/**
+ * Asteroids that arrive and are swept by drones within one step, counted instead of made one by
+ * one (a late-game catch-up step sees millions; making each cost 6 ms a step, found by the speed
+ * budgets). Each rarity is one draw from the belt's stream and each mutation one draw from the
+ * mutation stream, like the runes, so on average it pays what harvesting them one at a time would.
+ */
+function sweepThrough(s: GameState, count: number, scale: number): void {
+  const shares = rarityShares(s);
+  const sps = stat(s, 'stardustPerSec');
+  let left = count;
+  let below = 1; // the chance of this rarity or a commoner one
+  let ore = ZERO;
+  let xp = ZERO;
+  let dust = ZERO;
+  for (let r = RARITIES.length - 1; r >= 0 && left > 0; r--) {
+    const p = r === 0 || below <= 0 ? 1 : Math.min(1, shares[r]! / below);
+    below -= shares[r]!;
+    const n = p >= 1 ? left : Math.min(left, drawHits(s.belt.rng, D(left), Math.log10(p), 1000).toNumber());
+    if (n <= 0) continue;
+    left -= n;
+    // each asteroid is worth 1, or its mutation's size
+    let worth = n;
+    for (const { m, count: k } of drawAsteroidMutations(s, n)) {
+      worth += k * (asteroidMutMult(m) - 1);
+      recordAsteroidMutation(s, r, m, k);
+    }
+    const o = oreFor(s, r).mul(worth);
+    ore = ore.add(o);
+    xp = xp.add(xpFor(s, r).mul(worth));
+    dust = dust.add(sps.mul(B.stardustSeconds * Math.sqrt(RARITIES[r]!.mult) * n));
+    if (r === VOID) gain(s, 'darkMatter', voidDarkMatter(s, worth).mul(scale));
+    if (r > 0) {
+      gain(s, GRADES[r]!.ore, o.mul(scale));
+      events.emit({ t: 'harvest', rarity: RARITIES[r]!.id, hand: false });
+    }
+  }
+  ore = ore.mul(scale);
+  gain(s, 'ore', ore);
+  s.belt.oreThisTier = s.belt.oreThisTier.add(ore);
+  addXp(s, xp.mul(scale));
+  gain(s, 'stardust', dust.mul(scale));
+  s.stats.harvested = (s.stats.harvested ?? 0) + count;
+}
+
 /** Ore one asteroid of this rarity gives. */
 export function oreFor(s: GameState, rarity: number): Decimal {
   return stat(s, 'oreValue').mul(RARITIES[rarity]!.mult);
@@ -66,6 +133,7 @@ export function harvest(s: GameState, ids: readonly number[], scale = 1, hand = 
   let ore = ZERO;
   let xp = ZERO;
   let dust = ZERO;
+  let darkMatter = ZERO;
   /** Rare asteroids also give their own grade of ore for the Starforge: as much as their common ore. */
   const rare = new Map<number, Decimal>();
   const sps = stat(s, 'stardustPerSec');
@@ -78,7 +146,8 @@ export function harvest(s: GameState, ids: readonly number[], scale = 1, hand = 
     xp = xp.add(xpFor(s, a.r).mul(mm));
     recordAsteroidMutation(s, a.r, a.m);
     dust = dust.add(sps.mul(B.stardustSeconds * Math.sqrt(RARITIES[a.r]!.mult)));
-    // TODO(later phases): Crystal asteroids also give Crystals, Void ones Dark Matter (Game design: Rarities).
+    // rare asteroids give their own grade of ore (a Crystal asteroid's is the Crystal the Starforge smelts); Void ones Dark Matter too
+    if (a.r === VOID) darkMatter = darkMatter.add(voidDarkMatter(s, mm));
     if (a.r > 0) {
       rare.set(a.r, (rare.get(a.r) ?? ZERO).add(oreFor(s, a.r).mul(mm)));
       events.emit({ t: 'harvest', rarity: RARITIES[a.r]!.id, hand });
@@ -97,6 +166,7 @@ export function harvest(s: GameState, ids: readonly number[], scale = 1, hand = 
   s.belt.oreThisTier = s.belt.oreThisTier.add(ore);
   addXp(s, xp);
   gain(s, 'stardust', dust);
+  if (darkMatter.gt(0)) gain(s, 'darkMatter', darkMatter.mul(scale));
   s.stats.harvested = (s.stats.harvested ?? 0) + n;
   events.emit({ t: 'harvest', rarity: 'any', hand });
   return n;
@@ -253,8 +323,11 @@ export function registerBelt(): void {
   registerSystem({
     id: 'belt',
     order: 30,
-    tick: (s: GameState, dt: number, ctx: TickContext) => {
+    tick: (s: GameState, step: number, ctx: TickContext) => {
       if (!beltOpen(s)) return;
+      // arrivals, drones and the drill 5 times a second, with the game time between kept
+      const dt = pacedDt(s, 'belt', ctx, step, 0.2);
+      if (dt === null) return;
       // Works the same for one 50 ms tick or one 43 s catch-up step: arrivals may fill the room
       // the drones free up within the step, then drones sweep the oldest asteroids.
       const cap = Math.min(B.maxCap, Math.floor(stat(s, 'beltCap').toNumber()));
@@ -265,7 +338,9 @@ export function registerBelt(): void {
       s.belt.spawnAcc += dt * rate;
       const room = Math.max(0, cap - s.belt.field.length + take);
       const arrive = Math.min(Math.floor(s.belt.spawnAcc), room);
-      for (let i = 0; i < arrive; i++) {
+      // new arrivals the drones sweep within this step: past the first few they're only counted
+      const through = Math.max(0, Math.min(arrive, take - s.belt.field.length) - ONE_BY_ONE);
+      for (let i = 0; i < arrive - through; i++) {
         const a: GameState['belt']['field'][number] = { id: s.belt.nextId++, r: rollRarity(s) };
         const m = rollAsteroidMutation(s);
         if (m) a.m = m;
@@ -275,14 +350,21 @@ export function registerBelt(): void {
       s.stats.spawned = (s.stats.spawned ?? 0) + arrive;
       // a full field doesn't bank arrivals; drones with nothing left to sweep don't bank sweeps
       s.belt.spawnAcc = Math.min(s.belt.spawnAcc, 1);
+      if (through > 0) sweepThrough(s, through, ctx.gainScale);
       if (take > 0) {
-        harvest(s, s.belt.field.slice(0, take).map((a) => a.id), ctx.gainScale, false);
+        if (take > through) harvest(s, s.belt.field.slice(0, take - through).map((a) => a.id), ctx.gainScale, false);
         s.belt.droneAcc -= take;
       }
       // passive ore from the whole field
       if (s.belt.tier >= 3 && s.belt.field.length > 0) {
+        // one price per rarity, not per asteroid (the field can hold dozens)
+        const per = new Map<number, Decimal>();
         let sum = ZERO;
-        for (const a of s.belt.field) sum = sum.add(oreFor(s, a.r).mul(asteroidMutMult(a.m)));
+        for (const a of s.belt.field) {
+          let o = per.get(a.r);
+          if (!o) per.set(a.r, (o = oreFor(s, a.r)));
+          sum = sum.add(a.m ? o.mul(asteroidMutMult(a.m)) : o);
+        }
         const ore = sum.mul(B.passiveShare * dt * ctx.gainScale);
         gain(s, 'ore', ore);
         s.belt.oreThisTier = s.belt.oreThisTier.add(ore);

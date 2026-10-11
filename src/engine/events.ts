@@ -6,7 +6,8 @@ export type GameEvent =
   /** `auto`: made by automation (auto-buyers, Eternity), which buys quietly. */
   | { t: 'purchase'; kind: string; id: string; amount: number; auto?: boolean }
   | { t: 'tierUp'; tier: number }
-  | { t: 'reset'; layer: string; gain: Decimal }
+  /** `auto`: made by automation inside a tick (Eternity, Auto-Crunch, milestones), which resets quietly. */
+  | { t: 'reset'; layer: string; gain: Decimal; auto?: boolean }
   | { t: 'unlock'; feature: string }
   | { t: 'achievement'; id: string }
   | { t: 'milestone'; id: string }
@@ -47,7 +48,7 @@ class EventBus {
 
   private automation = 0;
 
-  /** Runs automation: every purchase announced inside is marked `auto`. */
+  /** Runs automation: every purchase and reset announced inside is marked `auto`. */
   automated(fn: () => void): void {
     this.automation++;
     try {
@@ -58,7 +59,7 @@ class EventBus {
   }
 
   emit(e: GameEvent): void {
-    if (this.automation > 0 && e.t === 'purchase') e = { ...e, auto: true };
+    if (this.automation > 0 && (e.t === 'purchase' || e.t === 'reset')) e = { ...e, auto: true };
     for (const fn of this.listeners) {
       try {
         fn(e);

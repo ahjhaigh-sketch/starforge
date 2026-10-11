@@ -11,10 +11,11 @@ import { nextFloat, nextInt } from '../rng';
 import { cur, gain, type GameState, spend } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
+import { addSamples } from './codex';
 import { addRelicLevels, relicLevel } from './forge';
 import { rawShardGain } from './supernova';
 import { BASE_SEEDS } from '../../content/nursery';
-import { nurseryOpen } from './nursery';
+import { addSeeds, nurseryOpen } from './nursery';
 
 /**
  * Starship Expeditions: ships fly to named sectors and bring back ore, alloy, shards and rare finds.
@@ -122,7 +123,7 @@ function deliver(s: GameState, sec: SectorDef, trips: number): void {
         addRelicLevels(s, id, share);
       } else if (found.length > 0) {
         const e = found[nextInt(s.ships.rng, 0, found.length - 1)]!;
-        s.codex[e.id] = (s.codex[e.id] ?? 0) + share * Math.max(1, Math.round(sec.loot));
+        addSamples(s, e.id, share * Math.max(1, Math.round(sec.loot)));
       }
     }
     s.stats.rareFinds = (s.stats.rareFinds ?? 0) + rares;
@@ -132,7 +133,7 @@ function deliver(s: GameState, sec: SectorDef, trips: number): void {
     const picks = Math.min(trips, BASE_SEEDS.length);
     for (let i = 0; i < picks; i++) {
       const seed = BASE_SEEDS[nextInt(s.ships.rng, 0, BASE_SEEDS.length - 1)]!;
-      s.nursery.seeds[seed] = (s.nursery.seeds[seed] ?? 0) + Math.floor(trips / picks) + (i < trips % picks ? 1 : 0);
+      addSeeds(s, seed, Math.floor(trips / picks) + (i < trips % picks ? 1 : 0));
     }
   }
   s.stats.trips = (s.stats.trips ?? 0) + trips;

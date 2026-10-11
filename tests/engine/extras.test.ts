@@ -4,6 +4,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { registerContent } from '../../src/content';
 import { BALANCE } from '../../src/content/balance';
 import { SECTOR_BY_ID } from '../../src/content/extras';
+import { BASE_SEEDS } from '../../src/content/nursery';
 import { D } from '../../src/engine/decimal';
 import { performReset } from '../../src/engine/layers';
 import { simulateElapsed } from '../../src/engine/offline';
@@ -310,6 +311,33 @@ describe('Starship Expeditions', () => {
     expect(cur(many, 'ore').div(per).toNumber()).toBeGreaterThanOrEqual(999_999);
     expect(many.ships.fleet[0]!.t).toBeGreaterThan(0);
     expect(many.ships.fleet[0]!.t).toBeLessThanOrEqual(600);
+  });
+
+  it('Codex samples stop at 2^50, so a quadrillion trips still leave a game that saves (found by the simulator)', () => {
+    const s = run(15);
+    s.tier = 4;
+    s.codex = { h: 2 ** 50 - 5, he: 7 };
+    launch(s, 0, 'kuiper');
+    for (let i = 0; i < 4; i++) tick(s, 600 * 1e15);
+    expect(Object.values(s.codex).every((n) => Number.isSafeInteger(n) && n <= 2 ** 50)).toBe(true);
+    expect(s.codex.h).toBe(2 ** 50);
+    expect(exportSave(s).ok).toBe(true);
+  });
+
+  it('star seeds stop at 2^50, and a count past 2^53 no longer stops the game saving (found by review)', () => {
+    const s = run(15);
+    s.tier = 4;
+    s.stats.nebulasAll = 10;
+    s.nursery.seeds = Object.fromEntries(BASE_SEEDS.map((id) => [id, 2 ** 50 - 3]));
+    launch(s, 0, 'kuiper');
+    for (let i = 0; i < 4; i++) tick(s, 600 * 1e15);
+    expect(Object.values(s.nursery.seeds).every((n) => n <= 2 ** 50)).toBe(true);
+    expect(BASE_SEEDS.some((id) => s.nursery.seeds[id] === 2 ** 50)).toBe(true);
+    // a counter that does outgrow plain numbers loses precision, but the save still goes through
+    s.enginesEver.mote = 2 ** 60;
+    const r = exportSave(s);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(importSave(r.code).state.enginesEver.mote).toBe(2 ** 60);
   });
 
   it('sectors open with your best Star Tier; ships cost Iron alloy; Cargo fills the hold', () => {

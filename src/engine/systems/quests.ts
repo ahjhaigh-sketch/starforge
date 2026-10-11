@@ -4,6 +4,7 @@ import { TIERS } from '../../content/tiers';
 import { D, type Decimal } from '../decimal';
 import { events } from '../events';
 import { nextFloat } from '../rng';
+import { onAnyReset, onBeforeReset } from '../layers';
 import { gain, type GameState, type QuestState } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
 import { registerSystem } from '../tick';
@@ -146,4 +147,22 @@ export function registerQuests(): void {
     active: (s) => (s.stats.questsDone ?? 0) > 0,
   });
   registerSystem({ id: 'quests', order: 85, tick: (s) => s.quests.length < QUESTS.slots && fillQuests(s) });
+  // a reset takes away engines, tiers, upgrades (and the Multiverse even lifetime Stardust), which a quest
+  // measured itself from: each keeps the share it had done, measured from where things stand after the reset
+  onBeforeReset((s) => {
+    progressBefore.set(s, s.quests.map((q) => questProgress(s, q)));
+  });
+  onAnyReset((s) => {
+    const done = progressBefore.get(s);
+    progressBefore.delete(s);
+    if (!done) return;
+    s.quests.forEach((q, i) => {
+      const p = done[i] ?? 0;
+      if (q.kind === 'stardust' && q.startD && q.needD) q.startD = (s.totals.all.stardust ?? D(0)).sub(q.needD.mul(p));
+      else q.start = counter(s, q) - p * q.need;
+    });
+  });
 }
+
+/** Each quest's progress just before a reset (not saved: a reset happens within one call). */
+const progressBefore = new WeakMap<GameState, number[]>();

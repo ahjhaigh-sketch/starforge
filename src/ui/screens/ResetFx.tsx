@@ -31,7 +31,8 @@ export function ResetFx() {
   useEffect(
     () =>
       events.on((e) => {
-        if (e.t !== 'reset' || isEchoLayer(e.layer)) return;
+        // automated resets (several a second late in the game) stay quiet
+        if (e.t !== 'reset' || e.auto || isEchoLayer(e.layer)) return;
         setFx((f) => ({ key: f.key + 1, layer: e.layer }));
         const s = snapshotStore.getState();
         if (s.reducedMotion) return;

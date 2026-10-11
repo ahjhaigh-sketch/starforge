@@ -1,14 +1,20 @@
 import { useEffect, useRef } from 'react';
 import { snapshotStore, type Snapshot } from '../../app/uiSnapshot';
 
-/** Re-triggers the punch animation, at most 10 times a second per element. */
+const PUNCH: Keyframe[] = [{ transform: 'scale(1)' }, { transform: 'scale(1.08)', offset: 0.45 }, { transform: 'scale(1)' }];
+const PUNCH_TIMING: KeyframeAnimationOptions = { duration: 180, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' };
+const reduceMotion = () => document.documentElement.classList.contains('reduced-motion') || matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/**
+ * Plays the punch, at most 10 times a second per element. A Web Animation of the transform only:
+ * toggling a CSS class needed a forced layout per number, and late in the game every number on
+ * screen changes ten times a second (found by the speed budgets on a slow phone).
+ */
 function punch(el: HTMLElement, last: { current: number }): void {
   const now = performance.now();
-  if (now - last.current < 100) return;
+  if (now - last.current < 100 || reduceMotion()) return;
   last.current = now;
-  el.classList.remove('punch');
-  void el.offsetWidth;
-  el.classList.add('punch');
+  el.animate(PUNCH, PUNCH_TIMING);
 }
 
 /** A number already formatted by the snapshot; punches when it changes. */

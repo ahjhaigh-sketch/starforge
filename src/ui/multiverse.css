@@ -79,3 +79,7 @@
 @media (max-width: 900px) {
   .mv-rules { grid-template-columns: 1fr; }
 }
+
+/* ---------- Phase 19: the update banner ---------- */
+.update-banner { position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); z-index: 90; display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.8rem; --c: var(--panel); font-weight: 700; max-width: calc(100vw - 2rem); flex-wrap: wrap; justify-content: center; }
+.update-banner .icon { width: 1.4rem; height: 1.4rem; }

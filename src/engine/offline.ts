@@ -21,12 +21,21 @@ export interface ElapsedOptions {
   /** Share of normal gains (0.5 = 50%). Time itself always passes fully. */
   efficiency: number;
   offline: boolean;
+  /**
+   * Real milliseconds the catch-up may take (the boot catch-up: Tech tab budget, 300 ms). After a
+   * few steps it measures its own speed and takes fewer, longer steps if it must, never under
+   * MIN_STEPS. Leave it out for the same steps on every machine (tests, the dev panel).
+   */
+  budgetMs?: number;
 }
 
 const TICK = 0.05;
 const MAX_STEPS = 2000;
 /** The async catch-up hands the page back every CHUNK steps. */
 const CHUNK = 100;
+/** With a time budget: steps measured before choosing how many more, and the fewest it will take. */
+const PROBE = 4;
+const MIN_STEPS = 32;
 
 function newReport(seconds: number, opts: ElapsedOptions): OfflineReport {
   const away = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
@@ -35,7 +44,7 @@ function newReport(seconds: number, opts: ElapsedOptions): OfflineReport {
 }
 
 /**
- * Simulates the counted seconds in at most 2,000 steps with the real tick, so automation and
+ * Simulates the counted seconds in at most 2,000 steps (fewer within a time budget) with the real tick, so automation and
  * thresholds behave the same as online. One code path for any gap: a closed tab, sleep, a hidden
  * tab. Yields its progress (0 to 1) every CHUNK steps.
  */
@@ -51,12 +60,23 @@ function* elapsedSteps(s: GameState, opts: ElapsedOptions, report: OfflineReport
     if (e.t === 'reset') resets[e.layer] = (resets[e.layer] ?? 0) + 1;
   });
 
-  const steps = Math.max(1, Math.min(MAX_STEPS, Math.ceil(counted / TICK)));
-  const dt = counted / steps;
+  let steps = Math.max(1, Math.min(MAX_STEPS, Math.ceil(counted / TICK)));
+  let dt = counted / steps;
+  let done = 0;
   const ctx = { gainScale: opts.efficiency, offline: opts.offline, catchUp: true };
+  const t0 = performance.now();
   try {
     for (let i = 0; i < steps; i++) {
       tick(s, dt, ctx);
+      done += dt;
+      // late in the game a step costs milliseconds: fit the rest into the budget with longer steps
+      if (opts.budgetMs !== undefined && i + 1 === PROBE && steps > MIN_STEPS) {
+        const per = (performance.now() - t0) / PROBE;
+        const fits = Math.floor((opts.budgetMs - (performance.now() - t0)) / Math.max(per, 1e-3));
+        const rest = Math.max(MIN_STEPS - PROBE, Math.min(steps - PROBE, fits));
+        steps = PROBE + rest;
+        dt = (counted - done) / rest;
+      }
       if ((i + 1) % CHUNK === 0 && i + 1 < steps) yield (i + 1) / steps;
     }
   } finally {

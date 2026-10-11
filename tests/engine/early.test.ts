@@ -3,9 +3,11 @@ import fc from 'fast-check';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { registerContent } from '../../src/content';
 import { CONSTANT_BY_ID, CONSTANTS } from '../../src/content/constants';
+import { BALANCE } from '../../src/content/balance';
 import { MASTERY_RANKS, ORBITALS } from '../../src/content/early';
 import { bulkCost, maxBuy, priceAt } from '../../src/engine/cost';
 import { D } from '../../src/engine/decimal';
+import { performReset } from '../../src/engine/layers';
 import { exportSave, importSave } from '../../src/engine/save/store';
 import { createInitialState, cur, gain, SAVE_VERSION } from '../../src/engine/state';
 import { invalidateStats, resetStatRegistry, stat } from '../../src/engine/stats';
@@ -123,6 +125,26 @@ describe('Engine Mastery', () => {
 });
 
 describe('Star Quests', () => {
+  it('a reset keeps every quest\'s progress, though it takes away the engines, tier and Stardust they count (found by review)', () => {
+    const s = fresh();
+    s.tier = BALANCE.supernova.tier;
+    s.engines = { mote: 120 };
+    gain(s, 'stardust', D(1e9));
+    s.quests = [
+      { kind: 'own', engine: 'mote', start: 100, need: 40 },
+      { kind: 'evolve', start: BALANCE.supernova.tier - 1, need: 2 },
+      { kind: 'stardust', start: 0, need: 1, startD: D(0), needD: D(2e9) },
+    ];
+    const before = s.quests.map((q) => questProgress(s, q));
+    expect(before).toEqual([0.5, 0.5, 0.5]);
+    expect(performReset(s, 'supernova')).not.toBeNull();
+    expect(s.engines).toEqual({});
+    expect(s.quests.map((q) => questProgress(s, q))).toEqual(before);
+    // and they still move on from there
+    s.engines.mote = 20;
+    expect(questProgress(s, s.quests[0]!)).toBe(1);
+  });
+
   it('fills three at Golden Sun, measures from when each appeared, and refills on claim', () => {
     const s = fresh();
     fillQuests(s);

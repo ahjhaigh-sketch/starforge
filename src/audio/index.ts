@@ -306,7 +306,8 @@ export function installAudio(): void {
         sounds.tierUp();
         break;
       case 'reset':
-        sounds.reset(e.layer);
+        // automated resets (several a second late in the game) are silent, like automated purchases
+        if (!e.auto) sounds.reset(e.layer);
         break;
       case 'comet':
         if (e.kind === 'spawn') sounds.comet();

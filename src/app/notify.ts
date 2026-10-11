@@ -98,7 +98,7 @@ export function installNotifications(): void {
       const def = layer(e.layer);
       // the Echo boards' small resets show on their own panel, not as big news
       if (!def || isEchoLayer(e.layer)) return;
-      events.emit({ t: 'toast', title: `${def.name}!`, body: `+${(def.currency === 'sparks' ? formatFifths : format)(e.gain, snapshotStore.getState().notation)} ${CURRENCY_NAMES[def.currency] ?? def.currency}.`, icon: CURRENCY_ICONS[def.currency] ?? 'shard', priority: true });
+      if (!e.auto) events.emit({ t: 'toast', title: `${def.name}!`, body: `+${(def.currency === 'sparks' ? formatFifths : format)(e.gain, snapshotStore.getState().notation)} ${CURRENCY_NAMES[def.currency] ?? def.currency}.`, icon: CURRENCY_ICONS[def.currency] ?? 'shard', priority: true });
       const done = resetsDone(game.state, def);
       const m = def.milestones.find((x) => x.at === done);
       if (m) events.emit({ t: 'toast', title: `Milestone: ${m.at} ${plural(def.name, m.at)}`, body: `${m.text}.`, icon: 'trophy' });

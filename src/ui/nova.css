@@ -15,6 +15,8 @@
   50% { box-shadow: 0 4px 0 #3a1240, 0 0 34px 6px rgba(255, 122, 46, 0.55); }
 }
 .reduced-motion .nova.ready { animation: none; }
+/* a layer Eternity resets by itself is ready and gone several times a second: no pulse */
+.nova.slim.ready { animation: none; }
 
 /* ---------- confirm screen ---------- */
 .confirm { display: flex; flex-direction: column; gap: 0.5rem; align-items: stretch; }
@@ -29,7 +31,7 @@
 .center-row { display: flex; justify-content: center; gap: 0.7rem; }
 .modal .center-row { display: flex; }
 .milestones { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.25rem; font-size: 0.85rem; font-weight: 600; color: var(--text-dim); }
-.milestones li b { display: inline-block; min-width: 1.8rem; color: var(--slate); }
+.milestones li b { display: inline-block; min-width: 1.8rem; color: var(--slate-text); }
 .milestones li.reached { color: var(--lime); }
 .milestones li.reached b { color: var(--lime); }
 

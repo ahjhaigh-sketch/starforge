@@ -471,3 +471,26 @@ describe('save version 18', () => {
     expect(c.echoes).toEqual(s.echoes);
   });
 });
+
+describe('quiet automation', () => {
+  it("resets made by automation inside a tick are marked auto (no cinematic, toast or chord); the player's own are not", () => {
+    const s = crunched();
+    s.eternity.upgrades = ['et.nova'];
+    s.tier = BALANCE.supernova.tier;
+    s.stats.supernovasAll = 5;
+    Object.assign(s.stats, { nebulas: 10, nebulasAll: 10, nebulasBest: 10 });
+    gain(s, 'stardust', D(1e9));
+    const seen: GameEvent[] = [];
+    const off = events.on((e) => {
+      if (e.t === 'reset') seen.push(e);
+    });
+    tick(s, 1);
+    tick(s, 1);
+    gain(s, 'stardust', D(1e9));
+    performReset(s, 'supernova');
+    off();
+    expect(seen.length).toBeGreaterThanOrEqual(2);
+    expect(seen.slice(0, -1).every((e) => e.t === 'reset' && e.auto)).toBe(true);
+    expect((seen[seen.length - 1] as { auto?: boolean }).auto).toBeUndefined();
+  });
+});

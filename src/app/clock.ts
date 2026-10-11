@@ -38,7 +38,8 @@ function frame(nowMs: number): void {
 
   const t0 = performance.now();
   if (elapsed > MAX_LIVE_GAP) {
-    simulateElapsed(s, elapsed, { cap: Infinity, efficiency: 1, offline: false });
+    // within a budget: late in the game 2,000 full steps froze the page for seconds
+    simulateElapsed(s, elapsed, { cap: Infinity, efficiency: 1, offline: false, budgetMs: 220 });
     acc = 0;
   } else {
     acc += elapsed;

@@ -1,0 +1,26 @@
+[package]
+name = "starforge"
+version = "1.0.0"
+description = "Starforge: a space-fantasy incremental game"
+authors = ["ahjhaigh-sketch"]
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+# the name differs from the binary's so Windows builds don't clash
+name = "starforge_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "~2.7.1", features = [] }
+
+[dependencies]
+# keep tauri on the same major.minor as @tauri-apps/api in package.json (the CLI checks)
+tauri = { version = "~2.12.1", features = [] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

@@ -7,6 +7,7 @@ import { SOUNDTRACKS } from '../../audio/music';
 import type { Notation, Settings } from '../../engine/state';
 import { Button } from '../kit/Chunk';
 import { Panel } from '../kit/Panel';
+import { installApp, useAppShell } from '../../app/pwa';
 import { useUi } from '../store';
 
 const NOTATIONS: Array<{ v: Notation; label: string }> = [
@@ -104,6 +105,7 @@ export function SettingsPanel() {
   const reducedMotion = useSnap((s) => s.reducedMotion);
   const reduceFlashing = useSnap((s) => s.reduceFlashing);
   const storySeen = useSnap((s) => s.storySeen);
+  const canInstall = useAppShell((s) => s.canInstall);
   const openPanel = useUi((s) => s.open);
   const muted = useSnap((s) => s.muted);
   const volumeMaster = useSnap((s) => s.volumeMaster);
@@ -282,8 +284,16 @@ export function SettingsPanel() {
       <h3>Backups</h3>
       <Backups />
       <h3>About</h3>
+      <p>
+        Starforge <span className="num">{__APP_VERSION__}</span>. It plays offline once loaded{canInstall ? ', and can be installed as an app' : ''}.
+      </p>
       <div className="set-row">
         <div className="set-ctl">
+          {canInstall && (
+            <Button size="sm" color="var(--lime)" onClick={() => void installApp()} data-testid="install-app">
+              Install Starforge
+            </Button>
+          )}
           {storySeen && (
             <Button size="sm" color="#7B3FD6" onClick={() => openPanel('story')}>
               Read the ending again

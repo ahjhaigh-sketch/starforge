@@ -199,7 +199,8 @@ export function mutationsReport(): MutationsReport {
     targets: [
       { name: 'Runes: a mutated copy counts as that many copies toward the rune’s level', built: true },
       { name: 'Asteroids: a mutated asteroid gives that many times the ore and XP', built: true },
-      { name: 'Void Wyrms and nursery stars mutate too, once they arrive', built: false },
+      { name: 'Void Wyrms: a mutated Wyrm hatches that many times as strong', built: true },
+      { name: 'Nursery stars: a mutated harvest is worth that many times the Essence', built: true },
     ],
   };
 }

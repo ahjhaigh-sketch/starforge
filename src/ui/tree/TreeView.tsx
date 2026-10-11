@@ -43,7 +43,12 @@ const R = 22;
 const MIN_K = 0.25;
 const MAX_K = 2.2;
 
-const NodeGlyph = memo(function NodeGlyph({ n, selected, match }: { n: TreeNodeView; selected: boolean; match: boolean }) {
+type GlyphProps = { n: TreeNodeView; selected: boolean; match: boolean };
+/** Each report makes new node objects: compare what's drawn, so 200 unchanged nodes don't redraw five times a second. */
+const sameGlyph = (a: GlyphProps, b: GlyphProps) =>
+  a.selected === b.selected && a.match === b.match && a.n.id === b.n.id && a.n.x === b.n.x && a.n.y === b.n.y && a.n.state === b.n.state && a.n.color === b.n.color && a.n.name === b.n.name && a.n.level === b.n.level && a.n.repeat === b.n.repeat && a.n.big === b.n.big;
+
+const NodeGlyph = memo(function NodeGlyph({ n, selected, match }: GlyphProps) {
   const r = n.big ? R * 1.4 : R;
   if (n.state === 'fog') {
     return (
@@ -69,7 +74,7 @@ const NodeGlyph = memo(function NodeGlyph({ n, selected, match }: { n: TreeNodeV
       </text>
     </g>
   );
-});
+}, sameGlyph);
 
 export function TreeView({ nodes, edges, onBuy, currencyLabel, legend }: TreeViewProps) {
   const host = useRef<HTMLDivElement>(null);

@@ -212,6 +212,24 @@ describe('the Multiverse', () => {
     expect(UNIVERSE_RULES).toHaveLength(7);
   });
 
+  it('no mix of rules, Spark Hoards and the milestone loses a fifth to floating point (found by review)', () => {
+    const s = ready();
+    s.stats.multiversesAll = 1;
+    const hoards = SPARK_TREE.filter((n) => 'flag' in n.effect && n.effect.flag === 'sparkBonus').map((n) => n.id);
+    const rules = UNIVERSE_RULES.map((r) => r.id);
+    for (let mask = 0; mask < 1 << rules.length; mask++) {
+      for (let h = 0; h <= hoards.length; h += 3) {
+        s.multiverse.rules = rules.filter((_, i) => mask & (1 << i));
+        s.multiverse.tree = Object.fromEntries(hoards.slice(0, h).map((id) => [id, 1]));
+        invalidateStats();
+        // the exact answer, in whole fifths and whole percents
+        const share = s.multiverse.rules.reduce((a, id) => a + Math.round(UNIVERSE_RULES.find((r) => r.id === id)!.reward * 100), 0);
+        const fifths = Math.floor(((30 + h) * (100 + share)) / 100);
+        expect(multiverseGain(s).toNumber()).toBeCloseTo(fifths / 5, 9);
+      }
+    }
+  });
+
   it('Auto-Crunch (a Spark choice) Crunches by itself once ready', () => {
     const s = ready();
     s.stats.crunchesCycle = 0;

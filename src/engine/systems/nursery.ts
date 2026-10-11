@@ -6,7 +6,7 @@ import { D, type Decimal } from '../decimal';
 import { drawHits } from '../odds';
 import { cur, gain, type GameState, spend } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
-import { registerSystem, type TickContext } from '../tick';
+import { pacedDt, registerSystem, type TickContext } from '../tick';
 import { recordMutation, rollMutations } from './mutations';
 
 /**
@@ -22,6 +22,15 @@ export const nurseryOpen = (s: GameState) => (s.stats.nebulasAll ?? 0) >= N.nebu
 export const nurseryLevel = (s: GameState, id: string) => s.nursery.upgrades[id] ?? 0;
 export const plotCount = (s: GameState) => Math.min(N.maxPlots, N.plots + nurseryLevel(s, 'plots'));
 export const seedsOf = (s: GameState, id: string) => s.nursery.seeds[id] ?? 0;
+
+/**
+ * Seeds stop at 2^50. Late in the game every starship trip brings one home, a trillion trips a
+ * tick, and past 2^53 a plain number can't count whole seeds (found by review: the save refused it).
+ */
+export const MAX_SEEDS = 2 ** 50;
+export function addSeeds(s: GameState, id: string, n: number): void {
+  s.nursery.seeds[id] = Math.min(MAX_SEEDS, seedsOf(s, id) + Math.max(0, Math.floor(n)));
+}
 
 /** Keeps one entry per plot you own. */
 export function ensurePlots(s: GameState): void {
@@ -66,7 +75,7 @@ export function buySeeds(s: GameState, id: string): boolean {
   if (!nurseryOpen(s) || !BASE_SEEDS.includes(id)) return false;
   const plan = seedPlan(s);
   if (!plan.canAfford || !spend(s, 'essence', plan.cost)) return false;
-  s.nursery.seeds[id] = seedsOf(s, id) + Math.min(1e9, plan.count.toNumber());
+  addSeeds(s, id, Math.min(1e9, plan.count.toNumber()));
   return true;
 }
 
@@ -92,7 +101,7 @@ function reap(s: GameState, sp: StarSpecies, times: number, scale: number): Deci
   essence = essence.mul(stat(s, 'nurseryYield')).mul(scale);
   gain(s, 'essence', essence);
   const extra = drawHits(s.nursery.rng, n, Math.log10(N.extraSeed), BALANCE.runes.poissonBelow).toNumber();
-  s.nursery.seeds[sp.id] = seedsOf(s, sp.id) + times + extra;
+  addSeeds(s, sp.id, times + extra);
   if (!s.nursery.found.includes(sp.id)) {
     s.nursery.found.push(sp.id);
     s.stats.speciesGrown = s.nursery.found.length;
@@ -149,8 +158,11 @@ export function registerNursery(): void {
   registerSystem({
     id: 'nursery',
     order: 43,
-    tick: (s: GameState, dt: number, ctx: TickContext) => {
+    tick: (s: GameState, step: number, ctx: TickContext) => {
       if (!nurseryOpen(s)) return;
+      // stars grow over seconds: 5 looks a second are plenty (and the game time between is kept)
+      const dt = pacedDt(s, 'nursery', ctx, step, 0.2);
+      if (dt === null) return;
       ensurePlots(s);
       const speed = stat(s, 'nurseryGrowth').toNumber();
       const tending = nurseryLevel(s, 'tending') > 0;

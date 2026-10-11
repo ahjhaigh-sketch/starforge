@@ -25,6 +25,16 @@ export function samplesFor(runStardust: Decimal): number {
 }
 
 export const samples = (s: GameState, id: string) => s.codex[id] ?? 0;
+
+/**
+ * Samples stop at 2^50 (element level 51). Late in the game starships bring home billions of
+ * rare finds a tick, and past 2^53 a plain number can't count whole samples, so the save refused
+ * it and the game stopped saving (found by the simulator).
+ */
+export const MAX_SAMPLES = 2 ** 50;
+export function addSamples(s: GameState, id: string, n: number): void {
+  s.codex[id] = Math.min(MAX_SAMPLES, samples(s, id) + Math.max(0, Math.floor(n)));
+}
 export const elementLevel = (s: GameState, id: string): number => {
   const n = samples(s, id);
   return n <= 0 ? 0 : Math.floor(Math.log2(n)) + 1;
@@ -58,7 +68,7 @@ export function grantCodex(s: GameState, runStardust: Decimal, tier: number): nu
   for (const e of ELEMENTS) {
     if (e.z > maxZForTier(tier)) break;
     if (samples(s, e.id) === 0) fresh++;
-    s.codex[e.id] = samples(s, e.id) + each;
+    addSamples(s, e.id, each);
   }
   s.stats.elements = elementsFound(s);
   const rows = [1, 2, 3, 4, 5, 6, 7].filter((p) => rowComplete(s, p)).length;

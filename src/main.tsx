@@ -39,6 +39,8 @@ import { events } from './engine/events';
 import { simulateElapsedAsync } from './engine/offline';
 import { importSave, loadFromSlots } from './engine/save/store';
 import { breakdown, stat } from './engine/stats';
+import { installPwa } from './app/pwa';
+import { readSaveFile } from './platform/tauri';
 import { webStore } from './platform/web';
 import { burst, liveParticles } from './render/particles';
 import * as renderStage from './render/stage';
@@ -67,7 +69,25 @@ async function boot(): Promise<void> {
 
   let away = 0;
   let notice: { title: string; body: string } | null = null;
-  const loaded = loadFromSlots(webStore);
+  let loaded = loadFromSlots(webStore);
+  // the Windows app: if the window's storage was cleared, the save file still has the game
+  if (loaded.status === 'empty') {
+    const code = await readSaveFile();
+    if (code) {
+      try {
+        const r = importSave(code);
+        loaded = { status: 'ok', state: r.state, slot: 'A', savedAt: r.savedAt };
+        notice = { title: 'Save file loaded', body: 'Your game was loaded from its save file.' };
+      } catch (err) {
+        console.error('The save file could not be read:', err);
+      }
+    }
+  }
+  // a new game follows the system's "reduce motion" setting (the player can change it in Settings)
+  if (loaded.status === 'empty' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+    game.state.settings.reducedMotion = true;
+    game.state.settings.reduceFlashing = true;
+  }
   if (loaded.status === 'ok') {
     game.state = loaded.state;
     away = (Date.now() - game.state.lastTick) / 1000;
@@ -91,6 +111,7 @@ async function boot(): Promise<void> {
     </StrictMode>,
   );
   void renderStage.initRender();
+  installPwa();
   if (notice) events.emit({ t: 'toast', ...notice, icon: 'gear' });
 
   // Offline progress: the tab was closed, so the offline cap and efficiency apply.
@@ -99,12 +120,14 @@ async function boot(): Promise<void> {
     const s = game.state;
     const ui = useUi.getState();
     ui.setCatchUp(0);
+    const caughtFrom = performance.now();
     game.bootReport = await simulateElapsedAsync(
       s,
       away,
-      { cap: stat(s, 'offlineCap').toNumber(), efficiency: Math.min(BALANCE.offline.maxEfficiency, stat(s, 'offlineEfficiency').toNumber()), offline: true },
+      { cap: stat(s, 'offlineCap').toNumber(), efficiency: Math.min(BALANCE.offline.maxEfficiency, stat(s, 'offlineEfficiency').toNumber()), offline: true, budgetMs: 220 },
       (share) => ui.setCatchUp(share),
     );
+    game.catchUpMs = performance.now() - caughtFrom;
     ui.setCatchUp(null);
     if (game.bootReport.secondsCounted > 0) ui.open('welcome');
   }

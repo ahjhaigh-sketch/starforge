@@ -1,5 +1,6 @@
 import { events } from '../engine/events';
 import { saveToSlots, wipeSlots } from '../engine/save/store';
+import { mirrorSaveToFile } from '../platform/tauri';
 import { webStore } from '../platform/web';
 import { game } from './game';
 
@@ -9,6 +10,7 @@ export function saveNow(): boolean {
   const r = saveToSlots(webStore, game.state);
   if (r.ok) {
     game.lastSaveError = null;
+    mirrorSaveToFile(r.code);
     events.emit({ t: 'saved', slot: r.slot });
     return true;
   }

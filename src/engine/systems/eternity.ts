@@ -14,7 +14,7 @@ import { events } from '../events';
 import { milestoneReached, onAnyReset, performReset } from '../layers';
 import { cur, type GameState, spend } from '../state';
 import { invalidateStats, registerSources, stat } from '../stats';
-import { every, registerSystem } from '../tick';
+import { registerSystem, type TickContext, upkeepDue } from '../tick';
 import type { Tree } from '../treeKit';
 import { bhOpen, bhStage, reactorOpen, setDustShare } from './blackhole';
 import { buildingCost, buyBuilding, buyPort, buyResearch, coloniesOpen, hasResearch, maxRoutes, openRoute } from './colonies';
@@ -39,7 +39,7 @@ import { goalMet as trialGoalMet, inTrial } from './trials';
  *   as soon as it is ready once the layer's reset is free (its "resets nothing" milestone one layer
  *   up). Passive income can make a run's total dwarf any one reset, so a free layer must not wait;
  * - "amount": once the reset gives at least a number you set.
- * Automation acts once a game second and never cuts an unfinished Trial short. It spends freely on
+ * Automation acts once a game second (at most 4 times a real second) and never cuts an unfinished Trial short. It spends freely on
  * one-off tree nodes and builds, but at most a tenth of a currency on anything that repeats
  * forever (repeating nodes, constants), so your own purchases always have room.
  */
@@ -86,7 +86,7 @@ const UPGRADE_FOR: Record<AutoLayer, string> = { stardust: 'et.forge', supernova
 export const automating = (s: GameState, layer: AutoLayer) => hasEternity(s, UPGRADE_FOR[layer]) && eternityAuto(s, layer).on;
 
 /** The layers whose reset starts a run of each layer (its own and every higher one). */
-const RESET_ORDER = ['supernova', 'nebula', 'singularity', 'galactic', 'crunch'];
+const RESET_ORDER = ['supernova', 'nebula', 'singularity', 'galactic', 'crunch', 'multiverse'];
 
 /** The best gain a second each layer's current run has shown (not saved: relearned after a reload). */
 const bestRates = new WeakMap<GameState, Map<string, { since: number; rate: Decimal }>>();
@@ -162,25 +162,40 @@ interface TreeOps<N> {
   currency: string;
 }
 
-/** One-off nodes first, cheapest first, with everything; then repeating nodes from the budget. */
+/** Repeating levels one pass may buy (their prices climb, so a pass rarely needs more). */
+const REPEATS_PER_PASS = 40;
+
+/**
+ * One-off nodes first, cheapest first, with everything; then repeating nodes from the budget,
+ * cheapest level first. Each round looks at the tree once (buying a node can open its children,
+ * so there are a few rounds), and repeats only look at the repeating nodes: picking one node at a
+ * time from the whole tree cost the late game 8 ms a tick (found by the speed budgets).
+ */
 function buyTree<N>(s: GameState, t: TreeOps<N>, b: Budget): void {
-  for (let i = 0; i < 200; i++) {
+  for (let round = 0; round < 8; round++) {
+    const open = t.nodes
+      .filter((n) => !t.repeats(n) && t.canBuy(n))
+      .map((n) => ({ n, c: t.cost(n) }))
+      .sort((x, y) => x.c.cmp(y.c));
+    let bought = 0;
+    for (const { n } of open) if (t.canBuy(n) && t.buy(n)) bought++;
+    if (bought === 0) break;
+  }
+  const repeats = t.nodes.filter((n) => t.repeats(n));
+  for (let i = 0; i < REPEATS_PER_PASS; i++) {
+    const budget = budgetOf(s, b, t.currency);
     let pick: N | undefined;
     let pickCost: Decimal | undefined;
-    let pickRepeats = true;
-    for (const n of t.nodes) {
+    for (const n of repeats) {
       if (!t.canBuy(n)) continue;
-      const r = t.repeats(n);
       const c = t.cost(n);
-      if (r && c.gt(budgetOf(s, b, t.currency))) continue;
-      if (!pick || (pickRepeats && !r) || (pickRepeats === r && c.lt(pickCost!))) {
+      if (c.lte(budget) && (!pickCost || c.lt(pickCost))) {
         pick = n;
         pickCost = c;
-        pickRepeats = r;
       }
     }
     if (!pick || !t.buy(pick)) return;
-    if (pickRepeats) b.set(t.currency, budgetOf(s, b, t.currency).sub(pickCost!));
+    b.set(t.currency, budget.sub(pickCost!));
   }
 }
 
@@ -276,6 +291,9 @@ export function runEternity(s: GameState): void {
   });
 }
 
+/** When each game last had an automation pass, in game seconds (not saved). */
+const lastPass = new WeakMap<GameState, number>();
+
 export function registerEternity(): void {
   registerSources(
     ...ETERNITY_UPGRADES.filter((u) => u.effect).map((u) => ({
@@ -296,8 +314,11 @@ export function registerEternity(): void {
   registerSystem({
     id: 'eternity',
     order: 69,
-    tick: (s: GameState, dt: number) => {
-      if (s.eternity.upgrades.length > 0 && every(s, dt, 1 / ET.every)) runEternity(s);
+    tick: (s: GameState, _dt: number, ctx: TickContext) => {
+      // the real-time check first, so it counts every tick (behind the game-second check it fell behind)
+      if (s.eternity.upgrades.length === 0 || !upkeepDue(s, 'eternity', ctx, 0.25) || s.playtime - (lastPass.get(s) ?? -Infinity) < ET.every) return;
+      lastPass.set(s, s.playtime);
+      runEternity(s);
     },
   });
 }

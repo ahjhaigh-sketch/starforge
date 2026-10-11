@@ -137,11 +137,12 @@ canvas.sky { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; p
 }
 .rail-btn .badge.soon { background: var(--slate); }
 .rail-btn .badge.new { background: var(--lime); }
-.rail-btn.new { animation: railNew 1.4s ease-in-out infinite; }
-@keyframes railNew {
-  0%, 100% { box-shadow: 0 4px 0 color-mix(in oklab, var(--c) 35%, black), 0 0 0 0 rgba(125, 255, 90, 0); }
-  50% { box-shadow: 0 4px 0 color-mix(in oklab, var(--c) 35%, black), 0 0 24px 6px rgba(125, 255, 90, 0.55); }
-}
+/* a new system's glow: a fixed shadow on its own layer, pulsing only in opacity (the compositor
+   animates that without repainting; dozens of box-shadow pulses repainted every frame on a slow phone) */
+.rail-btn .new-glow { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
+  box-shadow: 0 0 24px 6px rgba(125, 255, 90, 0.55); opacity: 0; will-change: opacity; animation: newGlow 1.4s ease-in-out infinite; }
+@keyframes newGlow { 50% { opacity: 1; } }
+.reduced-motion .rail-btn .new-glow { animation: none; opacity: 0.6; }
 .rail .settings-btn { margin-top: auto; width: 4.2rem; }
 /* late in the game the right rail holds 40+ systems: the grid scrolls so the engine shop keeps its room */
 .teasers { flex: 0 1 auto; min-height: 0; max-height: 46%; display: flex; flex-direction: column; }

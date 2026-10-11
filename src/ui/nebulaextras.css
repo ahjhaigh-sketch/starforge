@@ -35,7 +35,7 @@
 .deck-slot b { font-family: var(--font-display); font-weight: 400; font-size: 0.95rem; line-height: 1.1; }
 .deck-slot .slot-no { position: absolute; top: 0.3rem; left: 0.5rem; color: var(--text-dim); font-weight: 800; }
 .deck-slot .now { color: var(--lime); font-weight: 700; }
-.deck-slot.off .now { color: var(--red); }
+.deck-slot.off .now { color: var(--red-text); }
 .deck-slot .acts { color: var(--cyan); font-weight: 700; }
 .deck-slot .twice { color: var(--gold); font-weight: 800; }
 .deck-slot .btn { margin-top: auto; }

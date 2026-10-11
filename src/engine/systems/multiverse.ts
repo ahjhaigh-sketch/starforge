@@ -77,7 +77,8 @@ export function multiverseGain(s: GameState): Decimal {
   const base = M.sparks + sparkTree.flag(s, 'sparkBonus') + (milestoneReached(s, 'multiverse', 'sparkPlus') ? 1 : 0);
   const raw = stat(s, 'sparkGain').mul(base * (1 + ruleReward(s)));
   // Sparks come in fifths: every Spark choice costs 0.2
-  return raw.mul(5).floor().div(5);
+  // in floating point 6 x 1.4 is 8.399999999999999: a hair of slack keeps a whole fifth from flooring away
+  return raw.mul(5).mul(1 + 1e-9).floor().div(5);
 }
 
 export const multiverseReady = (s: GameState) => multiverseGain(s).gte(M.choiceCost);

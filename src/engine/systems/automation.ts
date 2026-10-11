@@ -6,7 +6,7 @@ import { events } from '../events';
 import { milestoneReached } from '../layers';
 import { cur, type GameState } from '../state';
 import { defineStat, stat } from '../stats';
-import { registerSystem } from '../tick';
+import { registerSystem, upkeepDue } from '../tick';
 import { automating } from './eternity';
 import { buyEngine, engineCurve, engineRevealed, evolve, nextTierCost, owned } from './stardust';
 import { availableUpgrades, buyUpgrade } from './upgrades';
@@ -26,6 +26,9 @@ export interface AutoBuyerDef {
 }
 
 const ENGINE_MILESTONE = (i: number) => (i === 0 ? 'starforge' : i <= 4 ? 'auto5' : 'autoAll');
+
+/** When each game's auto-buyers last acted, in game seconds (not saved). */
+const lastRun = new WeakMap<GameState, number>();
 
 export const AUTO_BUYERS: readonly AutoBuyerDef[] = [
   { id: 'auto.evolve', name: 'Auto-Evolve', milestone: 'autoEvolve', kind: 'evolve' },
@@ -76,10 +79,14 @@ export function registerAutomation(): void {
   registerSystem({
     id: 'automation',
     order: 40,
-    tick: (s, dt) => {
+    tick: (s, dt, ctx) => {
+      // at most 4 times a real second; each time covers the game time since the last
+      if (!upkeepDue(s, 'automation', ctx, 0.25)) return;
+      const since = lastRun.get(s) ?? s.playtime - dt;
+      lastRun.set(s, s.playtime);
       const hz = BALANCE.automation.perSecond * stat(s, 'autoSpeed').toNumber();
-      // several passes if a long catch-up step covers more than one interval
-      const passes = Math.min(20, Math.floor(s.playtime * hz) - Math.floor((s.playtime - dt) * hz));
+      // several passes if a long stretch covers more than one interval (a few online: more buy nothing new)
+      const passes = Math.min(ctx.catchUp ? 5 : 3, Math.floor(s.playtime * hz) - Math.floor(since * hz));
       // automated purchases make no sound (only the player's own clicks do)
       if (passes > 0) events.automated(() => {
         for (let i = 0; i < passes; i++) runAutomation(s);

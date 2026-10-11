@@ -11,6 +11,7 @@ import { nextFloat, nextInt } from '../rng';
 import { cur, type Deal, gain, type GameState, spend } from '../state';
 import { stat } from '../stats';
 import { registerSystem } from '../tick';
+import { addSamples } from './codex';
 import { addRelicLevels, batchAlloy, batchSeconds, crucibles, forgeOpen, relicLevel } from './forge';
 import { levelInfo, addXp } from './starsmith';
 import { rawShardGain } from './supernova';
@@ -110,7 +111,7 @@ export function buyDeal(s: GameState, index: number): boolean {
       addRelicLevels(s, d.get.id!, d.get.count ?? 1);
       break;
     case 'codex':
-      s.codex[d.get.id!] = (s.codex[d.get.id!] ?? 0) + (d.get.count ?? 1);
+      addSamples(s, d.get.id!, d.get.count ?? 1);
       break;
     case 'xp':
       addXp(s, d.get.amount!);

@@ -70,6 +70,7 @@ export const RailButton = memo(function RailButton({ item, side, small }: { item
       data-rail={item.id}
       {...tipProps(`rail-${item.id}`, side, title, tipBody(item))}
     >
+      {item.state === 'new' && <span className="new-glow" aria-hidden="true" />}
       <Icon name={hidden ? 'mystery' : item.icon} className="rail-ico" />
       <span className="lbl">{hidden ? '???' : item.name}</span>
       {item.state === 'locked' && (
