@@ -105,6 +105,8 @@ export interface TapRuntime {
   combo: number;
   lastTapMs: number;
   recent: number[];
+  /** Pulse: the last beat that has had its one graded tap. */
+  pulseBeat?: number;
 }
 
 export function createTapRuntime(): TapRuntime {
@@ -137,13 +139,25 @@ export interface TapResult {
   amount: Decimal;
   crit: boolean;
   combo: number;
+  /** Pulse grade of this tap ('Perfect', 'Off beat'...), when Pulse is equipped. */
+  grade?: string;
 }
+
+/**
+ * Attunements change tapping without stardust.ts knowing them: a cap on taps a second, and hooks
+ * that see every tap and return a multiplier for it (0 = the tap gives nothing) and a label.
+ */
+export const tapRules: {
+  cap: Array<(s: GameState) => number>;
+  hooks: Array<(s: GameState, rt: TapRuntime, nowMs: number) => { mult: number; grade?: string }>;
+} = { cap: [], hooks: [] };
 
 /** One tap on the Star Core. Returns null when the 30-taps-a-second limit drops it. */
 export function tapStar(s: GameState, rt: TapRuntime, nowMs: number): TapResult | null {
   const t = BALANCE.tap;
   while (rt.recent.length && nowMs - rt.recent[0]! >= 1000) rt.recent.shift();
-  if (rt.recent.length >= t.maxPerSecond) return null;
+  const cap = tapRules.cap.reduce<number>((c, f) => Math.min(c, f(s)), t.maxPerSecond);
+  if (rt.recent.length >= cap) return null;
   rt.recent.push(nowMs);
 
   rt.combo = comboNow(rt, nowMs, stat(s, 'comboDrain').toNumber()) + 1;
@@ -153,12 +167,18 @@ export function tapStar(s: GameState, rt: TapRuntime, nowMs: number): TapResult 
   const crit = nextFloat(s.rng) < stat(s, 'critChance').toNumber();
   let amount = tapValue(s).mul(comboMult(rt.combo, stat(s, 'comboPower').toNumber()));
   if (crit) amount = amount.mul(stat(s, 'critMult'));
+  let grade: string | undefined;
+  for (const h of tapRules.hooks) {
+    const r = h(s, rt, nowMs);
+    if (r.mult !== 1) amount = amount.mul(r.mult);
+    grade ??= r.grade;
+  }
   gain(s, 'stardust', amount);
   s.stats.taps = (s.stats.taps ?? 0) + 1;
   giveXp(s, BALANCE.starsmith.xp.tap);
   if (crit) s.stats.crits = (s.stats.crits ?? 0) + 1;
   events.emit({ t: 'tap', amount, crit });
-  return { amount, crit, combo: rt.combo };
+  return { amount, crit, combo: rt.combo, ...(grade ? { grade } : {}) };
 }
 
 // ---------- registration ----------

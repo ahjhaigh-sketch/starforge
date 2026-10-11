@@ -14,6 +14,11 @@ import { type BeltUpgradeId } from '../content/belt';
 import { beltTierUp, buyBeltUpgrade, buyDrillBit, buyDrillDrone, harvest, tapCore } from '../engine/systems/belt';
 import { addPerk, resetPerks } from '../engine/systems/starsmith';
 import type { ForgeUpgradeId } from '../content/forge';
+import type { AttuneId } from '../content/extras';
+import { buyAutoFuse, buyFusionUpgrade, fuse, type FusionUpgradeId } from '../engine/systems/fusion';
+import { equipAttune, unequipAttune, unlockAttune } from '../engine/systems/attune';
+import { buyDeal, buyLuck, reroll } from '../engine/systems/merchant';
+import { buyShip, buyShipUpgrade, launch, setShipAuto, type ShipUpgradeId } from '../engine/systems/ships';
 import { buyForgeUpgrade, buyRelic, equipRelic, setForgeGrade, setForgeOn, setForgeShare, unequipRelic } from '../engine/systems/forge';
 import { backupNow, readBackup } from './backups';
 import { D } from '../engine/decimal';
@@ -43,11 +48,12 @@ let askedToKeepData = false;
 
 export const commands = {
   /** One tap on the Star Core. Returns the floating text, or null if the 30-a-second cap dropped it. */
-  tap(): { text: string; crit: boolean } | null {
+  tap(): { text: string; crit: boolean; grade?: string } | null {
     const r = tapStar(game.state, game.tapRuntime, performance.now());
     if (!r) return null;
     done();
-    return { text: `+${format(r.amount, game.state.settings.notation)}`, crit: r.crit };
+    if (r.grade === 'Off beat') return { text: 'Off beat', crit: false, grade: r.grade };
+    return { text: `+${format(r.amount, game.state.settings.notation)}`, crit: r.crit, ...(r.grade ? { grade: r.grade } : {}) };
   },
   /** Buys an engine with the current buy amount (x1, x10, x100, x1,000, Max or typed). */
   buyEngine(id: string): boolean {
@@ -149,6 +155,74 @@ export const commands = {
     const ok = unequipRelic(game.state, id);
     done();
     return ok;
+  },
+  fuse(from: number, to: number): boolean {
+    const ok = fuse(game.state, from, to);
+    done();
+    return ok;
+  },
+  buyFusionUpgrade(id: FusionUpgradeId): boolean {
+    const ok = buyFusionUpgrade(game.state, id);
+    done();
+    return ok;
+  },
+  buyAutoFuse(): boolean {
+    const ok = buyAutoFuse(game.state);
+    done();
+    return ok;
+  },
+  unlockAttune(id: AttuneId): boolean {
+    const ok = unlockAttune(game.state, id);
+    done();
+    return ok;
+  },
+  equipAttune(id: AttuneId): boolean {
+    const ok = equipAttune(game.state, id);
+    done();
+    return ok;
+  },
+  unequipAttune(id: AttuneId): boolean {
+    const ok = unequipAttune(game.state, id);
+    done();
+    return ok;
+  },
+  buyDeal(index: number): boolean {
+    const ok = buyDeal(game.state, index);
+    done();
+    return ok;
+  },
+  rerollDeals(): boolean {
+    const ok = reroll(game.state);
+    done();
+    return ok;
+  },
+  buyMerchantLuck(): boolean {
+    const ok = buyLuck(game.state);
+    done();
+    return ok;
+  },
+  buyShip(): boolean {
+    const ok = buyShip(game.state);
+    done();
+    return ok;
+  },
+  launchShip(ship: number, sector: string): boolean {
+    const ok = launch(game.state, ship, sector);
+    done();
+    return ok;
+  },
+  buyShipUpgrade(id: ShipUpgradeId): boolean {
+    const ok = buyShipUpgrade(game.state, id);
+    done();
+    return ok;
+  },
+  setAutoFuse(on: boolean) {
+    game.state.fusion.autoOn = on;
+    done();
+  },
+  setShipAuto(ship: number, auto: boolean) {
+    setShipAuto(game.state, ship, auto);
+    done();
   },
   buyNode(id: string): boolean {
     const ok = buyNode(game.state, id);

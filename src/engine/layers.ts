@@ -91,6 +91,12 @@ export function resetPreview(s: GameState, id: string): ResetPreview | null {
   return { gain: def.gain(s), resets, kept };
 }
 
+/** Systems that react to any reset (a new Merchant ship docks after a Supernova). */
+const resetHooks: Array<(s: GameState, layerId: string, before: ResetBefore) => void> = [];
+export function onAnyReset(fn: (s: GameState, layerId: string, before: ResetBefore) => void): void {
+  resetHooks.push(fn);
+}
+
 /** The one reset function. Returns the gain, or null if the layer isn't ready. */
 export function performReset(s: GameState, id: string): Decimal | null {
   const def = layers.get(id);
@@ -106,6 +112,7 @@ export function performReset(s: GameState, id: string): Decimal | null {
   });
   s.lastResetAt[id] = s.playtime;
   def.onReset?.(s, before);
+  for (const h of resetHooks) h(s, id, before);
   // every stat depends on what was just reset: nothing may read a cached value from the old run
   invalidateStats();
   events.emit({ t: 'reset', layer: id, gain: amount });

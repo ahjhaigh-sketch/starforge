@@ -63,6 +63,21 @@ export const plainSaveSchema = z.looseObject({
     .optional(),
   relics: z.looseObject({ levels: z.record(z.string(), z.number().int().min(0)), equipped: z.array(z.string()) }).optional(),
   codex: z.record(z.string(), z.number().int().min(0)).optional(),
+  fusion: z
+    .looseObject({ board: z.array(z.number().int().min(0)), upgrades: z.record(z.string(), z.number().int().min(0)), acc: finite, best: z.number().int().min(0), autoOwned: z.boolean(), autoOn: z.boolean(), spawned: finite })
+    .optional(),
+  attune: z
+    .looseObject({ unlocked: z.array(z.string()), equipped: z.array(z.string()), pulse: z.array(finite), heart: finite, chaosTaps: finite, chaos: z.looseObject({ id: z.string(), until: finite }).nullable(), rng: z.tuple([finite, finite, finite, finite]) })
+    .optional(),
+  merchant: z
+    .looseObject({
+      deals: z.array(z.looseObject({ kind: z.string(), quality: z.string(), pay: z.looseObject({ currency: z.string(), amount: dec }), get: z.looseObject({ currency: z.string().optional(), amount: dec.optional(), id: z.string().optional(), count: finite.optional() }) })),
+      luck: z.number().int().min(0),
+      rerolls: z.number().int().min(0),
+      rng: z.tuple([finite, finite, finite, finite]),
+    })
+    .optional(),
+  ships: z.looseObject({ fleet: z.array(z.looseObject({ sector: z.string().nullable(), t: finite, auto: z.boolean() })), upgrades: z.record(z.string(), z.number().int().min(0)), rng: z.tuple([finite, finite, finite, finite]) }).optional(),
   settings: z.looseObject({
     notation: z.enum(['suffix', 'scientific', 'engineering']),
     autosaveSeconds: finite,

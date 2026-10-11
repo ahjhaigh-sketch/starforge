@@ -671,3 +671,123 @@ test('Belt and furnace purchases follow the buy amount', async ({ page }) => {
   await expect.poll(() => page.evaluate(() => (window as unknown as Sf6).sf.game.state.forge.upgrades.crucibles)).toBe(5);
   await expect(forge.locator('[data-forge-up="crucibles"]').getByRole('button', { name: /maxed/ })).toBeVisible();
 });
+
+// ---------- Phase 7: Comet Fusion, Attunements, the Merchant and starships ----------
+
+type Sf7 = {
+  sf: {
+    game: {
+      state: {
+        tier: number;
+        unlocked: string[];
+        stats: Record<string, number>;
+        fusion: { board: number[]; best: number };
+        attune: { equipped: string[]; pulse: number[] };
+        merchant: { deals: unknown[] };
+        ships: { fleet: Array<{ sector: string | null; t: number }>; upgrades: Record<string, number> };
+        currencies: Record<string, { toNumber(): number }>;
+      };
+    };
+    commands: { devAdd(c: string, n: number): void };
+    breakdown(s: unknown, id: string): Array<{ label: string }>;
+  };
+};
+
+const sf7 = (page: Page) => page.evaluate.bind(page);
+
+test('Comet Fusion: dragging a comet onto its twin fuses exactly three', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf7).sf;
+    game.state.stats.supernovas = 6;
+    game.state.fusion.board = [2, 2, 2, 1, 0, 0, 0, 0, 0];
+    commands.devAdd('shards', 0);
+  });
+  await openRail(page, 'fusion');
+  const board = page.getByTestId('fusion-board');
+  const a = board.locator('[data-cell="0"]');
+  const b = board.locator('[data-cell="1"]');
+  const from = (await a.boundingBox())!;
+  const to = (await b.boundingBox())!;
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 6 });
+  await page.mouse.up();
+  await expect.poll(() => sf7(page)(() => (window as unknown as Sf7).sf.game.state.fusion.board.slice(0, 4))).toEqual([0, 3, 0, 1]);
+  await expect(board.locator('[data-cell="1"]')).toHaveAttribute('data-level', '3');
+  // tap-to-fuse needs a third of the same level: with only one level 1, nothing happens
+  await board.locator('[data-cell="3"]').click();
+  await expect(board.locator('[data-cell="3"]')).toHaveClass(/sel/);
+  expect(errors).toEqual([]);
+});
+
+test('Attunements: equip Pulse, tap on the beat, the rating shows in Stats', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf7).sf;
+    game.state.stats.supernovas = 8;
+    game.state.unlocked.push('stats');
+    commands.devAdd('stardust', 0);
+  });
+  await openRail(page, 'attune');
+  const card = page.locator('[data-attune="pulse"]');
+  await card.getByRole('button', { name: 'Equip' }).click();
+  await expect(card.getByRole('button', { name: 'Equipped' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.pulse-ring')).toBeAttached();
+  await expect(page.locator('.attune-hud')).toContainText('Pulse');
+  // tap right on beats: wait for each beat with the page's own clock
+  for (let i = 0; i < 4; i++) {
+    await page.evaluate(() => new Promise((r) => setTimeout(r, 1000 - (performance.now() % 1000))));
+    await page.locator('.star-btn').click({ force: true });
+  }
+  const graded = await page.evaluate(() => (window as unknown as Sf7).sf.game.state.attune.pulse.length);
+  expect(graded).toBeGreaterThanOrEqual(2);
+  await openRail(page, 'stats');
+  await expect(page.locator('[data-panel="stats"]')).toContainText('Pulse (timing rating)');
+  expect(errors).toEqual([]);
+});
+
+test('the Merchant: four deals, take one and it is replaced', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf7).sf;
+    game.state.stats.supernovas = 10;
+    commands.devAdd('stardust', 1e15);
+    commands.devAdd('shards', 1e6);
+    commands.devAdd('ore', 1e9);
+  });
+  await openRail(page, 'merchant');
+  const panel = page.locator('[data-panel="merchant"]');
+  await expect(panel.locator('.deal')).toHaveCount(4);
+  await panel.locator('[data-deal="0"]').getByRole('button', { name: /Take the deal/ }).click();
+  await expect.poll(() => sf7(page)(() => (window as unknown as Sf7).sf.game.state.stats.deals ?? 0)).toBe(1);
+  await expect(panel.locator('.deal')).toHaveCount(4);
+  await panel.getByRole('button', { name: /New deals for/ }).click();
+  await expect(panel.getByRole('button', { name: /New deals for 10 Nova/ })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('Starships: launch a ship; Engines make the trip shorter', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf7).sf;
+    game.state.stats.supernovas = 15;
+    game.state.stats.bestTier = 3; // 15 Supernovas means Blue Giant at least
+    commands.devAdd('alloy.iron', 1e6);
+  });
+  await openRail(page, 'expeditions');
+  const panel = page.locator('[data-panel="expeditions"]');
+  await expect(panel.locator('.sectors')).toContainText('Kuiper Drift');
+  await expect(panel.locator('.sectors')).toContainText('10m');
+  await panel.locator('[data-up="ships-engines"]').getByRole('button').click();
+  await expect(panel.locator('.sectors')).toContainText('8m');
+  await panel.locator('[data-ship="0"]').getByRole('button', { name: 'Launch' }).click();
+  await expect.poll(() => sf7(page)(() => (window as unknown as Sf7).sf.game.state.ships.fleet[0]!.sector)).toBe('kuiper');
+  await expect(panel.locator('[data-ship="0"]')).toContainText('Kuiper Drift');
+  expect(errors).toEqual([]);
+});

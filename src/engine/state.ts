@@ -2,7 +2,9 @@ import { D, type Decimal } from './decimal';
 import { seedRng, type RngState } from './rng';
 
 /** Bump with every change to the save's shape, and add a migration + an old-save fixture test. */
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
+/** A new Fusion board is 3 x 3 (BALANCE.fusion.baseSize). */
+const BALANCE_FUSION_CELLS = 9;
 
 export type Notation = 'suffix' | 'scientific' | 'engineering';
 /** 'next' buys up to the next milestone (an engine's next x2, a constant's next doubling). */
@@ -120,7 +122,23 @@ export interface GameState {
   relics: { levels: Record<string, number>; equipped: string[] };
   /** Element Codex: samples of each element, by element ID. */
   codex: Record<string, number>;
+  /** Comet Fusion: the board (comet level per cell, 0 = empty), upgrades, spawn progress and best level made. */
+  fusion: { board: number[]; upgrades: Record<string, number>; acc: number; best: number; autoOwned: boolean; autoOn: boolean; spawned: number };
+  /** Star Pulse Attunements: unlocked and equipped, the Pulse rating memory, the heart meter, the Chaos Die. */
+  attune: { unlocked: string[]; equipped: string[]; pulse: number[]; heart: number; chaosTaps: number; chaos: { id: string; until: number } | null; rng: RngState };
+  /** The Wandering Merchant: today's deals, Merchant Luck, rerolls since the last Supernova, its own random stream. */
+  merchant: { deals: Deal[]; luck: number; rerolls: number; rng: RngState };
+  /** Starship Expeditions: each ship's destination and time left, and fleet upgrades. */
+  ships: { fleet: Array<{ sector: string | null; t: number; auto: boolean }>; upgrades: Record<string, number>; rng: RngState };
   settings: Settings;
+}
+
+/** One Merchant offer: pay this, get that. Amounts are fixed when the deal appears. */
+export interface Deal {
+  kind: string;
+  quality: 'common' | 'rare' | 'mythical';
+  pay: { currency: string; amount: Decimal };
+  get: { currency?: string; amount?: Decimal; id?: string; count?: number };
 }
 
 export function defaultSettings(): Settings {
@@ -178,6 +196,10 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     forge: { grade: 'iron', on: true, upgrades: {}, lanes: [], share: 0.5, allowance: D(0), seen: D(0) },
     relics: { levels: {}, equipped: [] },
     codex: {},
+    fusion: { board: new Array<number>(BALANCE_FUSION_CELLS).fill(0), upgrades: {}, acc: 0, best: 0, autoOwned: false, autoOn: true, spawned: 0 },
+    attune: { unlocked: ['pulse'], equipped: [], pulse: [], heart: 0, chaosTaps: 0, chaos: null, rng: seedRng(seed ^ 0x0c4a_05d1) },
+    merchant: { deals: [], luck: 0, rerolls: 0, rng: seedRng(seed ^ 0x3e7c_4a17) },
+    ships: { fleet: [{ sector: null, t: 0, auto: true }], upgrades: {}, rng: seedRng(seed ^ 0x5417_9e11) },
     settings: defaultSettings(),
   };
 }

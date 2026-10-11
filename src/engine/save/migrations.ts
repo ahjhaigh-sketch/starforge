@@ -31,6 +31,8 @@ const migrations: Record<number, (d: PlainSave) => void> = {
   6: () => {},
   // 7 (Phase 6): the Starforge furnace, relics and the Element Codex, all with defaults.
   7: () => {},
+  // 8 (Phase 7): Comet Fusion, Attunements, the Merchant and starships, all with defaults.
+  8: () => {},
 };
 
 export function migrate(version: number, data: PlainSave): PlainSave {

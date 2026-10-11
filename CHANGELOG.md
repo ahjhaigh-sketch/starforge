@@ -1,5 +1,32 @@
 # Changelog
 
+## Phase 7: Supernova extras
+- Comet Fusion opens at 6 Supernovas.
+  - A merge board: 3x3, growing to 5x5. A comet arrives every 12 s.
+  - Drag a comet onto one of the same level (or tap one, then the other) and exactly three of that level fuse into the next.
+  - Your best level ever multiplies Stardust and taps (x1.25 a level) and comet strength.
+  - Upgrades (shards, with buy amounts): comet lure, hot start, wider board, and Auto-fuse, which keeps fusing offline.
+- Star Pulse Attunements open at 8 Supernovas, with up to 3 equipped on the Star Core.
+  - **Pulse:** a ring closes on the star each beat. The first tap in a beat's window is graded x25, x5 or x2, and off-beat taps give nothing, so mashing can't beat rhythm. The average grade is a tap-power bonus in the breakdown.
+  - **Heartbeat:** a meter that taps fill and time drains; production up to x4, but at 100 it overloads to zero.
+  - **Chaos Die:** one of six effects every 20 taps.
+  - **Gravity Lens:** taps x6, at most 4 a second.
+  - Chips on the Star Core show each one's state, and "Perfect!" floats up.
+- The Wandering Merchant opens at 10 Supernovas.
+  - Four deals sized from your economy the moment they appear: shards, ore, alloy, relic levels, Codex samples, XP or a Frenzy.
+  - A taken deal is replaced at once, and a new ship docks after every Supernova.
+  - Rerolls cost shards. Merchant Luck makes deals bigger. Rare deals are x3 and the Mythical Merchant is x100, with a toast when it docks.
+- Starship Expeditions open at 15 Supernovas.
+  - Up to 5 ships fly to 6 named sectors, opened by your best Star Tier.
+  - Trip time is distance / speed, so Engines shorten every trip; farther sectors pay more per hour.
+  - Cargo and Crew upgrades cost Gold and Crystal alloy, giving the rarer grades a use.
+  - Ships on repeat keep flying offline. Rare finds are relic levels or Codex samples.
+- All four are kept through Supernova and sit on the rails before they open. Fusion, the Chaos Die, the Merchant and the ships each roll from their own random stream.
+- Relic levels from deals and rare finds respect each relic's level cap.
+- 11 new medals for fusion, perfect Pulse taps, Chaos rolls, deals and trips.
+- The simulator bot fuses comets, uses the Gravity Lens, takes good deals and keeps ships flying. The milestone targets hold.
+- Save version 8, with a migration test that loads a real version 7 save.
+
 ## Phase 6: Starforge
 - The Starforge opens at 3 Supernovas, in one panel with three tabs: Furnace, Relics and Codex.
 - Ore grades: common ore makes Iron alloy. A rare asteroid also drops as much of its own grade's ore (Gold, Crystal, Prismatic, Void) as its common ore, so every grade arrives at about a tenth of iron's rate.

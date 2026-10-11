@@ -263,4 +263,71 @@ export const BALANCE = {
     /** The share of your Stardust an auto-buyer may spend: all, half, a tenth. */
     spendChoices: [1, 0.5, 0.1],
   },
+  fusion: {
+    /** Comet Fusion opens at 6 Supernovas: a 3x3 board growing to 5x5, a comet every 12 s. */
+    supernovas: 6,
+    baseSize: 3,
+    maxSize: 5,
+    spawnSeconds: 12,
+    /** Spawn speed: x1.12 a level. Upgrades cost Nova Shards. */
+    speedPerLevel: 1.12,
+    upgrades: {
+      speed: { base: 5, growth: 1.7 },
+      start: { base: 200, growth: 12 },
+      size: { base: 60, growth: 25 },
+    },
+    /** Starting level stops here (each level is worth 3 of the one below). */
+    maxStart: 5,
+    autoCost: 400,
+    /** Your best comet level: x1.25 Stardust and taps per level, +10% comet strength per level. */
+    perLevel: 1.25,
+    cometStrength: 0.1,
+  },
+  attune: {
+    /** Attunements open at 8 Supernovas; up to 3 equipped. Unlocking costs Nova Shards. */
+    supernovas: 8,
+    slots: 3,
+    unlock: { pulse: 0, heartbeat: 25, chaos: 100, lens: 400 },
+    /** Pulse: one beat a second. The first tap in a beat's window is graded; off-beat taps give nothing. */
+    pulse: { beatMs: 1000, perfectMs: 60, greatMs: 140, goodMs: 240, perfect: 25, great: 5, good: 2, missed: 1, memory: 8 },
+    /** Heartbeat: each tap adds 8, it drains 18 a second, and at 100 it overloads back to 0. */
+    heartbeat: { perTap: 8, drain: 18, max: 100, bonus: 3 },
+    /** Chaos Die: a random effect every 20 taps, for 15 seconds. */
+    chaos: { every: 20, seconds: 15 },
+    /** Gravity Lens: taps x6, but at most 4 a second. */
+    lens: { mult: 6, perSecond: 4 },
+  },
+  merchant: {
+    /** The Wandering Merchant arrives at 10 Supernovas with 4 deals. */
+    supernovas: 10,
+    deals: 4,
+    /** Rerolling the deals costs shards: 5 x 2^n, back to 5 after each Supernova (a new ship docks free). */
+    rerollBase: 5,
+    rerollGrowth: 2,
+    /** Merchant Luck: deals x1.1 a level; Mythical chance 1% + 0.2% a level. */
+    luck: { base: 20, growth: 1.8, value: 0.1 },
+    rareChance: 0.1,
+    rareMult: 3,
+    mythicalChance: 0.01,
+    mythicalPerLevel: 0.002,
+    mythicalMult: 100,
+  },
+  ships: {
+    /** Starship Expeditions open at 15 Supernovas. Ships cost Iron alloy; up to 5. */
+    supernovas: 15,
+    shipBase: 40,
+    shipGrowth: 5,
+    maxShips: 5,
+    /** Trip time = distance / speed; speed 1 a second, x1.25 per Engines level. */
+    baseSpeed: 1,
+    enginePerLevel: 1.25,
+    /** Cargo: loot x1.3 a level. Crew: rare finds +5% a level. */
+    cargoPerLevel: 1.3,
+    crewPerLevel: 0.05,
+    upgrades: {
+      engines: { base: 30, growth: 1.9 },
+      cargo: { base: 20, growth: 2.1 },
+      crew: { base: 10, growth: 2.4 },
+    },
+  },
 } as const;

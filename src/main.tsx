@@ -9,6 +9,7 @@ import './ui/early.css';
 import './ui/nova.css';
 import './ui/belt.css';
 import './ui/forge.css';
+import './ui/extras.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

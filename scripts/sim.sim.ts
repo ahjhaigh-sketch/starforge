@@ -78,6 +78,24 @@ let setForgeGrade: (typeof import('../src/engine/systems/forge'))['setForgeGrade
 let batchOre: (typeof import('../src/engine/systems/forge'))['batchOre'];
 let relicPlan: (typeof import('../src/engine/systems/forge'))['relicPlan'];
 let buyRelic: (typeof import('../src/engine/systems/forge'))['buyRelic'];
+let SECTORS: (typeof import('../src/content/extras'))['SECTORS'];
+let fusionOpen: (typeof import('../src/engine/systems/fusion'))['fusionOpen'];
+let autoFuse: (typeof import('../src/engine/systems/fusion'))['autoFuse'];
+let buyAutoFuse: (typeof import('../src/engine/systems/fusion'))['buyAutoFuse'];
+let buyFusionUpgrade: (typeof import('../src/engine/systems/fusion'))['buyFusionUpgrade'];
+let fusionPlan: (typeof import('../src/engine/systems/fusion'))['fusionPlan'];
+let attuneOpen: (typeof import('../src/engine/systems/attune'))['attuneOpen'];
+let unlockAttune: (typeof import('../src/engine/systems/attune'))['unlockAttune'];
+let equipAttune: (typeof import('../src/engine/systems/attune'))['equipAttune'];
+let merchantOpen: (typeof import('../src/engine/systems/merchant'))['merchantOpen'];
+let buyDeal: (typeof import('../src/engine/systems/merchant'))['buyDeal'];
+let shipsOpen: (typeof import('../src/engine/systems/ships'))['shipsOpen'];
+let launch: (typeof import('../src/engine/systems/ships'))['launch'];
+let sectorOpen: (typeof import('../src/engine/systems/ships'))['sectorOpen'];
+let buyShip: (typeof import('../src/engine/systems/ships'))['buyShip'];
+let shipCost: (typeof import('../src/engine/systems/ships'))['shipCost'];
+let buyShipUpgrade: (typeof import('../src/engine/systems/ships'))['buyShipUpgrade'];
+let shipUpgradePlan: (typeof import('../src/engine/systems/ships'))['shipUpgradePlan'];
 let PLANET_TYPES: (typeof import('../src/content/early'))['PLANET_TYPES'];
 
 async function loadGame(): Promise<void> {
@@ -105,6 +123,11 @@ async function loadGame(): Promise<void> {
   ({ harvest, beltPlan, buyBeltUpgrade, beltTierUp, beltOpen, dronePlan, bitPlan, buyDrillDrone, buyDrillBit } = await import('../src/engine/systems/belt'));
   ({ addPerk, perksFree } = await import('../src/engine/systems/starsmith'));
   ({ forgeOpen, forgePlan, buyForgeUpgrade, setForgeGrade, batchOre, relicPlan, buyRelic } = await import('../src/engine/systems/forge'));
+  ({ SECTORS } = await import('../src/content/extras'));
+  ({ fusionOpen, autoFuse, buyAutoFuse, buyFusionUpgrade, fusionPlan } = await import('../src/engine/systems/fusion'));
+  ({ attuneOpen, unlockAttune, equipAttune } = await import('../src/engine/systems/attune'));
+  ({ merchantOpen, buyDeal } = await import('../src/engine/systems/merchant'));
+  ({ shipsOpen, launch, sectorOpen, buyShip, shipCost, buyShipUpgrade, shipUpgradePlan } = await import('../src/engine/systems/ships'));
 }
 
 const TAPS_PER_SECOND = 4;
@@ -199,6 +222,22 @@ function sideSystems(s: GameState): void {
       if (!next || !buyRelic(s, next.id)) break;
     }
   }
+  // Phase 7: fuse the board, the Gravity Lens (the bot taps a steady 4 a second), good deals, ships
+  if (fusionOpen(s)) autoFuse(s);
+  const merchantDeals = merchantOpen(s) ? s.merchant.deals : [];
+  for (let i = 0; i < merchantDeals.length; i++) {
+    const d = merchantDeals[i]!;
+    if ((d.kind === 'shards' || d.kind === 'relic' || d.quality !== 'common') && d.pay.amount.lt(cur(s, d.pay.currency).mul(0.2))) buyDeal(s, i);
+  }
+  if (shipsOpen(s)) {
+    const best = [...SECTORS].reverse().find((x) => sectorOpen(s, x));
+    if (best) s.ships.fleet.forEach((sh, i) => !sh.sector && launch(s, i, best.id));
+    if (shipCost(s).lt(cur(s, 'alloy.iron').mul(0.3))) buyShip(s);
+    for (const id of ['engines', 'cargo', 'crew'] as const) {
+      const p = shipUpgradePlan(s, id);
+      if (p.canAfford && p.cost.lt(cur(s, id === 'engines' ? 'alloy.iron' : id === 'cargo' ? 'alloy.gold' : 'alloy.crystal').mul(0.3))) buyShipUpgrade(s, id);
+    }
+  }
   const drone = dronePlan(s);
   if (drone.canAfford && drone.cost.lt(cur(s, 'ore').mul(0.3))) buyDrillDrone(s);
   if (bitPlan(s).canAfford) buyDrillBit(s);
@@ -206,6 +245,19 @@ function sideSystems(s: GameState): void {
 }
 
 function spendShards(s: GameState): void {
+  // a fifth of the shards go to the stage's side systems first
+  const budget = cur(s, 'shards').mul(0.2);
+  if (attuneOpen(s)) {
+    if (!s.attune.unlocked.includes('lens') && budget.gte(BALANCE.attune.unlock.lens)) unlockAttune(s, 'lens');
+    if (s.attune.unlocked.includes('lens') && !s.attune.equipped.includes('lens')) equipAttune(s, 'lens');
+  }
+  if (fusionOpen(s)) {
+    if (!s.fusion.autoOwned && budget.gte(BALANCE.fusion.autoCost)) buyAutoFuse(s);
+    for (const id of ['speed', 'size', 'start'] as const) {
+      const p = fusionPlan(s, id);
+      if (p.count > 0 && p.cost.lt(cur(s, 'shards').mul(0.05))) buyFusionUpgrade(s, id);
+    }
+  }
   for (let i = 0; i < 200; i++) {
     const options = NOVA_TREE.filter((n) => canBuyNode(s, n)).sort((a, b) => Number(!!a.repeat) - Number(!!b.repeat) || nodeCost(s, a).cmp(nodeCost(s, b)));
     const pick = options[0];

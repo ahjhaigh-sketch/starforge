@@ -6,7 +6,7 @@ import { chromium } from '@playwright/test';
 
 const seconds = Number(process.argv[2] ?? 120);
 const base = process.argv[3] ?? 'http://localhost:4173';
-const PANELS = ['upgrades', 'medals', 'stats', 'constants', 'quests', 'orbitals', 'mastery', 'novatree', 'automation', 'ascent', 'belt', 'level', 'drill', 'starforge'];
+const PANELS = ['upgrades', 'medals', 'stats', 'constants', 'quests', 'orbitals', 'mastery', 'novatree', 'automation', 'ascent', 'belt', 'level', 'drill', 'starforge', 'fusion', 'attune', 'merchant', 'expeditions'];
 
 const browser = await chromium.launch();
 let failed = false;
@@ -27,7 +27,8 @@ for (const view of [
     const { game, commands } = window.sf;
     const s = game.state;
     s.tier = 3;
-    s.stats.supernovas = 5;
+    s.stats.supernovas = 15;
+    s.stats.bestTier = 4;
     commands.devAdd('stardust', 1e9);
     commands.devAdd('shards', 50);
     commands.devAdd('ore', 1e4);
@@ -79,6 +80,19 @@ for (const view of [
         await page.locator('[data-el="c"]').click();
         await page.getByRole('tab', { name: 'Furnace' }).click();
         await page.waitForTimeout(1500);
+      }
+      if (panel === 'fusion') {
+        const cells = page.locator('[data-cell]');
+        if ((await cells.count()) > 1) {
+          await cells.nth(0).click({ force: true });
+          await cells.nth(1).click({ force: true });
+        }
+      }
+      if (panel === 'attune') await page.locator('[data-attune="pulse"] button').first().click({ force: true });
+      if (panel === 'merchant') await page.locator('[data-deal="0"] button').click({ force: true });
+      if (panel === 'expeditions') {
+        const launch = page.getByRole('button', { name: 'Launch' }).first();
+        if (await launch.count()) await launch.click({ force: true });
       }
       if (panel === 'level') {
         await page.locator('[data-perk="ore"] button').click({ force: true });

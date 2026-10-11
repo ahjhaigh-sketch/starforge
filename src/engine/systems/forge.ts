@@ -197,6 +197,16 @@ export function buyRelic(s: GameState, id: string): boolean {
   return true;
 }
 
+/** Adds levels to a crafted relic from a deal or a rare find, never past its cap. Returns how many. */
+export function addRelicLevels(s: GameState, id: string, n: number): number {
+  const def = RELIC_BY_ID.get(id);
+  const level = relicLevel(s, id);
+  if (!def || level <= 0) return 0;
+  const add = Math.max(0, Math.min(n, (def.maxLevel ?? Infinity) - level));
+  s.relics.levels[id] = level + add;
+  return add;
+}
+
 export const relicSlots = (s: GameState) => Math.floor(stat(s, 'relicSlots').toNumber());
 
 export function equipRelic(s: GameState, id: string): boolean {

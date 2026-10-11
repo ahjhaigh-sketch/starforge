@@ -131,7 +131,7 @@ export function registerSupernova(): void {
       giveXp(s, BALANCE.starsmith.xp.supernova);
       grantCodex(s, before.runStardust, before.tier);
     },
-    alwaysKept: ['Nova Shards and the Nova Tree', 'Medals and Goals', 'Engine Mastery', 'Star Quests and their bonus', 'The Asteroid Belt, Deep Core and Starsmith Level', 'The Starforge: ore, alloy, relics and the Codex', 'Everything you have unlocked'],
+    alwaysKept: ['Nova Shards and the Nova Tree', 'Medals and Goals', 'Engine Mastery', 'Star Quests and their bonus', 'The Asteroid Belt, Deep Core and Starsmith Level', 'The Starforge: ore, alloy, relics and the Codex', 'Comet Fusion, Attunements, the Merchant and your starships', 'Everything you have unlocked'],
     milestones: [
       { at: 1, id: 'tree', text: 'The Nova Tree opens' },
       { at: 2, id: 'autoEvolve', text: 'Auto-Evolve: your star evolves by itself' },

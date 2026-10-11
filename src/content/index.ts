@@ -2,6 +2,10 @@ import { registerAutomation } from '../engine/systems/automation';
 import { registerBelt } from '../engine/systems/belt';
 import { registerCodex } from '../engine/systems/codex';
 import { registerForge } from '../engine/systems/forge';
+import { registerFusion } from '../engine/systems/fusion';
+import { registerAttune } from '../engine/systems/attune';
+import { registerMerchant } from '../engine/systems/merchant';
+import { registerShips } from '../engine/systems/ships';
 import { registerStarsmith } from '../engine/systems/starsmith';
 import { registerComets } from '../engine/systems/comets';
 import { registerNovaTree } from '../engine/systems/novaTree';
@@ -34,5 +38,9 @@ export function registerContent(): void {
   registerBelt();
   registerForge();
   registerCodex();
+  registerFusion();
+  registerAttune();
+  registerMerchant();
+  registerShips();
   registerUnlocks();
 }

@@ -1,5 +1,6 @@
 import { BELT_TIER_REWARDS, DEPTH_LAYERS, RARITIES } from '../content/belt';
 import { GOAL_BY_ID, MEDAL_BY_ID } from '../content/medals';
+import { SECTOR_BY_ID } from '../content/extras';
 import { SYSTEM_BY_ID } from '../content/systems';
 import { TIERS } from '../content/tiers';
 import { events } from '../engine/events';
@@ -23,6 +24,7 @@ export function installNotifications(): void {
   /** The tier just reached: its toast already names what it opens, so those unlocks stay quiet. */
   let tierNews = { tier: -1, at: 0 };
   let rare: string[] = [];
+  let ships: string[] = [];
   let timer: ReturnType<typeof setTimeout> | null = null;
   const flushMedals = () => {
     timer = null;
@@ -36,6 +38,11 @@ export function installNotifications(): void {
       const title = names.length === 1 ? `Unlocked: ${sys.name}` : names.length <= 3 ? `Unlocked: ${list}` : `${names.length} systems unlocked`;
       const body = names.length === 1 ? sys.blurb : names.length <= 3 ? 'New on the rails. Open them from there.' : `${list}. Open them from the rails.`;
       events.emit({ t: 'toast', title, body, icon: sys.icon });
+    }
+    if (ships.length > 0) {
+      const where = SECTOR_BY_ID.get(ships[0]!)?.name ?? 'a far sector';
+      events.emit({ t: 'toast', title: ships.length === 1 ? `Ship home from ${where}` : `${ships.length} ships home`, body: 'Ore, alloy and shards in the hold.', icon: 'ship' });
+      ships = [];
     }
     if (level > 0) {
       events.emit({ t: 'toast', title: `Starsmith Level ${level}`, body: 'A perk point to spend in the Level panel.', icon: 'level' });
@@ -101,6 +108,14 @@ export function installNotifications(): void {
       const depth = Number(e.id.slice(5));
       const reached = DEPTH_LAYERS.find((l) => l.from === depth && depth > 0);
       if (reached) events.emit({ t: 'toast', title: `Reached the ${reached.name}`, body: `Tougher cores, richer ore, and a new mastery: ${reached.oreName}.`, icon: 'drill' });
+    } else if (e.t === 'milestone' && e.id.startsWith('fusion.')) {
+      const lvl = Number(e.id.slice(7));
+      if (lvl >= 3) events.emit({ t: 'toast', title: `Level ${lvl} comet!`, body: 'Your best comet multiplies Stardust and taps.', icon: 'comet' });
+    } else if (e.t === 'milestone' && e.id === 'merchant.mythical') {
+      events.emit({ t: 'toast', title: 'The Mythical Merchant!', body: 'One absurd deal is waiting at the Merchant.', icon: 'merchant', priority: true });
+    } else if (e.t === 'milestone' && e.id.startsWith('ship.')) {
+      ships.push(e.id.slice(5));
+      timer ??= setTimeout(flushMedals, MEDAL_BATCH_MS);
     } else if (e.t === 'milestone' && e.id.startsWith('codex.')) {
       const fresh = Number(e.id.slice(6));
       events.emit({ t: 'toast', title: `${fresh} new element${fresh === 1 ? '' : 's'}`, body: 'Added to the Codex in the Starforge.', icon: 'atom' });

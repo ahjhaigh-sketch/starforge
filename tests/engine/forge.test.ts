@@ -400,7 +400,6 @@ describe('save version 7', () => {
   it('loads and migrates a real version 6 save', () => {
     const { state } = importSave(readFileSync('tests/fixtures/save-v6.txt', 'utf8').trim());
     expect(state.version).toBe(SAVE_VERSION);
-    expect(SAVE_VERSION).toBe(7);
     expect(state.belt.upgrades).toEqual({ value: 12, amount: 4 });
     expect(state.drill.depth).toBe(3);
     expect(state.starsmith.perks).toEqual({ cap: 2 });

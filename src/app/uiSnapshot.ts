@@ -20,6 +20,7 @@ import {
   tapValue,
 } from '../engine/systems/stardust';
 import { reqProgress, reqText } from '../engine/systems/unlocks';
+import { attuneHud } from './extrasReports';
 import { BUFF_KINDS, buffLeft, cometOnScreen } from '../engine/systems/comets';
 import { availableUpgrades } from '../engine/systems/upgrades';
 import { MEDALS } from '../content/medals';
@@ -132,6 +133,13 @@ export interface Snapshot {
   canEvolve: boolean;
   evolvePct: number;
   tapLabel: string;
+  /** Attunements on the Star Core ("pulse,heartbeat"), and their read-outs. */
+  attune: string;
+  pulseRating: string;
+  heartPct: number;
+  chaosTaps: number;
+  chaosEffect: string;
+  chaosLeft: string;
   moteCount: number;
   combo: number;
   comboMult: string;
@@ -310,6 +318,7 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
   const { rows, mystery } = engineRows(s, n, prev?.engineRows);
   const nova = BALANCE.supernova;
   const novaReady = supernovaReady(s);
+  const hud = attuneHud();
   const lvl = levelInfo(s);
   const novaTier = reqProgress(s, { kind: 'tier', tier: nova.tier });
   const run = (s.totals.run.stardust ?? D(0)).toNumber();
@@ -361,6 +370,12 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     canEvolve: !!nextCost && money.gte(nextCost),
     evolvePct: nextCost ? Math.floor(Math.min(1, money.div(nextCost).toNumber()) * 100) : 100,
     tapLabel: `+${format(tapValue(s), n)} stardust per tap`,
+    attune: hud.list,
+    pulseRating: hud.rating,
+    heartPct: hud.heart,
+    chaosTaps: hud.chaosTaps,
+    chaosEffect: hud.chaos,
+    chaosLeft: hud.chaosLeft,
     moteCount: owned(s, 'mote'),
     combo: Math.floor(combo),
     comboMult: comboX > 1 ? formatMult(comboX, n) : '',
