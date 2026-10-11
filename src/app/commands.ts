@@ -36,6 +36,9 @@ import { buyMirrorUpgrade, collapse, MIRROR_ENGINES, nextPriceStep } from '../en
 import { closeLink, openLink, setLinkShare } from '../engine/systems/wormholes';
 import { galacticTree, setNextGalaxy } from '../engine/systems/galactic';
 import { clearLinks, recordConstellation, starChart, toggleLink } from '../engine/systems/observatory';
+import { buildStage } from '../engine/systems/megastructures';
+import { buyBuilding, buyPort, buyResearch, closeRoute, finishPlanet, foundColony, openRoute, placeBiome } from '../engine/systems/colonies';
+import type { BuildingId } from '../content/galaxyBuild';
 import { buyForgeUpgrade, buyRelic, equipRelic, setForgeGrade, setForgeOn, setForgeShare, unequipRelic } from '../engine/systems/forge';
 import { backupNow, readBackup } from './backups';
 import { D } from '../engine/decimal';
@@ -488,6 +491,51 @@ export const commands = {
   },
   buyChartNode(id: string): boolean {
     const ok = starChart.buy(game.state, id);
+    done();
+    return ok;
+  },
+  /** Megastructures, Colonies and Terraforming. */
+  buildMegaStage(id: string): boolean {
+    const ok = buildStage(game.state, id);
+    done();
+    return ok;
+  },
+  foundColony(type: string): boolean {
+    const ok = foundColony(game.state, type);
+    done();
+    return ok;
+  },
+  buyColonyBuilding(i: number, id: BuildingId): boolean {
+    const ok = buyBuilding(game.state, i, id);
+    done();
+    return ok;
+  },
+  buyColonyPort(i: number): boolean {
+    const ok = buyPort(game.state, i);
+    done();
+    return ok;
+  },
+  openTradeRoute(a: number, b: number): boolean {
+    const ok = openRoute(game.state, a, b);
+    done();
+    return ok;
+  },
+  closeTradeRoute(index: number) {
+    closeRoute(game.state, index);
+    done();
+  },
+  buyColonyResearch(id: string): boolean {
+    const ok = buyResearch(game.state, id);
+    done();
+    return ok;
+  },
+  placeBiome(i: number, hex: number, biome: string): boolean {
+    const ok = placeBiome(game.state, i, hex, biome);
+    done();
+    return ok;
+  },
+  finishPlanet(i: number): boolean {
+    const ok = finishPlanet(game.state, i);
     done();
     return ok;
   },

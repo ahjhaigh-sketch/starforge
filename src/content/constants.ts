@@ -239,6 +239,30 @@ export const CONSTANTS: readonly ConstantDef[] = [
     effects: [{ stat: 'galacticTreePower', a: BALANCE.galactic.armsPer, doubles: false, what: 'Galactic Tree multipliers' }],
     desc: "The Galactic Tree's multipliers grow stronger.",
   },
+  {
+    id: 'gal.halo',
+    set: 'galactic',
+    name: 'Halo',
+    icon: 'colony',
+    color: '#2B7FD0',
+    currency: 'galaxyCores',
+    base: 8,
+    growth: BALANCE.constants.halo,
+    effects: [{ stat: 'colonyCapacity', a: BALANCE.galaxyBuild.haloPer, doubles: false, what: 'Colony capacity' }],
+    desc: 'Every colony has room for more people.',
+  },
+  {
+    id: 'gal.lattice',
+    set: 'galactic',
+    name: 'Lattice',
+    icon: 'mega',
+    color: '#FFC83D',
+    currency: 'galaxyCores',
+    base: 12,
+    growth: BALANCE.constants.lattice,
+    effects: [{ stat: 'megaRewardPower', a: BALANCE.galaxyBuild.latticePer, doubles: false, what: 'Megastructure rewards' }],
+    desc: 'Every megastructure stage gives more.',
+  },
 ];
 
 export const CONSTANT_BY_ID: ReadonlyMap<string, ConstantDef> = new Map(CONSTANTS.map((c) => [c.id, c]));

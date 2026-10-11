@@ -8,6 +8,18 @@ export default defineConfig({
   build: {
     target: 'es2022',
     chunkSizeWarningLimit: 1200,
+    // libraries in their own chunks: they change rarely, so browsers keep them cached between game updates
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            { name: 'pixi', test: /node_modules[\\/](pixi\.js|@pixi)[\\/]/ },
+            { name: 'react', test: /node_modules[\\/](react|react-dom|scheduler|zustand)[\\/]/ },
+            { name: 'libs', test: /node_modules[\\/](break_eternity\.js|zod|fflate)[\\/]/ },
+          ],
+        },
+      },
+    },
   },
   test: {
     include: ['tests/**/*.test.ts'],

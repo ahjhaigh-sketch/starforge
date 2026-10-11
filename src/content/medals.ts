@@ -112,6 +112,11 @@ export const MEDALS: readonly MedalDef[] = [
   { id: 'galactic.1', name: "Island Universe", desc: "Go Galactic.", icon: 'galaxy', req: { kind: 'count', stat: 'galacticsAll', count: 1, noun: 'Galactic Rebirth' } },
   { id: 'galactic.galaxies', name: "Galaxy Hopper", desc: "Explore 5 galaxies.", icon: 'galaxy', req: { kind: 'count', stat: 'galaxiesCleared', count: 5, noun: 'galaxy' } },
   { id: 'observatory.100', name: "Stargazer", desc: "Record a Star Score of 100.", icon: 'telescope', req: { kind: 'count', stat: 'starScoreBest', count: 100, noun: 'Star Score' } },
+  { id: 'mega.1', name: "Groundbreaking", desc: "Build a megastructure stage.", icon: 'mega', req: { kind: 'count', stat: 'megaStages', count: 1, noun: 'megastructure stage' } },
+  { id: 'mega.done', name: "Wonder of the Galaxy", desc: "Finish a megastructure.", icon: 'mega', req: { kind: 'count', stat: 'megaDone', count: 1, noun: 'megastructure' } },
+  { id: 'colony.1', name: "First Footprints", desc: "Found a colony.", icon: 'colony', req: { kind: 'count', stat: 'coloniesFounded', count: 1, noun: 'colony' } },
+  { id: 'colony.pop', name: "Teeming", desc: "Grow a colony to a million people.", icon: 'colony', req: { kind: 'count', stat: 'colonyPopBest', count: 1e6, noun: 'person' } },
+  { id: 'planet.1', name: "Green Thumb", desc: "Finish terraforming a planet.", icon: 'terraform', req: { kind: 'count', stat: 'planetsFinished', count: 1, noun: 'planet' } },
   { id: 'wormhole.1', name: "Shortcut", desc: "Open a wormhole.", icon: 'wormhole', req: { kind: 'count', stat: 'wormholesOpened', count: 1, noun: 'wormhole' } },
   { id: 'nursery.25', name: "Stellar Gardener", desc: "Grow all 25 star species.", icon: 'nursery', req: { kind: 'count', stat: 'speciesGrown', count: 25, noun: 'species' } },
   // Phase 7: Comet Fusion, Attunements, the Merchant and starships

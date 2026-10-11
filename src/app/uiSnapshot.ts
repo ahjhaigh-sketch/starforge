@@ -191,6 +191,8 @@ export interface Snapshot {
   galaxyCoresVisible: boolean;
   galaxyColor: string;
   galaxyName: string;
+  /** Megastructure stages built, for the sky ("dyson:3|ringworld:1"). */
+  megaStages: string;
   /** The Antimatter pill in the top bar (once the Mirror is open). */
   antimatter: string;
   antimatterRate: string;
@@ -456,6 +458,10 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     nebulasAll: s.stats.nebulasAll ?? 0,
     ...singularityBar(s, n),
     ...galacticBar(s, n),
+    megaStages: Object.entries(s.megastructures)
+      .filter(([, k]) => k > 0)
+      .map(([id, k]) => `${id}:${k}`)
+      .join('|'),
     darkMatter: format(cur(s, 'darkMatter'), n),
     darkMatterVisible: (s.stats.singularitiesAll ?? 0) > 0 || cur(s, 'darkMatter').gt(0),
     bhStage: bhOpen(s) ? Math.max(1, bhStage(s)) : 0,

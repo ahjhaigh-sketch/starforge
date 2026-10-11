@@ -1527,3 +1527,90 @@ test('the 200-node Galactic Tree stays smooth to pan, and the Observatory draws 
   await expect.poll(() => page.evaluate(() => (window as unknown as Sf15).sf.game.state.currencies.starCharts?.toNumber() ?? 0)).toBeGreaterThan(0);
   expect(errors).toEqual([]);
 });
+
+// ---------- Phase 16: Megastructures, Colonies, Terraforming ----------
+
+type Sf16 = {
+  sf: {
+    game: {
+      state: {
+        stats: Record<string, number>;
+        megastructures: Record<string, number>;
+        colonies: { list: Array<{ pop: number; grid: Array<string | null>; finished: number | null }>; research: string[] };
+        galactic: { cleared: string[] };
+      };
+    };
+    commands: { devAdd(c: string, n: number): void };
+    breakdown(s: unknown, id: string): Array<{ label: string }>;
+  };
+};
+
+test('Megastructures: build a stage and its reward shows in Stats; colonies found, built on and researched', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { sf } = window as unknown as Sf16;
+    const s = sf.game.state;
+    s.stats.galacticsAll = 2;
+    s.galactic.cleared = ['milkyway'];
+    for (const c of ['stardust', 'alloy.iron', 'darkMatter', 'galaxyCores', 'supply']) sf.commands.devAdd(c, 1e300);
+    sf.commands.devAdd('stardust', 1e300);
+  });
+  await page.evaluate(() => {
+    // Stardust past e380 for the Dyson Swarm's first stage
+    const { sf } = window as unknown as Sf16;
+    const s = sf.game.state as unknown as { currencies: Record<string, { mul(x: string): unknown }> };
+    s.currencies.stardust = s.currencies.stardust!.mul('1e100') as never;
+  });
+  await openRail(page, 'megastructures');
+  const mega = page.locator('[data-panel="megastructures"]');
+  await mega.getByTestId('build-dyson').click();
+  expect(await page.evaluate(() => (window as unknown as Sf16).sf.game.state.megastructures.dyson)).toBe(1);
+  expect(
+    await page.evaluate(() => {
+      const { sf } = window as unknown as Sf16;
+      return sf.breakdown(sf.game.state, 'productionMult').some((l) => l.label === 'Dyson Swarm (megastructure)');
+    }),
+  ).toBe(true);
+  await page.keyboard.press('Escape');
+  await openRail(page, 'colonies');
+  const col = page.locator('[data-panel="colonies"]');
+  await col.getByTestId('found-rocky').click();
+  await col.getByTestId('found-ocean').click();
+  await expect(col.locator('[data-colony]')).toHaveCount(2);
+  await col.getByTestId('build-housing-0').click();
+  await col.locator('[data-research="res.terra"]').click();
+  expect(await page.evaluate(() => (window as unknown as Sf16).sf.game.state.colonies.research)).toContain('res.terra');
+  expect(errors).toEqual([]);
+});
+
+test('Terraforming: paint hexes, finish the planet, and its multiplier is locked in', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { sf } = window as unknown as Sf16;
+    const s = sf.game.state;
+    s.stats.galacticsAll = 2;
+    sf.commands.devAdd('galaxyCores', 100);
+    sf.commands.devAdd('supply', 1e9);
+    (sf.commands as unknown as { foundColony(t: string): boolean; buyColonyResearch(id: string): boolean }).foundColony('rocky');
+    (sf.commands as unknown as { buyColonyResearch(id: string): boolean }).buyColonyResearch('res.terra');
+  });
+  await openRail(page, 'terraform');
+  const terra = page.locator('[data-panel="terraform"]');
+  await expect(terra.locator('[data-hex]')).toHaveCount(19);
+  await terra.locator('[data-biome="forest"]').click();
+  await terra.locator('[data-hex="0"]').click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf16).sf.game.state.colonies.list[0]!.grid[0])).toBe('forest');
+  await terra.locator('[data-biome="ocean"]').click();
+  for (let i = 1; i < 19; i++) await terra.locator(`[data-hex="${i}"]`).click();
+  await terra.getByTestId('terra-finish').click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf16).sf.game.state.colonies.list[0]!.finished)).not.toBeNull();
+  expect(
+    await page.evaluate(() => {
+      const { sf } = window as unknown as Sf16;
+      return sf.breakdown(sf.game.state, 'productionMult').some((l) => l.label === 'Terraformed planet 1 (Rocky world)');
+    }),
+  ).toBe(true);
+  expect(errors).toEqual([]);
+});

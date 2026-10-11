@@ -10,6 +10,7 @@ import { initStarfield, resizeStarfield, setNebulaClouds, updateClouds, updateSt
 import { WyrmSky } from './wyrms';
 import { BlackHoleView } from './blackhole';
 import { LeviathanView } from './leviathan';
+import { MegaView } from './megastructures';
 import { BH_STAGES } from '../engine/systems/blackhole';
 
 /**
@@ -24,6 +25,8 @@ let anchor: Element | null = null;
 let wyrms: WyrmSky | null = null;
 let hole: BlackHoleView | null = null;
 let whale: LeviathanView | null = null;
+let mega: MegaView | null = null;
+let megaSpec = '';
 let holeMass = 0;
 /** Wyrms swimming in the sky right now (tests and the dev panel). */
 export const swimmingWyrms = () => wyrms?.count ?? 0;
@@ -77,7 +80,8 @@ export async function initRender(): Promise<boolean> {
   orbitals = new OrbitalsView();
   hole = new BlackHoleView();
   // the Black Hole sits behind everything at the star: orbits and the star are in front of it
-  mid.addChild(hole.mesh, orbitals.behind, star.root, orbitals.infront);
+  mega = new MegaView();
+  mid.addChild(hole.mesh, mega.root, orbitals.behind, star.root, orbitals.infront);
   initParticles(fx);
 
   const apply = () => {
@@ -93,6 +97,10 @@ export async function initRender(): Promise<boolean> {
     hole!.setStage(s.bhStage, BH_STAGES[Math.max(0, s.bhStage - 1)]?.color ?? '#FFB347');
     holeMass = s.bhMassLog;
     whale!.set(s.levVisible, s.levIndex, s.levColor, s.levPct);
+    if (s.megaStages !== megaSpec) {
+      megaSpec = s.megaStages;
+      mega!.set(s.megaStages);
+    }
   };
   star.setTier(snapshotStore.getState().tierIndex, true);
   apply();
@@ -141,6 +149,7 @@ export async function initRender(): Promise<boolean> {
     if (r && r.width > 0) {
       star.update(dt, r.left + r.width / 2, r.top + r.height / 2, r.width, still);
       hole?.update(dt, r.left + r.width / 2, r.top + r.height / 2, star.lastRadius, holeMass, still);
+      mega?.update(dt, r.left + r.width / 2, r.top + r.height / 2, star.lastRadius, still);
       orbitals?.update(dt, r.left + r.width / 2, r.top + r.height / 2, star.lastRadius, still);
     }
     updateParticles(dt);

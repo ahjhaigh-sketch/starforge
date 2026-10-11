@@ -1,0 +1,84 @@
+/* =====================================================================
+   Phase 16: Megastructures, Colonies, Terraforming.
+   ===================================================================== */
+
+/* ---------- Megastructures ---------- */
+.mega-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 0.6rem; }
+.mega-card { border-radius: 16px; --stroke: 2.5px; padding: 0.65rem 0.75rem; display: flex; flex-direction: column; gap: 0.4rem; color: #fff; text-shadow: var(--outline-sm);
+  background: linear-gradient(160deg, color-mix(in oklab, var(--c) 35%, #1c1640), #1c1640 70%); }
+.mega-card.locked { opacity: 0.55; }
+.mega-card.done { box-shadow: 0 0 18px 2px color-mix(in oklab, var(--c) 55%, transparent); }
+.mega-card .btn { align-self: flex-start; margin-top: auto; }
+.mega-top { display: flex; align-items: center; gap: 0.5rem; }
+.mega-top b { font-family: var(--font-display); font-weight: 400; font-size: 1.1rem; flex: 1; }
+.mega-pips { display: inline-flex; gap: 3px; }
+.mega-pips i { width: 0.75rem; height: 0.45rem; border-radius: 3px; border: 2px solid var(--ink); background: #3a3f6f; }
+.mega-pips i.on { background: var(--c); box-shadow: 0 0 6px var(--c); }
+/* each structure's little glyph, drawn in CSS from its own colour */
+.mega-glyph { width: 1.9rem; height: 1.9rem; flex: none; border-radius: 50%; position: relative; border: 2px solid var(--ink);
+  background: radial-gradient(circle, #fff3b0 0 22%, #ffb347 23% 34%, transparent 35%); }
+.mega-glyph::after { content: ''; position: absolute; inset: 2px; border-radius: 50%; border: 3px dotted var(--c); }
+.mega-glyph.ringworld::after { inset: 9px -4px; border-style: solid; border-width: 3px; transform: rotate(-20deg); }
+.mega-glyph.matrioshka::after { inset: 1px; border-style: double; border-width: 5px; }
+.mega-glyph.starlifter::after { inset: -4px 11px; border-style: solid; border-width: 0 3px; border-radius: 4px; }
+.mega-glyph.stellarengine::after { inset: 2px 14px 2px -4px; border-style: solid; border-width: 4px 0 4px 4px; border-radius: 50% 0 0 50%; }
+.mega-glyph.birch { background: radial-gradient(circle, #140b2e 0 30%, var(--c) 31% 44%, transparent 45%); }
+.mega-glyph.birch::after { border: none; }
+.mega-desc { margin: 0; font-size: 0.78rem; font-weight: 600; color: var(--text-dim); text-shadow: none; }
+.mega-reward { margin: 0; font-size: 0.82rem; font-weight: 700; }
+.mega-reward .num { color: var(--lime); }
+.mega-cost { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.1rem; font-size: 0.78rem; font-weight: 700; }
+.mega-cost li.have { color: var(--lime); }
+.mega-cost li.short { color: #ffb3c8; }
+.mega-done { font-family: var(--font-display); color: var(--gold); }
+
+/* ---------- Colonies ---------- */
+.col-found { padding: 0.65rem 0.85rem; display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 0.6rem; font-weight: 600; }
+.col-types { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.col-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: 0.55rem; margin-bottom: 0.6rem; }
+.col-card { border-radius: 16px; --stroke: 2.5px; padding: 0.6rem 0.7rem; display: flex; flex-direction: column; gap: 0.35rem; color: #fff; text-shadow: var(--outline-sm);
+  background: radial-gradient(circle at 85% 10%, color-mix(in oklab, var(--c) 45%, transparent), transparent 55%), #1c1640; }
+.col-top { display: flex; justify-content: space-between; align-items: baseline; gap: 0.4rem; }
+.col-top b { font-family: var(--font-display); font-weight: 400; font-size: 1.1rem; }
+.col-top span { font-size: 0.75rem; font-weight: 800; color: var(--text-dim); }
+.col-pop { font-size: 0.74rem; font-weight: 800; }
+.col-line { font-size: 0.78rem; font-weight: 600; }
+.col-line.done { color: var(--lime); }
+.col-builds { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.col-builds .btn { font-size: 0.72rem; }
+.col-routes { padding: 0.65rem 0.85rem; display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.6rem; }
+.col-route-pick { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
+.col-route-pick select { height: 2rem; border-radius: 10px; border: 2.5px solid var(--ink); background: var(--panel-deep); color: #fff; font-weight: 700; padding: 0 0.4rem; }
+.col-route { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.82rem; }
+.col-research { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 0.45rem; margin-bottom: 0.6rem; }
+.res-tile { border-radius: 14px; --stroke: 2.5px; padding: 0.5rem 0.6rem; display: flex; flex-direction: column; gap: 0.2rem; text-align: left; color: #fff; text-shadow: var(--outline-sm); font-size: 0.76rem; font-weight: 600; }
+.res-tile b { font-family: var(--font-display); font-weight: 400; font-size: 0.98rem; }
+.res-tile .num { font-weight: 800; margin-top: auto; }
+.res-tile.owned { opacity: 0.65; }
+.res-tile:disabled { cursor: default; transform: none; }
+
+/* ---------- Terraforming ---------- */
+.terra-tabs { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+.terra-tab { --c: #3a3f6f; --stroke: 2px; height: 2rem; padding: 0 0.7rem; border-radius: 10px; font-weight: 800; font-size: 0.8rem; color: #fff; }
+.terra-tab.on { --c: #3e9e2a; }
+.terra-cols { display: grid; grid-template-columns: minmax(16rem, 26rem) 1fr; gap: 0.8rem; align-items: start; }
+.terra-map { width: 100%; max-width: 26rem; user-select: none; }
+.terra-hex { cursor: pointer; outline: none; }
+.terra-hex polygon { fill: var(--c); stroke: #140b2e; stroke-width: 3; transition: filter 120ms ease; }
+.terra-hex.empty polygon { fill: #2a2160; stroke-dasharray: 4 3; }
+.terra-hex:hover polygon, .terra-hex:focus-visible polygon { filter: brightness(1.25); }
+.terra-hex:focus-visible polygon { stroke: var(--cyan); stroke-width: 4; }
+.terra-edge { text-anchor: middle; font-family: var(--font-body); font-weight: 800; font-size: 12px; fill: #b4f04a; stroke: #140b2e; stroke-width: 3px; paint-order: stroke; pointer-events: none; }
+.terra-edge.neg { fill: #ff8a8a; }
+.terra-side { display: flex; flex-direction: column; gap: 0.5rem; }
+.terra-score { padding: 0.7rem 0.9rem; display: flex; flex-direction: column; gap: 0.4rem; font-weight: 600; }
+.terra-palette { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.terra-biome { --stroke: 2.5px; height: 2.2rem; padding: 0 0.7rem; border-radius: 12px; font-weight: 800; font-size: 0.8rem; color: #fff; text-shadow: var(--outline-sm); }
+.terra-biome.on { outline: 3px solid var(--gold); outline-offset: 2px; }
+.terra-pairs { padding: 0.55rem 0.8rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.15rem 0.6rem; font-size: 0.74rem; font-weight: 600; }
+.terra-pairs .neg b { color: #ff8a8a; }
+
+@media (max-width: 900px) {
+  .terra-cols { grid-template-columns: 1fr; }
+  .terra-map { margin: 0 auto; }
+}

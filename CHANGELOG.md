@@ -1,5 +1,24 @@
 # Changelog
 
+## Phase 16: Megastructures, Colonies and Terraforming
+- Six megastructures of five stages: Dyson Swarm, Ringworld, Matrioshka Brain, Star Lifter, Stellar Engine and Birch Planet.
+  - They open from 1 to 5 Galactic Rebirths.
+  - A stage costs a bundle of currencies from every layer, each 10^(base + step x stage).
+  - Every stage's reward is permanent: no reset touches what you've built, and it shows in the breakdowns as "<name> (megastructure)".
+  - Built stages are drawn round the star: Dyson panels on an orbit, the Ringworld's band, Matrioshka shells, Star Lifter jets, the Stellar Engine's mirror, and the Birch Planet far behind.
+  - Prices were set from the currencies the simulator saw at each Galactic Rebirth. A first draft let the Matrioshka Brain finish at once (its Essence prices were far below late-game Essence), which pushed Galaxy Cores up tenfold.
+- Colonies open at 2 Galactic Rebirths, with one per galaxy explored plus one (up to 8), founded with Galaxy Cores (5 x 3^n).
+  - Five planet types each boost one thing by x(1 + log10(1 + people))^power.
+  - People grow logistically towards capacity. The tick uses the exact solution, so an hour away, an hour in one step and 7,200 half-second steps end at the same population (tested).
+  - Colonies make Supply for buildings (Housing, Farms, Factories), spaceports, trade routes (x1.5 Supply at both ends) and six research projects.
+- Terraforming (after the Terraformers research): paint a colony planet's 19 hexes with four biomes; neighbouring pairs score together, and some clash.
+  - Finishing locks the score in: the colony's bonus is multiplied by (1 + score / 10) for good.
+- Galactic Constants Halo (colony capacity) and Lattice (megastructure rewards).
+- The game's libraries (Pixi, React, the number and save libraries) now load as their own cached chunks. The game's own code is 578 kB instead of a single 1.21 MB file.
+- Also: three panels, three icons, 5 medals, rails and the Ascent map.
+- The simulator builds megastructure stages, founds and develops colonies, opens routes, researches and terraforms. It logs every currency's size at each Galactic Rebirth with SIM_DEBUG_MAG.
+- Save version 17, with a migration test that loads a real version 16 save.
+
 ## Phase 15: Galactic Rebirth
 - Galactic Rebirth is the fourth reset. It needs all 8 Black Hole stages, the Mirror Key and 1e8 Dark Matter gained in the Galactic run.
   - It gives floor((DM / 1e8)^0.5) x Galaxy Core gain. The plan's ^0.25 gave 3 to 6 Cores a run in the simulator, which bought 18 of the 200 tree nodes in four Galactic Rebirths.

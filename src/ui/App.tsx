@@ -35,6 +35,7 @@ import { BlackHolePanel, PrismWheelPanel, ReactorPanel, SingularityConfirmPanel,
 import { ChallengeHud, LeviathansPanel, ScaleTreePanel, SpirePanel, TrialsPanel } from './screens/ChallengePanels';
 import { MirrorPanel, WormholesPanel } from './screens/MirrorPanels';
 import { GalacticConfirmPanel, GalacticPanel, GalacticTreePanel, GalaxyMapPanel, ObservatoryPanel, StarChartPanel } from './screens/GalacticPanels';
+import { ColoniesPanel, MegastructuresPanel, TerraformPanel } from './screens/GalaxyBuildPanels';
 import { useUi } from './store';
 
 /** Shown while time away is being simulated; fades in only if that takes a moment. */
@@ -132,6 +133,9 @@ export function App() {
       <GalaxyMapPanel />
       <ObservatoryPanel />
       <StarChartPanel />
+      <MegastructuresPanel />
+      <ColoniesPanel />
+      <TerraformPanel />
       <SettingsPanel />
       <PanelHost />
       <ToastHost />

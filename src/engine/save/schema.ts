@@ -129,6 +129,26 @@ export const plainSaveSchema = z.looseObject({
     .looseObject({ seed: z.number().int().min(0), links: z.array(z.tuple([z.number().int().min(0), z.number().int().min(0)])), best: z.number().min(0) })
     .optional(),
   starChart: z.record(z.string(), z.number().int().min(0)).optional(),
+  megastructures: z.record(z.string(), z.number().int().min(0)).optional(),
+  colonies: z
+    .looseObject({
+      list: z.array(
+        z.looseObject({
+          type: z.string(),
+          name: z.string(),
+          pop: z.number().min(0),
+          housing: z.number().int().min(0),
+          farms: z.number().int().min(0),
+          factories: z.number().int().min(0),
+          port: z.boolean(),
+          grid: z.array(z.string().nullable()),
+          finished: z.number().nullable(),
+        }),
+      ),
+      routes: z.array(z.tuple([z.number().int().min(0), z.number().int().min(0)])),
+      research: z.array(z.string()),
+    })
+    .optional(),
   tarot: z
     .looseObject({
       owned: z.array(z.string()),

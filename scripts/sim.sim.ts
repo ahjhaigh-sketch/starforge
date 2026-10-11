@@ -131,6 +131,9 @@ let COST: typeof import('../src/engine/cost');
 let GL: typeof import('../src/engine/systems/galactic');
 let OB: typeof import('../src/engine/systems/observatory');
 let GC: typeof import('../src/content/galactic');
+let MS: typeof import('../src/engine/systems/megastructures');
+let CO: typeof import('../src/engine/systems/colonies');
+let GB: typeof import('../src/content/galaxyBuild');
 let PLANET_TYPES: (typeof import('../src/content/early'))['PLANET_TYPES'];
 
 async function loadGame(): Promise<void> {
@@ -191,6 +194,9 @@ async function loadGame(): Promise<void> {
   GL = await import('../src/engine/systems/galactic');
   OB = await import('../src/engine/systems/observatory');
   GC = await import('../src/content/galactic');
+  MS = await import('../src/engine/systems/megastructures');
+  CO = await import('../src/engine/systems/colonies');
+  GB = await import('../src/content/galaxyBuild');
 }
 
 const TAPS_PER_SECOND = 4;
@@ -335,6 +341,28 @@ function sideSystems(s: GameState): void {
         NS.plant(s, i, base);
       }
     });
+  }
+  // Phase 16: megastructure stages as soon as they're affordable; colonies, their buildings, routes, research, terraforming
+  for (const m of GB.MEGASTRUCTURES) MS.buildStage(s, m.id);
+  if (CO.coloniesOpen(s)) {
+    const types = ['rocky', 'ocean', 'ice', 'desert', 'gasmoon'];
+    while (s.colonies.list.length < CO.colonySlots(s) && CO.foundCost(s).lt(cur(s, 'galaxyCores').mul(0.3))) if (!CO.foundColony(s, types[s.colonies.list.length % types.length]!)) break;
+    for (const r of GB.RESEARCH) if (GB.RESEARCH_BY_ID.get(r.id)!.cost < cur(s, 'supply').mul(0.5).toNumber()) CO.buyResearch(s, r.id);
+    s.colonies.list.forEach((c, i) => {
+      for (const b of ['farms', 'housing', 'factories'] as const) for (let k = 0; k < 10 && CO.buildingCost(c, b).lt(cur(s, 'supply').mul(0.25)); k++) CO.buyBuilding(s, i, b);
+      if (!c.port) CO.buyPort(s, i);
+    });
+    for (let a = 0; a < s.colonies.list.length; a++) for (let b = a + 1; b < s.colonies.list.length; b++) CO.openRoute(s, a, b);
+    if (CO.terraOpen(s)) {
+      // a simple layout: ocean and crystal forest alternating ring by ring (ocean beside forest scores 3)
+      s.colonies.list.forEach((c, i) => {
+        if (c.finished !== null) return;
+        GB.HEXES.forEach((h, k) => {
+          if (!c.grid[k] && cur(s, 'supply').gte(1e4)) CO.placeBiome(s, i, k, (h.q + h.r) % 2 === 0 ? 'ocean' : 'forest');
+        });
+        CO.finishPlanet(s, i);
+      });
+    }
   }
   // Phase 14: the Mirror spends on collapses and upgrades first, then the costliest engines it can afford
   if (MR.mirrorOpen(s)) {
@@ -587,12 +615,21 @@ it('balance simulation', async () => {
       const explored = GL.galaxyCleared(s, s.galactic.galaxy);
       if ((s.stats.galacticsAll ?? 0) === 0 || (explored && (g.gte(life.div(2)) || s.playtime - galacticStart > 3600)) || s.playtime - galacticStart > 3 * 3600) {
         galacticLengths.push(s.playtime - galacticStart);
+        if (process.env.SIM_DEBUG_MAG) {
+          const lg = (c: string) => cur(s, c).add(1).log10().toNumber().toFixed(0);
+          console.log(`[mag] Galactic ${(s.stats.galacticsAll ?? 0) + 1}: ${['stardust', 'shards', 'essence', 'darkMatter', 'galaxyCores', 'antimatter', 'embers', 'ore', 'scales', 'alloy.iron', 'alloy.gold'].map((c) => `${c} e${lg(c)}`).join(', ')}, run essence e${(s.totals.run.essence ?? D(0)).add(1).log10().toNumber().toFixed(0)}`);
+        }
         performReset(s, 'galactic');
         galacticStart = s.playtime;
         singularityStart = s.playtime;
         nebulaStart = s.playtime;
         runStart = s.playtime;
         bestRate = D(0);
+        for (const m of GB.MEGASTRUCTURES) while (MS.buildStage(s, m.id));
+        if (CO.coloniesOpen(s)) {
+          const types = ['rocky', 'ocean', 'ice', 'desert', 'gasmoon'];
+          while (s.colonies.list.length < CO.colonySlots(s) && CO.foundCost(s).lte(cur(s, 'galaxyCores').mul(0.5))) if (!CO.foundColony(s, types[s.colonies.list.length % types.length]!)) break;
+        }
         spendGalaxyCores(s);
         spendDarkMatter(s);
         spendEssence(s);
@@ -748,6 +785,7 @@ it('balance simulation', async () => {
   }
   if (MR.mirrorOpen(s)) console.log(`Mirror (opened ${hms(s.stats.mirrorOpenedAt ?? 0)}): depth ${s.mirror.depth}/11, ${s.mirror.upgrades.length}/9 upgrades${MR.mirrorKey(s) ? ' (key)' : ''}, Antimatter ${fmt(cur(s, 'antimatter'))} at ${fmt(MR.antimatterRate(s))}/s, ${Object.values(s.mirror.engines).reduce((a, b) => a + b, 0)} engines. Wormholes: ${s.wormholes.links.map((l) => `${l.from}>${l.to}`).join(', ') || 'none'}.`);
   if (TR.trialsOpen(s)) console.log(`Trials: ${TR.totalTrialLevels(s)} levels (${CH.TRIALS.filter((t) => TR.trialLevel(s, t.id) >= t.levels).length} mastered), Fast Nova ${CH.FAST_RANKS[s.trials.fastBest]?.name ?? 'none'}. Spire floor ${s.spire.floor}. Leviathans beaten ${s.stats.leviathansBeaten ?? 0}/12 (${s.stats.leviathanKills ?? 0} kills), Scale Tree ${Object.keys(s.scaleTree).length}/14, scales ${fmt(cur(s, 'scales'))}.`);
+  if (CO.coloniesOpen(s) || s.stats.megaStages) console.log(`Megastructures: ${GB.MEGASTRUCTURES.map((m) => `${m.name} ${MS.megaStage(s, m.id)}/5`).join(', ')}. Colonies: ${s.colonies.list.map((c) => `${c.name} ${fmt(D(c.pop))}${c.finished !== null ? ` (terraformed ${c.finished})` : ''}`).join(', ') || 'none'}; routes ${s.colonies.routes.length}, research ${s.colonies.research.length}/6, Supply ${fmt(cur(s, 'supply'))}.`);
   if (galacticLengths.length) console.log(`Galactic runs, game time: first ${hms(galacticLengths[0] ?? 0)}, then ${galacticLengths.slice(1).map(hms).join(', ')}. Galaxy Cores (lifetime) ${fmt(s.totals.all.galaxyCores ?? D(0))}, Galactic Tree ${Object.keys(s.galacticTree).length}/200, galaxies explored ${s.galactic.cleared.length} (${s.galactic.cleared.join(', ')}), in ${s.galactic.galaxy}, Star Charts ${fmt(cur(s, 'starCharts'))}, chart ${Object.keys(s.starChart).length}/12, best Star Score ${s.stats.starScoreBest ?? 0}.`);
   if (singularityLengths.length) console.log(`Singularity runs, game time: first ${hms(singularityLengths[0] ?? 0)}, then ${singularityLengths.slice(1).map(hms).join(', ')}`);
   console.log(`Nebula runs, game time: first ${hms(nebulaLengths[0] ?? 0)}, then ${nebulaLengths.slice(1).map(hms).join(', ')}`);

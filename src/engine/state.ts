@@ -2,7 +2,7 @@ import { D, type Decimal } from './decimal';
 import { seedRng, type RngState } from './rng';
 
 /** Bump with every change to the save's shape, and add a migration + an old-save fixture test. */
-export const SAVE_VERSION = 16;
+export const SAVE_VERSION = 17;
 /** A new Fusion board is 3 x 3 (BALANCE.fusion.baseSize). */
 const BALANCE_FUSION_CELLS = 9;
 
@@ -34,6 +34,19 @@ export interface Settings {
   customBuyAmount: number;
   showToasts: boolean;
   hotkeys: boolean;
+}
+
+/** A colony: its planet type, people, buildings, spaceport, and the planet's 19 hexes (with the score locked in once finished). */
+export interface Colony {
+  type: string;
+  name: string;
+  pop: number;
+  housing: number;
+  farms: number;
+  factories: number;
+  port: boolean;
+  grid: Array<string | null>;
+  finished: number | null;
 }
 
 export interface GameState {
@@ -172,6 +185,9 @@ export interface GameState {
   /** The Observatory: this run's sky (a seed), the links drawn, and the best score recorded on it. */
   observatory: { seed: number; links: Array<[number, number]>; best: number };
   starChart: Record<string, number>;
+  /** Phase 16: megastructure stages built, colonies (with their buildings and terraformed grids), trade routes, research. */
+  megastructures: Record<string, number>;
+  colonies: { list: Colony[]; routes: Array<[number, number]>; research: string[] };
   settings: Settings;
 }
 
@@ -282,6 +298,8 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     galacticTree: {},
     observatory: { seed: (seed ^ 0x2545f491) >>> 0, links: [], best: 0 },
     starChart: {},
+    megastructures: {},
+    colonies: { list: [], routes: [], research: [] },
     settings: defaultSettings(),
   };
 }

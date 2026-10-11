@@ -257,7 +257,7 @@ export const BALANCE = {
     quickBurnSeconds: 900,
   },
   /** Cost growth per level of each Stellar Constant (between 1.05 and 2, Math and balance tab). */
-  constants: { gravity: 1.3, light: 1.3, heat: 1.35, orbit: 1.35, runeSpeed: 1.8, runeBulk: 1.6, resonance: 2, drift: 1.9, bloom: 1.7, mass: 1.5, spin: 1.8, horizon: 1.6, charge: 1.7, expansion: 1.6, arms: 1.8 },
+  constants: { gravity: 1.3, light: 1.3, heat: 1.35, orbit: 1.35, runeSpeed: 1.8, runeBulk: 1.6, resonance: 2, drift: 1.9, bloom: 1.7, mass: 1.5, spin: 1.8, horizon: 1.6, charge: 1.7, expansion: 1.6, arms: 1.8, halo: 1.7, lattice: 1.9 },
   novaTree: {
     /** Node price along an arm: armBase x armGrowth^depth (depth 0 to 22). */
     armBase: 3,
@@ -513,6 +513,36 @@ export const BALANCE = {
     /** Scale Tree prices: 10 x 2.5^step. */
     treeBase: 10,
     treeGrowth: 2.5,
+  },
+  /** Phase 16: Megastructures, Colonies and Terraforming. */
+  galaxyBuild: {
+    /** Colonies open at 2 Galactic Rebirths; you may hold 1 + galaxies explored, up to 8. */
+    colonyGalactics: 2,
+    maxColonies: 8,
+    /** Founding colony n costs 5 x 3^n Galaxy Cores; it starts with 10 people. */
+    foundCost: 5,
+    foundGrowth: 3,
+    startPop: 10,
+    /** Logistic growth: rate 0.002 a second x farms, towards capacity 10,000 x housing x everything else. */
+    baseGrowth: 0.002,
+    baseCapacity: 1e4,
+    /** Supply a second: 0.001 per person x factories x trade. */
+    supplyPer: 1e-3,
+    /** Buildings: housing x2 capacity, farms x1.3 growth, factories x1.5 Supply a level; price base x growth^level Supply. */
+    housingMult: 2,
+    farmsMult: 1.3,
+    factoriesMult: 1.5,
+    buildingCosts: { housing: [50, 4], farms: [30, 3], factories: [80, 4] } as Record<string, [number, number]>,
+    /** A spaceport (one-off) lets a colony trade; each route gives both ends x1.5 Supply. Routes: 1 + 1 per 2 colonies. */
+    portCost: 500,
+    routeMult: 1.5,
+    researchCosts: [500, 2000, 5000, 2e4, 1e5, 5e5],
+    /** Terraforming: each biome placed costs 200 Supply; a finished planet gives its colony's stat x(1 + score / 10) for good. */
+    biomeCost: 200,
+    finishPer: 0.1,
+    /** Galactic Constants: Halo +10% colony capacity a level; Lattice +5% megastructure rewards (as a power) a level. */
+    haloPer: 0.1,
+    latticePer: 0.05,
   },
   /** Phase 15: Galactic Rebirth, the fourth reset (Math and balance: reset layers). */
   galactic: {

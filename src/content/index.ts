@@ -25,6 +25,8 @@ import { registerMirror } from '../engine/systems/mirror';
 import { registerWormholes } from '../engine/systems/wormholes';
 import { registerGalactic } from '../engine/systems/galactic';
 import { registerObservatory } from '../engine/systems/observatory';
+import { registerMegastructures } from '../engine/systems/megastructures';
+import { registerColonies } from '../engine/systems/colonies';
 import { registerStarsmith } from '../engine/systems/starsmith';
 import { registerComets } from '../engine/systems/comets';
 import { registerNovaTree } from '../engine/systems/novaTree';
@@ -80,5 +82,7 @@ export function registerContent(): void {
   registerWormholes();
   registerGalactic();
   registerObservatory();
+  registerMegastructures();
+  registerColonies();
   registerUnlocks();
 }
