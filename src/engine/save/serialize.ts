@@ -56,6 +56,8 @@ export function mergeDefaults<T>(defaults: T, loaded: unknown): T {
 
 function merge(def: unknown, val: unknown): unknown {
   if (val === undefined || val === null) return def;
+  // a field that defaults to null (the worn aura, the Chaos Die's effect) takes whatever was saved
+  if (def === null) return val;
   if (def instanceof Decimal) return val instanceof Decimal ? val : def;
   if (Array.isArray(def)) return Array.isArray(val) ? val : def;
   if (def && typeof def === 'object') {

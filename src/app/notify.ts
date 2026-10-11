@@ -2,6 +2,7 @@ import { BELT_TIER_REWARDS, DEPTH_LAYERS, RARITIES } from '../content/belt';
 import { GOAL_BY_ID, MEDAL_BY_ID } from '../content/medals';
 import { SECTOR_BY_ID } from '../content/extras';
 import { RUNE_BY_ID, SHRINE_BY_ID } from '../content/runes';
+import { AURA_BY_ID, MUTATION_BY_ID } from '../content/runeDepth';
 import { SYSTEM_BY_ID } from '../content/systems';
 import { TIERS } from '../content/tiers';
 import { events } from '../engine/events';
@@ -121,6 +122,16 @@ export function installNotifications(): void {
     } else if (e.t === 'rune' && e.first) {
       const r = RUNE_BY_ID.get(e.id);
       if (r) events.emit({ t: 'toast', title: `New rune: ${r.name}`, body: `${r.hidden ? 'A hidden' : r.anomaly ? 'An Anomaly' : 'A ' + r.rarity} rune from the ${SHRINE_BY_ID.get(r.shrine)?.name ?? 'shrine'}.`, icon: 'rune' });
+    } else if (e.t === 'aura' && e.first) {
+      const a = AURA_BY_ID.get(e.id);
+      if (a) events.emit({ t: 'toast', title: `New aura: ${a.name}`, body: 'Wear it in the Celestial Auras panel.', icon: 'aura' });
+    } else if (e.t === 'mutation' && e.firstOfKind) {
+      // one toast per kind of mutation; the Index keeps count of the rest
+      const m = MUTATION_BY_ID.get(e.mut);
+      const body = e.target === 'rune' ? `A ${m?.name} copy of ${RUNE_BY_ID.get(e.id)?.name ?? 'a rune'} counts as ${m?.mult} copies.` : `A ${m?.name} ${e.id} asteroid gives x${m?.mult} ore and XP.`;
+      if (m) events.emit({ t: 'toast', title: `First ${m.name} mutation`, body, icon: 'mutation' });
+    } else if (e.t === 'star') {
+      events.emit({ t: 'toast', title: `${SHRINE_BY_ID.get(e.shrine)?.name ?? 'Shrine'}: ${e.stars} star${e.stars === 1 ? '' : 's'}`, body: 'Its runes are stronger.', icon: 'starrank', priority: true });
     } else if (e.t === 'milestone' && e.id.startsWith('codex.')) {
       const fresh = Number(e.id.slice(6));
       events.emit({ t: 'toast', title: `${fresh} new element${fresh === 1 ? '' : 's'}`, body: 'Added to the Codex in the Starforge.', icon: 'atom' });

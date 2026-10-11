@@ -1,3 +1,4 @@
+import { seedRng } from '../rng';
 import { SAVE_VERSION } from '../state';
 
 export class NewerSaveError extends Error {
@@ -40,6 +41,16 @@ const migrations: Record<number, (d: PlainSave) => void> = {
     stats.supernovasAll = stats.supernovas ?? 0;
     stats.supernovasBest = stats.supernovas ?? 0;
     d.stats = stats;
+  },
+  // 10 (Phase 9): star ranks, Celestial Auras and Mutations. Their random streams start from the
+  // save's own stream, so an old save still rolls the same way on every device.
+  10: (d) => {
+    const runes = d.runes as { stars?: Record<string, number> } | undefined;
+    if (runes && !runes.stars) runes.stars = {};
+    const base = (d.rng as number[] | undefined) ?? [1, 2, 3, 4];
+    const derive = (k: number) => seedRng(((base[0] ?? 1) ^ k) >>> 0);
+    d.auras ??= { copies: {}, equipped: null, auto: false, rng: derive(0x0a4a_51d3) };
+    d.mutations ??= { runes: {}, asteroids: {}, rng: derive(0x3d7a_7e05) };
   },
 };
 

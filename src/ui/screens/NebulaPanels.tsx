@@ -5,6 +5,7 @@ import { NODE_LEGEND } from '../../app/novaReports';
 import { layerConfirm, nebulaReport, nebulaTreeReport, shrineReport } from '../../app/runeReports';
 import { snapshotStore } from '../../app/uiSnapshot';
 import { RUNE_BY_ID, RUNE_RARITIES } from '../../content/runes';
+import { AURA_BY_ID } from '../../content/runeDepth';
 import { events } from '../../engine/events';
 import { BuyAmountControl } from '../kit/BuyAmountControl';
 import { Button, cx, tint } from '../kit/Chunk';
@@ -191,6 +192,7 @@ export function RunesPanel() {
           <button key={t.id} type="button" role="tab" aria-selected={t.id === shrine} className={cx('shrine-tab chunk pop', t.id === shrine && 'on', !t.open && 'locked')} style={tint(t.id === shrine ? t.color : '#2B1F6E')} onClick={() => setShrine(t.id)} title={t.open ? t.name : t.req} data-shrine={t.id}>
             {!t.open && <Icon name="lock" />}
             {t.name}
+            {t.stars > 0 && <span className="tab-stars num">{t.stars}</span>}
           </button>
         ))}
       </div>
@@ -262,7 +264,16 @@ export function RunesPanel() {
                   {x.rarity}
                 </span>
                 <span role="cell" className="rune-name">
-                  <b>{x.name}</b>
+                  <b>
+                    {x.name}
+                    {x.muts.length > 0 && (
+                      <span className="rune-muts" title={x.muts.map((m) => `${m.count} ${m.name}`).join(', ')}>
+                        {x.muts.map((m) => (
+                          <i key={m.id} style={tint(m.color)} />
+                        ))}
+                      </span>
+                    )}
+                  </b>
                   <small>{x.effects}</small>
                 </span>
                 <span role="cell" className="num rune-odds" title={`Base ${x.base}`}>
@@ -290,6 +301,12 @@ export function MythicBanner() {
   useEffect(
     () =>
       events.on((e) => {
+        // rare Celestial Auras (1 in 10,000 or rarer) get the banner too
+        if (e.t === 'aura' && e.first) {
+          const a = AURA_BY_ID.get(e.id);
+          if (a && a.log10 >= 4) setShow({ name: a.name, rarity: 'Celestial Aura', color: a.color, key: Date.now() });
+          return;
+        }
         if (e.t !== 'rune' || !e.first) return;
         const r = RUNE_BY_ID.get(e.id);
         if (!r) return;

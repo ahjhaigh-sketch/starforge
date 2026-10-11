@@ -46,6 +46,10 @@ export const SYSTEMS: readonly SystemDef[] = [
   { id: 'nebula', name: 'Nebula', icon: 'nebula', color: '#1E8FA8', rail: 'right', req: { kind: 'count', stat: 'supernovas', count: 30, noun: 'Supernova' }, panel: 'nebula', built: true, blurb: 'The second reset layer.' },
   { id: 'nebulatree', name: 'Nebula Tree', icon: 'tree', color: '#1E8FA8', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 1, noun: 'Nebula' }, panel: 'nebulatree', built: true, blurb: 'Spend Nebula Essence on a 100-node cloud.' },
   { id: 'runes', name: 'Runes', icon: 'rune', color: '#7B3FD6', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 1, noun: 'Nebula' }, panel: 'runes', built: true, blurb: 'Roll Constellation Runes at eight shrines.' },
+  { id: 'index', name: 'Index', icon: 'book', color: '#B08A1A', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 1, noun: 'Nebula' }, panel: 'index', built: true, blurb: 'A collection book of everything you find, with a bonus for each page.' },
+  { id: 'starring', name: 'Stars', icon: 'starrank', color: '#C99A1E', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 2, noun: 'Nebula' }, panel: 'starring', built: true, blurb: 'Sacrifice runes to give a shrine stars; craft the rune you want.' },
+  { id: 'mutations', name: 'Mutations', icon: 'mutation', color: '#C23FA0', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 3, noun: 'Nebula' }, panel: 'mutations', built: true, blurb: 'Golden, Rainbow, Void and Prismatic runes and asteroids.' },
+  { id: 'auras', name: 'Auras', icon: 'aura', color: '#1A9DB8', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 4, noun: 'Nebula' }, panel: 'auras', built: true, blurb: 'Roll Aura Dice and wear one Celestial Aura.' },
   { id: 'wyrms', name: 'Wyrms', icon: 'wyrm', color: '#2E9C78', rail: 'right', req: { kind: 'count', stat: 'nebulasAll', count: 3, noun: 'Nebula' }, built: false, blurb: 'Hatch, train and fuse Void Wyrms.' },
 ];
 

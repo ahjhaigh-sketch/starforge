@@ -1,5 +1,29 @@
 # Changelog
 
+## Phase 9: Rune depth
+- The Index opens at 1 Nebula: a collection book with a page each for runes, auras, elements, relics and mutations.
+  - Each page multiplies one stat at 10%, 25%, 50%, 75% and 100% complete: rune luck, rune bulk, Stardust, alloy and mutation luck.
+  - The bonuses show in Stats as "Index: <page>". Wyrms, star species, cards and galaxies have locked pages waiting for their systems.
+- Rune Stars open at 2 Nebulas: each shrine earns up to 5 stars.
+  - A star asks for copies of one rune: Legendary x250, then Celestial x2,500, Eternal x500K, Primordial x1B and Absolute x1 quadrillion.
+  - Only those copies go; every other rune stays, and mutated copies are the last to go.
+  - Each star is +20% to that shrine's rune effects. At 2 stars the hidden rune shows and comes 10 times as often.
+- Rune Crafting, in the same panel:
+  - Salvage turns the copies a rune's level doesn't use into Rune Shards (a 1-in-N rune gives N / 10).
+  - Crafting makes copies of the rune you pick for N each, with buy amounts.
+- Mutations open at 3 Nebulas: Golden x2, Rainbow x5, Void x20 and Prismatic x100, with Mutation Luck.
+  - A mutated rune copy counts as that many copies toward its level. Rune rows show coloured dots for their mutations.
+  - A mutated asteroid wears a ring in its colour and gives that much more ore and XP.
+  - Mutations roll from their own random stream. Wyrms and nursery stars will join them.
+- Celestial Auras open at 4 Nebulas.
+  - Every 1,000 runes rolled at any shrine gives an Aura Die.
+  - 30 auras, from Comet Haze (1 in 5) to Stellar Crown (1 in 1.75M), with Aura Luck. Rolls use the buy amount, and auto-roll keeps going offline.
+  - Wear one at a time: +5% up to +500%. Rare finds get the banner.
+- All four sit on the rails before they open. 8 new medals and toasts for stars, crafting, auras and mutations.
+- Fixed: a value saved in a field that defaults to empty (the worn aura, the Chaos Die's effect) now survives a reload.
+- The simulator bot wears its rarest aura, rolls every die and stars shrines up. After a Nebula it also goes Supernova when a run passes 10 minutes short of the 30 the Nebula needs, instead of waiting hours on passive shards.
+- Save version 10, with a migration test that loads a real version 9 save.
+
 ## Phase 8: the Nebula and Constellation Runes
 - The Nebula, the second reset, needs 30 Supernovas and 100,000 shards gathered in one Nebula run.
   - Essence = floor((shards this run / 100,000)^0.35); the first Nebula always gives 2.

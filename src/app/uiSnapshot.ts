@@ -413,7 +413,7 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     shards: format(cur(s, 'shards'), n),
     shardsVisible: (s.stats.supernovas ?? 0) > 0 || novaReady,
     supernovas: s.stats.supernovas ?? 0,
-    beltField: beltOpen(s) ? s.belt.field.map((a) => `${a.id}:${a.r}`).join('|') : '',
+    beltField: beltOpen(s) ? s.belt.field.map((a) => `${a.id}:${a.r}${a.m ? `:${a.m}` : ''}`).join('|') : '',
     beamRadius: Math.round(stat(s, 'beamRadius').toNumber()),
     ore: format(cur(s, 'ore'), n),
     oreVisible: beltOpen(s),

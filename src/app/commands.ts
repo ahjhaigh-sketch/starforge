@@ -21,6 +21,8 @@ import { buyDeal, buyLuck, reroll } from '../engine/systems/merchant';
 import { buyShip, buyShipUpgrade, launch, setShipAuto, type ShipUpgradeId } from '../engine/systems/ships';
 import { buyNebulaNode } from '../engine/systems/nebulaTree';
 import { rollOnce, type RollResult, setShrine } from '../engine/systems/runes';
+import { craftRune, salvage, starUp } from '../engine/systems/starring';
+import { type AuraRoll, equipAura, rollAuras } from '../engine/systems/auras';
 import { buyForgeUpgrade, buyRelic, equipRelic, setForgeGrade, setForgeOn, setForgeShare, unequipRelic } from '../engine/systems/forge';
 import { backupNow, readBackup } from './backups';
 import { D } from '../engine/decimal';
@@ -245,6 +247,36 @@ export const commands = {
   setShrine(shrine: string, patch: { auto?: boolean; rate?: number; luck?: number; keep?: number }) {
     setShrine(game.state, shrine, patch);
     done();
+  },
+  /** Rune Starring: sacrifices exactly the copies the shrine's next star asks for. */
+  starUp(shrine: string): boolean {
+    const ok = starUp(game.state, shrine);
+    done();
+    return ok;
+  },
+  salvageRunes(shrine: string): string {
+    const got = salvage(game.state, shrine);
+    done();
+    return format(got, game.state.settings.notation);
+  },
+  craftRune(id: string): boolean {
+    const ok = craftRune(game.state, id);
+    done();
+    return ok;
+  },
+  rollAuras(): AuraRoll | null {
+    const r = rollAuras(game.state);
+    done();
+    return r;
+  },
+  setAuraAuto(on: boolean) {
+    game.state.auras.auto = on;
+    done();
+  },
+  equipAura(id: string | null): boolean {
+    const ok = equipAura(game.state, id);
+    done();
+    return ok;
   },
   buyNode(id: string): boolean {
     const ok = buyNode(game.state, id);

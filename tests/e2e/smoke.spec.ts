@@ -537,10 +537,16 @@ test('Starsmith perks: the HUD chip opens the panel, points spend and reset', as
 
 /** Opens a rail's panel. With ?dev=1 the dev panel can sit over the right rail, so click through the DOM. */
 async function openRail(page: Page, id: string): Promise<void> {
-  await page.evaluate((x) => {
-    const btn = [...document.querySelectorAll<HTMLButtonElement>(`[data-rail="${x}"]`)].find((b) => b.offsetParent !== null);
-    btn?.click();
-  }, id);
+  // a system unlocked by the test shows on the rail one snapshot later: wait for its button, then click once
+  await expect
+    .poll(() =>
+      page.evaluate((x) => {
+        const btn = [...document.querySelectorAll<HTMLButtonElement>(`[data-rail="${x}"]`)].find((b) => b.offsetParent !== null);
+        btn?.click();
+        return !!btn;
+      }, id),
+    )
+    .toBe(true);
   await expect(page.locator(`[data-panel="${id}"]`)).toHaveClass(/open/);
 }
 
@@ -874,4 +880,98 @@ test('auto-roll spends exactly the price of every rune it rolls', async ({ page 
   expect(after.rolled).toBeGreaterThanOrEqual(1);
   // nothing else earns or spends Stardust here (no engines): the spend is exactly 1M a rune
   expect(before - after.left).toBe(after.rolled * 1e6);
+});
+
+// ---------- Phase 9: rune depth ----------
+
+type Sf9 = {
+  sf: {
+    game: {
+      state: {
+        unlocked: string[];
+        stats: Record<string, number>;
+        runes: { copies: Record<string, unknown>; stars: Record<string, number> };
+        auras: { copies: Record<string, unknown>; equipped: string | null };
+        codex: Record<string, number>;
+        currencies: Record<string, { toNumber(): number }>;
+      };
+    };
+    commands: { devAdd(c: string, n: number): void };
+  };
+};
+
+test('Rune Stars: a star takes exactly the copies it asks for; spare copies salvage into Rune Shards', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game } = (window as unknown as Sf9).sf;
+    const s = game.state;
+    s.stats.nebulasAll = 2;
+    s.stats.nebulas = 2;
+    const D = (s.currencies.stardust as unknown as { constructor: new (x: number) => unknown }).constructor;
+    s.runes.copies['dust.4'] = new D(300);
+    s.runes.copies['dust.0'] = new D(1e6);
+  });
+  await openRail(page, 'starring');
+  const panel = page.locator('[data-panel="starring"]');
+  await panel.getByTestId('star-up').click();
+  const after = await page.evaluate(() => {
+    const s = (window as unknown as Sf9).sf.game.state;
+    return { left: (s.runes.copies['dust.4'] as { toNumber(): number }).toNumber(), common: (s.runes.copies['dust.0'] as { toNumber(): number }).toNumber(), stars: s.runes.stars.dust };
+  });
+  expect(after).toEqual({ left: 50, common: 1e6, stars: 1 });
+  await expect(panel.locator('[data-star-shrine="dust"]')).toContainText('1');
+  await panel.getByTestId('salvage').click();
+  const shards = await page.evaluate(() => (window as unknown as Sf9).sf.game.state.currencies.runeShards?.toNumber() ?? 0);
+  // a million commons, of which 250,000 feed the level cap: 750,000 x 2 / 10
+  expect(shards).toBe(150_000);
+  expect(errors).toEqual([]);
+});
+
+test('Celestial Auras: roll a die, wear an aura, and it shows in Stats', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf9).sf;
+    game.state.stats.nebulasAll = 4;
+    game.state.stats.nebulas = 4;
+    game.state.unlocked.push('stats');
+    commands.devAdd('auraDice', 1000);
+  });
+  await openRail(page, 'auras');
+  const panel = page.locator('[data-panel="auras"]');
+  await panel.getByTestId('roll-aura').click();
+  await expect(panel.getByTestId('aura-card')).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as Sf9).sf.game.state.currencies.auraDice!.toNumber())).toBe(999);
+  await page.evaluate(() => {
+    const s = (window as unknown as Sf9).sf.game.state;
+    const D = (s.currencies.stardust as unknown as { constructor: new (x: number) => unknown }).constructor;
+    s.auras.copies['aura.crown'] = new D(1);
+  });
+  await panel.locator('[data-aura="aura.crown"]').getByRole('button', { name: 'Wear' }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf9).sf.game.state.auras.equipped)).toBe('aura.crown');
+  await openRail(page, 'stats');
+  await expect(page.locator('[data-panel="stats"]')).toContainText('Celestial Aura');
+  expect(errors).toEqual([]);
+});
+
+test('the Index: page bonuses grow with completion and show in Stats; Mutations opens at 3 Nebulas', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const s = (window as unknown as Sf9).sf.game.state;
+    s.stats.nebulasAll = 3;
+    s.stats.nebulas = 3;
+    s.unlocked.push('stats');
+    for (const id of ['h', 'he', 'li', 'be', 'b', 'c', 'n', 'o', 'f', 'ne', 'na', 'mg']) s.codex[id] = 1;
+  });
+  await openRail(page, 'index');
+  const panel = page.locator('[data-panel="index"]');
+  await panel.locator('[data-page="elements"]').click();
+  await expect(panel.getByTestId('index-bonus')).toContainText('x2 Stardust');
+  await openRail(page, 'mutations');
+  await expect(page.locator('[data-panel="mutations"]')).toContainText('Prismatic');
+  await openRail(page, 'stats');
+  await expect(page.locator('[data-panel="stats"]')).toContainText('Index: Elements');
+  expect(errors).toEqual([]);
 });

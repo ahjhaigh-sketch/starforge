@@ -40,7 +40,7 @@ export const plainSaveSchema = z.looseObject({
     .looseObject({
       upgrades: z.record(z.string(), z.number().int().min(0)),
       tier: z.number().int().min(0),
-      field: z.array(z.looseObject({ id: finite, r: z.number().int().min(0) })),
+      field: z.array(z.looseObject({ id: finite, r: z.number().int().min(0), m: z.number().int().min(0).optional() })),
       nextId: finite,
       spawnAcc: finite,
       droneAcc: finite,
@@ -84,8 +84,11 @@ export const plainSaveSchema = z.looseObject({
       shrines: z.record(z.string(), z.looseObject({ auto: z.boolean(), rate: finite, luck: finite, keep: z.number().int().min(0), acc: finite, pity: dec, rolled: dec })),
       copies: z.record(z.string(), dec),
       rng: z.tuple([finite, finite, finite, finite]),
+      stars: z.record(z.string(), z.number().int().min(0)).optional(),
     })
     .optional(),
+  auras: z.looseObject({ copies: decRecord, equipped: z.string().nullable(), auto: z.boolean(), rng: z.tuple([finite, finite, finite, finite]) }).optional(),
+  mutations: z.looseObject({ runes: z.record(z.string(), decRecord), asteroids: z.record(z.string(), finite), rng: z.tuple([finite, finite, finite, finite]) }).optional(),
   ships: z.looseObject({ fleet: z.array(z.looseObject({ sector: z.string().nullable(), t: finite, auto: z.boolean() })), upgrades: z.record(z.string(), z.number().int().min(0)), rng: z.tuple([finite, finite, finite, finite]) }).optional(),
   settings: z.looseObject({
     notation: z.enum(['suffix', 'scientific', 'engineering']),

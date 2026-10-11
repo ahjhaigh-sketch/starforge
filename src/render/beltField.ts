@@ -1,5 +1,6 @@
 import { Application, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import { RARITIES } from '../content/belt';
+import { MUTATIONS } from '../content/runeDepth';
 import { ParticlePool } from './particles';
 
 /**
@@ -77,6 +78,8 @@ function segmentDistance(x: number, y: number, a: { x: number; y: number }, b: {
 interface Rock {
   id: number;
   rarity: number;
+  /** 0 for none, else 1 (Golden) to 4 (Prismatic). */
+  mut: number;
   sprite: Sprite;
   age: number;
 }
@@ -114,26 +117,36 @@ export class BeltField {
     this.app?.renderer.resize(width, height);
   }
 
-  /** The asteroids the game state holds: "id:rarity|...". */
+  /** The asteroids the game state holds: "id:rarity|..." or "id:rarity:mutation". */
   setField(field: string): void {
     if (!this.app) return;
     const seen = new Set<number>();
     for (const part of field.split('|')) {
       if (!part) continue;
-      const [idS, rS] = part.split(':');
+      const [idS, rS, mS] = part.split(':');
       const id = Number(idS);
       seen.add(id);
       if (this.rocks.has(id) || this.gone.has(id)) continue;
       const rarity = Number(rS);
+      const mut = Number(mS ?? 0) || 0;
       const sprite = new Sprite(rockTexture(rarity));
       sprite.anchor.set(0.5);
+      // a mutated asteroid wears a ring in its mutation's colour
+      const m = MUTATIONS[mut - 1];
+      if (m) {
+        const ring = new Graphics();
+        const rr = sprite.texture.width * 0.47;
+        ring.circle(0, 0, rr).stroke({ width: 7, color: 0x140b2e });
+        ring.circle(0, 0, rr).stroke({ width: 4, color: parseInt(m.color.slice(1), 16) });
+        sprite.addChild(ring);
+      }
       sprite.scale.set(0);
       this.layer.addChild(sprite);
-      this.rocks.set(id, { id, rarity, sprite, age: 0 });
+      this.rocks.set(id, { id, rarity, mut, sprite, age: 0 });
     }
     for (const [id, rock] of this.rocks) {
       if (!seen.has(id)) {
-        rock.sprite.destroy();
+        rock.sprite.destroy({ children: true });
         this.rocks.delete(id);
       }
     }
@@ -178,9 +191,9 @@ export class BeltField {
     if (hit.length) {
       for (const id of hit) {
         const rock = this.rocks.get(id)!;
-        const color = parseInt((RARITIES[rock.rarity]!.glow || '#C9C2F2').slice(1), 16);
+        const color = parseInt((MUTATIONS[rock.mut - 1]?.color ?? (RARITIES[rock.rarity]!.glow || '#C9C2F2')).slice(1), 16);
         this.particles?.burst(rock.sprite.x, rock.sprite.y, rock.rarity > 0 ? 18 : 7, color, 60, 9);
-        rock.sprite.destroy();
+        rock.sprite.destroy({ children: true });
         this.rocks.delete(id);
         this.gone.add(id);
       }

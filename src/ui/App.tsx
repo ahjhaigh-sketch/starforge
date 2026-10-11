@@ -28,6 +28,7 @@ import { BeltPanel, DrillPanel, StarsmithPanel } from './screens/BeltPanels';
 import { StarforgePanel } from './screens/ForgePanels';
 import { AttunePanel, FusionPanel, MerchantPanel, ShipsPanel } from './screens/ExtrasPanels';
 import { MythicBanner, NebulaConfirmPanel, NebulaPanel, NebulaTreePanel, RunesPanel } from './screens/NebulaPanels';
+import { AurasPanel, IndexPanel, MutationsPanel, StarringPanel } from './screens/RuneDepthPanels';
 import { useUi } from './store';
 
 /** Shown while time away is being simulated; fades in only if that takes a moment. */
@@ -96,6 +97,10 @@ export function App() {
       <NebulaConfirmPanel />
       <NebulaTreePanel />
       <RunesPanel />
+      <StarringPanel />
+      <AurasPanel />
+      <MutationsPanel />
+      <IndexPanel />
       <SettingsPanel />
       <PanelHost />
       <ToastHost />

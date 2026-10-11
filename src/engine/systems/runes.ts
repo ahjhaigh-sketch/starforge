@@ -6,7 +6,12 @@ import { nextPoisson } from '../rng';
 import { cur, type GameState, type ShrineState, spend } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
+import { earnDice } from './auras';
+import { effectiveCopies, mutateRunes } from './mutations';
 import { reqMet } from './unlocks';
+import { effLog10 } from '../odds';
+
+export { effLog10 };
 
 /**
  * Constellation Runes (Math and balance: "Rune maths").
@@ -35,11 +40,15 @@ export function shrineState(s: GameState, id: string): ShrineState {
 
 export const copies = (s: GameState, id: string): Decimal => s.runes.copies[id] ?? ZERO;
 
+/** Mutated copies count as their mutation's size (a Golden copy is two). */
 export function runeLevel(s: GameState, r: RuneDef): number {
   const c = copies(s, r.id);
   if (c.lte(0)) return 0;
-  return Math.min(r.cap, Math.floor(c.sqrt().toNumber()));
+  return Math.min(r.cap, Math.floor(effectiveCopies(s, r.id, c).sqrt().toNumber()));
 }
+
+/** A shrine's stars (Rune Starring): +20% rune effects each. */
+export const shrineStars = (s: GameState, shrine: string) => s.runes.stars[shrine] ?? 0;
 
 /** Rolls a second: Rune Speed, at most 20. */
 export const rollSpeed = (s: GameState) => Math.min(R.speedCap, stat(s, 'runeSpeed').toNumber());
@@ -54,13 +63,10 @@ export function shrineLuck(s: GameState, id: string): number {
   return 1 + (L - 1) * shrineState(s, id).luck;
 }
 
-/** log10 of the effective odds "1 in eff". */
-export function effLog10(log10N: number, luck: number, root: number, anomaly = false): number {
-  if (anomaly || log10N <= 1) return log10N;
-  return Math.max(1, (log10N - Math.log10(Math.max(1, luck))) / Math.max(1, root));
-}
+/** From 2 stars a shrine's hidden rune comes 10 times as often. */
+const baseLog = (s: GameState, r: RuneDef) => (r.hidden && shrineStars(s, r.shrine) >= BALANCE.runeDepth.revealAt ? r.log10 - Math.log10(BALANCE.runeDepth.hiddenBoost) : r.log10);
 
-export const runeEffLog = (s: GameState, r: RuneDef, luck = shrineLuck(s, r.shrine)) => effLog10(r.log10, luck, Math.max(1, stat(s, 'luckRoot').toNumber()), r.anomaly);
+export const runeEffLog = (s: GameState, r: RuneDef, luck = shrineLuck(s, r.shrine)) => effLog10(baseLog(s, r), luck, Math.max(1, stat(s, 'luckRoot').toNumber()), r.anomaly);
 
 /** The rarest visible rune (hard pity target) of a shrine. */
 const rarestVisible = (shrine: string) => runesOf(shrine).filter((r) => !r.hidden && !r.anomaly).reduce((a, b) => (b.log10 > a.log10 ? b : a));
@@ -103,12 +109,14 @@ export function rollRunes(s: GameState, shrineId: string, runes: Decimal, keepAl
     if (!keepAll && r.tier >= 0 && r.tier < st.keep) continue;
     const firstTime = copies(s, r.id).lte(0);
     s.runes.copies[r.id] = copies(s, r.id).add(count);
+    mutateRunes(s, r.id, count);
     hits.push({ id: r.id, count });
     if (!best || r.log10 > best.log10) best = r;
     if (firstTime) s.stats.runesFound = (s.stats.runesFound ?? 0) + 1;
     if (r.tier >= 5 || r.tier < 0) events.emit({ t: 'rune', shrine: shrineId, id: r.id, first: firstTime });
   }
   st.rolled = st.rolled.add(runes);
+  earnDice(s, runes);
   s.stats.runesRolled = (s.stats.runesRolled ?? 0) + Math.min(1e15, runes.toNumber());
   return { runes, hits, best };
 }
@@ -188,7 +196,7 @@ export function registerRunes(): void {
         label: `Runes: ${sh.name}`,
         value: (s: GameState) => {
           // Resonance strengthens multipliers and additions, never powers
-          const res = statId === 'runeEffect' || op === 'pow' ? 1 : stat(s, 'runeEffect').toNumber();
+          const res = statId === 'runeEffect' || op === 'pow' ? 1 : stat(s, 'runeEffect').toNumber() * (1 + BALANCE.runeDepth.starEffect * shrineStars(s, sh.id));
           if (op === 'add') return D(list.reduce((t, x) => t + x.a * runeLevel(s, x.r) * res, 0));
           let v = ONE;
           for (const x of list) {

@@ -106,6 +106,12 @@ let nebulaNodeCost: (typeof import('../src/engine/systems/nebulaTree'))['nebulaN
 let ownsNebulaNode: (typeof import('../src/engine/systems/nebulaTree'))['ownsNebulaNode'];
 let runesOpen: (typeof import('../src/engine/systems/runes'))['runesOpen'];
 let setShrine: (typeof import('../src/engine/systems/runes'))['setShrine'];
+let aurasOpen: (typeof import('../src/engine/systems/auras'))['aurasOpen'];
+let auraCopies: (typeof import('../src/engine/systems/auras'))['auraCopies'];
+let equipAura: (typeof import('../src/engine/systems/auras'))['equipAura'];
+let AURAS: (typeof import('../src/content/runeDepth'))['AURAS'];
+let SHRINES: (typeof import('../src/content/runes'))['SHRINES'];
+let starUp: (typeof import('../src/engine/systems/starring'))['starUp'];
 let PLANET_TYPES: (typeof import('../src/content/early'))['PLANET_TYPES'];
 
 async function loadGame(): Promise<void> {
@@ -143,6 +149,10 @@ async function loadGame(): Promise<void> {
   ({ NEBULA_TREE } = await import('../src/content/nebulaTree'));
   ({ buyNebulaNode, canBuyNebulaNode, nebulaNodeCost, ownsNebulaNode } = await import('../src/engine/systems/nebulaTree'));
   ({ runesOpen, setShrine } = await import('../src/engine/systems/runes'));
+  ({ aurasOpen, auraCopies, equipAura } = await import('../src/engine/systems/auras'));
+  ({ AURAS } = await import('../src/content/runeDepth'));
+  ({ SHRINES } = await import('../src/content/runes'));
+  ({ starUp } = await import('../src/engine/systems/starring'));
 }
 
 const TAPS_PER_SECOND = 4;
@@ -244,6 +254,13 @@ function sideSystems(s: GameState): void {
     setShrine(s, 'dust', { auto: true, rate: 1 });
     setShrine(s, 'nova', { auto: true, rate: 0.25 });
   }
+  // Phase 9: throw every Aura Die, wear the rarest aura, and star a shrine up whenever it can
+  if (aurasOpen(s)) {
+    s.auras.auto = true;
+    const best = AURAS.filter((a) => auraCopies(s, a.id).gt(0)).sort((a, b) => b.log10 - a.log10)[0];
+    if (best && s.auras.equipped !== best.id) equipAura(s, best.id);
+  }
+  for (const sh of SHRINES) starUp(s, sh.id);
   // Phase 7: fuse the board, the Gravity Lens (the bot taps a steady 4 a second), good deals, ships
   if (fusionOpen(s)) autoFuse(s);
   const merchantDeals = merchantOpen(s) ? s.merchant.deals : [];
@@ -407,7 +424,9 @@ it('balance simulation', async () => {
       if (rate.gt(bestRate)) bestRate = rate;
       // once lifetime shards grow by themselves (20 Supernovas), doubling them can stall a run for hours
       const peaked = milestoneReached(s, 'supernova', 'passive') && s.playtime - runStart > 60 && rate.lt(bestRate.mul(0.9));
-      if ((s.stats.supernovasAll ?? 0) === 0 || g.gte(lifetime.max(3)) || peaked || tooLong) {
+      // short of the Supernovas the Nebula needs, a person resets rather than wait on passive shards
+      const behind = (s.stats.nebulasAll ?? 0) > 0 && (s.stats.supernovas ?? 0) < BALANCE.nebula.supernovas && s.playtime - runStart > 600;
+      if ((s.stats.supernovasAll ?? 0) === 0 || g.gte(lifetime.max(3)) || peaked || behind || tooLong) {
         if ((s.stats.supernovasAll ?? 0) === 0) {
           firstSnPurchases = s.stats.enginesBought ?? 0;
           firstSnTiers = s.tier;

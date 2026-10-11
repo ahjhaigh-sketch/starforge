@@ -74,6 +74,15 @@ export const MEDALS: readonly MedalDef[] = [
   { id: 'runes.75', name: "Constellation Keeper", desc: "Find 75 different runes.", icon: 'rune', req: { kind: 'count', stat: 'runesFound', count: 75, noun: 'rune' } },
   { id: 'rolls.1m', name: "A Million Throws", desc: "Roll a million runes.", icon: 'rune', req: { kind: 'count', stat: 'runesRolled', count: 1000000, noun: 'rune rolled' } },
   { id: 'rolls.1t', name: "Rune Storm", desc: "Roll a trillion runes.", icon: 'rune', req: { kind: 'count', stat: 'runesRolled', count: 1000000000000, noun: 'rune rolled' } },
+  // Phase 9: Rune Starring and Crafting, Celestial Auras, Mutations
+  { id: 'stars.1', name: "First Star", desc: "Give a shrine its first star.", icon: 'starrank', req: { kind: 'count', stat: 'starsEarned', count: 1, noun: 'star' } },
+  { id: 'stars.10', name: "Constellation Crown", desc: "Earn 10 shrine stars.", icon: 'starrank', req: { kind: 'count', stat: 'starsEarned', count: 10, noun: 'star' } },
+  { id: 'craft.1', name: "Runesmith", desc: "Craft a rune from Rune Shards.", icon: 'rune', req: { kind: 'count', stat: 'runesCrafted', count: 1, noun: 'rune crafted' } },
+  { id: 'auras.1', name: "Haloed", desc: "Find a Celestial Aura.", icon: 'aura', req: { kind: 'count', stat: 'aurasFound', count: 1, noun: 'aura' } },
+  { id: 'auras.15', name: "Aura Collector", desc: "Find 15 different auras.", icon: 'aura', req: { kind: 'count', stat: 'aurasFound', count: 15, noun: 'aura' } },
+  { id: 'auras.30', name: "Every Light in the Sky", desc: "Find all 30 auras.", icon: 'aura', req: { kind: 'count', stat: 'aurasFound', count: 30, noun: 'aura' } },
+  { id: 'mutations.1', name: "Something Shiny", desc: "Find a mutation.", icon: 'mutation', req: { kind: 'count', stat: 'mutationsFound', count: 1, noun: 'mutation' } },
+  { id: 'mutations.50', name: "Strange Matter", desc: "Find 50 kinds of mutation.", icon: 'mutation', req: { kind: 'count', stat: 'mutationsFound', count: 50, noun: 'mutation' } },
   // Phase 7: Comet Fusion, Attunements, the Merchant and starships
   { id: 'fusion.5', name: "Comet Smith", desc: "Fuse a level 5 comet.", icon: 'comet', req: { kind: 'count', stat: 'fusionBest', count: 5, noun: 'fusion level' } },
   { id: 'fusion.10', name: "Starfall Forge", desc: "Fuse a level 10 comet.", icon: 'comet', req: { kind: 'count', stat: 'fusionBest', count: 10, noun: 'fusion level' } },

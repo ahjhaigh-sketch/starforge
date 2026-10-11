@@ -9,6 +9,7 @@ import { nextFloat } from '../rng';
 import { cur, gain, type GameState, spend } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
+import { asteroidMutMult, recordAsteroidMutation, rollAsteroidMutation } from './mutations';
 import { addXp } from './starsmith';
 
 /**
@@ -71,12 +72,15 @@ export function harvest(s: GameState, ids: readonly number[], scale = 1, hand = 
   const keep = s.belt.field.filter((a) => {
     if (!want.has(a.id)) return true;
     n++;
-    ore = ore.add(oreFor(s, a.r));
-    xp = xp.add(xpFor(s, a.r));
+    // a mutated asteroid (from 3 Nebulas) is worth its mutation's size in ore and XP
+    const mm = asteroidMutMult(a.m);
+    ore = ore.add(oreFor(s, a.r).mul(mm));
+    xp = xp.add(xpFor(s, a.r).mul(mm));
+    recordAsteroidMutation(s, a.r, a.m);
     dust = dust.add(sps.mul(B.stardustSeconds * Math.sqrt(RARITIES[a.r]!.mult)));
     // TODO(later phases): Crystal asteroids also give Crystals, Void ones Dark Matter (Game design: Rarities).
     if (a.r > 0) {
-      rare.set(a.r, (rare.get(a.r) ?? ZERO).add(oreFor(s, a.r)));
+      rare.set(a.r, (rare.get(a.r) ?? ZERO).add(oreFor(s, a.r).mul(mm)));
       events.emit({ t: 'harvest', rarity: RARITIES[a.r]!.id, hand });
     }
     return false;
@@ -261,7 +265,12 @@ export function registerBelt(): void {
       s.belt.spawnAcc += dt * rate;
       const room = Math.max(0, cap - s.belt.field.length + take);
       const arrive = Math.min(Math.floor(s.belt.spawnAcc), room);
-      for (let i = 0; i < arrive; i++) s.belt.field.push({ id: s.belt.nextId++, r: rollRarity(s) });
+      for (let i = 0; i < arrive; i++) {
+        const a: GameState['belt']['field'][number] = { id: s.belt.nextId++, r: rollRarity(s) };
+        const m = rollAsteroidMutation(s);
+        if (m) a.m = m;
+        s.belt.field.push(a);
+      }
       s.belt.spawnAcc -= arrive;
       s.stats.spawned = (s.stats.spawned ?? 0) + arrive;
       // a full field doesn't bank arrivals; drones with nothing left to sweep don't bank sweeps
@@ -273,7 +282,7 @@ export function registerBelt(): void {
       // passive ore from the whole field
       if (s.belt.tier >= 3 && s.belt.field.length > 0) {
         let sum = ZERO;
-        for (const a of s.belt.field) sum = sum.add(oreFor(s, a.r));
+        for (const a of s.belt.field) sum = sum.add(oreFor(s, a.r).mul(asteroidMutMult(a.m)));
         const ore = sum.mul(B.passiveShare * dt * ctx.gainScale);
         gain(s, 'ore', ore);
         s.belt.oreThisTier = s.belt.oreThisTier.add(ore);

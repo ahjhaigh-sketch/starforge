@@ -9,6 +9,9 @@ import { registerShips } from '../engine/systems/ships';
 import { registerNebula } from '../engine/systems/nebula';
 import { registerNebulaTree } from '../engine/systems/nebulaTree';
 import { registerRunes } from '../engine/systems/runes';
+import { registerMutations } from '../engine/systems/mutations';
+import { registerAuras } from '../engine/systems/auras';
+import { registerIndex } from '../engine/systems/collection';
 import { registerStarsmith } from '../engine/systems/starsmith';
 import { registerComets } from '../engine/systems/comets';
 import { registerNovaTree } from '../engine/systems/novaTree';
@@ -48,5 +51,8 @@ export function registerContent(): void {
   registerNebula();
   registerNebulaTree();
   registerRunes();
+  registerMutations();
+  registerAuras();
+  registerIndex();
   registerUnlocks();
 }

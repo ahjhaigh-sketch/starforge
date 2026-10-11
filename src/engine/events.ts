@@ -16,6 +16,12 @@ export type GameEvent =
   | { t: 'smelt'; grade: string }
   /** A Mythic-or-rarer rune (or a hidden rune or Anomaly) was rolled. */
   | { t: 'rune'; shrine: string; id: string; first: boolean }
+  /** A Celestial Aura was rolled (`first`: never found before). */
+  | { t: 'aura'; id: string; first: boolean }
+  /** The first of a kind of mutation: a rune or an asteroid grade. */
+  | { t: 'mutation'; target: 'rune' | 'asteroid'; id: string; mut: string; firstOfKind: boolean }
+  /** A shrine gained a star. */
+  | { t: 'star'; shrine: string; stars: number }
   /** `priority`: big news (a new tier, a reset) that smaller toasts must never push out. */
   | { t: 'toast'; title: string; body: string; icon?: string; priority?: boolean }
   | { t: 'saved'; slot: string }

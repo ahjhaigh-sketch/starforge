@@ -7,7 +7,9 @@ import { cur } from '../engine/state';
 import { stat } from '../engine/stats';
 import { nebulaGain, nebulaReady, nextEssenceAt, runShards } from '../engine/systems/nebula';
 import { canBuyNebulaNode, nebulaNodeCost, nebulaNodeLevel, nebulaNodeReachable, nebulaTreeOpen, ownsNebulaNode } from '../engine/systems/nebulaTree';
-import { copies, rollSpeed, runeBulk, runeEffLog, runeLevel, runePrice, runesPerSecond, shrineOpen, shrineState, worthChasing } from '../engine/systems/runes';
+import { copies, rollSpeed, runeBulk, runeEffLog, runeLevel, runePrice, runesPerSecond, shrineOpen, shrineStars, shrineState, worthChasing } from '../engine/systems/runes';
+import { runeMutations } from '../engine/systems/mutations';
+import { MUTATIONS } from '../content/runeDepth';
 import { reqText } from '../engine/systems/unlocks';
 import { format, formatCount, formatTime } from '../ui/format';
 import type { TreeNodeView } from '../ui/tree/TreeView';
@@ -108,7 +110,7 @@ export function nebulaTreeReport(): { open: boolean; essence: string; nodes: Tre
 
 // ---------- runes ----------
 
-const oddsText = (log10: number): string => {
+export const oddsText = (log10: number): string => {
   if (log10 < 3) return `1 in ${formatCount(Math.round(10 ** log10 * 100) / 100, n())}`;
   return `1 in ${format(D(10).pow(log10), n())}`;
 };
@@ -129,10 +131,13 @@ export interface RuneRow {
   found: boolean;
   hidden: boolean;
   anomaly: boolean;
+  /** Mutated copies (Golden, Rainbow, Void, Prismatic) the rune has. */
+  muts: Array<{ id: string; name: string; color: string; count: string }>;
 }
 
 export interface ShrineReport {
-  tabs: Array<{ id: string; name: string; color: string; open: boolean; req: string }>;
+  tabs: Array<{ id: string; name: string; color: string; open: boolean; req: string; stars: number }>;
+  stars: number;
   id: string;
   name: string;
   color: string;
@@ -179,24 +184,29 @@ export function shrineReport(id: string): ShrineReport {
   const runes = runesOf(sh.id).map((r): RuneRow => {
     const c = copies(s, r.id);
     const found = c.gt(0);
+    // from 2 stars the hidden rune shows itself
+    const secret = r.hidden && !found && shrineStars(s, sh.id) < BALANCE.runeDepth.revealAt;
+    const rec = runeMutations(s, r.id);
     return {
       id: r.id,
-      name: r.hidden && !found ? '???' : r.name,
+      name: secret ? '???' : r.name,
       rarity: rarityName(r),
       color: r.color,
-      odds: r.hidden && !found ? 'Beyond reckoning' : oddsText(runeEffLog(s, r)),
+      odds: secret ? 'Beyond reckoning' : oddsText(runeEffLog(s, r)),
       base: oddsText(r.log10),
       copies: format(c, n()),
       level: runeLevel(s, r),
       cap: r.cap,
-      effects: r.hidden && !found ? 'A secret' : [...r.effects.map((e) => `${e.op === 'pow' ? '^' : e.op === 'add' ? '+' : 'x'} ${RUNE_STAT_WORDS[e.stat] ?? e.stat}`), ...(r.note ? [r.note] : [])].join(' · '),
+      effects: secret ? 'A secret' : [...r.effects.map((e) => `${e.op === 'pow' ? '^' : e.op === 'add' ? '+' : 'x'} ${RUNE_STAT_WORDS[e.stat] ?? e.stat}`), ...(r.note ? [r.note] : [])].join(' · '),
       found,
       hidden: r.hidden,
       anomaly: r.anomaly,
+      muts: MUTATIONS.filter((m) => rec[m.id]?.gt(0)).map((m) => ({ id: m.id, name: m.name, color: m.color, count: format(rec[m.id]!, n()) })),
     };
   });
   return {
-    tabs: SHRINES.map((x) => ({ id: x.id, name: x.name.replace(' Shrine', ''), color: x.color, open: shrineOpen(s, x), req: reqText(x.req) })),
+    tabs: SHRINES.map((x) => ({ id: x.id, name: x.name.replace(' Shrine', ''), color: x.color, open: shrineOpen(s, x), req: reqText(x.req), stars: shrineStars(s, x.id) })),
+    stars: shrineStars(s, sh.id),
     id: sh.id,
     name: sh.name,
     color: sh.color,

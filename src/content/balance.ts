@@ -341,6 +341,46 @@ export const BALANCE = {
     /** Below this many expected hits a tick, draw a Poisson count; above it, use the expectation. */
     poissonBelow: 1000,
   },
+  /** Phase 9: Rune Starring and Crafting, Celestial Auras, Mutations and the Index. */
+  runeDepth: {
+    /** Lifetime Nebulas that open each system. */
+    opens: { index: 1, starring: 2, mutations: 3, auras: 4 },
+    /** Star ranks: [ladder tier, copies to sacrifice]. Legendary x250, Celestial x2,500, Eternal x500K, Primordial x1B, Absolute x1 quadrillion. */
+    stars: [
+      [4, 250],
+      [6, 2500],
+      [8, 5e5],
+      [10, 1e9],
+      [12, 1e15],
+    ] as Array<[number, number]>,
+    /** Each star: +20% to that shrine's rune effects (never its powers). */
+    starEffect: 0.2,
+    /** From this many stars the shrine's hidden rune shows, and it comes 10 times as often. */
+    revealAt: 2,
+    hiddenBoost: 10,
+    /** Salvaging a copy of a 1-in-N rune gives N / 10 Rune Shards; crafting one costs N. */
+    salvageRatio: 10,
+    auras: {
+      /** One Aura Die for every 1,000 runes rolled at any shrine. */
+      diceEvery: 1000,
+      /** Odds from Comet Haze (1 in 5) to Stellar Crown (1 in 1.75M), evenly spaced on a log scale. */
+      firstOdds: 5,
+      lastOdds: 1.75e6,
+      /** Boosts from +5% to +500%. */
+      minBoost: 0.05,
+      maxBoost: 5,
+    },
+    /** [id, name, what it counts as, base odds 1 in N, colour]. Mutation Luck divides the odds, never better than 1 in 2. */
+    mutations: [
+      ['golden', 'Golden', 2, 50, '#FFC83D'],
+      ['rainbow', 'Rainbow', 5, 500, '#FF7AE0'],
+      ['void', 'Void', 20, 10_000, '#6E5CC4'],
+      ['prismatic', 'Prismatic', 100, 250_000, '#9FE7FF'],
+    ] as Array<[string, string, number, number, string]>,
+    mutationFloor: 2,
+    /** Index pages: each of these completion shares multiplies the page's stat once more. */
+    indexMilestones: [0.1, 0.25, 0.5, 0.75, 1],
+  },
   ships: {
     /** Starship Expeditions open at 15 Supernovas. Ships cost Iron alloy; up to 5. */
     supernovas: 15,
