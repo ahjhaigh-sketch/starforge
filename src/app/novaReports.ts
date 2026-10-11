@@ -140,8 +140,14 @@ const STAGES: Array<{ name: string; ids: string[] }> = [
   { name: 'Blue Giant and beyond', ids: ['orbitals', 'mastery'] },
   { name: 'Supernova', ids: ['novatree', 'automation', 'starforge', 'drill'] },
   { name: 'Supernova extras', ids: ['fusion', 'attune', 'merchant', 'expeditions'] },
-  { name: 'Nebula', ids: ['nebula', 'runes', 'wyrms'] },
+  { name: 'Nebula', ids: ['nebula', 'nebulatree', 'runes', 'index', 'wyrms'] },
+  { name: 'Nebula depths', ids: ['starring', 'mutations', 'auras', 'nursery', 'spectral', 'tarot'] },
+  { name: 'Singularity', ids: ['singularity', 'singularitytree', 'blackhole', 'reactor', 'prismwheel'] },
+  { name: 'Challenges', ids: ['trials', 'spire', 'leviathans', 'scaletree'] },
 ];
+
+/** Every system id on the Ascent map (a test checks that each built system is on it). */
+export const ASCENT_IDS: readonly string[] = STAGES.flatMap((st) => st.ids);
 
 export function ascentReport(): Array<{ stage: string; decks: AscentDeck[] }> {
   const s = game.state;

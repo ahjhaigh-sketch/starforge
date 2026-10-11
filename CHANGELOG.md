@@ -1,5 +1,34 @@
 # Changelog
 
+## Phase 13: Trials, the Spire and the Void Leviathans
+- Trials open at 2 Singularities: 20 optional restricted runs. None is ever needed to progress.
+  - Entering one restarts the Supernova run (keeping what a Supernova keeps) and switches its debuff on. Debuffs live in the stat pipeline, labelled "Trial: <name>", and count only while the Trial runs: leave, finish or reset and they are gone at once.
+  - The goal at level L: Blue Giant and 1e200 x 1e100^(L - 1) Stardust in the Trial run. Claim it from the panel or the stage chip. A Supernova (or Nebula) during a Trial finishes it if the goal was met, and otherwise ends it with nothing.
+  - The plan's 1e7 goal would have been met in two seconds: Stardust runs at about e220 to e320 a second by then. The goals now run from e200 to e600, so the first levels fall in the Singularity era and the top ones wait for later layers.
+  - Each level gives its reward for good (Stardust x3, shards x2, comets more often, and so on).
+  - Fast Nova is ranked by the run's game time to e300 Stardust, D (under 5 minutes) to Q (under 5 seconds). The best rank multiplies shards, x1.5 to x25.62.
+  - Fusion runs 2 to 4 Trials at once. Its score is the product of their factors x (1 + log10(1 + 100 / (t + 1)^0.75)); the best score boosts Stardust, shards and Essence.
+  - From 10 Trial levels, Trials can finish themselves the moment the goal is met.
+  - Auto-Supernova and auto-Nebula wait while a Trial's goal is unmet, so they never cut one short.
+  - Fog of the Void hides your numbers and draws a mist over the sky.
+- The Spire opens at 3 Singularities: an endless tower.
+  - Floor f has 10 x 1.15^f hit points, a formula rather than a list.
+  - While you climb, you deal (1 + log10(1 + Stardust a second)) x Spire power damage a second, offline too. Floors clear in closed form, so a long absence is one calculation.
+  - Each floor plays one Trial's level-1 debuff while you climb it, so climbing costs something. Climbing pauses during a Trial.
+  - Every floor gives Stardust x1.02, and shards and Essence x1.01, compounding. Every tenth floor unlocks a banner (12 in all) to fly beside your star's name.
+- The Void Leviathans surface at 4 Singularities: 12 whales, each 6x tougher than the last and 2.5x tougher each time you beat it.
+  - Damage, all x Leviathan damage, comes from three places: output (1 + log10(1 + Stardust a second))^2 a second; 25 a second per Wyrm on the team; and every tap on the star, (1 + log10(1 + tap value))^2.
+  - A kill pays 5 x 2^k scales. The first kill opens the next Leviathan and moves the hunt on to it. Kills are counted in closed form.
+  - The one you're hunting swims across the sky, with a boss bar on the stage.
+  - Scales buy the Scale Tree: 14 nodes in three branches and a crown, on the same tree engine as the Singularity Tree.
+- Fixes found on the way:
+  - A Frenzy comet caught during Frenzy Famine made production x0 instead of x1. The debuff now raises the Frenzy multiplier to the power 0, and a test checks that no Trial or Spire floor can zero production or break a number.
+  - No Taps now also stops the share of Stardust a second that taps add.
+- The Ascent map had missed every system since the Nebula. It now shows the Nebula depths, the Singularity and the Challenges, and a test checks that every system on the rails is on the map.
+- Also: four icons (trial, spire, leviathan, scale), four panels, the stage chip and boss bar, and 6 medals.
+- The simulator now plays Trials, climbs the Spire, hunts Leviathans and buys the Scale Tree.
+- Save version 14, with a migration test that loads a real version 13 save.
+
 ## Phase 12: the Singularity
 - The Singularity is the third reset. It needs the Event Horizon key and a million Essence gathered in the Singularity run.
   - The key costs 100M Embers, is on sale from Nebula milestone 8, and is yours for good.

@@ -120,6 +120,10 @@ let TAR: typeof import('../src/engine/systems/tarot');
 let NX: typeof import('../src/content/nebulaExtras');
 let SG: typeof import('../src/engine/systems/singularity');
 let BH: typeof import('../src/engine/systems/blackhole');
+let TR: typeof import('../src/engine/systems/trials');
+let SP: typeof import('../src/engine/systems/spire');
+let LV: typeof import('../src/engine/systems/leviathans');
+let CH: typeof import('../src/content/challenges');
 let PLANET_TYPES: (typeof import('../src/content/early'))['PLANET_TYPES'];
 
 async function loadGame(): Promise<void> {
@@ -169,6 +173,10 @@ async function loadGame(): Promise<void> {
   NX = await import('../src/content/nebulaExtras');
   SG = await import('../src/engine/systems/singularity');
   BH = await import('../src/engine/systems/blackhole');
+  TR = await import('../src/engine/systems/trials');
+  SP = await import('../src/engine/systems/spire');
+  LV = await import('../src/engine/systems/leviathans');
+  CH = await import('../src/content/challenges');
 }
 
 const TAPS_PER_SECOND = 4;
@@ -311,6 +319,15 @@ function sideSystems(s: GameState): void {
         NS.plant(s, i, base);
       }
     });
+  }
+  // Phase 13: always climb the Spire and hunt Leviathans; scales go on the cheapest Scale Tree node
+  if (SP.spireOpen(s)) SP.setClimbing(s, true);
+  if (LV.leviathansOpen(s)) {
+    LV.setFighting(s, true);
+    for (let i = 0; i < 20; i++) {
+      const pick = LV.scaleTree.def.nodes.filter((n) => LV.scaleTree.canBuy(s, n)).sort((a, b) => LV.scaleTree.cost(s, a).cmp(LV.scaleTree.cost(s, b)))[0];
+      if (!pick || !LV.scaleTree.buy(s, pick.id)) break;
+    }
   }
   // Phase 12: feed the Black Hole a fifth of Stardust, turn the wheel on once it opens
   if (BH.bhOpen(s)) {
@@ -469,6 +486,9 @@ it('balance simulation', async () => {
     [8, 'Nebula 8 (Singularity)'],
   ]);
   let singularityStart = 0;
+  let nanSeen = false;
+  /** Trials the bot failed, and the Singularity count when it did (it tries again after the next one). */
+  const trialFailed = new Map<string, number>();
   const singularityLengths: number[] = [];
   const playing = () => (STOP_AT_SINGULARITIES > 0 ? (s.stats.singularitiesAll ?? 0) < STOP_AT_SINGULARITIES : (s.stats.nebulasAll ?? 0) < STOP_AT_NEBULAS);
   while (s.playtime < MAX_HOURS * 3600 && playing()) {
@@ -479,6 +499,7 @@ it('balance simulation', async () => {
       const life = s.totals.all.darkMatter ?? D(0);
       if ((s.stats.singularitiesAll ?? 0) === 0 || g.gte(life) || s.playtime - singularityStart > 3600) {
         singularityLengths.push(s.playtime - singularityStart);
+        if (process.env.SIM_DEBUG_P13) console.log(`[p13] Singularity ${(s.stats.singularitiesAll ?? 0) + 1}: log10 SPS ${stat(s, 'stardustPerSec').add(1).log10().toNumber().toFixed(1)}, log10 run Stardust ${(s.totals.run.stardust ?? D(0)).add(1).log10().toNumber().toFixed(1)}, log10 tap ${stat(s, 'tapPower').add(1).log10().toNumber().toFixed(1)}, supernovas ${s.stats.supernovasAll ?? 0}`);
         performReset(s, 'singularity');
         singularityStart = s.playtime;
         nebulaStart = s.playtime;
@@ -521,12 +542,26 @@ it('balance simulation', async () => {
     const dt = s.playtime - runStart < 1800 ? 1 : 5;
     for (let i = 0; i < TAPS_PER_SECOND * dt && i < 40; i++) tapStar(s, rt, (ms += 1000 / TAPS_PER_SECOND));
     tick(s, dt);
+    if (process.env.SIM_DEBUG_NAN && !nanSeen) {
+      const pm = stat(s, 'productionMult');
+      if (!Number.isFinite(pm.log10().toNumber()) || Number.isNaN(pm.mag)) {
+        nanSeen = true;
+        const st = await import('../src/engine/stats');
+        console.log(`[nan] ${hms(s.playtime)} trial ${s.trials.active.join('+')} prod ${pm.toString()}`);
+        for (const l of st.breakdown(s, 'productionMult')) console.log(`[nan]   ${l.op} ${l.label}: ${l.value.toString()}`);
+      }
+    }
     if (cometOnScreen(s)) catchComet(s);
     s.quests.forEach((q, i) => questProgress(s, q) >= 1 && claimQuest(s, i));
     shop(s);
     if (s.playtime - lastSide >= SIDE_EVERY) {
       sideSystems(s);
       lastSide = s.playtime;
+    }
+    // a Trial whose goal is met is claimed at once, as a player would
+    if (TR.goalMet(s)) {
+      const what = TR.completeTrial(s);
+      if (process.env.SIM_DEBUG_P13) console.log(`[p13] ${hms(s.playtime)} S${s.stats.singularitiesAll ?? 0}: ${what} (prod log10 ${stat(s, 'productionMult').log10().toNumber().toFixed(0)}, sps log10 ${stat(s, 'stardustPerSec').add(1).log10().toNumber().toFixed(0)}, run ${(s.playtime - runStart).toFixed(0)}s)`);
     }
     if (supernovaReady(s)) {
       const g = supernovaGain(s);
@@ -548,10 +583,17 @@ it('balance simulation', async () => {
         if (process.env.SIM_DEBUG && (s.stats.supernovas ?? 0) < 8) {
           console.log(`SN${(s.stats.supernovas ?? 0) + 1}: run ${(s.playtime - runStart).toFixed(0)}s gain ${fmt(g)} lifetime ${fmt(lifetime)} tier ${s.tier} sps ${fmt(stat(s, 'stardustPerSec'))} prodMult ${fmt(stat(s, 'productionMult'))} tap ${fmt(stat(s, 'tapPower'))} runS ${fmt(s.totals.run.stardust ?? D(0))} nodes ${Object.keys(s.novaTree).join(',')}`);
         }
+        const wasIn = s.trials.active[0];
+        const levelsBefore = TR.totalTrialLevels(s) + s.trials.fastBest;
         performReset(s, 'supernova');
+        if (wasIn && TR.totalTrialLevels(s) + s.trials.fastBest === levelsBefore) trialFailed.set(wasIn, s.stats.singularitiesAll ?? 0);
         runStart = s.playtime;
         bestRate = D(0);
         spendShards(s);
+        if (TR.trialsOpen(s) && !TR.inTrial(s)) {
+          const next = CH.TRIALS.find((t) => (t.id === 'fast' ? s.trials.fastBest < 0 : TR.trialLevel(s, t.id) < t.levels) && trialFailed.get(t.id) !== (s.stats.singularitiesAll ?? 0));
+          if (next) TR.enterTrial(s, [next.id]);
+        }
         const label = (s.stats.nebulasAll ?? 0) === 0 ? want.get(s.stats.supernovasAll ?? 0) : undefined;
         if (label) record(label);
       }
@@ -563,6 +605,7 @@ it('balance simulation', async () => {
   console.table(rows);
   const avg = (a: number[]) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
   console.log(`Run length, game time: first ${hms(runLengths[0] ?? 0)}, runs 2-5 avg ${hms(avg(runLengths.slice(1, 5)))}, 6-12 avg ${hms(avg(runLengths.slice(5, 12)))}, 13-30 avg ${hms(avg(runLengths.slice(12)))}`);
+  if (TR.trialsOpen(s)) console.log(`Trials: ${TR.totalTrialLevels(s)} levels (${CH.TRIALS.filter((t) => TR.trialLevel(s, t.id) >= t.levels).length} mastered), Fast Nova ${CH.FAST_RANKS[s.trials.fastBest]?.name ?? 'none'}. Spire floor ${s.spire.floor}. Leviathans beaten ${s.stats.leviathansBeaten ?? 0}/12 (${s.stats.leviathanKills ?? 0} kills), Scale Tree ${Object.keys(s.scaleTree).length}/14, scales ${fmt(cur(s, 'scales'))}.`);
   if (singularityLengths.length) console.log(`Singularity runs, game time: first ${hms(singularityLengths[0] ?? 0)}, then ${singularityLengths.slice(1).map(hms).join(', ')}`);
   console.log(`Nebula runs, game time: first ${hms(nebulaLengths[0] ?? 0)}, then ${nebulaLengths.slice(1).map(hms).join(', ')}`);
   console.log(`Ended at ${s.stats.supernovasAll} Supernovas and ${s.stats.nebulasAll ?? 0} Nebulas, ${hms(s.playtime)} played, Nebula Tree ${nebulaShare(s)} bought, raw next gain ${fmt(rawShardGain(s))}.`);

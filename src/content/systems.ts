@@ -59,6 +59,10 @@ export const SYSTEMS: readonly SystemDef[] = [
   { id: 'blackhole', name: 'Black Hole', icon: 'blackhole', color: '#3A2470', rail: 'right', req: { kind: 'count', stat: 'singularitiesAll', count: 1, noun: 'Singularity' }, panel: 'blackhole', built: true, blurb: 'Feed it; its mass passes 8 colour stages and speeds up the game.' },
   { id: 'reactor', name: 'Reactor', icon: 'reactor', color: '#FF4F6E', rail: 'right', req: { kind: 'count', stat: 'singularitiesAll', count: 5, noun: 'Singularity' }, panel: 'reactor', built: true, blurb: 'Feed Dark Matter in for more Dark Matter later.' },
   { id: 'prismwheel', name: 'Prism Wheel', icon: 'wheel', color: '#FF4FC1', rail: 'right', req: { kind: 'count', stat: 'bhStageBest', count: 8, noun: 'Black Hole stage' }, panel: 'prismwheel', built: true, blurb: 'Split Dark Matter into eight boosts on a wheel you drag.' },
+  { id: 'trials', name: 'Trials', icon: 'trial', color: '#C23F6A', rail: 'right', req: { kind: 'count', stat: 'singularitiesAll', count: 2, noun: 'Singularity' }, panel: 'trials', built: true, blurb: '20 optional restricted runs, each with levels and a reward for good.' },
+  { id: 'spire', name: 'Spire', icon: 'spire', color: '#8C97C2', rail: 'right', req: { kind: 'count', stat: 'singularitiesAll', count: 3, noun: 'Singularity' }, panel: 'spire', built: true, blurb: 'Climb an endless tower; every floor is a little harder and pays for good.' },
+  { id: 'leviathans', name: 'Leviathans', icon: 'leviathan', color: '#2B7FD0', rail: 'right', req: { kind: 'count', stat: 'singularitiesAll', count: 4, noun: 'Singularity' }, panel: 'leviathans', built: true, blurb: 'Wear down 12 Void Leviathans with taps, Wyrms and output.' },
+  { id: 'scaletree', name: 'Scale Tree', icon: 'scale', color: '#1A9DB8', rail: 'right', req: { kind: 'count', stat: 'leviathanKills', count: 1, noun: 'Leviathan kill' }, panel: 'scaletree', built: true, blurb: 'Spend Leviathan scales on a small tree of big boosts.' },
 ];
 
 export const SYSTEM_BY_ID: ReadonlyMap<string, SystemDef> = new Map(SYSTEMS.map((x) => [x.id, x]));

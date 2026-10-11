@@ -9,6 +9,7 @@ import { StarCore } from './star';
 import { initStarfield, resizeStarfield, setNebulaClouds, updateClouds, updateStarfield } from './starfield';
 import { WyrmSky } from './wyrms';
 import { BlackHoleView } from './blackhole';
+import { LeviathanView } from './leviathan';
 import { BH_STAGES } from '../engine/systems/blackhole';
 
 /**
@@ -22,6 +23,7 @@ let orbitals: OrbitalsView | null = null;
 let anchor: Element | null = null;
 let wyrms: WyrmSky | null = null;
 let hole: BlackHoleView | null = null;
+let whale: LeviathanView | null = null;
 let holeMass = 0;
 /** Wyrms swimming in the sky right now (tests and the dev panel). */
 export const swimmingWyrms = () => wyrms?.count ?? 0;
@@ -69,7 +71,8 @@ export async function initRender(): Promise<boolean> {
   app.stage.addChild(sky, mid, fx);
   initStarfield(sky);
   wyrms = new WyrmSky();
-  sky.addChild(wyrms.root);
+  whale = new LeviathanView();
+  sky.addChild(whale.root, wyrms.root);
   star = new StarCore();
   orbitals = new OrbitalsView();
   hole = new BlackHoleView();
@@ -89,6 +92,7 @@ export async function initRender(): Promise<boolean> {
     wyrms!.set(s.wyrmSky, app!.screen.width, app!.screen.height);
     hole!.setStage(s.bhStage, BH_STAGES[Math.max(0, s.bhStage - 1)]?.color ?? '#FFB347');
     holeMass = s.bhMassLog;
+    whale!.set(s.levVisible, s.levIndex, s.levColor, s.levPct);
   };
   star.setTier(snapshotStore.getState().tierIndex, true);
   apply();
@@ -132,6 +136,7 @@ export async function initRender(): Promise<boolean> {
       }
       wyrms.update(dt, width, height, still, comet);
     }
+    whale?.update(dt, width, height, still);
     const r = anchorRect();
     if (r && r.width > 0) {
       star.update(dt, r.left + r.width / 2, r.top + r.height / 2, r.width, still);

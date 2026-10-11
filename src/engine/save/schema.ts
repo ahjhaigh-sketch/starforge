@@ -106,6 +106,19 @@ export const plainSaveSchema = z.looseObject({
   blackHole: z.looseObject({ mass: dec, dustShare: finite }).optional(),
   wheel: z.looseObject({ on: z.boolean(), shares: z.array(finite.refine((n) => n >= 0, 'shares are never negative')).length(8), banks: decRecord }).optional(),
   reactor: z.looseObject({ charge: dec }).optional(),
+  trials: z
+    .looseObject({
+      levels: z.record(z.string(), z.number().int().min(0)),
+      active: z.array(z.string()).max(4),
+      start: finite,
+      fastBest: z.number().int().min(-1),
+      fusionBest: finite,
+      auto: z.boolean(),
+    })
+    .optional(),
+  spire: z.looseObject({ floor: z.number().int().min(0), damage: dec, climbing: z.boolean(), banner: z.string().nullable() }).optional(),
+  leviathans: z.looseObject({ kills: z.record(z.string(), z.number().int().min(0)), current: z.number().int().min(0), damage: dec, fighting: z.boolean() }).optional(),
+  scaleTree: z.record(z.string(), z.number().int().min(0)).optional(),
   tarot: z
     .looseObject({
       owned: z.array(z.string()),

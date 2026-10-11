@@ -2,7 +2,7 @@ import { D, type Decimal } from './decimal';
 import { seedRng, type RngState } from './rng';
 
 /** Bump with every change to the save's shape, and add a migration + an old-save fixture test. */
-export const SAVE_VERSION = 13;
+export const SAVE_VERSION = 14;
 /** A new Fusion board is 3 x 3 (BALANCE.fusion.baseSize). */
 const BALANCE_FUSION_CELLS = 9;
 
@@ -156,6 +156,13 @@ export interface GameState {
   blackHole: { mass: Decimal; dustShare: number };
   wheel: { on: boolean; shares: number[]; banks: Record<string, Decimal> };
   reactor: { charge: Decimal };
+  /** Trials: levels earned, the Trials running now (one, or a Fusion of several), when they began, Fast Nova and Fusion bests. */
+  trials: { levels: Record<string, number>; active: string[]; start: number; fastBest: number; fusionBest: number; auto: boolean };
+  /** The Spire: floors cleared, damage on the floor you're on, whether you're climbing, the banner you show. */
+  spire: { floor: number; damage: Decimal; climbing: boolean; banner: string | null };
+  /** The Void Leviathans: times each was beaten, which one you face, damage dealt to it, whether you're fighting. */
+  leviathans: { kills: Record<string, number>; current: number; damage: Decimal; fighting: boolean };
+  scaleTree: Record<string, number>;
   settings: Settings;
 }
 
@@ -256,6 +263,10 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     blackHole: { mass: D(0), dustShare: 0 },
     wheel: { on: false, shares: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], banks: {} },
     reactor: { charge: D(0) },
+    trials: { levels: {}, active: [], start: 0, fastBest: -1, fusionBest: 0, auto: false },
+    spire: { floor: 0, damage: D(0), climbing: false, banner: null },
+    leviathans: { kills: {}, current: 0, damage: D(0), fighting: false },
+    scaleTree: {},
     settings: defaultSettings(),
   };
 }

@@ -1253,3 +1253,102 @@ test('the Prism Wheel: dragging and arrow keys move share between colours, and t
   expect(await page.evaluate(() => (window as unknown as Sf12).sf.game.state.wheel.on)).toBe(true);
   expect(errors).toEqual([]);
 });
+
+// ---------- Phase 13: Trials, the Spire, the Void Leviathans ----------
+
+type Sf13 = {
+  sf: {
+    game: {
+      state: {
+        stats: Record<string, number>;
+        trials: { active: string[]; levels: Record<string, number> };
+        spire: { floor: number; climbing: boolean; banner: string | null };
+        leviathans: { fighting: boolean; current: number; kills: Record<string, number> };
+        scaleTree: Record<string, number>;
+        currencies: Record<string, { toNumber(): number }>;
+      };
+    };
+    commands: { devAdd(c: string, n: number): void };
+    stat(s: unknown, id: string): { toNumber(): number; log10(): { toNumber(): number } };
+    breakdown(s: unknown, id: string): Array<{ label: string }>;
+  };
+};
+
+test('Trials: entering switches the debuff on and shows the chip; leaving removes both', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    (window as unknown as Sf13).sf.game.state.stats.singularitiesAll = 2;
+  });
+  await openRail(page, 'trials');
+  const panel = page.locator('[data-panel="trials"]');
+  await expect(panel.locator('[data-trial]')).toHaveCount(20);
+  const labels = () => page.evaluate(() => {
+    const { sf } = window as unknown as Sf13;
+    return sf.breakdown(sf.game.state, 'productionMult').map((l) => l.label);
+  });
+  expect(await labels()).not.toContain('Trial: Low Gravity');
+  await panel.getByTestId('trial-enter-lowgrav').click();
+  expect(await page.evaluate(() => (window as unknown as Sf13).sf.game.state.trials.active)).toEqual(['lowgrav']);
+  expect(await labels()).toContain('Trial: Low Gravity');
+  await expect(panel.getByTestId('trial-leave')).toBeVisible();
+  await panel.getByTestId('trial-leave').click();
+  expect(await labels()).not.toContain('Trial: Low Gravity');
+  // a Fusion picks two and runs both debuffs; the stage chip names them and opens the panel
+  await panel.getByTestId('trial-fusion-mode').click();
+  await panel.locator('[data-trial="dim"] button').click();
+  await panel.locator('[data-trial="lonely"] button').click();
+  await panel.getByTestId('trial-fusion-start').click();
+  expect(await page.evaluate(() => (window as unknown as Sf13).sf.game.state.trials.active)).toEqual(['dim', 'lonely']);
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('trial-chip')).toContainText('Dimmed Star + Lonely Cosmos');
+  await page.getByTestId('trial-chip').click();
+  await expect(panel).toHaveClass(/open/);
+  await panel.getByTestId('trial-leave').click();
+  await expect(page.getByTestId('trial-chip')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('the Spire climbs while on, and the Leviathan hunt takes taps; scales buy the Scale Tree', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    (window as unknown as Sf13).sf.game.state.stats.singularitiesAll = 4;
+  });
+  await openRail(page, 'spire');
+  const spire = page.locator('[data-panel="spire"]');
+  await spire.getByTestId('spire-climb').click();
+  expect(await page.evaluate(() => (window as unknown as Sf13).sf.game.state.spire.climbing)).toBe(true);
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf13).sf.game.state.spire.floor), { timeout: 15_000 }).toBeGreaterThan(0);
+  await spire.getByTestId('spire-climb').click();
+  await openRail(page, 'leviathans');
+  const lev = page.locator('[data-panel="leviathans"]');
+  await expect(lev.locator('[data-lev]')).toHaveCount(12);
+  await lev.getByTestId('lev-fight').click();
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('boss-bar')).toContainText('Drift Calf');
+  // wear the calf down to its last hit point, then tap the star until it falls (taps strike it too)
+  await page.evaluate(() => {
+    const st = (window as unknown as Sf13).sf.game.state as unknown as { leviathans: { damage: unknown }; currencies: Record<string, { constructor: new (x: number) => unknown }> };
+    st.leviathans.damage = new st.currencies.stardust!.constructor(999);
+  });
+  const star = page.locator('.star-btn');
+  await expect
+    .poll(
+      async () => {
+        for (let i = 0; i < 20; i++) await star.dispatchEvent('pointerdown', { button: 0, clientX: 600, clientY: 400 });
+        return page.evaluate(() => (window as unknown as Sf13).sf.game.state.leviathans.kills.calf ?? 0);
+      },
+      { timeout: 30_000 },
+    )
+    .toBeGreaterThan(0);
+  await expect(page.getByTestId('boss-bar')).toContainText('Nebula Humpback');
+  expect(await page.evaluate(() => (window as unknown as Sf13).sf.game.state.currencies.scales!.toNumber())).toBeGreaterThanOrEqual(5);
+  await page.evaluate(() => (window as unknown as Sf13).sf.commands.devAdd('scales', 100));
+  await openRail(page, 'scaletree');
+  const tree = page.locator('[data-panel="scaletree"]');
+  await tree.locator('[data-node="scale.root"]').click();
+  await tree.locator('.tree-card').getByRole('button', { name: /Buy/ }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf13).sf.game.state.scaleTree['scale.root'] ?? 0)).toBe(1);
+  expect(errors).toEqual([]);
+});

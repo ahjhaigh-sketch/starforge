@@ -1,0 +1,90 @@
+/* =====================================================================
+   Phase 13: Trials, the Spire, the Void Leviathans, the Scale Tree.
+   ===================================================================== */
+
+/* ---------- Trials ---------- */
+.trial-live { padding: 0.7rem 0.9rem; display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 0.7rem; border-color: var(--c); box-shadow: inset 0 4px 0 rgba(0, 0, 0, 0.25), 0 0 16px 1px color-mix(in oklab, var(--c) 45%, transparent); }
+.trial-live-head { display: flex; justify-content: space-between; gap: 0.6rem; flex-wrap: wrap; font-weight: 700; }
+.trial-live-head > b { font-family: var(--font-display); font-weight: 400; font-size: 1.2rem; text-shadow: var(--outline-sm); }
+.trial-modes { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+.trial-seg button { height: 2.1rem; padding: 0 0.8rem; font-size: 0.85rem; }
+.trial-auto { display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer; }
+.trial-auto input { accent-color: var(--magenta); width: 1.05rem; height: 1.05rem; }
+.trial-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr)); gap: 0.55rem; }
+.trial-card { border-radius: 14px; --stroke: 2.5px; padding: 0.6rem 0.7rem; display: flex; flex-direction: column; gap: 0.35rem; min-height: 9.5rem; }
+.trial-card.active { box-shadow: 0 0 16px 2px color-mix(in oklab, var(--c) 60%, transparent); }
+.trial-card.picked { outline: 3px solid var(--gold); outline-offset: 2px; }
+.trial-card.maxed .trial-top b::after { content: ' (mastered)'; color: var(--gold); font-family: var(--font-body); font-size: 0.75rem; font-weight: 800; }
+.trial-card .btn { margin-top: auto; align-self: flex-start; }
+.trial-top { display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; }
+.trial-top b { font-family: var(--font-display); font-weight: 400; font-size: 1.05rem; text-shadow: var(--outline-sm); }
+.trial-top .rank { font-size: 1.1rem; color: var(--gold); text-shadow: var(--outline-sm); }
+.trial-pips { display: inline-flex; gap: 3px; }
+.trial-pips i { width: 0.7rem; height: 0.7rem; border-radius: 3px; border: 2px solid var(--ink); background: #3a3f6f; transform: rotate(45deg); }
+.trial-pips i.on { background: var(--gold); box-shadow: 0 0 6px var(--gold); }
+.trial-debuff { margin: 0; font-size: 0.8rem; font-weight: 700; color: #ffb3c8; }
+.trial-reward { margin: 0; font-size: 0.78rem; font-weight: 600; color: var(--text-dim); }
+.trial-reward .num { color: var(--lime); }
+.trial-ranks { display: flex; flex-wrap: wrap; gap: 3px; }
+.rank-chip { font-family: var(--font-num); font-weight: 800; font-size: 0.7rem; padding: 0.1rem 0.35rem; border-radius: 6px; border: 2px solid var(--ink); background: #3a3f6f; color: var(--text-dim); }
+.rank-chip.got { background: var(--gold); color: var(--ink); }
+
+/* ---------- the Spire ---------- */
+.spire-cols { display: grid; grid-template-columns: minmax(12rem, 17rem) 1fr; gap: 0.9rem; align-items: start; }
+.spire-tower { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; padding: 0.6rem 0 0.4rem; position: relative; }
+.spire-tower::before { content: ''; width: 0; height: 0; border-left: 1.4rem solid transparent; border-right: 1.4rem solid transparent; border-bottom: 2rem solid #8c97c2; filter: drop-shadow(0 3px 0 var(--ink)); margin-bottom: 0.1rem; }
+.spire-floor { width: var(--w, 86%); border-radius: 10px; border: 3px solid var(--ink); background: #2a2160; display: grid; place-items: center; height: 2.1rem; font-weight: 800; color: var(--text-dim); }
+.spire-floor.ahead { opacity: 0.55; }
+.spire-floor.current { width: 100%; height: auto; padding: 0.5rem 0.7rem; gap: 0.35rem; border-radius: 14px; --stroke: 3px; color: #fff; font-size: 1.15rem; }
+.spire-floor.current .progress { width: 100%; }
+.spire-floor.climbing { animation: spireGlow 1.6s ease-in-out infinite; }
+@keyframes spireGlow { 50% { box-shadow: 0 0 18px 3px color-mix(in oklab, #ff4fc1 55%, transparent); } }
+.reduced-motion .spire-floor.climbing { animation: none; box-shadow: 0 0 12px 2px color-mix(in oklab, #ff4fc1 45%, transparent); }
+.spire-floor.below { width: 100%; opacity: 0.4; background: #1c1640; }
+.spire-side { display: flex; flex-direction: column; gap: 0.55rem; }
+.spire-info { padding: 0.7rem 0.9rem; display: flex; flex-direction: column; gap: 0.4rem; font-weight: 600; }
+.spire-info .btn { align-self: flex-start; }
+.spire-banners { display: grid; grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr)); gap: 0.4rem; }
+.banner-tile { border-radius: 12px; --stroke: 2.5px; padding: 0.4rem 0.5rem; display: flex; align-items: center; gap: 0.4rem; font-weight: 700; font-size: 0.75rem; color: #fff; text-shadow: var(--outline-sm); text-align: left; }
+.banner-tile.locked { opacity: 0.55; cursor: default; }
+.banner-tile.flown { outline: 3px solid var(--gold); outline-offset: 2px; }
+.pennant, .star-pennant { display: inline-block; width: 1.1rem; height: 1.4rem; flex: none; background: var(--c); border: 2px solid var(--ink); border-bottom: none; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%); }
+.banner-tile .pennant { background: color-mix(in oklab, var(--c) 70%, white); }
+.star-pennant { width: 1rem; height: 1.3rem; margin-right: 0.4rem; vertical-align: 0.2rem; filter: drop-shadow(0 2px 0 var(--ink)); }
+
+/* ---------- the Void Leviathans ---------- */
+.lev-boss { padding: 0.75rem 0.9rem; display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 0.7rem; border-color: color-mix(in oklab, var(--c) 60%, var(--ink)); }
+.lev-boss-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; }
+.lev-boss-head b:first-child { font-family: var(--font-display); font-weight: 400; font-size: 1.35rem; text-shadow: var(--outline-sm); color: color-mix(in oklab, var(--c) 55%, white); }
+.lev-boss .btn .icon { width: 1.2rem; height: 1.2rem; vertical-align: -0.2rem; }
+.lev-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: 0.45rem; }
+.lev-tile { border-radius: 14px; --stroke: 2.5px; padding: 0.5rem 0.6rem; display: grid; grid-template-columns: 2rem 1fr; column-gap: 0.45rem; align-items: center; text-align: left; color: #fff; text-shadow: var(--outline-sm); }
+.lev-tile .icon { grid-row: span 3; width: 2rem; height: 2rem; }
+.lev-tile b { font-family: var(--font-display); font-weight: 400; font-size: 0.95rem; }
+.lev-tile .num { font-size: 0.72rem; font-weight: 800; }
+.lev-tile.current { outline: 3px solid var(--gold); outline-offset: 2px; cursor: default; }
+.lev-tile.locked { opacity: 0.5; cursor: default; }
+.lev-tile:disabled { transform: none; }
+
+/* ---------- on the stage ---------- */
+/* top left of the stage on wide screens (toasts own the top centre), top centre on phones */
+.challenge-hud { position: absolute; top: 0.8rem; left: 1rem; z-index: 5; display: flex; flex-direction: column; align-items: stretch; gap: 0.4rem; width: min(19rem, 40%); pointer-events: none; }
+.challenge-hud > * { pointer-events: auto; }
+.trial-chip { width: 100%; border-radius: 14px; --stroke: 2.5px; padding: 0.35rem 0.6rem; display: grid; grid-template-columns: 1.4rem 1fr; column-gap: 0.4rem; align-items: center; color: #fff; text-shadow: var(--outline-sm); font-weight: 800; font-size: 0.82rem; text-align: left; }
+.trial-chip .icon { grid-row: span 2; width: 1.4rem; height: 1.4rem; }
+.trial-chip .progress { height: 0.55rem; }
+.trial-chip.ready { animation: chipReady 1.2s ease-in-out infinite; }
+@keyframes chipReady { 50% { box-shadow: 0 0 14px 3px color-mix(in oklab, var(--gold) 60%, transparent); } }
+.reduced-motion .trial-chip.ready { animation: none; box-shadow: 0 0 10px 2px color-mix(in oklab, var(--gold) 55%, transparent); }
+.boss-bar { width: 100%; border-radius: 14px; --stroke: 2.5px; padding: 0.35rem 0.6rem 0.4rem; display: flex; flex-direction: column; gap: 0.25rem; color: #fff; text-shadow: var(--outline-sm); background: color-mix(in oklab, var(--c) 30%, #1c1640); }
+.boss-bar .lbl { font-family: var(--font-display); font-size: 0.95rem; display: flex; align-items: center; gap: 0.35rem; }
+.boss-bar .lbl .icon { width: 1.3rem; height: 1.3rem; }
+.boss-bar .progress { height: 0.75rem; }
+.boss-bar .hp { font-size: 0.72rem; font-weight: 800; align-self: flex-end; }
+.fog-veil { position: fixed; inset: 0; pointer-events: none; z-index: 1; background: radial-gradient(ellipse at 50% 55%, transparent 25%, rgba(140, 151, 194, 0.22) 60%, rgba(140, 151, 194, 0.38)); }
+
+@media (max-width: 900px) {
+  .spire-cols { grid-template-columns: 1fr; }
+  .spire-tower { max-width: 18rem; margin: 0 auto; width: 100%; }
+  .challenge-hud { top: 0.3rem; left: 50%; transform: translateX(-50%); width: min(24rem, 92%); }
+}

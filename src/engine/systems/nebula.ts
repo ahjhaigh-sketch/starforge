@@ -7,6 +7,7 @@ import { defineStat, registerSources, stat } from '../stats';
 import { registerSystem } from '../tick';
 import { nebulaFlag } from './nebulaTree';
 import { supernovaGain, supernovaReady } from './supernova';
+import { goalMet, inTrial } from './trials';
 
 /**
  * The Nebula: the second reset (Game design: "Nebula and Constellation Runes"). It needs 30
@@ -131,6 +132,8 @@ export function registerNebula(): void {
     order: 61,
     tick: (s: GameState) => {
       if (!milestoneReached(s, 'nebula', 'autoNova') || s.nebula.autoAt.lte(0)) return;
+      // never cut a Trial short: wait until its goal is met (the Supernova then finishes it)
+      if (inTrial(s) && !goalMet(s)) return;
       if (supernovaReady(s) && supernovaGain(s).gte(s.nebula.autoAt)) performReset(s, 'supernova');
     },
   });

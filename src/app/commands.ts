@@ -29,6 +29,9 @@ import { buySpectral, setFocus } from '../engine/systems/spectral';
 import { openPacks, placeCard, removeCard } from '../engine/systems/tarot';
 import { buyKey, singularityTree } from '../engine/systems/singularity';
 import { feedDarkMatter, feedReactor, moveBoundary, setDustShare, setShare } from '../engine/systems/blackhole';
+import { autoTrialsOpen, completeTrial, enterTrial, exitTrial } from '../engine/systems/trials';
+import { flyBanner, setClimbing } from '../engine/systems/spire';
+import { chooseLeviathan, scaleTree, setFighting } from '../engine/systems/leviathans';
 import { buyForgeUpgrade, buyRelic, equipRelic, setForgeGrade, setForgeOn, setForgeShare, unequipRelic } from '../engine/systems/forge';
 import { backupNow, readBackup } from './backups';
 import { D } from '../engine/decimal';
@@ -369,6 +372,50 @@ export const commands = {
   },
   feedReactor(): boolean {
     const ok = feedReactor(game.state);
+    done();
+    return ok;
+  },
+  /** Trials: one at a time, or a Fusion of 2 to 4; claim when the goal is met, or leave. */
+  enterTrial(ids: string[]): boolean {
+    const ok = enterTrial(game.state, ids);
+    done();
+    return ok;
+  },
+  claimTrial(): boolean {
+    const ok = completeTrial(game.state) !== null;
+    done();
+    return ok;
+  },
+  leaveTrial() {
+    exitTrial(game.state);
+    done();
+  },
+  setTrialsAuto(on: boolean) {
+    game.state.trials.auto = on && autoTrialsOpen(game.state);
+    done();
+  },
+  /** The Spire. */
+  setClimbing(on: boolean) {
+    setClimbing(game.state, on);
+    done();
+  },
+  flyBanner(id: string | null): boolean {
+    const ok = flyBanner(game.state, id);
+    done();
+    return ok;
+  },
+  /** The Void Leviathans and the Scale Tree. */
+  setFighting(on: boolean) {
+    setFighting(game.state, on);
+    done();
+  },
+  chooseLeviathan(k: number): boolean {
+    const ok = chooseLeviathan(game.state, k);
+    done();
+    return ok;
+  },
+  buyScaleNode(id: string): boolean {
+    const ok = scaleTree.buy(game.state, id);
     done();
     return ok;
   },

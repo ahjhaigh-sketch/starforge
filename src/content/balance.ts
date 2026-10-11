@@ -444,6 +444,62 @@ export const BALANCE = {
     /** The Reactor: Dark Matter gain x(1 + charge)^(0.15 x Reactor power). */
     reactorPow: 0.15,
   },
+  /** Phase 13: Trials, the Spire and the Void Leviathans (Game design: "Singularity"). */
+  trials: {
+    singularities: 2,
+    /**
+     * A Trial's goal at level L: Blue Giant and 1e200 x 1e100^(L - 1) Stardust in the Trial run (e200 to e600).
+     * Trials open at 2 Singularities, when Stardust a second is about e220 to e320 and grows about e15 a
+     * Singularity (sim, Phase 13): the first levels fall in the Singularity era, the top ones under their
+     * debuffs wait for later layers. Fast Nova races to e300.
+     */
+    goal: 1e200,
+    goalGrowth: 1e100,
+    fastGoal: 1e300,
+    /** Auto-complete opens once you have this many Trial levels in all. */
+    autoAt: 10,
+    /** Fast Nova: the Trial's run time under each limit (seconds) earns that rank's shard multiplier. */
+    fastRanks: [
+      ['D', 300, 1.5],
+      ['C', 240, 2.25],
+      ['B', 180, 3.75],
+      ['A', 120, 5.06],
+      ['AA', 60, 7.59],
+      ['S', 30, 11.39],
+      ['SS', 15, 17.09],
+      ['Q', 5, 25.62],
+    ] as Array<[string, number, number]>,
+    /** Fusion: 2 to 4 Trials at once; score = product of their factors x (1 + log10(1 + 100 / (t + 1)^0.75)). */
+    fusionMax: 4,
+    /** Fusion rewards: Stardust x(1 + score^0.6), shards x(1 + score^0.2), Essence x(1 + score^0.1). */
+    fusionPows: [0.6, 0.2, 0.1] as [number, number, number],
+  },
+  spire: {
+    singularities: 3,
+    /** Floor f has 10 x 1.15^f hit points (a formula, never a hand-made list). */
+    hpBase: 10,
+    hpGrowth: 1.15,
+    /** Damage a second = (1 + log10(1 + Stardust a second)) x Spire power. */
+    /** Every floor: Stardust x1.02, shards and Essence x1.01; every tenth floor a banner. */
+    perFloor: { productionMult: 1.02, shardGain: 1.01, essenceGain: 1.01 } as Record<string, number>,
+  },
+  leviathans: {
+    singularities: 4,
+    /** Leviathan k's hit points: 1,000 x 6^k, x2.5 for each time you've beaten it. */
+    hpBase: 1000,
+    hpPerBoss: 6,
+    hpPerKill: 2.5,
+    /** Damage: (1 + log10(1 + Stardust a second))^2 a second from output, 25 a second per Wyrm on the team, (1 + log10(1 + tap value))^2 a tap. */
+    outputPow: 2,
+    perWyrm: 25,
+    tapPow: 2,
+    /** Scales for beating Leviathan k: 5 x 2^k. */
+    scalesBase: 5,
+    scalesGrowth: 2,
+    /** Scale Tree prices: 10 x 2.5^step. */
+    treeBase: 10,
+    treeGrowth: 2.5,
+  },
   /** Phase 11: Spectral Focus (Upgradex's Wavelengths). */
   spectral: {
     nebulas: 5,

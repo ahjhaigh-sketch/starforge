@@ -75,6 +75,9 @@ const migrations: Record<number, (d: PlainSave) => void> = {
     stats.nebulasBest = Math.max(stats.nebulasBest ?? 0, stats.nebulas ?? 0);
     d.stats = stats;
   },
+  // 14 (Phase 13): Trials, the Spire, the Void Leviathans and the Scale Tree. Every field is new and has
+  // a default, so nothing moves; this records the change.
+  14: () => {},
 };
 
 export function migrate(version: number, data: PlainSave): PlainSave {

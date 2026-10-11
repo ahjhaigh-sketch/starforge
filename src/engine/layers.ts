@@ -101,10 +101,17 @@ export function onAnyReset(fn: (s: GameState, layerId: string, before: ResetBefo
   resetHooks.push(fn);
 }
 
+/** Systems that must see the run before it's reset (a Trial is judged on the run it ends). */
+const beforeHooks: Array<(s: GameState, layerId: string) => void> = [];
+export function onBeforeReset(fn: (s: GameState, layerId: string) => void): void {
+  beforeHooks.push(fn);
+}
+
 /** The one reset function. Returns the gain, or null if the layer isn't ready. */
 export function performReset(s: GameState, id: string): Decimal | null {
   const def = layers.get(id);
   if (!def || !def.ready(s)) return null;
+  for (const h of beforeHooks) h(s, id);
   const amount = def.gain(s);
   // decide what is kept BEFORE anything changes, so parts can't affect each other's rules
   const keep = def.parts.map((p) => !!p.keptBy?.(s));

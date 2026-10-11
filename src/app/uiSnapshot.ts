@@ -24,6 +24,9 @@ import { attuneHud } from './extrasReports';
 import { keyOnSale, runEssence, singularityGain, singularityReady } from '../engine/systems/singularity';
 import { bhOpen, bhStage } from '../engine/systems/blackhole';
 import { gameSpeed } from '../engine/tick';
+import { LEVIATHANS, SPIRE_BANNERS, TRIAL_BY_ID } from '../content/challenges';
+import { goalMet, inTrial, trialGoal } from '../engine/systems/trials';
+import { fighting, leviathanHp, leviathansUnlocked } from '../engine/systems/leviathans';
 import { wyrmSky } from './wyrmReports';
 import { nebulaGain, nebulaReady, runShards } from '../engine/systems/nebula';
 import { BUFF_KINDS, buffLeft, cometOnScreen } from '../engine/systems/comets';
@@ -176,6 +179,19 @@ export interface Snapshot {
   bhStage: number;
   bhMassLog: number;
   gameSpeed: number;
+  /** Fog of the Void hides the numbers; the Trial chip; the Leviathan boss bar; the Spire banner. */
+  fog: boolean;
+  trialLabel: string;
+  trialPct: number;
+  trialReady: boolean;
+  levVisible: boolean;
+  levIndex: number;
+  levName: string;
+  levColor: string;
+  levPct: number;
+  levHp: string;
+  spireBanner: string;
+  spireBannerName: string;
   /** The Wyrm team for the sky ("colour:rank:form|..."). */
   wyrmSky: string;
   novaReady: boolean;
@@ -354,10 +370,11 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
   const novaDust = Math.min(1, Math.log10(1 + run) / Math.log10(1 + nova.runStardust));
   let enginesOwned = 0;
   for (const e of ENGINES) enginesOwned += owned(s, e.id);
+  const fog = s.trials.active.some((id) => TRIAL_BY_ID.get(id)?.fog);
   return {
     notation: n,
-    dust: format(money, n),
-    dustRate: formatRate(stat(s, 'stardustPerSec'), n),
+    dust: fog ? '???' : format(money, n),
+    dustRate: fog ? '??? /s' : formatRate(stat(s, 'stardustPerSec'), n),
     playtime: formatTime(s.playtime),
     saveLabel: game.saveBlocked
       ? 'Saving paused'
@@ -398,7 +415,7 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     evolveCost: nextCost ? format(nextCost, n) : '',
     canEvolve: !!nextCost && money.gte(nextCost),
     evolvePct: nextCost ? Math.floor(Math.min(1, money.div(nextCost).toNumber()) * 100) : 100,
-    tapLabel: `+${format(tapValue(s), n)} stardust per tap`,
+    tapLabel: fog ? 'The fog hides your taps' : `+${format(tapValue(s), n)} stardust per tap`,
     attune: hud.list,
     pulseRating: hud.rating,
     heartPct: hud.heart,
@@ -428,6 +445,8 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     bhMassLog: Math.floor(s.blackHole.mass.add(1).log10().toNumber() * 10) / 10,
     gameSpeed: Math.round(gameSpeed(s) * 100) / 100,
     wyrmSky: wyrmSky(),
+    fog,
+    ...challengeHud(s, n),
     novaPct: novaReady ? 100 : Math.floor((s.tier >= nova.tier ? 0.5 + novaDust * 0.5 : novaTier * 0.5) * 100),
     novaReq: novaReady
       ? `Next shard at ${format(nextShardAt(s), n)} Stardust`
@@ -457,6 +476,30 @@ export function publish(): void {
 /** Select ONE primitive field (or a stable row/list): a new object per call loops forever. */
 export function useSnap<T>(selector: (s: Snapshot) => T): T {
   return useStore(snapshotStore, selector);
+}
+
+/** The Trial chip, the Leviathan boss bar and the Spire banner. */
+function challengeHud(s: GameState, n: Notation) {
+  const goal = trialGoal(s);
+  const run = s.totals.run.stardust ?? D(0);
+  const trialLabel = inTrial(s) ? s.trials.active.map((id) => TRIAL_BY_ID.get(id)?.name ?? id).join(' + ') : '';
+  const k = Math.min(s.leviathans.current, leviathansUnlocked(s) - 1);
+  const lev = LEVIATHANS[k]!;
+  const hp = leviathanHp(s, k);
+  const banner = SPIRE_BANNERS.find((b) => b.id === s.spire.banner);
+  return {
+    trialLabel,
+    trialPct: inTrial(s) ? Math.floor(Math.min(1, run.add(1).log10().toNumber() / Math.max(1, goal.log10().toNumber())) * 100) : 0,
+    trialReady: goalMet(s),
+    levVisible: fighting(s),
+    levIndex: k,
+    levName: lev.name,
+    levColor: lev.color,
+    levPct: Math.max(0, 100 - Math.floor(Math.min(1, s.leviathans.damage.div(hp).toNumber()) * 100)),
+    levHp: `${format(hp.sub(s.leviathans.damage).max(0), n)} / ${format(hp, n)}`,
+    spireBanner: banner?.color ?? '',
+    spireBannerName: banner?.name ?? '',
+  };
 }
 
 /** The Singularity on the reset bar: visible from Nebula milestone 8 (or after the first Singularity). */

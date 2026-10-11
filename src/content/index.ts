@@ -18,6 +18,9 @@ import { registerSpectral } from '../engine/systems/spectral';
 import { registerTarot } from '../engine/systems/tarot';
 import { registerSingularity } from '../engine/systems/singularity';
 import { registerBlackHole } from '../engine/systems/blackhole';
+import { registerTrials } from '../engine/systems/trials';
+import { registerSpire } from '../engine/systems/spire';
+import { registerLeviathans } from '../engine/systems/leviathans';
 import { registerStarsmith } from '../engine/systems/starsmith';
 import { registerComets } from '../engine/systems/comets';
 import { registerNovaTree } from '../engine/systems/novaTree';
@@ -66,5 +69,8 @@ export function registerContent(): void {
   registerTarot();
   registerSingularity();
   registerBlackHole();
+  registerTrials();
+  registerSpire();
+  registerLeviathans();
   registerUnlocks();
 }

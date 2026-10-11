@@ -9,6 +9,7 @@ import { defineStat, registerSources, stat } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
 import { makeTree } from '../treeKit';
 import { nebulaGain, nebulaReady } from './nebula';
+import { goalMet, inTrial } from './trials';
 
 /**
  * The Singularity: the third reset (Game design: "Singularity"). It needs the Event Horizon key
@@ -141,7 +142,7 @@ export function registerSingularity(): void {
     order: 62,
     tick: (s: GameState, dt: number, ctx: TickContext) => {
       // Milestone 2: a Nebula by itself once its gain reaches your number
-      if (milestoneReached(s, 'singularity', 'autoNebula') && s.singularity.autoAt.gt(0) && nebulaReady(s) && nebulaGain(s).gte(s.singularity.autoAt)) performReset(s, 'nebula');
+      if (milestoneReached(s, 'singularity', 'autoNebula') && s.singularity.autoAt.gt(0) && nebulaReady(s) && nebulaGain(s).gte(s.singularity.autoAt) && !(inTrial(s) && !goalMet(s))) performReset(s, 'nebula');
       // Milestone 10: 1/50 of the Nebula gain trickles in every second, nothing reset
       if (nebulaFree(s) && nebulaReady(s)) gain(s, 'essence', nebulaGain(s).mul(S.trickle * dt * ctx.gainScale));
     },

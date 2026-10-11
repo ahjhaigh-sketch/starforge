@@ -101,6 +101,12 @@ export const MEDALS: readonly MedalDef[] = [
   { id: 'singularity.10', name: "Frequent Faller", desc: "Go Singularity 10 times.", icon: 'darkmatter', req: { kind: 'count', stat: 'singularitiesAll', count: 10, noun: 'Singularity' } },
   { id: 'bh.4', name: "Red Giant Hunger", desc: "Bring the Black Hole to its red stage.", icon: 'blackhole', req: { kind: 'count', stat: 'bhStageBest', count: 4, noun: 'Black Hole stage' } },
   { id: 'bh.8', name: "Rainbow Abyss", desc: "Bring the Black Hole to its rainbow stage.", icon: 'blackhole', req: { kind: 'count', stat: 'bhStageBest', count: 8, noun: 'Black Hole stage' } },
+  { id: 'trial.1', name: "Tried and Tested", desc: "Finish a Trial.", icon: 'trial', req: { kind: 'count', stat: 'trialsDone', count: 1, noun: 'Trial finished' } },
+  { id: 'trial.20', name: "Trial by Fire", desc: "Earn 20 Trial levels.", icon: 'trial', req: { kind: 'count', stat: 'trialLevels', count: 20, noun: 'Trial level' } },
+  { id: 'spire.10', name: "First Pennant", desc: "Reach floor 10 of the Spire.", icon: 'spire', req: { kind: 'count', stat: 'spireBest', count: 10, noun: 'Spire floor' } },
+  { id: 'spire.50', name: "Cloud Climber", desc: "Reach floor 50 of the Spire.", icon: 'spire', req: { kind: 'count', stat: 'spireBest', count: 50, noun: 'Spire floor' } },
+  { id: 'lev.1', name: "Whale Watcher", desc: "Beat a Void Leviathan.", icon: 'leviathan', req: { kind: 'count', stat: 'leviathansBeaten', count: 1, noun: 'Leviathan' } },
+  { id: 'lev.12', name: "Mother of All", desc: "Beat all 12 Void Leviathans.", icon: 'leviathan', req: { kind: 'count', stat: 'leviathansBeaten', count: 12, noun: 'Leviathan' } },
   { id: 'nursery.25', name: "Stellar Gardener", desc: "Grow all 25 star species.", icon: 'nursery', req: { kind: 'count', stat: 'speciesGrown', count: 25, noun: 'species' } },
   // Phase 7: Comet Fusion, Attunements, the Merchant and starships
   { id: 'fusion.5', name: "Comet Smith", desc: "Fuse a level 5 comet.", icon: 'comet', req: { kind: 'count', stat: 'fusionBest', count: 5, noun: 'fusion level' } },

@@ -16,6 +16,8 @@ export function StarStage() {
   const starSize = useSnap((s) => s.starSize);
   const combo = useSnap((s) => s.combo);
   const comboMult = useSnap((s) => s.comboMult);
+  const banner = useSnap((s) => s.spireBanner);
+  const bannerName = useSnap((s) => s.spireBannerName);
   const floaters = useRef<HTMLDivElement>(null);
   const wrap = useRef<HTMLDivElement>(null);
 
@@ -66,7 +68,10 @@ export function StarStage() {
       <div className="floaters" ref={floaters} aria-hidden="true" />
       <AttuneHud />
       <div className="star-caption">
-        <div className="name">{tierName}</div>
+        <div className="name">
+          {banner && <span className="star-pennant" style={{ ['--c' as string]: banner } as CSSProperties} title={bannerName} />}
+          {tierName}
+        </div>
         <div className="sub">{tapLabel}</div>
         <div className={`combo ${combo > 0 ? 'on' : ''}`} aria-hidden={combo === 0}>
           <span className="combo-bar">

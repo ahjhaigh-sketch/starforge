@@ -32,6 +32,7 @@ import { AurasPanel, IndexPanel, MutationsPanel, StarringPanel } from './screens
 import { NurseryPanel, WyrmsPanel } from './screens/WyrmPanels';
 import { SpectralPanel, TarotPanel } from './screens/NebulaExtrasPanels';
 import { BlackHolePanel, PrismWheelPanel, ReactorPanel, SingularityConfirmPanel, SingularityPanel, SingularityTreePanel } from './screens/SingularityPanels';
+import { ChallengeHud, LeviathansPanel, ScaleTreePanel, SpirePanel, TrialsPanel } from './screens/ChallengePanels';
 import { useUi } from './store';
 
 /** Shown while time away is being simulated; fades in only if that takes a moment. */
@@ -65,6 +66,7 @@ export function App() {
         <LeftRail />
         <main className="stage">
           <StarStage />
+          <ChallengeHud />
         </main>
         <BottomBar />
         <aside className={`side ${drawer ? 'open' : ''}`}>
@@ -114,6 +116,10 @@ export function App() {
       <BlackHolePanel />
       <PrismWheelPanel />
       <ReactorPanel />
+      <TrialsPanel />
+      <SpirePanel />
+      <LeviathansPanel />
+      <ScaleTreePanel />
       <SettingsPanel />
       <PanelHost />
       <ToastHost />
