@@ -1,6 +1,6 @@
 [package]
 name = "starforge"
-version = "1.0.0"
+version = "1.1.0"
 description = "Starforge: a space-fantasy incremental game"
 authors = ["ahjhaigh-sketch"]
 edition = "2021"
