@@ -16,7 +16,8 @@
     "e2e": "vite build && playwright test",
     "sim": "vitest run --config vitest.sim.config.ts --reporter=verbose --silent=false",
     "tauri": "tauri",
-    "budgets": "node scripts/budgets.mjs"
+    "budgets": "node scripts/budgets.mjs",
+    "single": "vite build --config scripts/single/single.config.ts && node scripts/single/inline.mjs"
   },
   "dependencies": {
     "@fontsource-variable/baloo-2": "5.3.0",

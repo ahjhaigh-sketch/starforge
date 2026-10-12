@@ -11,3 +11,4 @@ shots/
 
 # Third-party reference images stay local (not ours to redistribute)
 research/screenshots/
+dist-single
