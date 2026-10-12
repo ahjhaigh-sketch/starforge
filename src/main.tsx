@@ -41,6 +41,7 @@ import { simulateElapsedAsync } from './engine/offline';
 import { importSave, loadFromSlots } from './engine/save/store';
 import { breakdown, stat } from './engine/stats';
 import { installPwa } from './app/pwa';
+import { announceUpdate } from './app/updates';
 import { readSaveFile } from './platform/tauri';
 import { webStore } from './platform/web';
 import { burst, liveParticles } from './render/particles';
@@ -114,6 +115,7 @@ async function boot(): Promise<void> {
   void renderStage.initRender();
   installPwa();
   if (notice) events.emit({ t: 'toast', ...notice, icon: 'gear' });
+  announceUpdate(game.state.playtime > 60);
 
   // Offline progress: the tab was closed, so the offline cap and efficiency apply.
   if (away > 60) {

@@ -54,6 +54,9 @@ export const milestoneSpan = (n: number, s?: GameState): { from: number; to: num
 
 /** Stardust per second from ONE of this engine, with every multiplier. */
 export const engineEach = (s: GameState, id: string): Decimal => STARDUST_ENGINES.each(s, id);
+/** Everything one kind of engine makes together, and what buying `count` more adds (a second). */
+export const engineTotal = (s: GameState, id: string): Decimal => STARDUST_ENGINES.total(s, id);
+export const engineAdds = (s: GameState, id: string, count: number): Decimal => STARDUST_ENGINES.adds(s, id, count);
 
 /** An engine is shown once the one before it has ever been owned; the next one is a "???" row. */
 export const engineRevealed = (s: GameState, index: number): boolean => STARDUST_ENGINES.revealed(s, index);

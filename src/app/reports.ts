@@ -49,6 +49,21 @@ function section(id: string, title?: string, shape: 'num' | 'pct' | 'mult' | 'ti
   };
 }
 
+/** A medal's icon carries its milestone ("1K" taps, "T5", "e21" Stardust), so each tier of a medal has its own symbol. */
+function shortCount(c: number): string {
+  if (c >= 1e12) return `e${Math.floor(Math.log10(c))}`;
+  if (c >= 1e9) return `${+(c / 1e9).toFixed(1)}B`;
+  if (c >= 1e6) return `${+(c / 1e6).toFixed(1)}M`;
+  if (c >= 1e3) return `${+(c / 1e3).toFixed(1)}K`;
+  return String(c);
+}
+function medalIcon(m: (typeof MEDALS)[number]): string {
+  const q = m.req;
+  if (q.kind === 'tier') return `${m.icon}#T${q.tier + 1}`;
+  const c = q.kind === 'count' || q.kind === 'medals' || q.kind === 'upgrades' || q.kind === 'engine' ? q.count : q.kind === 'total' || q.kind === 'rate' ? q.amount : 0;
+  return c > 1 ? `${m.icon}#${shortCount(c)}` : m.icon;
+}
+
 export function statsReport(): { sections: StatSection[]; counters: StatLine[] } {
   const s = game.state;
   const sections = [
@@ -114,7 +129,7 @@ export interface GoalItem {
 
 export function medalsReport(): { medals: MedalItem[]; goals: GoalItem[]; summary: string } {
   const s = game.state;
-  const medals = MEDALS.map((m) => ({ id: m.id, name: m.name, desc: m.desc, icon: m.icon, earned: hasMedal(s, m.id) }));
+  const medals = MEDALS.map((m) => ({ id: m.id, name: m.name, desc: m.desc, icon: medalIcon(m), earned: hasMedal(s, m.id) }));
   const goals = GOALS.map((g): GoalItem => {
     const tier = s.goals[g.id] ?? 0;
     const v = goalValue(s, g);

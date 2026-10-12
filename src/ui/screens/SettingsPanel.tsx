@@ -3,7 +3,8 @@ import { type BackupMeta, listBackups } from '../../app/backups';
 import { commands } from '../../app/commands';
 import { previewImport } from '../../app/reports';
 import { useSnap } from '../../app/uiSnapshot';
-import { SOUNDTRACKS } from '../../audio/music';
+import { MUSIC_CHOICES } from '../../audio/music';
+import { UPDATES } from '../../content/updates';
 import type { Notation, Settings } from '../../engine/state';
 import { Button } from '../kit/Chunk';
 import { Panel } from '../kit/Panel';
@@ -198,12 +199,12 @@ export function SettingsPanel() {
       <div className="set-row">
         <span className="lbl">Music</span>
         <div className="set-ctl">
-          {[...SOUNDTRACKS.map((t) => ({ v: t.id, label: t.name })), { v: 'off', label: 'Off' }].map((t) => (
-            <Button key={t.v} size="sm" gloss={false} color={soundtrack === t.v ? 'var(--cyan)' : '#5A5F8F'} onClick={() => commands.setSetting('soundtrack', t.v)} aria-pressed={soundtrack === t.v} data-soundtrack={t.v}>
+          {[...MUSIC_CHOICES.map((t) => ({ v: t.id, label: t.name, mood: t.mood })), { v: 'off', label: 'Off', mood: 'no music' }].map((t) => (
+            <Button key={t.v} size="sm" gloss={false} color={soundtrack === t.v ? 'var(--cyan)' : '#5A5F8F'} onClick={() => commands.setSetting('soundtrack', t.v)} aria-pressed={soundtrack === t.v} title={t.mood} data-soundtrack={t.v}>
               {t.label}
             </Button>
           ))}
-          <small className="set-note">Each layer you reach adds an instrument.</small>
+          <small className="set-note">Journey plays a new song for each layer you reach, and every layer adds an instrument. Evolving, resets, medals and new systems each have their own theme.</small>
         </div>
       </div>
       <div className="set-row">
@@ -283,6 +284,21 @@ export function SettingsPanel() {
       <p style={{ fontSize: '0.8rem' }}>Safari deletes site data after 7 days without a visit, so export a code now and then.</p>
       <h3>Backups</h3>
       <Backups />
+      <h3>Update log</h3>
+      <div className="upd-log" data-testid="update-log">
+        {UPDATES.map((u, i) => (
+          <details key={u.version} className="well upd" open={i === 0}>
+            <summary>
+              <b className="num">{u.version}</b> {u.title} <small>{u.date}</small>
+            </summary>
+            <ul>
+              {u.notes.map((x, k) => (
+                <li key={k}>{x}</li>
+              ))}
+            </ul>
+          </details>
+        ))}
+      </div>
       <h3>About</h3>
       <p>
         Starforge <span className="num">{__APP_VERSION__}</span>. It plays offline once loaded{canInstall ? ', and can be installed as an app' : ''}.

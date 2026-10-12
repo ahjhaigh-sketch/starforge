@@ -56,6 +56,10 @@ export interface EngineLayer {
   milestonesReached(n: number, s?: GameState): number;
   milestoneSpan(n: number, s?: GameState): { from: number; to: number } | null;
   each(s: GameState, id: string): Decimal;
+  /** What every one of an engine makes together, a second (owned x each). */
+  total(s: GameState, id: string): Decimal;
+  /** How much more a second buying `count` more makes, milestone jumps included. */
+  adds(s: GameState, id: string, count: number): Decimal;
   revealed(s: GameState, index: number): boolean;
   price(s: GameState, id: string, count: number): Decimal;
   buy(s: GameState, id: string, count: number): boolean;
@@ -95,6 +99,17 @@ export function makeEngineLayer(def: EngineLayerDef): EngineLayer {
     each(s, id) {
       const e = byId.get(id)!;
       return D(e.baseProd).mul(stat(s, `${def.stats.engineMult}${id}`)).mul(stat(s, def.stats.layerMult));
+    },
+    total(s, id) {
+      return layer.each(s, id).mul(layer.owned(s, id));
+    },
+    adds(s, id, count) {
+      const n = layer.owned(s, id);
+      const k = Math.max(0, Math.floor(count));
+      // each one makes each(n) now; reaching a milestone multiplies every one of them
+      const base = def.stats.milestoneBase;
+      const jump = base && def.milestones ? stat(s, base).pow(layer.milestonesReached(n + k, s) - layer.milestonesReached(n, s)) : D(1);
+      return layer.each(s, id).mul(jump.mul(n + k).sub(n));
     },
     revealed(s, index) {
       if (index === 0) return true;

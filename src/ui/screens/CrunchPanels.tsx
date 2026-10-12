@@ -310,7 +310,7 @@ export function EchoesPanel() {
                     <div className="am-info">
                       <b>{e.name}</b>
                       <span className="num">
-                        {e.owned} owned · {e.each} each
+                        {e.owned} owned · {e.total} in all · next adds {e.adds}
                       </span>
                       {e.nextAt > 0 && (
                         <span className="echo-ms" title={`Output doubles at ${e.nextAt} owned`}>

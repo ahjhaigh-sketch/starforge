@@ -72,7 +72,7 @@ export function MirrorPanel() {
                     <div className="am-info">
                       <b>{e.name}</b>
                       <span className="num">
-                        {e.owned} owned · {e.each} each · twin {e.twin}
+                        {e.owned} owned · {e.total} in all · next adds {e.adds} · twin {e.twin}
                       </span>
                       <span className="num dim">
                         Price {e.ratio} a purchase, {e.nextStep}

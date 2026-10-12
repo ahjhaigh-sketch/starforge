@@ -86,6 +86,7 @@ export function brew(s: GameState, mix: readonly string[], count = 1): BrewResul
     s.stats.recipesFound = s.alchemy.known.length;
     s.alchemy.shelf[recipe.id] = (s.alchemy.shelf[recipe.id] ?? 0) + n;
     events.emit({ t: 'purchase', kind: 'alchemy', id: recipe.id, amount: n });
+    if (!known) events.emit({ t: 'milestone', id: `alchemy.${recipe.id}` });
     return { kind: 'elixir', recipe: recipe.id, count: n, first: !known };
   }
   const again = s.alchemy.tried.includes(key);

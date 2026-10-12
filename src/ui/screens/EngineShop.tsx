@@ -21,7 +21,8 @@ const EngineRow = memo(function EngineRow({ row }: { row: Row }) {
       {...tipProps(`eng-${row.id}`, 'left', row.name, (
         <>
           <span>{row.blurb}</span>
-          <span className="tip-line">{row.each} each</span>
+          <span className="tip-line">{row.each} each · {row.total} in all</span>
+          <span className="tip-line">Buying {row.count || 'one'} adds {row.adds}</span>
           <span className="tip-line">{row.msNext}</span>
         </>
       ))}
@@ -31,14 +32,17 @@ const EngineRow = memo(function EngineRow({ row }: { row: Row }) {
         {row.rank && <span className="rank-pip" style={{ background: row.rank }} title={row.rankName} />}
       </span>
       <span className="nm">{row.name}</span>
-      <Num value={row.owned} className="own" />
+      <span className="own-col">
+        <Num value={row.owned} className="own" />
+        <span className="tot" title="Stardust a second from all of these">{row.total}</span>
+      </span>
       <span className="meta">
         <span className={cx('cost-chip', row.can && 'can')}>
           <Icon name="stardust" />
           {row.cost}
           {row.count && <small>{row.count}</small>}
         </span>
-        <span className="each" title="Stardust per second from each one">{row.each}</span>
+        <span className="each" title={`Buying ${row.count || 'one'} adds this much Stardust a second (each one makes ${row.each})`}>{row.adds}</span>
         <span className="ms" title={row.msNext}>
           <i style={{ width: `${row.msPct}%` }} />
         </span>

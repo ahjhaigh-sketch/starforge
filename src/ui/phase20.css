@@ -145,3 +145,10 @@ html[data-bg='dawn'] body { background: radial-gradient(60% 50% at 18% 22%, rgba
 .alt-boon { color: var(--lime); font-weight: 700; }
 .alt-bane { color: #ff8a9e; font-weight: 700; }
 .alt-state { color: var(--text-dim); font-size: 0.74rem; text-align: right; }
+
+/* ---------- 1.2.0: the update log in Settings ---------- */
+.upd-log { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.6rem; }
+.upd { padding: 0.45rem 0.7rem; }
+.upd summary { cursor: pointer; font-weight: 700; }
+.upd summary small { color: var(--text-dim); font-weight: 600; margin-left: 0.3rem; }
+.upd ul { margin: 0.4rem 0 0.2rem; padding-left: 1.1rem; font-size: 0.82rem; display: flex; flex-direction: column; gap: 0.25rem; }

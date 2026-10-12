@@ -95,6 +95,9 @@ export interface EchoRow {
   hidden: boolean;
   owned: number;
   each: string;
+  /** All of them together a second, and what the next purchase adds. */
+  total: string;
+  adds: string;
   count: number;
   cost: string;
   can: boolean;
@@ -140,6 +143,8 @@ export function echoReport(): EchoReport {
       hidden: i > 0 && !ECHO_BOARD.revealed(s, i - 1),
       owned: own,
       each: formatRate(ECHO_BOARD.each(s, e.id), n()),
+      total: formatRate(ECHO_BOARD.total(s, e.id), n()).slice(1),
+      adds: formatRate(ECHO_BOARD.adds(s, e.id, Math.max(1, plan.count)), n()),
       count: plan.count,
       cost: format(plan.cost, n()),
       can: plan.canAfford && plan.count > 0,

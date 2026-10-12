@@ -25,6 +25,9 @@ export interface AmEngineRow {
   hidden: boolean;
   owned: number;
   each: string;
+  /** All of them together a second, and what the next purchase adds. */
+  total: string;
+  adds: string;
   count: number;
   cost: string;
   can: boolean;
@@ -69,6 +72,8 @@ export function mirrorReport(): MirrorReport {
       hidden: i > 0 && !MIRROR_ENGINES.revealed(s, i - 1),
       owned: own,
       each: formatRate(MIRROR_ENGINES.each(s, e.id), n()),
+      total: formatRate(MIRROR_ENGINES.total(s, e.id), n()).slice(1),
+      adds: formatRate(MIRROR_ENGINES.adds(s, e.id, Math.max(1, plan.count)), n()),
       count: plan.count,
       cost: format(plan.cost, n()),
       can: plan.canAfford && plan.count > 0,

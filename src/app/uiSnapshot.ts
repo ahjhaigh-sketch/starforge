@@ -13,6 +13,8 @@ import {
   comboNow,
   engineCurve,
   engineEach,
+  engineAdds,
+  engineTotal,
   engineRevealed,
   milestoneSpan,
   nextTierCost,
@@ -71,6 +73,9 @@ export interface EngineRow {
   blurb: string;
   owned: string;
   each: string;
+  /** All of this engine together, a second; and what the next purchase (at the buy amount) adds. */
+  total: string;
+  adds: string;
   cost: string;
   count: string;
   can: boolean;
@@ -306,6 +311,8 @@ function engineRows(s: GameState, n: Notation, prev: EngineRow[] | undefined): {
       blurb: e.blurb,
       owned: formatCount(own, n),
       each: `${format(engineEach(s, e.id), n)}/s`,
+      total: `${format(engineTotal(s, e.id), n)}/s`,
+      adds: `+${format(engineAdds(s, e.id, Math.max(1, plan.count)), n)}/s`,
       cost: format(plan.cost, n),
       count: s.settings.buyAmount === 1 ? '' : `x${formatCount(plan.count, n)}`,
       can: plan.canAfford,
@@ -462,7 +469,7 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     volumeSfx: s.settings.volumeSfx,
     soundtrack: s.settings.soundtrack,
     volumeMusic: s.settings.volumeMusic,
-    musicLayers: ['supernovasAll', 'nebulasAll', 'singularitiesAll', 'galacticsAll', 'crunchesAll'].filter((k) => (s.stats[k] ?? 0) > 0).length,
+    musicLayers: ['supernovasAll', 'nebulasAll', 'singularitiesAll', 'galacticsAll', 'crunchesAll', 'multiversesAll'].filter((k) => (s.stats[k] ?? 0) > 0).length,
     autoBars: [...(['supernova', 'nebula', 'singularity', 'galactic'] as const).filter((l) => automating(s, l)), ...(sparkFlag(s, 'autoCrunch') ? ['crunch'] : [])].join(','),
     autosaveSeconds: s.settings.autosaveSeconds,
     confirmResets: s.settings.confirmResets,

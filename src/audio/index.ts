@@ -1,6 +1,7 @@
 import { snapshotStore } from '../app/uiSnapshot';
 import { events } from '../engine/events';
 import { startMusic } from './music';
+import { evolveTheme, type Theme, THEMES } from './themes';
 
 /**
  * The one audio module (CLAUDE.md rule 14). Every sound is synthesised with WebAudio, so there are
@@ -13,6 +14,8 @@ let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let sfx: GainNode | null = null;
 let music: GainNode | null = null;
+/** Between the soundtrack and the mix: dips while a theme plays over it. */
+let duck: GainNode | null = null;
 let noise: AudioBuffer | null = null;
 
 function ensure(): boolean {
@@ -31,7 +34,9 @@ function ensure(): boolean {
     comp.threshold.value = -14;
     comp.ratio.value = 6;
     sfx.connect(master);
-    music.connect(master);
+    duck = ctx.createGain();
+    music.connect(duck);
+    duck.connect(master);
     master.connect(comp);
     comp.connect(ctx.destination);
     noise = ctx.createBuffer(1, ctx.sampleRate * 0.6, ctx.sampleRate);
@@ -95,6 +100,21 @@ function whoosh(start: number, dur: number, from: number, to: number, peak: numb
 }
 
 const semis = (n: number) => 2 ** (n / 12);
+
+/** Plays a theme over the soundtrack, which dips while it lasts. */
+function playTheme(theme: Theme, delay = 0): void {
+  if (!ctx) return;
+  const t = ctx.currentTime + delay;
+  for (const n of theme.notes) {
+    const f = theme.root * semis(n.semis);
+    tone(f, t + n.at, n.dur, n.wave, Math.max(0.002, n.vel * 0.22), n.glide !== undefined ? theme.root * semis(n.glide) : undefined);
+  }
+  if (duck) {
+    duck.gain.cancelScheduledValues(t);
+    duck.gain.setTargetAtTime(0.3, t, 0.06);
+    duck.gain.setTargetAtTime(1, t + theme.length, 0.5);
+  }
+}
 let lastTap = 0;
 let buyStreak = 0;
 let lastBuy = 0;
@@ -113,7 +133,7 @@ function throttle(kind: string, gap: number): boolean {
   return true;
 }
 
-/** Each reset layer's chord, from the bright Supernova down to the deep Singularity. */
+/** Each reset layer's sweep (its theme is in themes.ts), from the bright Supernova down to the deep Singularity. */
 const RESET_CHORDS: Record<string, { root: number; steps: number[]; sweep: [number, number] }> = {
   supernova: { root: 392, steps: [0, 4, 7, 12], sweep: [500, 5000] },
   nebula: { root: 349, steps: [0, 5, 9, 14], sweep: [800, 3000] },
@@ -144,12 +164,24 @@ export const sounds = {
     if (!ensure() || !ctx) return;
     tone(190, ctx.currentTime, 0.12, 'sine', 0.25, 140);
   },
-  tierUp() {
+  /** Evolving: its own fanfare, a step higher for every Star Tier. */
+  tierUp(tier = 1) {
     if (!ensure() || !ctx) return;
     const t = ctx.currentTime;
     lastBig = t;
-    [0, 4, 7, 12, 16].forEach((n, i) => tone(392 * semis(n), t + i * 0.07, 0.45, 'triangle', 0.24));
+    playTheme(evolveTheme(tier));
     whoosh(t, 0.9, 400, 4000, 0.12);
+  },
+  /** A system opens. */
+  unlock() {
+    if (!ensure() || !ctx || !throttle('unlock', 0.6)) return;
+    playTheme(THEMES.unlock!);
+  },
+  /** A short theme by name (a recipe found, a new best wave, a sigil). */
+  theme(id: string, gap = 0.5) {
+    const th = THEMES[id];
+    if (!th || !ensure() || !ctx || !throttle(`theme.${id}`, gap)) return;
+    playTheme(th);
   },
   /** Every reset has its own chord; the Big Crunch falls into a point, then booms as it comes back. */
   reset(layer: string) {
@@ -167,7 +199,7 @@ export const sounds = {
       tone(330, t, 1.1, 'sawtooth', 0.06, 40);
       tone(55, t + 1.15, 1.6, 'sine', 0.5, 32);
       whoosh(t + 1.15, 1.4, 150, 7000, 0.18);
-      [0, 7, 12, 16, 19, 24].forEach((n, i) => tone(196 * semis(n), t + 1.2 + i * 0.08, 1.2, 'triangle', 0.16));
+      playTheme(THEMES.crunch!);
       return;
     }
     if (layer === 'multiverse') {
@@ -175,13 +207,13 @@ export const sounds = {
       [0, 0.14, 0.26].forEach((d) => whoosh(t + d, 0.08, 7000, 3000, 0.12));
       whoosh(t + 0.85, 1.2, 9000, 300, 0.2);
       tone(65.4, t + 0.85, 1.8, 'sine', 0.45, 49);
-      [0, 4, 7, 11, 14, 16, 19, 23, 24].forEach((n, i) => tone(261.63 * semis(n), t + 0.95 + i * 0.07, 1.4, 'triangle', 0.13));
+      playTheme(THEMES.multiverse!);
       return;
     }
     const r = RESET_CHORDS[layer] ?? RESET_CHORDS.supernova!;
     whoosh(t, 1, r.sweep[0], r.sweep[1], 0.14);
-    tone(r.root / 4, t, 0.9, 'sine', 0.35, r.root / 8);
-    r.steps.forEach((n, i) => tone(r.root * semis(n), t + 0.12 + i * 0.07, 0.7, 'triangle', 0.18));
+    // each layer's own theme
+    playTheme(THEMES[layer] ?? THEMES.supernova!);
   },
   comet() {
     if (!ensure() || !ctx) return;
@@ -200,9 +232,8 @@ export const sounds = {
     [0, 7, 14].forEach((n, i) => tone(1320 * semis(n), t + 0.5 + i * 0.12, 0.6, 'sine', 0.06));
   },
   medal() {
-    if (!ensure() || !ctx) return;
-    const t = ctx.currentTime;
-    [0, 5, 9].forEach((n, i) => tone(880 * semis(n), t + i * 0.06, 0.25, 'sine', 0.16));
+    if (!ensure() || !ctx || !throttle('medal', 0.4)) return;
+    playTheme(THEMES.medal!);
   },
   /** A soft pluck per harvest; rare asteroids add a sparkle that climbs with rarity. */
   harvest(rarity: string) {
@@ -307,10 +338,11 @@ export function installAudio(): void {
         sounds.tap(e.crit);
         break;
       case 'purchase':
-        if (!e.auto) sounds.buy();
+        if (e.kind === 'sigil') sounds.theme('sigil');
+        else if (!e.auto) sounds.buy();
         break;
       case 'tierUp':
-        sounds.tierUp();
+        sounds.tierUp(e.tier);
         break;
       case 'reset':
         // automated resets (several a second late in the game) are silent, like automated purchases
@@ -323,6 +355,11 @@ export function installAudio(): void {
       case 'weather':
         sounds.weather();
         break;
+      case 'milestone':
+        // a recipe found; a new best wave (auto-defend can win several in a row: one theme at a time)
+        if (e.id.startsWith('alchemy.')) sounds.theme('recipe');
+        else if (e.id.startsWith('defense.')) sounds.theme('defense', 4);
+        break;
       case 'achievement':
         sounds.medal();
         break;
@@ -330,7 +367,7 @@ export function installAudio(): void {
         if (e.hand) sounds.harvest(e.rarity);
         break;
       case 'unlock':
-        sounds.toast();
+        sounds.unlock();
         break;
       case 'toast':
         // decided after the event that raised it has played its own sound (a reset's toast arrives first)
