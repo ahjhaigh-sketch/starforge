@@ -108,8 +108,13 @@ export const BALANCE = {
     /** Price of the n-th planet (0-based): base x growth^n. */
     planetBase: 2e6,
     planetGrowth: 4,
-    /** Level-up price: planet price x levelGrowth^level. */
+    /** Level-up price: planet price x levelGrowth^level up to level 20. */
     levelGrowth: 1.9,
+    /** 1.2.0: steeper from level 20 and 40, so bulk levelling (Max, auto-planets) can't run away mid-game. */
+    levelBrackets: [
+      { from: 20, ratio: 3.5 },
+      { from: 40, ratio: 8 },
+    ],
     /** Each level: +25% to the engines this planet boosts. */
     perLevel: 0.25,
     /** Each neighbour of a DIFFERENT type adds this share to the planet's bonus. */
@@ -243,6 +248,11 @@ export const BALANCE = {
     /** Blue Giant (tier index 3) and this much Stardust gathered in the run. */
     tier: 3,
     runStardust: 1e7,
+    /**
+     * 1.2.0: and at least this many seconds of the Stardust per second you had at your last
+     * Supernova, so each one takes a real run whatever your economy.
+     */
+    needSeconds: 30,
     /** Shards = floor((S / 1e7)^0.4), softcapped above 10,000 to 1e4 x (raw / 1e4)^0.6. (Plan: 0.5; the simulator chose 0.4.) */
     gainPow: 0.4,
     softcapAt: 1e4,
@@ -270,6 +280,10 @@ export const BALANCE = {
     perSecond: 1,
     /** The share of your Stardust an auto-buyer may spend: all, half, a tenth. */
     spendChoices: [1, 0.5, 0.1],
+    /** 1.2.0: lifetime Supernovas that earn each new auto-buyer. */
+    unlockAt: { novatree: 5, planets: 5, supernova: 10, belt: 15, constants: 20 },
+    /** Auto-Constants steps every constant to its next doubling once this many seconds of play, and waits this long after you buy one yourself. */
+    constantsEvery: 60,
   },
   fusion: {
     /** Comet Fusion opens at 6 Supernovas: a 3x3 board growing to 5x5, a comet every 12 s. */
@@ -307,10 +321,12 @@ export const BALANCE = {
     lens: { mult: 6, perSecond: 4 },
   },
   merchant: {
-    /** The Wandering Merchant arrives at 10 Supernovas with 4 deals. */
+    /** The Wandering Merchant arrives at 10 Supernovas. Each ship brings 3 deals; one you take stays sold. */
     supernovas: 10,
-    deals: 4,
-    /** Rerolling the deals costs shards: 5 x 2^n, back to 5 after each Supernova (a new ship docks free). */
+    deals: 3,
+    /** 1.2.0: a new ship docks every 15 minutes of play time (it was every Supernova: far too much stock). */
+    restockSeconds: 900,
+    /** Rerolling the deals still for sale costs shards: 5 x 2^n, back to 5 when a new ship docks. */
     rerollBase: 5,
     rerollGrowth: 2,
     /** Merchant Luck: deals +10% a level and Mythical chance 1% + 0.2% a level, up to level 25 (x3.5, 6%). */
@@ -324,10 +340,10 @@ export const BALANCE = {
     mythicalMult: 100,
   },
   nebula: {
-    /** The second reset: 30 Supernovas and 100,000 shards gathered in one Nebula run. */
+    /** The second reset: 30 Supernovas and 10M shards gathered in one Nebula run (1.2.0: was 100,000). */
     supernovas: 30,
-    runShards: 1e5,
-    /** Essence = floor((NS / 1e5)^0.35); the first Nebula gives 2. */
+    runShards: 1e7,
+    /** Essence = floor((NS / 1e7)^0.35); the first Nebula gives at least 2 (1.2.0: it follows the formula too). */
     gainPow: 0.35,
     firstGain: 2,
     /** Lifetime Essence boosts shard gain: x(1 + E)^0.4. */

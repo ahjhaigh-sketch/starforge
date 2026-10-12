@@ -4,6 +4,7 @@ import type { BuyAmount } from '../../engine/state';
 
 const OPTIONS: Array<{ v: BuyAmount; label: string }> = [
   { v: 1, label: 'x1' },
+  { v: 5, label: 'x5' },
   { v: 10, label: 'x10' },
   { v: 100, label: 'x100' },
   { v: 1000, label: 'x1K' },

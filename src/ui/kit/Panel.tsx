@@ -1,7 +1,9 @@
+import type React from 'react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useUi } from '../store';
 import { Icon } from './Icon';
 import { tint } from './Chunk';
+import { PANEL_ART, panelMark } from '../panelArtData';
 
 /**
  * A modal panel. Only one is ever open (opening one closes the other), it pops in from 0.6
@@ -39,6 +41,8 @@ export function Panel({
     return () => clearTimeout(t);
   }, [open]);
 
+  const art = PANEL_ART[id];
+  const mark = panelMark(id);
   return (
     <div
       ref={root}
@@ -48,7 +52,12 @@ export function Panel({
       aria-hidden={!open}
       aria-labelledby={`panel-title-${id}`}
       data-panel={id}
+      style={art ? ({ ['--art-a' as string]: art[1], ['--art-b' as string]: art[2] } as React.CSSProperties) : undefined}
     >
+      {/* the menu's own backdrop and a faint watermark of its symbol (1.2.0) */}
+      <div className="panel-art" data-art={art?.[0]} aria-hidden="true">
+        {mark && <Icon name={mark} className="panel-mark" />}
+      </div>
       <div className="ribbon chunk gloss" id={`panel-title-${id}`} style={tint(color)}>
         {title}
       </div>

@@ -47,9 +47,9 @@ export interface PlanetType {
 }
 
 export const PLANET_TYPES: readonly PlanetType[] = [
-  { id: 'rocky', name: 'Rocky', color: '#B07A52', band: '#8A5A3A', engines: ['moonmill', 'drill', 'foundry'] },
-  { id: 'gas', name: 'Gas giant', color: '#E0A86A', band: '#C0784A', engines: ['siphon', 'sail', 'bellows'] },
-  { id: 'ice', name: 'Ice', color: '#9FE7FF', band: '#5FB8E0', engines: ['catcher', 'turbine', 'mote'] },
-  { id: 'lava', name: 'Lava', color: '#FF6A3D', band: '#B0301E', engines: ['dyson', 'quasar', 'lantern'] },
-  { id: 'crystal', name: 'Crystal', color: '#C9A0FF', band: '#8A5CD8', engines: ['pulsar', 'choir', 'loom'] },
+  { id: 'rocky', name: 'Rocky', color: '#B07A52', band: '#8A5A3A', engines: ['moonmill', 'drill', 'foundry', 'press', 'wellpump', 'kiln'] },
+  { id: 'gas', name: 'Gas giant', color: '#E0A86A', band: '#C0784A', engines: ['siphon', 'sail', 'bellows', 'reef', 'spinner', 'wormtap'] },
+  { id: 'ice', name: 'Ice', color: '#9FE7FF', band: '#5FB8E0', engines: ['catcher', 'turbine', 'mote', 'hatchery', 'crystal', 'reservoir'] },
+  { id: 'lava', name: 'Lava', color: '#FF6A3D', band: '#B0301E', engines: ['dyson', 'quasar', 'lantern', 'crown', 'novaforge', 'magnetar'] },
+  { id: 'crystal', name: 'Crystal', color: '#C9A0FF', band: '#8A5CD8', engines: ['pulsar', 'choir', 'loom', 'harp', 'dmmill', 'infinity'] },
 ];

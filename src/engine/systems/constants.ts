@@ -1,3 +1,4 @@
+import { BALANCE } from '../../content/balance';
 import { CONSTANT_BRACKETS as B, CONSTANT_BY_ID, CONSTANT_SETS, CONSTANTS, type ConstantDef } from '../../content/constants';
 import { planPurchase, type PurchasePlan } from '../buy';
 import type { CostCurve } from '../cost';
@@ -66,14 +67,39 @@ export function constantPlan(s: GameState, c: ConstantDef, amount: BuyAmount = s
   return planPurchase(constantCurve(c), L, cur(s, c.currency), amount, s.settings.customBuyAmount, D(1), nextDoubling(L));
 }
 
-export function buyConstant(s: GameState, id: string, amount?: BuyAmount): boolean {
+export function buyConstant(s: GameState, id: string, amount?: BuyAmount, auto = false): boolean {
   const c = CONSTANT_BY_ID.get(id);
   if (!c || !constantOpen(s, c)) return false;
   const plan = constantPlan(s, c, amount);
   if (!plan.canAfford || !spend(s, c.currency, plan.cost)) return false;
   s.constants[id] = level(s, id) + plan.count;
+  // your own purchase: Auto-Constants waits a while before its next step
+  if (!auto) s.stats.constantsByHand = s.playtime;
   events.emit({ t: 'purchase', kind: 'constant', id, amount: plan.count });
   return true;
+}
+
+/** Seconds of play until Auto-Constants next steps (0: now). */
+export function autoConstantsIn(s: GameState): number {
+  const every = BALANCE.automation.constantsEvery;
+  const last = Math.max(s.stats.constantsAuto ?? -every, s.stats.constantsByHand ?? -every);
+  return Math.max(0, last + every - s.playtime);
+}
+
+/**
+ * 1.2.0 Auto-Constants: once a minute of play, steps every open constant up to its next doubling if
+ * its share of that constant's currency pays for it. Not instant: a jump a minute, and it waits a
+ * minute after you buy one yourself, so your own choices come first.
+ */
+export function autoConstants(s: GameState, share: number): void {
+  if (autoConstantsIn(s) > 0) return;
+  s.stats.constantsAuto = s.playtime;
+  for (const c of CONSTANTS) {
+    if (!constantOpen(s, c)) continue;
+    const plan = constantPlan(s, c, 'next');
+    if (plan.count <= 0 || plan.cost.gt(cur(s, c.currency).mul(share))) continue;
+    buyConstant(s, c.id, 'next', true);
+  }
 }
 
 export function registerConstants(): void {

@@ -200,25 +200,27 @@ export function MerchantPanel() {
   return (
     <Panel id="merchant" title="Wandering Merchant" color="#B08A1A" size="wide">
       <div className="tree-head">
-        <p>A trader ship with four deals, sized to your economy. A deal you take is replaced at once, and a new ship docks after every Supernova. Once in a while it's the Mythical Merchant (now {r?.mythical ?? '1%'}).</p>
+        <p>
+          A trader ship with three deals, sized to your economy. A deal you take is sold until the next ship, which docks every 15 minutes of play: next in <b className="num">{r?.nextShip ?? ''}</b>. Once in a while it's the Mythical Merchant (now {r?.mythical ?? '1%'}).
+        </p>
         {r && <ShardChip value={r.shards} />}
       </div>
       <div className="deals">
         {r?.deals.map((d) => (
-          <div key={`${d.i}-${d.get}`} className={cx('deal chunk', d.quality)} style={tint(d.quality === 'mythical' ? '#7A2A8C' : d.quality === 'rare' ? '#2B4F8C' : '#2B1F6E')} data-deal={d.i}>
+          <div key={`${d.i}-${d.get}`} className={cx('deal chunk', d.quality, d.sold && 'sold')} style={tint(d.quality === 'mythical' ? '#7A2A8C' : d.quality === 'rare' ? '#2B4F8C' : '#2B1F6E')} data-deal={d.i}>
             {d.quality !== 'common' && <span className="deal-q ol-sm">{d.quality === 'mythical' ? 'Mythical' : 'Rare'}</span>}
             <span className="deal-get">{d.get}</span>
             <span className="deal-pay">for {d.pay}</span>
-            <Button size="sm" color={d.can ? 'var(--lime)' : '#5A5F8F'} disabled={!d.can} onClick={() => commands.buyDeal(d.i)} aria-label={`Take the deal: ${d.get} for ${d.pay}`}>
-              Take
+            <Button size="sm" color={d.can ? 'var(--lime)' : '#5A5F8F'} disabled={!d.can} onClick={() => commands.buyDeal(d.i)} aria-label={d.sold ? 'Sold' : `Take the deal: ${d.get} for ${d.pay}`}>
+              {d.sold ? 'Sold' : 'Take'}
             </Button>
           </div>
         ))}
       </div>
       {r && (
         <div className="merchant-foot">
-          <Button color={r.canReroll ? 'var(--cyan)' : '#5A5F8F'} disabled={!r.canReroll} onClick={() => commands.rerollDeals()} aria-label={`New deals for ${r.reroll} Nova Shards`}>
-            <span>New deals</span>
+          <Button color={r.canReroll ? 'var(--cyan)' : '#5A5F8F'} disabled={!r.canReroll} onClick={() => commands.rerollDeals()} aria-label={`Swap the deals still for sale for ${r.reroll} Nova Shards`}>
+            <span>Swap unsold deals</span>
             <span className="cost-chip">
               <Icon name="shard" />
               {r.reroll}

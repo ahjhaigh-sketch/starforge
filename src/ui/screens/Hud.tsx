@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { commands } from '../../app/commands';
 import { type BuffChip, useSnap } from '../../app/uiSnapshot';
 import { tint } from '../kit/Chunk';
 import { Icon } from '../kit/Icon';
@@ -55,7 +56,7 @@ export function Hud() {
   const sparksVisible = useSnap((s) => s.sparksVisible);
   return (
     <header className="hud">
-      <CurrencyPill icon="stardust" label="Stardust" value={dustValue} rate={dustRate} />
+      <CurrencyPill icon="stardust" label="Stardust" value={dustValue} rate={dustRate} onPoke={() => commands.poke('pill')} />
       {shardsVisible && <CurrencyPill icon="shard" label="Nova Shards" color="#5A2A8C" value={shardValue} />}
       {essenceVisible && <CurrencyPill icon="nebula" label="Nebula Essence" color="#1E6F88" value={essenceValue} />}
       {darkMatterVisible && <CurrencyPill icon="darkmatter" label="Dark Matter" color="#3A2470" value={darkMatterValue} />}
@@ -64,7 +65,7 @@ export function Hud() {
       {chrononsVisible && <CurrencyPill icon="chronon" label="Chronons" color="#9A4A12" value={chrononValue} />}
       {sparksVisible && <CurrencyPill icon="spark" label="Multiverse Sparks" color="#5A2A8C" value={sparkValue} className="pill-rainbow" />}
       {oreVisible && <CurrencyPill icon="belt" label="Ore" color="#3B4370" value={oreValue} />}
-      <div className="tag-pill chunk tier-pill" style={tint('var(--panel)')} title={`Star Tier ${tierIndex + 1} of 12`}>
+      <div className="tag-pill chunk tier-pill" style={tint('var(--panel)')} title={`Star Tier ${tierIndex + 1} of 12`} onClick={() => commands.poke('tier')}>
         <span className="tier-dot" style={{ background: tierColor, color: tierColor }} />
         <span className="ol-sm">
           <span className="tier-num">Tier {tierIndex + 1} · </span>

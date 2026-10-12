@@ -7,11 +7,11 @@ import type { Decimal } from '../engine/decimal';
 import { stat } from '../engine/stats';
 import { attuneOpen, heartMult, pulseRating } from '../engine/systems/attune';
 import { boardSide, fusionLevel, fusionMult, fusionPlan, type FusionUpgradeId, spawnEvery, spawnLevel } from '../engine/systems/fusion';
-import { canAfford, luckPlan, mythicalChance, rerollCost } from '../engine/systems/merchant';
+import { canAfford, luckPlan, mythicalChance, nextShipIn, rerollCost } from '../engine/systems/merchant';
 import { bestDesign, designOf, lootPerHour, partOwned, partPrice, rareChance, sectorOpen, SHIP_UPGRADE_ALLOY, shipCost, shipLevel, shipUpgradePlan, type ShipUpgradeId, tripLoot, tripSeconds } from '../engine/systems/ships';
 import { PART_BY_ID, PART_SLOTS, PARTS, SLOT_NAMES } from '../content/shipParts';
 import { TIERS } from '../content/tiers';
-import { format, formatMult } from '../ui/format';
+import { format, formatMult, formatTime } from '../ui/format';
 import { dur } from './forgeReports';
 import { game } from './game';
 
@@ -130,7 +130,9 @@ export function dealText(d: Deal): { pay: string; get: string } {
 }
 
 export interface MerchantReport {
-  deals: Array<{ i: number; kind: string; quality: string; pay: string; get: string; can: boolean }>;
+  deals: Array<{ i: number; kind: string; quality: string; pay: string; get: string; can: boolean; sold: boolean }>;
+  /** Time until the next ship docks. */
+  nextShip: string;
   reroll: string;
   canReroll: boolean;
   luck: number;
@@ -145,9 +147,10 @@ export function merchantReport(): MerchantReport {
   const s = game.state;
   const lp = luckPlan(s);
   return {
-    deals: s.merchant.deals.map((d, i) => ({ i, kind: d.kind, quality: d.quality, ...dealText(d), can: canAfford(s, d) })),
+    deals: s.merchant.deals.map((d, i) => ({ i, kind: d.kind, quality: d.quality, ...dealText(d), can: !d.sold && canAfford(s, d), sold: !!d.sold })),
+    nextShip: formatTime(nextShipIn(s)),
     reroll: format(rerollCost(s), n()),
-    canReroll: cur(s, 'shards').gte(rerollCost(s)),
+    canReroll: cur(s, 'shards').gte(rerollCost(s)) && s.merchant.deals.some((d) => !d.sold),
     luck: s.merchant.luck,
     luckCount: lp.count,
     luckCost: format(lp.cost, n()),

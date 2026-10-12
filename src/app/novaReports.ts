@@ -1,4 +1,5 @@
 import { NOVA_TREE, type NodeColor } from '../content/novaTree';
+import { menuHidden } from './menus';
 import { withSigil } from './sigilReports';
 import { SYSTEMS } from '../content/systems';
 import { layer, resetPreview, resetsDone } from '../engine/layers';
@@ -112,6 +113,8 @@ export interface AutoRow {
   on: boolean;
   spend: number;
   req: string;
+  /** What it spends ('' for a reset, which spends nothing). */
+  spends: string;
 }
 
 export function automationReport(): AutoRow[] {
@@ -120,7 +123,7 @@ export function automationReport(): AutoRow[] {
   return AUTO_BUYERS.map((a) => {
     const m = def?.milestones.find((x) => x.id === a.milestone);
     const st = autoSetting(s, a.id);
-    return { id: a.id, name: a.name, unlocked: autoUnlocked(s, a), on: st.on, spend: st.spend, req: m ? `${m.at} Supernova${m.at === 1 ? '' : 's'}` : '' };
+    return { id: a.id, name: a.name, unlocked: autoUnlocked(s, a), on: st.on, spend: st.spend, req: a.req ? reqText(a.req) : m ? `${m.at} Supernova${m.at === 1 ? '' : 's'}` : '', spends: a.spends ?? (a.kind === 'tree' ? 'that tree\'s currency' : 'Stardust') };
   });
 }
 
@@ -134,6 +137,19 @@ export interface AscentDeck {
   req: string;
   pct: number;
   panel?: string;
+  /** 1.2.0: what it is, and whether it's off the rails (hidden by you, or running itself). */
+  blurb: string;
+  tucked: boolean;
+}
+
+export interface AscentStage {
+  stage: string;
+  decks: AscentDeck[];
+  /** Systems open in this stage, of how many. */
+  lit: number;
+  total: number;
+  /** The furthest stage you've reached. */
+  here: boolean;
 }
 
 const STAGES: Array<{ name: string; ids: string[] }> = [
@@ -157,12 +173,15 @@ const STAGES: Array<{ name: string; ids: string[] }> = [
 /** Every system id on the Ascent map (a test checks that each built system is on it). */
 export const ASCENT_IDS: readonly string[] = STAGES.flatMap((st) => st.ids);
 
-export function ascentReport(): Array<{ stage: string; decks: AscentDeck[] }> {
+export function ascentReport(): AscentStage[] {
   const s = game.state;
   let nextShown = 0;
-  return STAGES.map((st) => ({
+  const stages = STAGES.map((st) => ({
     stage: st.name,
-    decks: st.ids.flatMap((id) => {
+    lit: 0,
+    total: 0,
+    here: false,
+    decks: st.ids.flatMap((id): AscentDeck[] => {
       const x = SYSTEMS.find((y) => y.id === id);
       if (!x) return [];
       const met = s.unlocked.includes(x.id) || x.req.kind === 'none';
@@ -171,7 +190,25 @@ export function ascentReport(): Array<{ stage: string; decks: AscentDeck[] }> {
       else if (met) state = 'soon';
       else if (nextShown++ < 4) state = 'next';
       else state = 'dim';
-      return [{ id: x.id, name: x.name, icon: x.icon, color: x.color, state, req: x.built ? reqText(x.req) : 'Arrives in a later update', pct: Math.floor(reqProgress(s, x.req) * 100), panel: met && x.built ? x.panel : undefined }];
+      return [{ id: x.id, name: x.name, icon: x.icon, color: x.color, state, req: x.built ? reqText(x.req) : 'Arrives in a later update', pct: Math.floor(reqProgress(s, x.req) * 100), panel: met && x.built ? x.panel : undefined, blurb: x.blurb, tucked: state === 'lit' && menuHidden(s, x.id) }];
     }),
-  })).reverse(); // Protostar at the bottom, the furthest stage at the top
+  }));
+  for (const st of stages) {
+    st.total = st.decks.length;
+    st.lit = st.decks.filter((d) => d.state === 'lit').length;
+  }
+  const furthest = stages.reduce((at, st, i) => (st.lit > 0 && st.stage !== 'Secrets' ? i : at), 0);
+  stages[furthest]!.here = true;
+  return stages.reverse(); // Protostar at the bottom, the furthest stage at the top
+}
+
+/** The top of the Ascent: how much of the map is lit, and the nearest thing to unlock. */
+export function ascentOverview(): { lit: number; total: number; next: string; nextReq: string; nextPct: number } {
+  const s = game.state;
+  const all = SYSTEMS.filter((x) => x.built && ASCENT_IDS.includes(x.id));
+  const lit = all.filter((x) => s.unlocked.includes(x.id) || x.req.kind === 'none').length;
+  const locked = all.filter((x) => !(s.unlocked.includes(x.id) || x.req.kind === 'none')).map((x) => ({ x, p: reqProgress(s, x.req) }));
+  locked.sort((a, b) => b.p - a.p);
+  const near = locked[0];
+  return { lit, total: all.length, next: near?.x.name ?? '', nextReq: near ? reqText(near.x.req) : '', nextPct: near ? Math.floor(near.p * 100) : 100 };
 }

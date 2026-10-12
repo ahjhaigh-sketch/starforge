@@ -12,6 +12,7 @@ export function CurrencyPill({
   label,
   locked,
   className,
+  onPoke,
 }: {
   icon: string;
   color?: string;
@@ -21,9 +22,11 @@ export function CurrencyPill({
   locked?: boolean;
   /** e.g. the rainbow rim of the Sparks pill. */
   className?: string;
+  /** 1.2.0: a click does something small (a secret medal counts pokes). */
+  onPoke?: () => void;
 }) {
   return (
-    <div className={`pill chunk ${locked ? 'locked' : ''} ${className ?? ''}`} style={tint(color)} title={label} aria-label={label}>
+    <div className={`pill chunk ${locked ? 'locked' : ''} ${className ?? ''}`} style={tint(color)} title={label} aria-label={label} onClick={onPoke}>
       <span className="ico">
         <Icon name={icon} />
       </span>

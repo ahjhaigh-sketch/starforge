@@ -45,6 +45,7 @@ import { buyEternity, setEternityAuto } from '../engine/systems/eternity';
 import { brew, type BrewResult, drink } from '../engine/systems/alchemy';
 import { summonWeather } from '../engine/systems/weather';
 import { buySigil, toggleSigil } from '../engine/systems/sigils';
+import { buyAllNodes, buyAllUpgrades, TREE_SHOP_BY_ID, treeBulkOpen, upgradeBulkOpen } from '../engine/systems/treeShop';
 import { buyTurretLevels, clearSocket, fightWave, placeTurret, setDefenseAuto } from '../engine/systems/defense';
 import type { BattleResult, BattleSetup } from '../engine/systems/defenseBattle';
 import { type CosmeticKind, setCosmetic } from '../engine/systems/cosmetics';
@@ -62,6 +63,8 @@ import { requestPersistentStorage, webStore } from '../platform/web';
 import { format } from '../ui/format';
 import { game } from './game';
 import { saveNow, wipeSave } from './persistence';
+import { setMenuHidden, toggleHud } from './menus';
+import { poke } from '../engine/systems/medals';
 import { publish } from './uiSnapshot';
 
 /**
@@ -241,6 +244,18 @@ export const commands = {
     const ok = launch(game.state, ship, sector);
     done();
     return ok;
+  },
+  /** Buy all (1.2.0): every Stardust upgrade, or every node of a tree, that you can afford. */
+  buyAllUpgrades(): number {
+    const n = upgradeBulkOpen(game.state) ? buyAllUpgrades(game.state) : 0;
+    done();
+    return n;
+  },
+  buyAllNodes(tree: string): number {
+    const shop = TREE_SHOP_BY_ID.get(tree);
+    const n = shop && treeBulkOpen(game.state) ? buyAllNodes(game.state, shop) : 0;
+    done();
+    return n;
   },
   /** The Hidden Sigils: buy one where it hides, switch it at the Altar. */
   buySigil(id: string): boolean {
@@ -669,6 +684,7 @@ export const commands = {
     done();
     return ok;
   },
+  /** Levels a planet by the buy amount (x1 to Max, Next, typed), paying the previewed total. */
   levelPlanet(slot: string): boolean {
     const ok = levelPlanet(game.state, slot);
     done();
@@ -794,7 +810,14 @@ export const commands = {
     game.state.settings.customBuyAmount = Math.max(1, Math.min(1e15, Math.floor(n) || 1));
     done();
   },
+  /** 1.2.0: poking something for a secret medal (no publish needed beyond the usual). */
+  poke(id: string) {
+    poke(game.state, id);
+    done();
+  },
   setSetting<K extends keyof typeof game.state.settings>(key: K, value: (typeof game.state.settings)[K]) {
+    if (key === 'muted' && value !== game.state.settings.muted) poke(game.state, 'mute');
+    if (key === 'uiScale' && value !== game.state.settings.uiScale) poke(game.state, 'size');
     game.state.settings[key] = value;
     done();
   },
@@ -820,6 +843,21 @@ export const commands = {
     } catch (err) {
       return (err as Error).message;
     }
+  },
+  /** 1.2.0 Settings: hide a menu from the rails, or show it again. */
+  setMenuHidden(id: string, hide: boolean) {
+    setMenuHidden(game.state, id, hide);
+    done();
+  },
+  /** 1.2.0 Settings: hide or show one part of the screen. */
+  toggleHud(id: string) {
+    toggleHud(game.state, id);
+    done();
+  },
+  /** The permanent reset (three confirmations in Settings): a backup first, then a fresh game. */
+  async resetEverything(): Promise<void> {
+    await backupNow();
+    commands.wipe();
   },
   wipe() {
     wipeSave();

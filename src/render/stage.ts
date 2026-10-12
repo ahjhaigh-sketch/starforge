@@ -2,7 +2,7 @@ import { Application, Container, Rectangle } from 'pixi.js';
 import { onFrame } from '../app/clock';
 import { snapshotStore } from '../app/uiSnapshot';
 import { useUi } from '../ui/store';
-import { BACKGROUND_BY_ID, SKIN_BY_ID, TRAIL_BY_ID } from '../content/cosmetics';
+import { BACKGROUND_BY_ID, BURST_BY_ID, SKIN_BY_ID, TRAIL_BY_ID } from '../content/cosmetics';
 import { TIERS } from '../content/tiers';
 import { events } from '../engine/events';
 import { isEchoLayer, layer } from '../engine/layers';
@@ -41,6 +41,8 @@ let still = false;
 let wornSkin = '';
 let wornBackground = '';
 let trailColors: readonly number[] = [];
+let burstColors: readonly number[] = [];
+let burstIndex = 0;
 let trailAt = 0;
 let trailIndex = 0;
 
@@ -87,6 +89,23 @@ export function captureStar(size: number, starAt = 0.5): HTMLCanvasElement | nul
   return app.renderer.extract.canvas({ target: app.stage, frame: new Rectangle(x, y, side, side), resolution: size / side, clearColor: [0, 0, 0, 0] }) as HTMLCanvasElement;
 }
 
+/**
+ * A software renderer (no GPU: SwiftShader, llvmpipe, Microsoft Basic Render) draws every pixel on
+ * the CPU, where the star's surface shader is costly: there the sky renders at 1x (1.2.0).
+ */
+function softwareGl(): boolean {
+  try {
+    const gl = document.createElement('canvas').getContext('webgl');
+    if (!gl) return false;
+    const info = gl.getExtension('WEBGL_debug_renderer_info');
+    const name = String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return /swiftshader|llvmpipe|software|basic render/i.test(name);
+  } catch {
+    return false;
+  }
+}
+
 export async function initRender(): Promise<boolean> {
   try {
     const canvas = document.createElement('canvas');
@@ -100,7 +119,7 @@ export async function initRender(): Promise<boolean> {
       backgroundAlpha: 0,
       antialias: true,
       autoDensity: true,
-      resolution: Math.min(window.devicePixelRatio || 1, 2),
+      resolution: softwareGl() ? 1 : Math.min(window.devicePixelRatio || 1, 2),
       preference: 'webgl',
       autoStart: false,
     });
@@ -149,10 +168,22 @@ export async function initRender(): Promise<boolean> {
     }
     if (s.background !== wornBackground) {
       wornBackground = s.background;
-      setCloudPalette(BACKGROUND_BY_ID.get(s.background)?.clouds ?? []);
+      const bg = BACKGROUND_BY_ID.get(s.background);
+      setCloudPalette(bg?.clouds ?? []);
       document.documentElement.dataset.bg = s.background;
+      // 1.2.0 backgrounds carry their own page sky (the first five have theirs in phase20.css)
+      const root = document.documentElement;
+      if (bg?.glow) {
+        const [a, b, top, bottom] = bg.glow;
+        root.style.setProperty('--bg-a', a);
+        root.style.setProperty('--bg-b', b);
+        root.style.setProperty('--bg-top', top);
+        root.style.setProperty('--bg-bottom', bottom);
+        root.dataset.bgGlow = '1';
+      } else delete root.dataset.bgGlow;
     }
     trailColors = TRAIL_BY_ID.get(s.trail)?.colors ?? [];
+    burstColors = BURST_BY_ID.get(s.burst)?.colors ?? [];
     weather!.set(s.weatherKind);
     wyrms!.set(s.wyrmSky, app!.screen.width, app!.screen.height);
     hole!.setStage(s.bhStage, BH_STAGES[Math.max(0, s.bhStage - 1)]?.color ?? '#FFB347');
@@ -170,7 +201,7 @@ export async function initRender(): Promise<boolean> {
 
   events.on((e) => {
     if (e.t === 'reset' && star) {
-      if (isEchoLayer(e.layer) || e.auto) return;
+      if (isEchoLayer(e.layer) || e.auto || !snapshotStore.getState().resetFx) return;
       star.collapse();
       // 140 particles in the layer's colour (and white); the Big Crunch bursts as the universe comes back
       const color = colorNum(layer(e.layer)?.color ?? '#FF4FC1');
@@ -253,7 +284,9 @@ export function tapFx(x: number, y: number, crit: boolean): void {
   if (!star) return;
   if (!still) star.poke();
   const tier = TIERS[snapshotStore.getState().tierIndex] ?? TIERS[0]!;
-  burst(x, y, crit ? 14 : 6, crit ? 0xffffff : colorNum(tier.color), crit ? 110 : 70, crit ? 12 : 9);
+  // 1.2.0: the Wardrobe's tap sparks (crits stay white so they still stand out)
+  const spark = burstColors.length ? burstColors[burstIndex++ % burstColors.length]! : colorNum(tier.color);
+  burst(x, y, crit ? 14 : 6, crit ? 0xffffff : spark, crit ? 110 : 70, crit ? 12 : 9);
 }
 
 /** A burst anywhere on screen (comets, purchases). */

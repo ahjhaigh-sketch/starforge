@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { registerContent } from '../../src/content';
 import { BALANCE } from '../../src/content/balance';
 import { ENGINES } from '../../src/content/engines';
-import { GOALS, MEDALS } from '../../src/content/medals';
+import { GOALS, MEDALS, pokeStat } from '../../src/content/medals';
 import { SYSTEMS } from '../../src/content/systems';
 import { UPGRADES } from '../../src/content/upgrades';
 import { D } from '../../src/engine/decimal';
@@ -108,6 +108,10 @@ describe('medals and goals', () => {
       s.enginesEver[e.id] = 100;
     }
     s.stats = { taps: 2e9, crits: 2e8, comets: 20_000, enginesBought: 1e8, evolves: 11, maxCombo: 60, supernovas: 30, harvested: 1e5, beltTier: 6, cores: 20, level: 40, smelts: 1e4, relics: 50, elements: 118, fusionBest: 20, perfects: 300, chaosRolls: 30, deals: 60, trips: 600, nebulasAll: 10, runesFound: 100, runesRolled: 1e13, starsEarned: 12, runesCrafted: 5, aurasFound: 30, mutationsFound: 60, wyrmsHatched: 150, wyrmFusions: 3, wyrmCatches: 30, nurseryHarvests: 10, crossbreeds: 2, speciesGrown: 25, spectralBest: 10, spectralColors: 7, cardsDrawn: 60, singularitiesAll: 12, bhStageBest: 8, trialsDone: 5, trialLevels: 25, spireBest: 60, leviathansBeaten: 12, amEnginesBought: 200, mirrorDepth: 11, wormholesOpened: 2, galacticsAll: 2, galaxiesCleared: 6, starScoreBest: 150, megaStages: 6, megaDone: 1, coloniesFounded: 2, colonyPopBest: 2e6, planetsFinished: 1, crunchesAll: 10, eternityUpgrades: 10, echoNovas: 3, echoNebulas: 1, multiversesAll: 10, rulesBest: 4, sparkChoices: 114, omniBest: 1e6, recipesFound: 12, weatherSummoned: 1, weathers: 50, defenseBest: 100, sigils: 7 };
+    // 1.2.0 medals: further counts, combinations, unlocks and the secrets
+    Object.assign(s.stats, { maxCombo: 800, evolves: 300, supernovasAll: 3000, nebulasAll: 300, singularitiesAll: 60, galacticsAll: 60, crunchesAll: 60, multiversesAll: 30, beltTier: 10, level: 50, cores: 30, deals: 200, trips: 2000, chaosRolls: 250, perfects: 1000, questsDone: 500, weathers: 250, weatherSummoned: 10, elixirsDrunk: 25, brews: 100, defenseFights: 100, wyrmsHatched: 1000, nurseryHarvests: 100, runesCrafted: 100, spireBest: 100, coloniesFounded: 5, megaDone: 3, wormholesOpened: 10, tradeRoutes: 5, diceRolled: 100 });
+    for (const [id, n] of [['pill', 25], ['tier', 10], ['mystery', 10], ['gear', 25], ['photo', 1], ['credits', 3], ['name', 7], ['locked', 20], ['ascent', 30], ['mute', 10], ['size', 1]] as const) s.stats[pokeStat(id)] = n;
+    s.unlocked = SYSTEMS.map((x) => x.id);
     s.upgrades = UPGRADES.map((u) => u.id);
     invalidateStats();
     const seen: string[] = [];

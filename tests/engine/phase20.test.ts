@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { registerContent } from '../../src/content';
 import { INGREDIENTS, mixKey, RECIPES } from '../../src/content/alchemy';
 import { BALANCE } from '../../src/content/balance';
-import { BACKGROUNDS, SKINS, TRAILS } from '../../src/content/cosmetics';
+import { BACKGROUNDS, BURSTS, SKINS, THEMES, TRAILS } from '../../src/content/cosmetics';
 import { WEATHERS } from '../../src/content/weather';
 import { D } from '../../src/engine/decimal';
 import { events, type GameEvent } from '../../src/engine/events';
@@ -49,7 +49,7 @@ describe('save version 20', () => {
     expect(state.version).toBe(SAVE_VERSION);
     expect(state.stats.multiversesAll).toBe(1);
     expect(state.ships.fleet).toHaveLength(2);
-    expect(state.cosmetics).toEqual({ skin: 'classic', trail: 'none', background: 'violet' });
+    expect(state.cosmetics).toEqual({ skin: 'classic', trail: 'none', background: 'violet', burst: 'tier', theme: 'violet' });
     expect(state.alchemy).toEqual({ known: [], tried: [], shelf: {}, active: {} });
   });
 });
@@ -74,11 +74,16 @@ describe('20.1 the Wardrobe', () => {
     expect(setCosmetic(s, 'skin', 'blacksun')).toBe(true);
     expect(s.cosmetics.skin).toBe('blacksun');
     // everything there is, unlocked by the numbers that unlock it
-    Object.assign(s.stats, { smelts: 1000, elements: 26, questsDone: 50, taps: 1e6, multiversesAll: 1, comets: 100, supernovasAll: 30, singularitiesAll: 1, nebulasAll: 1, crunchesAll: 1, galacticsAll: 1 });
-    s.achievements = Array.from({ length: 50 }, (_, i) => `m${i}`);
-    for (const k of SKINS) expect(setCosmetic(s, 'skin', k.id)).toBe(true);
-    for (const t of TRAILS) expect(setCosmetic(s, 'trail', t.id)).toBe(true);
-    for (const b of BACKGROUNDS) expect(setCosmetic(s, 'background', b.id)).toBe(true);
+    Object.assign(s.stats, { smelts: 1000, elements: 26, questsDone: 50, taps: 1e6, multiversesAll: 3, comets: 250, supernovasAll: 30, singularitiesAll: 5, nebulasAll: 5, crunchesAll: 3, galacticsAll: 5 });
+    // 1.2.0 choices
+    Object.assign(s.stats, { trips: 50, weathers: 100, maxCombo: 150, mutationsFound: 25, wyrmsHatched: 10, cores: 20, aurasFound: 5, perfects: 100, elixirsDrunk: 10, recipesFound: 6, nurseryHarvests: 10 });
+    s.totals.all.stardust = D(1e30);
+    s.achievements = Array.from({ length: 100 }, (_, i) => `m${i}`);
+    for (const k of SKINS) expect(setCosmetic(s, 'skin', k.id), k.id).toBe(true);
+    for (const t of TRAILS) expect(setCosmetic(s, 'trail', t.id), t.id).toBe(true);
+    for (const b of BACKGROUNDS) expect(setCosmetic(s, 'background', b.id), b.id).toBe(true);
+    for (const b of BURSTS) expect(setCosmetic(s, 'burst', b.id), b.id).toBe(true);
+    for (const t of THEMES) expect(setCosmetic(s, 'theme', t.id), t.id).toBe(true);
   });
 
   it('only the choices are saved: they round-trip, and no reset touches them', () => {
@@ -88,7 +93,7 @@ describe('20.1 the Wardrobe', () => {
     setCosmetic(s, 'skin', 'blacksun');
     setCosmetic(s, 'trail', 'comet');
     const c = clone(s);
-    expect(c.cosmetics).toEqual({ skin: 'blacksun', trail: 'comet', background: 'violet' });
+    expect(c.cosmetics).toEqual({ skin: 'blacksun', trail: 'comet', background: 'violet', burst: 'tier', theme: 'violet' });
   });
 });
 

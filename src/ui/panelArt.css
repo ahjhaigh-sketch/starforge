@@ -1,0 +1,144 @@
+/*
+ * Each menu's own backdrop (1.2.0). Panel.tsx sets --art-a and --art-b (the menu's two colours,
+ * from panelArtData.ts) and data-art (its pattern). Everything here is static: nothing animates, so
+ * the speed budgets and reduced motion are untouched. Patterns stay dark and low in contrast, so
+ * every menu's text keeps its contrast.
+ */
+.modal { isolation: isolate; }
+.modal > .ribbon,
+.modal > .x-btn,
+.modal > .modal-body { position: relative; z-index: 1; }
+.modal > .ribbon { position: absolute; }
+.modal > .x-btn { position: absolute; }
+
+.panel-art {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+  --a: var(--art-a, #5546b8);
+  --b: var(--art-b, #2a2f55);
+  /* the menu's two colours as a soft wash over the panel, darker toward the bottom */
+  background:
+    radial-gradient(120% 80% at 0% 0%, color-mix(in srgb, var(--a) 34%, transparent), transparent 60%),
+    radial-gradient(120% 90% at 100% 100%, color-mix(in srgb, var(--b) 38%, transparent), transparent 62%);
+}
+.panel-art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.22;
+  mix-blend-mode: screen;
+}
+
+/* the watermark: the menu's own symbol, huge and faint, bottom right */
+.panel-art .panel-mark {
+  position: absolute;
+  right: -2.5rem;
+  bottom: -2.5rem;
+  width: 17rem;
+  height: 17rem;
+  opacity: 0.12;
+  filter: grayscale(0.15);
+  transform: rotate(-12deg);
+}
+
+/* ---------- the patterns ---------- */
+.panel-art[data-art='rings']::after {
+  background: repeating-radial-gradient(circle at 85% 20%, transparent 0 22px, color-mix(in srgb, var(--a) 70%, white) 22px 24px);
+}
+.panel-art[data-art='grid']::after {
+  background:
+    linear-gradient(color-mix(in srgb, var(--a) 70%, white) 1px, transparent 1px) 0 0 / 34px 34px,
+    linear-gradient(90deg, color-mix(in srgb, var(--a) 70%, white) 1px, transparent 1px) 0 0 / 34px 34px;
+  opacity: 0.14;
+}
+.panel-art[data-art='stars']::after {
+  background:
+    radial-gradient(1.5px 1.5px at 12% 18%, #fff 50%, transparent 52%),
+    radial-gradient(1px 1px at 32% 62%, #fff 50%, transparent 52%),
+    radial-gradient(2px 2px at 58% 28%, color-mix(in srgb, var(--a) 40%, white) 50%, transparent 52%),
+    radial-gradient(1px 1px at 76% 74%, #fff 50%, transparent 52%),
+    radial-gradient(1.5px 1.5px at 90% 40%, color-mix(in srgb, var(--b) 40%, white) 50%, transparent 52%),
+    radial-gradient(1px 1px at 46% 88%, #fff 50%, transparent 52%);
+  background-size: 260px 220px;
+  opacity: 0.5;
+}
+.panel-art[data-art='swirl']::after {
+  background:
+    repeating-conic-gradient(from 0deg at 82% 18%, color-mix(in srgb, var(--a) 60%, white) 0deg 4deg, transparent 4deg 18deg),
+    radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--b) 80%, black) 0 6%, transparent 40%);
+  opacity: 0.18;
+}
+.panel-art[data-art='bubbles']::after {
+  background:
+    radial-gradient(circle at 20% 80%, transparent 14px, color-mix(in srgb, var(--a) 60%, white) 15px 17px, transparent 18px),
+    radial-gradient(circle at 70% 30%, transparent 9px, color-mix(in srgb, var(--b) 60%, white) 10px 11.5px, transparent 12.5px),
+    radial-gradient(circle at 45% 55%, transparent 5px, color-mix(in srgb, var(--a) 60%, white) 6px 7px, transparent 8px);
+  background-size: 180px 160px, 120px 140px, 90px 80px;
+  opacity: 0.3;
+}
+.panel-art[data-art='waves']::after {
+  background: repeating-linear-gradient(170deg, transparent 0 26px, color-mix(in srgb, var(--a) 60%, white) 26px 28px, transparent 28px 40px, color-mix(in srgb, var(--b) 60%, white) 40px 41px);
+  opacity: 0.16;
+}
+.panel-art[data-art='diagonal']::after {
+  background: repeating-linear-gradient(-45deg, transparent 0 18px, color-mix(in srgb, var(--a) 60%, white) 18px 20px);
+  opacity: 0.12;
+}
+.panel-art[data-art='hex']::after {
+  background:
+    radial-gradient(circle at 0 0, transparent 17px, color-mix(in srgb, var(--a) 60%, white) 18px 19.5px, transparent 20.5px) 0 0 / 40px 34px,
+    radial-gradient(circle at 20px 17px, transparent 17px, color-mix(in srgb, var(--b) 60%, white) 18px 19.5px, transparent 20.5px) 0 0 / 40px 34px;
+  opacity: 0.16;
+}
+.panel-art[data-art='rays']::after {
+  background: repeating-conic-gradient(from 0deg at 50% 0%, color-mix(in srgb, var(--a) 60%, white) 0deg 3deg, transparent 3deg 14deg);
+  opacity: 0.12;
+  -webkit-mask-image: linear-gradient(to bottom, #000, transparent 75%);
+  mask-image: linear-gradient(to bottom, #000, transparent 75%);
+}
+.panel-art[data-art='dots']::after {
+  background: radial-gradient(circle, color-mix(in srgb, var(--a) 60%, white) 1.6px, transparent 2.2px) 0 0 / 22px 22px;
+  opacity: 0.2;
+}
+.panel-art[data-art='clouds']::after {
+  background:
+    radial-gradient(40% 30% at 20% 30%, color-mix(in srgb, var(--a) 70%, white), transparent 70%),
+    radial-gradient(35% 28% at 75% 65%, color-mix(in srgb, var(--b) 70%, white), transparent 70%),
+    radial-gradient(30% 22% at 55% 15%, color-mix(in srgb, var(--a) 50%, white), transparent 70%);
+  opacity: 0.14;
+  filter: blur(6px);
+}
+.panel-art[data-art='scales']::after {
+  background: radial-gradient(circle at 50% 100%, transparent 14px, color-mix(in srgb, var(--a) 60%, white) 15px 16.5px, transparent 17.5px) 0 0 / 32px 18px;
+  opacity: 0.16;
+}
+.panel-art[data-art='embers']::after {
+  background:
+    radial-gradient(2px 2px at 15% 85%, color-mix(in srgb, var(--b) 30%, #ffd27a) 50%, transparent 52%),
+    radial-gradient(1.5px 1.5px at 40% 70%, #ffd27a 50%, transparent 52%),
+    radial-gradient(2.5px 2.5px at 65% 90%, color-mix(in srgb, var(--b) 40%, #ff7a2e) 50%, transparent 52%),
+    radial-gradient(1.5px 1.5px at 85% 60%, #ffd27a 50%, transparent 52%),
+    linear-gradient(to top, color-mix(in srgb, var(--b) 45%, transparent), transparent 55%);
+  background-size: 200px 180px, 200px 180px, 200px 180px, 200px 180px, 100% 100%;
+  opacity: 0.45;
+}
+.panel-art[data-art='orbits']::after {
+  background:
+    radial-gradient(ellipse 60% 22% at 70% 40%, transparent 96%, color-mix(in srgb, var(--a) 60%, white) 97% 99%, transparent 100%),
+    radial-gradient(ellipse 85% 32% at 70% 40%, transparent 97%, color-mix(in srgb, var(--b) 60%, white) 97.6% 99%, transparent 100%),
+    radial-gradient(ellipse 110% 42% at 70% 40%, transparent 97.6%, color-mix(in srgb, var(--a) 60%, white) 98.2% 99%, transparent 100%);
+  opacity: 0.3;
+}
+
+/* the trees: their backdrop shows through the tree view's own well */
+.modal[data-panel$='tree'] .tree-view,
+.modal[data-panel='starchart'] .tree-view,
+.modal[data-panel='sparktree'] .tree-view { background: color-mix(in srgb, var(--panel-deep) 72%, transparent); }
+
+@media (max-width: 900px) {
+  .panel-art .panel-mark { width: 11rem; height: 11rem; right: -1.5rem; bottom: -1.5rem; }
+}

@@ -76,10 +76,11 @@ export const plainSaveSchema = z.looseObject({
     .optional(),
   merchant: z
     .looseObject({
-      deals: z.array(z.looseObject({ kind: z.string(), quality: z.string(), pay: z.looseObject({ currency: z.string(), amount: dec }), get: z.looseObject({ currency: z.string().optional(), amount: dec.optional(), id: z.string().optional(), count: finite.optional() }) })),
+      deals: z.array(z.looseObject({ kind: z.string(), quality: z.string(), pay: z.looseObject({ currency: z.string(), amount: dec }), get: z.looseObject({ currency: z.string().optional(), amount: dec.optional(), id: z.string().optional(), count: finite.optional() }), sold: z.boolean().optional() })),
       luck: count,
       rerolls: count,
       rng: z.tuple([finite, finite, finite, finite]),
+      nextShip: finite.optional(),
     })
     .optional(),
   nebulaTree: z.record(z.string(), count).optional(),

@@ -31,6 +31,9 @@ export interface TreeViewProps {
   /** e.g. "Nova Shards": shown on the buy button. */
   currencyLabel: string;
   legend: Array<{ color: string; label: string }>;
+  /** 1.2.0: buys every node you can afford, cheapest first; locked (with a hint) until earned. */
+  onBuyAll?: () => void;
+  bulkLocked?: string;
 }
 
 interface View {
@@ -76,7 +79,7 @@ const NodeGlyph = memo(function NodeGlyph({ n, selected, match }: GlyphProps) {
   );
 }, sameGlyph);
 
-export function TreeView({ nodes, edges, onBuy, currencyLabel, legend }: TreeViewProps) {
+export function TreeView({ nodes, edges, onBuy, currencyLabel, legend, onBuyAll, bulkLocked }: TreeViewProps) {
   const host = useRef<HTMLDivElement>(null);
   const layer = useRef<SVGGElement>(null);
   const view = useRef<View>({ x: 0, y: 0, k: 0.6 });
@@ -358,6 +361,11 @@ export function TreeView({ nodes, edges, onBuy, currencyLabel, legend }: TreeVie
         <button type="button" className="chunk pop" onClick={nextAffordable}>
           Next to buy
         </button>
+        {onBuyAll && (
+          <button type="button" className="chunk pop tree-buyall" onClick={onBuyAll} disabled={!!bulkLocked} title={bulkLocked || 'Buy every node you can afford, cheapest first'} data-testid="tree-buy-all">
+            {bulkLocked ? 'Buy all (locked)' : 'Buy all'}
+          </button>
+        )}
         <button type="button" className="chunk pop" onClick={() => zoomAt(size.w / 2, size.h / 2, 1.25)} aria-label="Zoom in">
           +
         </button>

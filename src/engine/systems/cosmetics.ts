@@ -1,4 +1,4 @@
-import { BACKGROUND_BY_ID, SKIN_BY_ID, TRAIL_BY_ID } from '../../content/cosmetics';
+import { BACKGROUND_BY_ID, BURST_BY_ID, SKIN_BY_ID, THEME_BY_ID, TRAIL_BY_ID } from '../../content/cosmetics';
 import type { Requirement } from '../../content/requirements';
 import type { GameState } from '../state';
 import { reqMet } from './unlocks';
@@ -8,13 +8,13 @@ import { reqMet } from './unlocks';
  * nothing here changes a number. A choice is unlocked by its requirement (medals or a stat), worked
  * out every time, so no reset can take one away; only the current choices are saved.
  */
-export type CosmeticKind = 'skin' | 'trail' | 'background';
+export type CosmeticKind = 'skin' | 'trail' | 'background' | 'burst' | 'theme';
 
 /** The Wardrobe opens at 10 medals. */
 export const WARDROBE_REQ: Requirement = { kind: 'medals', count: 10 };
 export const wardrobeOpen = (s: GameState) => reqMet(s, WARDROBE_REQ);
 
-const DEFS = { skin: SKIN_BY_ID, trail: TRAIL_BY_ID, background: BACKGROUND_BY_ID } as const;
+const DEFS = { skin: SKIN_BY_ID, trail: TRAIL_BY_ID, background: BACKGROUND_BY_ID, burst: BURST_BY_ID, theme: THEME_BY_ID } as const;
 
 export function cosmeticUnlocked(s: GameState, kind: CosmeticKind, id: string): boolean {
   const def = DEFS[kind].get(id);

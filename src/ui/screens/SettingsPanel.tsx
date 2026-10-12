@@ -10,6 +10,10 @@ import { Button } from '../kit/Chunk';
 import { Panel } from '../kit/Panel';
 import { installApp, useAppShell } from '../../app/pwa';
 import { useUi } from '../store';
+import { HUD_PARTS, menusReport } from '../../app/menus';
+import { useReport } from '../kit/useReport';
+import { Icon } from '../kit/Icon';
+import { cx } from '../kit/Chunk';
 
 const NOTATIONS: Array<{ v: Notation; label: string }> = [
   { v: 'suffix', label: '1.23M' },
@@ -17,6 +21,129 @@ const NOTATIONS: Array<{ v: Notation; label: string }> = [
   { v: 'engineering', label: '12.3e5' },
 ];
 const AUTOSAVES = [5, 15, 30, 60];
+const SCALES = [0.8, 0.9, 1, 1.1, 1.2, 1.3];
+const ENGINE_LISTS: Array<{ v: 'auto' | 'full' | 'compact' | 'min'; label: string; title: string }> = [
+  { v: 'auto', label: 'Auto', title: 'Full rows, then minimized to one line once every engine has its auto-buyer on' },
+  { v: 'full', label: 'Full', title: 'Always full rows' },
+  { v: 'compact', label: 'Compact', title: 'Always compact rows' },
+  { v: 'min', label: 'Minimized', title: 'Always one line (Show opens it)' },
+];
+
+/** 1.2.0: every menu you have, each with Hide or Show (three are always on the rails). */
+function Menus() {
+  const rows = useReport('settings', menusReport, 500);
+  const autoHide = useSnap((s) => s.autoHideMenus);
+  return (
+    <>
+      <div className="set-row">
+        <div className="set-ctl">
+          <Toggle on={autoHide} setting="autoHideMenus">
+            Tuck away menus that run themselves
+          </Toggle>
+        </div>
+      </div>
+      <ul className="menu-list well" data-testid="menu-list">
+        {rows?.map((m) => (
+          <li key={m.id} className={cx('menu-row', m.state)} data-menu={m.id}>
+            <span className="menu-ico chunk" style={{ ['--c' as string]: m.color }}>
+              <Icon name={m.icon} />
+            </span>
+            <span className="menu-name">
+              <b>{m.name}</b>
+              {m.why && <small>{m.why}</small>}
+            </span>
+            {m.state === 'always' ? (
+              <small className="menu-always">Always shown</small>
+            ) : (
+              <Button size="sm" gloss={false} color={m.state === 'shown' ? '#5A5F8F' : 'var(--cyan)'} onClick={() => commands.setMenuHidden(m.id, m.state === 'shown')} aria-pressed={m.state !== 'shown'}>
+                {m.state === 'shown' ? 'Hide' : 'Show'}
+              </Button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+/**
+ * The permanent reset: three steps (what it does, are you sure, type RESET), with a save code
+ * offered first. A backup of the game is still kept in Backups, in case you want it back.
+ */
+function PermanentReset({ onExport }: { onExport: () => void }) {
+  const toast = useUi((s) => s.pushToast);
+  const [step, setStep] = useState(0);
+  const [typed, setTyped] = useState('');
+  const cancel = () => {
+    setStep(0);
+    setTyped('');
+  };
+  if (step === 0)
+    return (
+      <Button size="sm" color="var(--red)" onClick={() => setStep(1)} data-testid="reset-1">
+        Reset everything
+      </Button>
+    );
+  return (
+    <div className="hard-reset well" role="group" aria-label="Reset everything" data-testid="hard-reset">
+      <b className="hard-reset-step">Step {step} of 3</b>
+      {step === 1 && (
+        <>
+          <p>This starts a brand-new game from a protostar. Every Stardust, layer, tree, medal and unlock goes. Export a save code first if you might want this game back.</p>
+          <div className="set-ctl">
+            <Button size="sm" color="var(--cyan)" onClick={onExport}>
+              Export a save code
+            </Button>
+            <Button size="sm" color="var(--red)" onClick={() => setStep(2)} data-testid="reset-2">
+              Continue
+            </Button>
+            <Button size="sm" color="#5A5F8F" onClick={cancel}>
+              Cancel
+            </Button>
+          </div>
+        </>
+      )}
+      {step === 2 && (
+        <>
+          <p>Are you sure? The game can't undo this by itself. (A backup of this game is kept in Backups above, in case you change your mind.)</p>
+          <div className="set-ctl">
+            <Button size="sm" color="var(--red)" onClick={() => setStep(3)} data-testid="reset-3">
+              Yes, I'm sure
+            </Button>
+            <Button size="sm" color="#5A5F8F" onClick={cancel}>
+              Cancel
+            </Button>
+          </div>
+        </>
+      )}
+      {step === 3 && (
+        <>
+          <p>
+            Last check: type <b>RESET</b> to start again.
+          </p>
+          <div className="set-ctl">
+            <input className="hard-reset-input well" value={typed} onChange={(e) => setTyped(e.target.value)} aria-label="Type RESET to confirm" placeholder="RESET" data-testid="reset-type" />
+            <Button
+              size="sm"
+              color="var(--red)"
+              disabled={typed.trim().toUpperCase() !== 'RESET'}
+              data-testid="reset-go"
+              onClick={() => {
+                cancel();
+                void commands.resetEverything().then(() => toast({ title: 'A fresh start', body: 'Starting again from a protostar. Your old game is in Backups.', icon: 'gear' }));
+              }}
+            >
+              Reset for good
+            </Button>
+            <Button size="sm" color="#5A5F8F" onClick={cancel}>
+              Cancel
+            </Button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 export const HOTKEYS: Array<[string, string]> = [
   ['T', 'Tap the star'],
   ['E', 'Evolve'],
@@ -117,9 +244,13 @@ export function SettingsPanel() {
   const confirmResets = useSnap((s) => s.confirmResets);
   const showToasts = useSnap((s) => s.showToasts);
   const hotkeys = useSnap((s) => s.hotkeys);
+  const uiScale = useSnap((s) => s.uiScale);
+  const engineList = useSnap((s) => s.engineList);
+  const shipAlerts = useSnap((s) => s.shipAlerts);
+  const resetFx = useSnap((s) => s.resetFx);
+  const hiddenHud = useSnap((s) => s.hiddenHud);
   const toast = useUi((s) => s.pushToast);
   const [code, setCode] = useState('');
-  const [wipeArmed, setWipeArmed] = useState(false);
   const preview = useMemo(() => (code.trim() ? previewImport(code) : null), [code]);
 
   const exportNow = () => {
@@ -221,6 +352,54 @@ export function SettingsPanel() {
           </Toggle>
         </div>
       </div>
+      <div className="set-row">
+        <span className="lbl">Alerts</span>
+        <div className="set-ctl">
+          <Toggle on={shipAlerts} setting="shipAlerts">
+            Ships-home pop-ups
+          </Toggle>
+          <Toggle on={resetFx} setting="resetFx">
+            Reset animations
+          </Toggle>
+          <small className="set-note">With reset animations off, resets still happen and still pay: you just don't see the flash. Resets made by automation are always quiet.</small>
+        </div>
+      </div>
+      <h3>Interface</h3>
+      <div className="set-row">
+        <span className="lbl">Size</span>
+        <div className="set-ctl" data-testid="ui-scale">
+          {SCALES.map((v) => (
+            <Button key={v} size="sm" gloss={false} color={Math.abs(uiScale - v) < 0.001 ? 'var(--cyan)' : '#5A5F8F'} onClick={() => commands.setSetting('uiScale', v)} aria-pressed={Math.abs(uiScale - v) < 0.001}>
+              {Math.round(v * 100)}%
+            </Button>
+          ))}
+        </div>
+      </div>
+      <div className="set-row">
+        <span className="lbl">Engines</span>
+        <div className="set-ctl">
+          {ENGINE_LISTS.map((x) => (
+            <Button key={x.v} size="sm" gloss={false} color={engineList === x.v ? 'var(--cyan)' : '#5A5F8F'} onClick={() => commands.setSetting('engineList', x.v)} aria-pressed={engineList === x.v} title={x.title}>
+              {x.label}
+            </Button>
+          ))}
+        </div>
+      </div>
+      <div className="set-row">
+        <span className="lbl">Hide</span>
+        <div className="set-ctl" data-testid="hud-parts">
+          {HUD_PARTS.map((p) => {
+            const hidden = hiddenHud.split(' ').includes(p.id);
+            return (
+              <Button key={p.id} size="sm" gloss={false} color={hidden ? 'var(--flare)' : '#5A5F8F'} onClick={() => commands.toggleHud(p.id)} aria-pressed={hidden} data-hud={p.id}>
+                {hidden ? `${p.name}: hidden` : p.name}
+              </Button>
+            );
+          })}
+        </div>
+      </div>
+      <h3>Menus</h3>
+      <Menus />
       {hotkeys && (
         <p className="hotkeys">
           {HOTKEYS.map(([k, what]) => (
@@ -315,7 +494,10 @@ export function SettingsPanel() {
               Read the ending again
             </Button>
           )}
-          <Button size="sm" color="#5A2A8C" onClick={() => openPanel('credits')} data-testid="open-credits">
+          <Button size="sm" color="#5A2A8C" onClick={() => {
+              commands.poke('credits');
+              openPanel('credits');
+            }} data-testid="open-credits">
             Credits
           </Button>
         </div>
@@ -323,22 +505,7 @@ export function SettingsPanel() {
       <div className="set-row">
         <span className="lbl">Danger</span>
         <div className="set-ctl">
-          <Button
-            size="sm"
-            color="var(--red)"
-            onClick={() => {
-              if (!wipeArmed) {
-                setWipeArmed(true);
-                setTimeout(() => setWipeArmed(false), 3000);
-                return;
-              }
-              commands.wipe();
-              setWipeArmed(false);
-              toast({ title: 'Save wiped', body: 'Starting again from a protostar.', icon: 'gear' });
-            }}
-          >
-            {wipeArmed ? 'Click again to wipe' : 'Wipe save'}
-          </Button>
+          <PermanentReset onExport={exportNow} />
         </div>
       </div>
     </Panel>

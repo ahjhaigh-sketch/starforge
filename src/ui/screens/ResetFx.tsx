@@ -32,7 +32,8 @@ export function ResetFx() {
     () =>
       events.on((e) => {
         // automated resets (several a second late in the game) stay quiet
-        if (e.t !== 'reset' || e.auto || isEchoLayer(e.layer)) return;
+        // 1.2.0: or when you switched the animations off (the reset itself still happens)
+        if (e.t !== 'reset' || e.auto || isEchoLayer(e.layer) || !snapshotStore.getState().resetFx) return;
         setFx((f) => ({ key: f.key + 1, layer: e.layer }));
         const s = snapshotStore.getState();
         if (s.reducedMotion) return;

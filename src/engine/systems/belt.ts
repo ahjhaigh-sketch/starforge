@@ -1,5 +1,5 @@
 import { BALANCE } from '../../content/balance';
-import { type BeltUpgradeId, DEPTH_LAYERS, RARITIES } from '../../content/belt';
+import { BELT_UPGRADES, type BeltUpgradeId, DEPTH_LAYERS, RARITIES } from '../../content/belt';
 import { GRADES } from '../../content/forge';
 import { planLimited, type PurchasePlan } from '../buy';
 import { bulkCost, type CostCurve, priceAt } from '../cost';
@@ -206,6 +206,23 @@ export function buyBeltUpgrade(s: GameState, id: BeltUpgradeId): boolean {
   s.belt.upgrades[id] = beltLevel(s, id) + plan.count;
   events.emit({ t: 'purchase', kind: 'belt', id, amount: plan.count });
   return true;
+}
+
+/**
+ * 1.2.0 Auto-Belt: buys as many levels of every Belt upgrade as its share of your ore pays for,
+ * then moves up a Belt Tier as soon as it can (a Belt Tier only resets the Belt's own ore and upgrades).
+ */
+export function autoBelt(s: GameState, share: number): void {
+  if (!beltOpen(s)) return;
+  for (const u of BELT_UPGRADES) {
+    const level = beltLevel(s, u.id);
+    const plan = planLimited(beltCurve(u.id), level, cur(s, 'ore').mul(share), 'max', 0, beltLimit(s, u.id));
+    if (plan.count <= 0 || !plan.canAfford) continue;
+    if (!freeUpgrades(s) && !spend(s, 'ore', plan.cost)) continue;
+    s.belt.upgrades[u.id] = level + plan.count;
+    events.emit({ t: 'purchase', kind: 'belt', id: u.id, amount: plan.count });
+  }
+  beltTierUp(s);
 }
 
 /** Ore needed this tier to reach Belt Tier T: 100 x 3^(T^1.2). */

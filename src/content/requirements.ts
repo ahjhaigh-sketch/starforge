@@ -13,4 +13,9 @@ export type Requirement =
   /** Stardust per second right now. */
   | { kind: 'rate'; amount: number }
   | { kind: 'upgrades'; count: number }
-  | { kind: 'medals'; count: number };
+  | { kind: 'medals'; count: number }
+  /** 1.2.0: every one of these at once (combination medals). */
+  | { kind: 'all'; of: readonly Requirement[] }
+  /** 1.2.0: one system unlocked, or this many systems unlocked. */
+  | { kind: 'system'; id: string; name: string }
+  | { kind: 'systems'; count: number };

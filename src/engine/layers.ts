@@ -1,7 +1,7 @@
 import { D, type Decimal } from './decimal';
 import { events } from './events';
 import { gain, type GameState } from './state';
-import { invalidateStats } from './stats';
+import { invalidateStats, stat } from './stats';
 
 /**
  * Reset layers (Tech tab, "Reset layers"). Each layer is a definition: its currency, when it is
@@ -28,6 +28,8 @@ export interface LayerMilestone {
 export interface ResetBefore {
   tier: number;
   runStardust: Decimal;
+  /** log10 of Stardust per second just before the reset (1.2.0: sizes the next Supernova). */
+  rateLog?: number;
   /** What this reset gave (the layer's currency). */
   gained: Decimal;
 }
@@ -118,7 +120,9 @@ export function performReset(s: GameState, id: string): Decimal | null {
   const amount = def.gain(s);
   // decide what is kept BEFORE anything changes, so parts can't affect each other's rules
   const keep = def.parts.map((p) => !!p.keptBy?.(s));
-  const before: ResetBefore = { tier: s.tier, runStardust: s.totals.run.stardust ?? D(0), gained: amount };
+  // only a Supernova needs the rate (it sizes the next one), and working it out is a full stat rebuild
+  const sps = id === 'supernova' ? stat(s, 'stardustPerSec') : null;
+  const before: ResetBefore = { tier: s.tier, runStardust: s.totals.run.stardust ?? D(0), gained: amount, rateLog: sps?.gt(0) ? sps.log10().toNumber() : 0 };
   gain(s, def.currency, amount);
   s.stats[def.counter] = resetsDone(s, def) + 1;
   def.parts.forEach((p, i) => {

@@ -5,7 +5,7 @@ import { NODE_LEGEND } from '../../app/novaReports';
 import { layerConfirm } from '../../app/runeReports';
 import { blackHoleReport, reactorReport, singularityReport, wheelReport } from '../../app/singularityReports';
 import { kitTreeReport } from '../../app/treeReports';
-import { snapshotStore } from '../../app/uiSnapshot';
+import { snapshotStore, useSnap } from '../../app/uiSnapshot';
 import { singularityTree } from '../../engine/systems/singularity';
 import { BuyAmountControl } from '../kit/BuyAmountControl';
 import { Button, cx, tint } from '../kit/Chunk';
@@ -168,13 +168,14 @@ export function SingularityConfirmPanel() {
 
 export function SingularityTreePanel() {
   const r = useReport('singularitytree', () => kitTreeReport(singularityTree), 200);
+  const treeBulk = useSnap((s) => s.treeBulk);
   return (
     <Panel id="singularitytree" title="Singularity Tree" color="#6E5CC4" size="wide">
       <div className="tree-head">
         <p>Four rings round the accretion disk, each in four sectors: Mass (the Black Hole and game speed), Matter (Dark Matter and Essence), Fate (runes and Luck Root) and Memory (what a Singularity keeps). Only a Galactic Rebirth resets it, and from 3 Galactic Rebirths not even that.</p>
         {r && <DarkChip value={r.money} />}
       </div>
-      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={sigilAware((id) => commands.buySingularityNode(id))} currencyLabel="Dark Matter" legend={NODE_LEGEND} />}
+      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={sigilAware((id) => commands.buySingularityNode(id))} onBuyAll={() => commands.buyAllNodes('singularitytree')} bulkLocked={treeBulk ? '' : 'Buy all opens at 5 Supernovas'} currencyLabel="Dark Matter" legend={NODE_LEGEND} />}
     </Panel>
   );
 }

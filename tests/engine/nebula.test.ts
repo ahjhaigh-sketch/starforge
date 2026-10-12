@@ -34,6 +34,8 @@ function nebulaPlayer(seed = 3): GameState {
   s.stats.nebulas = 1;
   s.stats.nebulasAll = 1;
   s.forge.on = false;
+  // 1.2.0: Auto-Supernova (40 Supernovas) would reset this run: these tests are about other things
+  s.auto['auto.supernova'] = { on: false, spend: 1 };
   invalidateStats();
   return s;
 }
@@ -196,11 +198,11 @@ describe('rolling runes', () => {
 });
 
 describe('the Nebula', () => {
-  /** 30 Supernovas this Nebula run, 1e5 shards gathered. */
+  /** 30 Supernovas this Nebula run, 1e7 shards gathered. */
   function ready(): GameState {
     const s = nebulaPlayer();
     s.stats.supernovas = 30;
-    gain(s, 'shards', D(2e5));
+    gain(s, 'shards', D(2e7));
     s.novaTree = { root: 1, 'forge.1': 1, 'forge.2': 1 };
     s.relics = { levels: { anvil: 3 }, equipped: ['anvil'] };
     s.codex = { h: 4 };
@@ -213,23 +215,28 @@ describe('the Nebula', () => {
     return s;
   }
 
-  it('needs 30 Supernovas and 100,000 shards this Nebula run', () => {
+  it('needs 30 Supernovas and 10M shards this Nebula run', () => {
     const s = nebulaPlayer();
-    gain(s, 'shards', D(2e5));
+    gain(s, 'shards', D(2e7));
     expect(nebulaReady(s)).toBe(false);
     s.stats.supernovas = 30;
     expect(nebulaReady(s)).toBe(true);
-    s.totals.run.shards = D(9e4);
+    s.totals.run.shards = D(9e6);
     expect(nebulaReady(s)).toBe(false);
   });
 
-  it('gives floor((NS / 1e5)^0.35) Essence; the very first gives 2', () => {
+  it('gives floor((NS / 1e7)^0.35) Essence; the very first gives at least 2 and otherwise the same', () => {
     const s = nebulaPlayer();
     s.stats.nebulasAll = 0;
-    s.totals.run.shards = D(1e10);
+    s.totals.run.shards = D(1.5e7);
     expect(nebulaGain(s).toNumber()).toBe(2);
+    // 1.2.0: a big first run pays for its shards (it used to be a flat 2 whatever you had)
+    s.totals.run.shards = D(1.44e23);
+    expect(nebulaGain(s).toNumber()).toBe(Math.floor((1.44e16) ** 0.35));
+    s.totals.run.shards = D(1e10);
+    expect(nebulaGain(s).toNumber()).toBe(Math.floor((1e3) ** 0.35));
     s.stats.nebulasAll = 1;
-    expect(nebulaGain(s).toNumber()).toBe(Math.floor((1e5) ** 0.35));
+    expect(nebulaGain(s).toNumber()).toBe(Math.floor((1e3) ** 0.35));
   });
 
   it('resets the Stardust and Supernova layers and keeps relics, the Codex and runes', () => {
@@ -308,7 +315,7 @@ describe('the Nebula Tree and Nebula Constants', () => {
     gain(s, 'essence', D(1e9));
     for (const id of ['nroot', 'bloom.1', 'bloom.2', 'bloom.3', 'bloom.4', 'bloom.5', 'bloom.6', 'bloom.7']) expect(buyNebulaNode(s, id), id).toBe(true);
     s.stats.supernovas = 30;
-    gain(s, 'shards', D(1e6));
+    gain(s, 'shards', D(1e8));
     s.novaTree = { root: 1, 'forge.1': 1, 'forge.2': 1 };
     invalidateStats();
     const shards = cur(s, 'shards');

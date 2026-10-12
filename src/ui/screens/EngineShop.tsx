@@ -76,10 +76,16 @@ const UpgradeTileButton = memo(function UpgradeTileButton({ tile }: { tile: Tile
 /** Upgrades you can buy right now, as icon tiles above the engines (cheapest first). */
 function UpgradeTiles() {
   const tiles = useSnap((s) => s.upgradeTiles);
+  const bulk = useSnap((s) => s.upgradeBulk);
   const open = useUi((s) => s.open);
   if (tiles.length === 0) return null;
   return (
     <div className="upg-tiles" aria-label="Upgrades you can buy">
+      {bulk && tiles.some((t) => t.can) && (
+        <button type="button" className="upg-tile upg-all chunk gloss pop can" style={tint('#2E9C78')} onClick={() => commands.buyAllUpgrades()} aria-label="Buy every upgrade you can afford" title="Buy every upgrade you can afford" data-testid="tiles-buy-all">
+          All
+        </button>
+      )}
       {tiles.map((t) => (
         <UpgradeTileButton key={t.id} tile={t} />
       ))}
@@ -95,11 +101,48 @@ export function EngineShop() {
   const rows = useSnap((s) => s.engineRows);
   const mystery = useSnap((s) => s.engineMystery);
   const total = useSnap((s) => s.enginesOwned);
+  const compact = useSnap((s) => s.engineCompact);
+  const view = useSnap((s) => s.engineView);
+  const rate = useSnap((s) => s.dustRate);
   const setDrawer = useUi((s) => s.setDrawer);
+  if (view === 'min')
+    return (
+      <section className="store store-min chunk" style={tint('var(--panel)')} aria-label="Engines" data-testid="engines-min">
+        <div className="store-head">
+          <h2 className="ol" onClick={() => commands.poke('name')}>
+            Engines
+          </h2>
+          <button type="button" className="store-size chunk pop" onClick={() => commands.setSetting('engineList', 'compact')} title="Show the engines again" data-testid="engine-show">
+            Show
+          </button>
+          <button type="button" className="x-btn chunk gloss pop drawer-close" onClick={() => setDrawer(false)} aria-label="Close engines">
+            <Icon name="x" />
+          </button>
+        </div>
+        <p className="store-min-line">
+          <span className="num">{total}</span> engines, every one buying itself: <b className="num">{rate}</b>
+        </p>
+      </section>
+    );
   return (
-    <section className="store chunk" style={tint('var(--panel)')} aria-label="Engines">
+    <section className={cx('store chunk', compact && 'compact')} style={tint('var(--panel)')} aria-label="Engines">
       <div className="store-head">
-        <h2 className="ol">Engines</h2>
+        <h2 className="ol" onClick={() => commands.poke('name')}>
+          Engines
+        </h2>
+        <button
+          type="button"
+          className="store-size chunk pop"
+          onClick={() => commands.setSetting('engineList', compact ? 'full' : 'compact')}
+          aria-pressed={compact}
+          title={compact ? 'Show full engine rows' : 'Show compact engine rows'}
+          data-testid="engine-size"
+        >
+          {compact ? 'Full' : 'Compact'}
+        </button>
+        <button type="button" className="store-size chunk pop" onClick={() => commands.setSetting('engineList', 'min')} title="Minimize the engine list to one line" data-testid="engine-min">
+          Hide
+        </button>
         <button type="button" className="x-btn chunk gloss pop drawer-close" onClick={() => setDrawer(false)} aria-label="Close engines">
           <Icon name="x" />
         </button>

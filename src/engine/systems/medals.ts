@@ -1,5 +1,5 @@
 import { BALANCE } from '../../content/balance';
-import { GOALS, type GoalDef, MEDALS } from '../../content/medals';
+import { GOALS, type GoalDef, MEDALS, type PokeId, POKES, pokeStat } from '../../content/medals';
 import { D, type Decimal } from '../decimal';
 import { events } from '../events';
 import type { GameState } from '../state';
@@ -32,6 +32,13 @@ export function goalTiersDone(s: GameState): number {
   let n = 0;
   for (const g of GOALS) n += s.goals[g.id] ?? 0;
   return n;
+}
+
+/** 1.2.0: poking something for a secret medal (an unknown id does nothing). */
+export function poke(s: GameState, id: string): void {
+  if (!(POKES as readonly string[]).includes(id)) return;
+  const k = pokeStat(id as PokeId);
+  s.stats[k] = (s.stats[k] ?? 0) + 1;
 }
 
 export function checkMedals(s: GameState): void {

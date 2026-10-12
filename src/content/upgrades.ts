@@ -2,7 +2,7 @@ import { ENGINES } from './engines';
 import type { Requirement } from './requirements';
 
 /**
- * About 60 one-off Stardust upgrades (Game design: "Upgrades"). Each appears as an icon tile above
+ * About 175 one-off Stardust upgrades (1.2.0: four doublers for each of 30 engines, and the general lines carried further) (Game design: "Upgrades"). Each appears as an icon tile above
  * the engine shop once its requirement is met, and its tooltip says when the effect applies.
  * IDs never change once released.
  */
@@ -45,14 +45,40 @@ const ENGINE_NAMES: Record<string, [string, string]> = {
   bellows: ['Deeper Breaths', 'Cloud Lungs'],
   foundry: ['Hotter Moulds', 'Ice Cores'],
   lantern: ['Dark Wicks', 'Hollow Flame'],
+  magnetar: ['Tighter Coils', 'Field Lines'],
+  press: ['Harder Plates', 'Degenerate Matter'],
+  reef: ['Coral Plasma', 'Tide Pools'],
+  wellpump: ['Deeper Wells', 'Escape Velocity'],
+  crown: ['Polished Crown', 'Solar Jewels'],
+  hatchery: ['Warm Nests', 'Comet Clutches'],
+  reservoir: ['Wider Dams', 'Overflow Channels'],
+  novaforge: ['Nova Bellows', 'Chain Reactions'],
+  dmmill: ['Unseen Gears', 'Shadow Millstones'],
+  wormtap: ['Wider Throats', 'Folded Space'],
+  spinner: ['Spiral Bearings', 'Bar Drive'],
+  harp: ['Tuned Strings', 'Cosmic Chords'],
+  crystal: ['Faceted Time', 'Recursion'],
+  kiln: ['Hotter Firing', 'Inflation'],
+  infinity: ['Endless Gears', 'Beyond Infinity'],
 };
 
-/** Two doublers per engine: at 5 owned (12x its base price) and at 40 owned (600x). */
+/** Each engine's third and fourth doublers (1.2.0): at 100 and 200 owned. */
+const LATE_NAMES = ['Overclocked', 'Perfected'];
+
+/**
+ * Four doublers per engine: at 5 owned (12x its base price), 40 owned (600x), 100 owned (5e8x) and
+ * 200 owned (5e15x): the first two cost about two of that engine's own price when they unlock, the
+ * last two about 400 (1.2.0 balance: so they deepen the late game, not shorten the middle). Each wears
+ * its engine's symbol and what that engine's doublers make it once bought (x2, x4, x8, x16).
+ */
+const plain = (name: string) => name.replace(/s$/, '').replace(/ Array$/, ' Arrays');
 const engineDoublers: UpgradeDef[] = ENGINES.flatMap((e) => {
   const [a, b] = ENGINE_NAMES[e.id]!;
   return [
-    { id: `${e.id}.x2a`, name: a, icon: e.icon, color: e.color, cost: e.baseCost * 12, req: { kind: 'engine', id: e.id, count: 5 }, effect: { stat: `engineMult.${e.id}`, op: 'mul', value: 2 }, desc: `${e.name} produce twice as much.` },
-    { id: `${e.id}.x2b`, name: b, icon: e.icon, color: e.color, cost: e.baseCost * 600, req: { kind: 'engine', id: e.id, count: 40 }, effect: { stat: `engineMult.${e.id}`, op: 'mul', value: 2 }, desc: `${e.name} produce twice as much again.` },
+    { id: `${e.id}.x2a`, name: a, icon: `${e.icon}#x2`, color: e.color, cost: e.baseCost * 12, req: { kind: 'engine', id: e.id, count: 5 }, effect: { stat: `engineMult.${e.id}`, op: 'mul', value: 2 }, desc: `${e.name} produce twice as much.` },
+    { id: `${e.id}.x2b`, name: b, icon: `${e.icon}#x4`, color: e.color, cost: e.baseCost * 600, req: { kind: 'engine', id: e.id, count: 40 }, effect: { stat: `engineMult.${e.id}`, op: 'mul', value: 2 }, desc: `${e.name} produce twice as much again.` },
+    { id: `${e.id}.x2c`, name: `${LATE_NAMES[0]} ${plain(e.name)}`, icon: `${e.icon}#x8`, color: e.color, cost: e.baseCost * 5e8, req: { kind: 'engine', id: e.id, count: 100 }, effect: { stat: `engineMult.${e.id}`, op: 'mul', value: 2 }, desc: `${e.name} produce twice as much: a third time.` },
+    { id: `${e.id}.x2d`, name: `${LATE_NAMES[1]} ${plain(e.name)}`, icon: `${e.icon}#x16`, color: e.color, cost: e.baseCost * 5e15, req: { kind: 'engine', id: e.id, count: 200 }, effect: { stat: `engineMult.${e.id}`, op: 'mul', value: 2 }, desc: `${e.name} produce twice as much: a fourth time.` },
   ] satisfies UpgradeDef[];
 });
 
@@ -101,7 +127,25 @@ const offline: UpgradeDef[] = [
   { id: 'off.lucid', name: 'Lucid Dreams', icon: 'moon+eye', color: '#2B7FD0', cost: 1e12, req: { kind: 'tier', tier: 5 }, effect: { stat: 'offlineEfficiency', op: 'add', value: 0.15 }, desc: 'Earn 15% more while away.' },
 ];
 
-export const UPGRADES: readonly UpgradeDef[] = [...tap, ...production, ...engineDoublers, ...synergy, ...comets, ...offline];
+/** 1.2.0: the general lines carried further into the game (each Stardust one costs the whole total that unlocks it). */
+const later: UpgradeDef[] = [
+  { id: 'prod.corona', name: 'Corona Harvest', icon: 'giant+swirl', color: '#B23A8E', cost: 1e20, req: { kind: 'total', currency: 'stardust', amount: 1e20 }, effect: { stat: 'productionMult', op: 'mul', value: 2 }, desc: 'Stardust x2.' },
+  { id: 'prod.fusion2', name: 'Triple Alpha', icon: 'atom+plus', color: '#B0701A', cost: 1e23, req: { kind: 'total', currency: 'stardust', amount: 1e23 }, effect: { stat: 'productionMult', op: 'mul', value: 2 }, desc: 'Stardust x2.' },
+  { id: 'prod.hyper', name: 'Hypernova Seeds', icon: 'shard+swirl', color: '#FF4FC1', cost: 1e26, req: { kind: 'total', currency: 'stardust', amount: 1e26 }, effect: { stat: 'productionMult', op: 'mul', value: 2 }, desc: 'Stardust x2.' },
+  { id: 'prod.lens', name: 'Gravity Lens', icon: 'telescope+eye', color: '#5B45C2', cost: 1e30, req: { kind: 'total', currency: 'stardust', amount: 1e30 }, effect: { stat: 'productionMult', op: 'mul', value: 2 }, desc: 'Stardust x2.' },
+  { id: 'prod.vacuum', name: 'Vacuum Energy', icon: 'darkmatter+bolt', color: '#3A2470', cost: 1e35, req: { kind: 'total', currency: 'stardust', amount: 1e35 }, effect: { stat: 'productionMult', op: 'mul', value: 2 }, desc: 'Stardust x2.' },
+  { id: 'prod.genesis', name: 'Genesis Spark', icon: 'universe+flame', color: '#7B3FD6', cost: 1e40, req: { kind: 'total', currency: 'stardust', amount: 1e40 }, effect: { stat: 'productionMult', op: 'mul', value: 2 }, desc: 'Stardust x2.' },
+  { id: 'tap.strike4', name: 'Pulsar Strike', icon: 'pulsar+bolt', color: '#5B45C2', cost: 1e13, req: { kind: 'tier', tier: 6 }, effect: { stat: 'tapSpsShare', op: 'add', spsShare: 0.05 }, desc: 'Each tap also gives another 5% of your Stardust per second.' },
+  { id: 'tap.crit3', name: 'Killer Instinct', icon: 'comet+crosshair', color: '#2E9C78', cost: 1e10, req: { kind: 'count', stat: 'crits', count: 2500, noun: 'crit' }, effect: { stat: 'critMult', op: 'add', value: 5 }, desc: 'Crits hit 5 times harder (added to the crit multiplier).' },
+  { id: 'tap.combo3', name: 'White Heat', icon: 'giant+arrowup', color: '#C23F6A', cost: 1e11, req: { kind: 'count', stat: 'taps', count: 25_000, noun: 'tap' }, effect: { stat: 'comboPower', op: 'mul', value: 1.5 }, desc: 'Combos build a stronger bonus (x1.5).' },
+  { id: 'comet.storm', name: 'Comet Storm', icon: 'comet+swirl', color: '#1A9DB8', cost: 5e12, req: { kind: 'count', stat: 'comets', count: 50, noun: 'comet' }, effect: { stat: 'cometRate', op: 'mul', value: 1.25 }, desc: 'Comets come 25% more often.' },
+  { id: 'comet.ages', name: 'Ages of Ice', icon: 'comet+bell', color: '#1A9DB8', cost: 1e16, req: { kind: 'count', stat: 'comets', count: 100, noun: 'comet' }, effect: { stat: 'buffDuration', op: 'mul', value: 1.5 }, desc: 'Comet buffs last 50% longer.' },
+  { id: 'comet.jackpot', name: 'Jackpot Ice', icon: 'comet+drop', color: '#C99A1E', cost: 1e20, req: { kind: 'count', stat: 'comets', count: 200, noun: 'comet' }, effect: { stat: 'luckyMult', op: 'mul', value: 3 }, desc: 'Lucky comets give 3 times as much.' },
+  { id: 'off.deep', name: 'Deep Sleep', icon: 'moon+bell', color: '#2B7FD0', cost: 1e15, req: { kind: 'tier', tier: 7 }, effect: { stat: 'offlineCap', op: 'add', value: 14_400 }, desc: 'Away time counts for 4 more hours.' },
+  { id: 'off.dreamer', name: 'Star Dreamer', icon: 'moon+stardust', color: '#2B7FD0', cost: 1e20, req: { kind: 'tier', tier: 9 }, effect: { stat: 'offlineEfficiency', op: 'add', value: 0.1 }, desc: 'Earn 10% more while away.' },
+];
+
+export const UPGRADES: readonly UpgradeDef[] = [...tap, ...production, ...engineDoublers, ...synergy, ...comets, ...offline, ...later];
 
 export const UPGRADE_BY_ID: ReadonlyMap<string, UpgradeDef> = new Map(UPGRADES.map((u) => [u.id, u]));
 

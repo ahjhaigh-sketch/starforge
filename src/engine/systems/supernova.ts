@@ -1,8 +1,8 @@
 import { BALANCE } from '../../content/balance';
 import { CONSTANTS } from '../../content/constants';
 import { TIERS } from '../../content/tiers';
-import { D, type Decimal, ZERO } from '../decimal';
-import { milestoneReached, registerLayer } from '../layers';
+import { D, Decimal, ZERO } from '../decimal';
+import { milestoneReached, registerLayer, onAnyReset } from '../layers';
 import { gain, type GameState } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
@@ -40,8 +40,20 @@ export function supernovaGain(s: GameState): Decimal {
   return rawShardGain(s).floor();
 }
 
+/**
+ * Stardust this run needed to go Supernova (1.2.0): the base, or needSeconds of the Stardust per
+ * second you had at your last Supernova, whichever is more. So each Supernova takes a real stretch
+ * of play whatever your economy, and an auto-Supernova can't fire every tick (even from 10 Nebulas,
+ * when a Supernova resets nothing). A Nebula or any bigger reset starts this over.
+ */
+export function novaNeed(s: GameState): Decimal {
+  const rate = s.stats.novaRateLog;
+  if (!rate) return D(B.runStardust);
+  return Decimal.max(B.runStardust, D(10).pow(rate).mul(B.needSeconds));
+}
+
 export function supernovaReady(s: GameState): boolean {
-  return s.tier >= B.tier && (s.totals.run.stardust ?? ZERO).gte(B.runStardust) && supernovaGain(s).gte(1);
+  return s.tier >= B.tier && (s.totals.run.stardust ?? ZERO).gte(novaNeed(s)) && supernovaGain(s).gte(1);
 }
 
 /** Stardust this run needed for one more shard than now ("next shard at X"). */
@@ -133,6 +145,8 @@ export function registerSupernova(): void {
     ],
     onReset: (s, before) => {
       s.stats.supernovasAll = (s.stats.supernovasAll ?? 0) + 1;
+      // what this run was making, for the next Supernova's requirement (log10, so any size fits)
+      s.stats.novaRateLog = Math.max(0, before.rateLog ?? 0);
       s.stats.supernovasBest = Math.max(s.stats.supernovasBest ?? 0, s.stats.supernovas ?? 0);
       // from 10 Nebulas a Supernova keeps everything, but this run's Stardust still starts over
       // (or every Supernova would pay again for the same Stardust)
@@ -153,6 +167,10 @@ export function registerSupernova(): void {
       { at: 20, id: 'passive', text: 'Gain 1% of your Supernova gain every second' },
       { at: 30, id: 'nebula', text: 'The Nebula appears' },
     ],
+  });
+
+  onAnyReset((s, layer) => {
+    if (['nebula', 'singularity', 'galactic', 'crunch', 'multiverse'].includes(layer)) s.stats.novaRateLog = 0;
   });
 
   registerSystem({

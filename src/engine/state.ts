@@ -4,13 +4,13 @@ import { BALANCE } from '../content/balance';
 import type { ShipDesign } from '../content/shipParts';
 
 /** Bump with every change to the save's shape, and add a migration + an old-save fixture test. */
-export const SAVE_VERSION = 20;
+export const SAVE_VERSION = 21;
 /** A new Fusion board is 3 x 3 (BALANCE.fusion.baseSize). */
 const BALANCE_FUSION_CELLS = 9;
 
 export type Notation = 'suffix' | 'scientific' | 'engineering';
 /** 'next' buys up to the next milestone (an engine's next x2, a constant's next doubling). */
-export type BuyAmount = 1 | 10 | 100 | 1000 | 'max' | 'custom' | 'next';
+export type BuyAmount = 1 | 5 | 10 | 100 | 1000 | 'max' | 'custom' | 'next';
 
 /** A Star Quest on the board (see engine/systems/quests.ts). */
 export interface QuestState {
@@ -38,6 +38,21 @@ export interface Settings {
   customBuyAmount: number;
   showToasts: boolean;
   hotkeys: boolean;
+  /** 1.2.0: the interface's size (0.8 to 1.3). */
+  uiScale: number;
+  /** Menus you hid from the rails, and automated menus you asked to see again. */
+  hiddenMenus: string[];
+  shownMenus: string[];
+  /** Tuck away menus that run themselves (Automation once it's all running, Orbitals with Auto-planets...). */
+  autoHideMenus: boolean;
+  /** Parts of the screen you hid (boosts, Coming up, focus cards, layer bars that run themselves...). */
+  hiddenHud: string[];
+  /** A pop-up each time ships come home. */
+  shipAlerts: boolean;
+  /** The big reset animations (the reset still happens either way). */
+  resetFx: boolean;
+  /** The engine list: full rows, compact rows, minimized to one line, or (auto) minimized once every engine has its auto-buyer. */
+  engineList: 'auto' | 'full' | 'compact' | 'min';
 }
 
 /** A colony: its planet type, people, buildings, spaceport, and the planet's 19 hexes (with the score locked in once finished). */
@@ -145,7 +160,8 @@ export interface GameState {
   /** Star Pulse Attunements: unlocked and equipped, the Pulse rating memory, the heart meter, the Chaos Die. */
   attune: { unlocked: string[]; equipped: string[]; pulse: number[]; heart: number; chaosTaps: number; chaos: { id: string; until: number } | null; rng: RngState };
   /** The Wandering Merchant: today's deals, Merchant Luck, rerolls since the last Supernova, its own random stream. */
-  merchant: { deals: Deal[]; luck: number; rerolls: number; rng: RngState };
+  /** nextShip: the play-time moment the next ship docks (0: one docks at once). */
+  merchant: { deals: Deal[]; luck: number; rerolls: number; rng: RngState; nextShip: number };
   /** Starship Expeditions: each ship's destination and time left, and fleet upgrades. */
   /** Phase 20.4: each ship may carry a design (none: the default parts); parts bought once, for every ship. */
   ships: { fleet: Array<{ sector: string | null; t: number; auto: boolean; design?: ShipDesign }>; upgrades: Record<string, number>; rng: RngState; parts: string[] };
@@ -199,7 +215,7 @@ export interface GameState {
   /** Phase 18: Spark choices owned (levels; echoes go past 1), this universe's rules, the next universe's rules, and whether the story has been told. */
   multiverse: { tree: Record<string, number>; rules: string[]; next: string[]; storySeen: boolean };
   /** Phase 20: the Wardrobe's choices (what's unlocked is worked out from medals and stats, never stored). */
-  cosmetics: { skin: string; trail: string; background: string };
+  cosmetics: { skin: string; trail: string; background: string; burst: string; theme: string };
   /** Phase 20.2: Starlight Alchemy: recipes found, mixes tried, elixirs on the shelf, and when each boost ends (play time). */
   alchemy: { known: string[]; tried: string[]; shelf: Record<string, number>; active: Record<string, number> };
   /**
@@ -241,6 +257,8 @@ export interface Deal {
   quality: 'common' | 'rare' | 'mythical';
   pay: { currency: string; amount: Decimal };
   get: { currency?: string; amount?: Decimal; id?: string; count?: number };
+  /** 1.2.0: taken: it stays on the counter, sold, until the next ship. */
+  sold?: boolean;
 }
 
 export function defaultSettings(): Settings {
@@ -259,6 +277,14 @@ export function defaultSettings(): Settings {
     customBuyAmount: 25,
     showToasts: true,
     hotkeys: true,
+    uiScale: 1,
+    hiddenMenus: [],
+    shownMenus: [],
+    autoHideMenus: true,
+    hiddenHud: [],
+    shipAlerts: false,
+    resetFx: true,
+    engineList: 'auto',
   };
 }
 
@@ -301,7 +327,7 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     codex: {},
     fusion: { board: new Array<number>(BALANCE_FUSION_CELLS).fill(0), upgrades: {}, acc: 0, best: 0, autoOwned: false, autoOn: true, spawned: 0 },
     attune: { unlocked: ['pulse'], equipped: [], pulse: [], heart: 0, chaosTaps: 0, chaos: null, rng: seedRng(seed ^ 0x0c4a_05d1) },
-    merchant: { deals: [], luck: 0, rerolls: 0, rng: seedRng(seed ^ 0x3e7c_4a17) },
+    merchant: { deals: [], luck: 0, rerolls: 0, rng: seedRng(seed ^ 0x3e7c_4a17), nextShip: 0 },
     ships: { fleet: [{ sector: null, t: 0, auto: true }], upgrades: {}, rng: seedRng(seed ^ 0x5417_9e11), parts: [] },
     nebulaTree: {},
     nebula: { autoAt: D(0) },
@@ -332,7 +358,7 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     eternity: { upgrades: [], auto: {} },
     echoes: { engines: {}, ever: {} },
     multiverse: { tree: {}, rules: [], next: [], storySeen: false },
-    cosmetics: { skin: 'classic', trail: 'none', background: 'violet' },
+    cosmetics: { skin: 'classic', trail: 'none', background: 'violet', burst: 'tier', theme: 'violet' },
     alchemy: { known: [], tried: [], shelf: {}, active: {} },
     sigils: { owned: [], on: [] },
     defense: { sockets: Array.from({ length: BALANCE.defense.sockets }, () => ''), levels: {}, best: 0, wave: 0, auto: false, seed: (seed ^ 0x0def_e45e) >>> 0, acc: 0, lost: '' },

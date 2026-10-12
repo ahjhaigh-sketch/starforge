@@ -99,6 +99,15 @@ const migrations: Record<number, (d: PlainSave) => void> = {
   // New fields with defaults (a ship without a design flies the default one); nothing moves. An old
   // save's weather starts unscheduled and its comets so far fill the Weather Beacon (up to 5 charges).
   20: () => {},
+  // 21 (1.2.0): the Merchant docks a ship of 3 deals every 15 minutes of play, and a deal taken stays
+  // sold. An old save's counter (4 deals, refilled at once) is cleared: a new ship docks on the first tick.
+  21: (d) => {
+    const m = d.merchant as { deals?: unknown[]; nextShip?: number } | undefined;
+    if (m) {
+      m.deals = [];
+      m.nextShip = 0;
+    }
+  },
 };
 
 export function migrate(version: number, data: PlainSave): PlainSave {

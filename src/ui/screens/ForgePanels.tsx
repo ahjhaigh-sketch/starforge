@@ -112,6 +112,14 @@ function FurnaceTab() {
         </Button>
       </div>
       <div className="grades" role="radiogroup" aria-label="Ore to smelt">
+        <button type="button" role="radio" aria-checked={r.all} className={cx('grade grade-all chunk pop', r.all && 'on')} style={tint(r.all ? '#C9A8FF' : '#2B1F6E')} onClick={() => commands.setForgeGrade('all')} data-grade="all" title="Smelt every grade you have ore for at once, one crucible per grade where it can">
+          <b>All grades</b>
+          <small>side by side</small>
+          <small className="grade-alloy">
+            <Icon name="ingot" />
+            <span>each its own</span>
+          </small>
+        </button>
         {r.grades.map((g) => (
           <button key={g.id} type="button" role="radio" aria-checked={g.selected} className={cx('grade chunk pop', g.selected && 'on')} style={tint(g.selected ? g.color : '#2B1F6E')} onClick={() => commands.setForgeGrade(g.id)} data-grade={g.id}>
             <b>{g.name}</b>

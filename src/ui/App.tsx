@@ -1,6 +1,7 @@
 import { type CSSProperties, useEffect } from 'react';
 import { game } from '../app/game';
 import { useSnap } from '../app/uiSnapshot';
+import { THEME_BY_ID } from '../content/cosmetics';
 import { DevPanel } from '../dev/DevPanel';
 import { TreeBench } from '../dev/TreeBench';
 
@@ -16,7 +17,7 @@ import { ResetFx } from './screens/ResetFx';
 import { EngineShop } from './screens/EngineShop';
 import { Hud } from './screens/Hud';
 import { MedalsPanel } from './screens/MedalsPanel';
-import { LeftRail, TeaserStack } from './screens/Rails';
+import { FocusCards, LeftRail, TeaserStack } from './screens/Rails';
 import { SettingsPanel } from './screens/SettingsPanel';
 import { StarStage } from './screens/StarStage';
 import { StatsPanel } from './screens/StatsPanel';
@@ -64,12 +65,34 @@ export function App() {
   const bench = benchSize();
   if (bench > 0) return <TreeBench count={bench} />;
   const reducedMotion = useSnap((s) => s.reducedMotion);
+  const uiScale = useSnap((s) => s.uiScale);
+  const hiddenHud = useSnap((s) => s.hiddenHud);
+  const uiTheme = useSnap((s) => s.uiTheme);
   const galaxyColor = useSnap((s) => s.galaxyColor);
   const drawer = useUi((s) => s.drawer);
   const setDrawer = useUi((s) => s.setDrawer);
   useEffect(() => {
     document.documentElement.classList.toggle('reduced-motion', reducedMotion);
   }, [reducedMotion]);
+  // 1.2.0: the interface's size (every size is in rem, so this scales the whole UI but not the sky)
+  useEffect(() => {
+    document.documentElement.style.setProperty('--ui-scale', String(Math.min(1.3, Math.max(0.8, uiScale || 1))));
+  }, [uiScale]);
+  useEffect(() => {
+    document.documentElement.dataset.hide = hiddenHud;
+  }, [hiddenHud]);
+  // 1.2.0: the Wardrobe's menu colour (the default leaves the theme's own tokens alone)
+  useEffect(() => {
+    const t = THEME_BY_ID.get(uiTheme);
+    const root = document.documentElement.style;
+    if (t && t.id !== 'violet') {
+      root.setProperty('--panel', t.panel);
+      root.setProperty('--panel-deep', t.deep);
+    } else {
+      root.removeProperty('--panel');
+      root.removeProperty('--panel-deep');
+    }
+  }, [uiTheme]);
 
   return (
     <>
@@ -83,6 +106,7 @@ export function App() {
         </main>
         <BottomBar />
         <aside className={`side ${drawer ? 'open' : ''}`}>
+          <FocusCards />
           <EngineShop />
           <TeaserStack />
         </aside>

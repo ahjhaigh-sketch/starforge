@@ -1,5 +1,6 @@
 import { ENGINES } from './engines';
 import type { Requirement } from './requirements';
+import { SYSTEMS } from './systems';
 import { TIERS } from './tiers';
 
 /**
@@ -13,7 +14,23 @@ export interface MedalDef {
   desc: string;
   icon: string;
   req: Requirement;
+  /** 1.2.0: hidden ("???") until earned. */
+  secret?: boolean;
 }
+
+/**
+ * 1.2.0: things you can poke for secret medals. Each poke adds one to its counter in stats
+ * ("poke" + the id with a capital: pokePill). IDs never change.
+ */
+export const POKES = ['pill', 'tier', 'mystery', 'gear', 'photo', 'credits', 'name', 'locked', 'ascent', 'mute', 'size'] as const;
+export type PokeId = (typeof POKES)[number];
+export const pokeStat = (id: PokeId) => `poke${id[0]!.toUpperCase()}${id.slice(1)}`;
+
+const c = (stat: string, count: number, noun: string): Requirement => ({ kind: 'count', stat, count, noun });
+const secret = (id: string, name: string, desc: string, req: Requirement): MedalDef => ({ id, name, desc, icon: 'mystery+eye', req, secret: true });
+const poke = (id: PokeId, count: number): Requirement => c(pokeStat(id), count, 'poke');
+const combo = (id: string, name: string, desc: string, of: Requirement[]): MedalDef => ({ id, name, desc, icon: 'trophy+plus', req: { kind: 'all', of } });
+const opened = (id: string, name: string, title: string, desc: string): MedalDef => ({ id: `unlock.${id}`, name: title, desc, icon: 'ascent+arrowup', req: { kind: 'system', id, name } });
 
 const totalNames = ['Spark', 'Glow', 'Shine', 'Radiance', 'A Million Lights', 'Brilliance', 'Blaze', 'Billion Suns', 'Starfall', 'Lightstorm', 'Trillion Gleams', 'Solar Tide', 'Stellar Ocean', 'Quadrillion Sparks', 'A Galaxy’s Worth', 'Cosmic Hoard', 'Quintillion Glimmers', 'Light Beyond Light', 'Endless Dawn', 'Sextillion Stars'];
 const rateNames = ['Trickle', 'Stream', 'Brook', 'River', 'Torrent', 'Cascade', 'Flood', 'Deluge', 'Monsoon', 'Maelstrom', 'Starstream', 'Sunflow', 'Galactic Current', 'Cosmic Flow', 'Light Engine', 'Endless River'];
@@ -155,6 +172,101 @@ export const MEDALS: readonly MedalDef[] = [
   { id: 'upg.10', name: 'Engineer', desc: 'Buy 10 upgrades.', icon: 'upgrade', req: { kind: 'upgrades', count: 10 } },
   { id: 'upg.25', name: 'Architect', desc: 'Buy 25 upgrades.', icon: 'upgrade', req: { kind: 'upgrades', count: 25 } },
   { id: 'upg.50', name: 'Starwright', desc: 'Buy 50 upgrades.', icon: 'upgrade', req: { kind: 'upgrades', count: 50 } },
+  // ---- 1.2.0: every part of the game, further ----
+  { id: 'tap.10k', name: 'Fingertip Furnace', desc: 'Tap the star 10,000 times.', icon: 'stardust', req: c('taps', 10_000, 'tap') },
+  { id: 'tap.100k', name: 'Tap Titan', desc: 'Tap the star 100,000 times.', icon: 'stardust', req: c('taps', 100_000, 'tap') },
+  { id: 'tap.1m', name: 'Million-Tap March', desc: 'Tap the star a million times.', icon: 'stardust', req: c('taps', 1e6, 'tap') },
+  { id: 'crit.1k', name: 'Sharp Eye', desc: 'Land 1,000 critical taps.', icon: 'pulse', req: c('crits', 1000, 'crit') },
+  { id: 'crit.100k', name: 'Precision Strike', desc: 'Land 100,000 critical taps.', icon: 'pulse', req: c('crits', 100_000, 'crit') },
+  { id: 'combo.150', name: 'Overdrive', desc: 'Reach a combo of 150.', icon: 'pulse', req: c('maxCombo', 150, 'combo') },
+  { id: 'combo.500', name: 'Unbroken', desc: 'Reach a combo of 500.', icon: 'pulse', req: c('maxCombo', 500, 'combo') },
+  { id: 'comet.500', name: 'Comet Shepherd', desc: 'Catch 500 comets.', icon: 'comet', req: c('comets', 500, 'comet') },
+  { id: 'comet.2500', name: 'Tail Gatherer', desc: 'Catch 2,500 comets.', icon: 'comet', req: c('comets', 2500, 'comet') },
+  { id: 'evolve.50', name: 'Shape Shifter', desc: 'Evolve your star 50 times.', icon: 'level', req: c('evolves', 50, 'evolve') },
+  { id: 'evolve.250', name: 'Ever-Changing', desc: 'Evolve your star 250 times.', icon: 'level', req: c('evolves', 250, 'evolve') },
+  { id: 'engines.10k', name: 'Industrial Revolution', desc: 'Buy 10,000 engines.', icon: 'foundry', req: c('enginesBought', 10_000, 'engine bought') },
+  { id: 'engines.1m', name: 'Factory of Stars', desc: 'Buy a million engines.', icon: 'foundry', req: c('enginesBought', 1e6, 'engine bought') },
+  { id: 'nova.100', name: 'Chain Reaction', desc: 'Go Supernova 100 times in all.', icon: 'shard', req: c('supernovasAll', 100, 'Supernova') },
+  { id: 'nova.500', name: 'Stellar Fireworks', desc: 'Go Supernova 500 times in all.', icon: 'shard', req: c('supernovasAll', 500, 'Supernova') },
+  { id: 'nova.2500', name: 'Supernova Season', desc: 'Go Supernova 2,500 times in all.', icon: 'shard', req: c('supernovasAll', 2500, 'Supernova') },
+  { id: 'nebula.50', name: 'Mist Maker', desc: 'Go Nebula 50 times.', icon: 'nebula', req: c('nebulasAll', 50, 'Nebula') },
+  { id: 'nebula.250', name: 'Cloud Atlas', desc: 'Go Nebula 250 times.', icon: 'nebula', req: c('nebulasAll', 250, 'Nebula') },
+  { id: 'singularity.50', name: 'Gravity Well', desc: 'Go Singularity 50 times.', icon: 'darkmatter', req: c('singularitiesAll', 50, 'Singularity') },
+  { id: 'galactic.10', name: 'Island Hopper', desc: 'Go Galactic 10 times.', icon: 'galaxy', req: c('galacticsAll', 10, 'Galactic Rebirth') },
+  { id: 'galactic.50', name: 'Galaxy Brain', desc: 'Go Galactic 50 times.', icon: 'galaxy', req: c('galacticsAll', 50, 'Galactic Rebirth') },
+  { id: 'crunch.50', name: 'Accordion Player', desc: 'Go Big Crunch 50 times.', icon: 'crunch', req: c('crunchesAll', 50, 'Big Crunch') },
+  { id: 'multiverse.25', name: 'Worlds Without End', desc: 'Enter the Multiverse 25 times.', icon: 'multiverse', req: c('multiversesAll', 25, 'Multiverse') },
+  { id: 'belt.100k', name: 'Asteroid Magnate', desc: 'Harvest 100,000 asteroids.', icon: 'belt', req: c('harvested', 100_000, 'asteroid') },
+  { id: 'beltTier.10', name: 'Belt Legend', desc: 'Reach Belt Tier 10.', icon: 'belt', req: c('beltTier', 10, 'Belt Tier') },
+  { id: 'smelt.10k', name: 'Forge Eternal', desc: 'Smelt 10,000 batches.', icon: 'ingot', req: c('smelts', 10_000, 'smelt') },
+  { id: 'level.50', name: 'Grandmaster Smith', desc: 'Reach Starsmith Level 50.', icon: 'level', req: c('level', 50, 'Starsmith Level') },
+  { id: 'cores.30', name: 'Planet Piercer', desc: 'Break 30 cores in the Deep Core.', icon: 'drill', req: c('cores', 30, 'core') },
+  { id: 'deals.200', name: "Merchant's Favourite", desc: 'Take 200 deals from the Merchant.', icon: 'merchant', req: c('deals', 200, 'deal') },
+  { id: 'trips.2000', name: 'Star Lanes', desc: 'Bring ships home 2,000 times.', icon: 'ship', req: c('trips', 2000, 'trip') },
+  { id: 'chaos.250', name: 'Loaded Dice', desc: 'Roll the Chaos Die 250 times.', icon: 'dice', req: c('chaosRolls', 250, 'Chaos roll') },
+  { id: 'perfect.1000', name: 'Clockwork Heart', desc: 'Land 1,000 perfect Pulse taps.', icon: 'pulse', req: c('perfects', 1000, 'perfect tap') },
+  { id: 'quests.25', name: 'Errand Runner', desc: 'Finish 25 quests.', icon: 'quests', req: c('questsDone', 25, 'quest') },
+  { id: 'quests.100', name: 'Quest Log', desc: 'Finish 100 quests.', icon: 'quests', req: c('questsDone', 100, 'quest') },
+  { id: 'quests.500', name: 'Legend of the Rails', desc: 'Finish 500 quests.', icon: 'quests', req: c('questsDone', 500, 'quest') },
+  { id: 'weather.250', name: 'Climate Scientist', desc: 'See 250 weathers roll through the sky.', icon: 'weather', req: c('weathers', 250, 'weather') },
+  { id: 'weather.summon10', name: 'Storm Caller', desc: 'Summon weather 10 times.', icon: 'weather', req: c('weatherSummoned', 10, 'summoned weather') },
+  { id: 'elixirs.25', name: 'Potion Habit', desc: 'Drink 25 elixirs.', icon: 'alchemy', req: c('elixirsDrunk', 25, 'elixir') },
+  { id: 'brews.100', name: 'Cauldron Keeper', desc: 'Brew 100 times.', icon: 'alchemy', req: c('brews', 100, 'brew') },
+  { id: 'defense.fights100', name: 'Veteran Gunner', desc: 'Fight 100 Planet Defense waves.', icon: 'defense', req: c('defenseFights', 100, 'wave fought') },
+  { id: 'wyrms.1k', name: 'Wyrm Rancher', desc: 'Hatch 1,000 Void Wyrms.', icon: 'wyrm', req: c('wyrmsHatched', 1000, 'Wyrm hatched') },
+  { id: 'nursery.100', name: 'Orchard of Stars', desc: 'Harvest 100 nursery stars.', icon: 'nursery', req: c('nurseryHarvests', 100, 'harvest') },
+  { id: 'craft.100', name: 'Rune Foundry', desc: 'Craft 100 runes.', icon: 'rune', req: c('runesCrafted', 100, 'rune crafted') },
+  { id: 'spire.100', name: 'Above the Clouds', desc: 'Reach floor 100 of the Spire.', icon: 'spire', req: c('spireBest', 100, 'Spire floor') },
+  { id: 'colony.5', name: 'Colonial Age', desc: 'Found 5 colonies.', icon: 'colony', req: c('coloniesFounded', 5, 'colony') },
+  { id: 'mega.3', name: 'Seven Wonders, Almost', desc: 'Finish 3 megastructures.', icon: 'mega', req: c('megaDone', 3, 'megastructure') },
+  { id: 'wormhole.10', name: 'Web of Tunnels', desc: 'Open 10 wormholes.', icon: 'wormhole', req: c('wormholesOpened', 10, 'wormhole') },
+  { id: 'trade.5', name: 'Trade Winds', desc: 'Run 5 trade routes.', icon: 'colony', req: c('tradeRoutes', 5, 'trade route') },
+  { id: 'sigil.3', name: 'Rule Breaker', desc: 'Own 3 hidden sigils.', icon: 'sigil', req: c('sigils', 3, 'sigil') },
+  { id: 'dice.100', name: 'High Roller', desc: 'Roll the dice for 100 auras.', icon: 'dice', req: c('diceRolled', 100, 'roll') },
+  { id: 'upg.100', name: 'Grand Designer', desc: 'Buy 100 upgrades.', icon: 'upgrade', req: { kind: 'upgrades', count: 100 } },
+  { id: 'upg.150', name: 'Upgrade Everything', desc: 'Buy 150 upgrades.', icon: 'upgrade', req: { kind: 'upgrades', count: 150 } },
+  { id: 'medals.100', name: 'Decorated', desc: 'Earn 100 medals.', icon: 'trophy', req: { kind: 'medals', count: 100 } },
+  { id: 'medals.250', name: 'Hall of Fame', desc: 'Earn 250 medals.', icon: 'trophy', req: { kind: 'medals', count: 250 } },
+  { id: 'medals.300', name: 'Trophy Cabinet', desc: 'Earn 300 medals.', icon: 'trophy', req: { kind: 'medals', count: 300 } },
+  // ---- 1.2.0: combinations (everything listed, all at once) ----
+  combo('combo.starter', 'Jack of All Trades', 'Go Supernova, reach Belt Tier 1 and Starsmith Level 5, and smelt a batch.', [c('supernovasAll', 1, 'Supernova'), c('beltTier', 1, 'Belt Tier'), c('level', 5, 'Starsmith Level'), c('smelts', 1, 'smelt')]),
+  combo('combo.workshop', 'Full Workshop', 'Own at least one of every engine.', ENGINES.map((e): Requirement => ({ kind: 'engine', id: e.id, count: 1 }))),
+  combo('combo.economy', 'Balanced Economy', 'Own 100 of each of the first 15 engines.', ENGINES.slice(0, 15).map((e): Requirement => ({ kind: 'engine', id: e.id, count: 100 }))),
+  combo('combo.triple', 'Triple Crown', 'Go Nebula, Singularity and Galactic.', [c('nebulasAll', 1, 'Nebula'), c('singularitiesAll', 1, 'Singularity'), c('galacticsAll', 1, 'Galactic Rebirth')]),
+  combo('combo.circle', 'Full Circle', 'Enter the Multiverse with 200 medals.', [c('multiversesAll', 1, 'Multiverse'), { kind: 'medals', count: 200 }]),
+  combo('combo.curator', 'Curator', 'Find 25 runes, 15 auras and 50 mutations.', [c('runesFound', 25, 'rune'), c('aurasFound', 15, 'aura'), c('mutationsFound', 50, 'mutation')]),
+  combo('combo.trader', 'Spice Route', 'Take 50 deals, bring ships home 50 times and run a trade route.', [c('deals', 50, 'deal'), c('trips', 50, 'trip'), c('tradeRoutes', 1, 'trade route')]),
+  combo('combo.weather', 'Weather Wizard', 'See 50 weathers, summon one, and drink an elixir.', [c('weathers', 50, 'weather'), c('weatherSummoned', 1, 'summoned weather'), c('elixirsDrunk', 1, 'elixir')]),
+  combo('combo.arcana', 'Alloy and Arcana', 'Craft 25 relics and find all 12 recipes.', [c('relics', 25, 'relic'), c('recipesFound', 12, 'recipe')]),
+  combo('combo.depths', 'Deep and High', 'Break 15 cores and reach floor 50 of the Spire.', [c('cores', 15, 'core'), c('spireBest', 50, 'Spire floor')]),
+  combo('combo.living', 'Living Galaxy', 'Harvest a nursery star, hatch a Wyrm and found a colony.', [c('nurseryHarvests', 1, 'harvest'), c('wyrmsHatched', 1, 'Wyrm hatched'), c('coloniesFounded', 1, 'colony')]),
+  combo('combo.rhythm', 'Rhythm and Fire', 'Land 100 perfect Pulse taps, roll the Chaos Die 25 times and reach a combo of 150.', [c('perfects', 100, 'perfect tap'), c('chaosRolls', 25, 'Chaos roll'), c('maxCombo', 150, 'combo')]),
+  combo('combo.fleet', 'Admiral of the Belt', 'Reach Belt Tier 6, bring ships home 500 times and break 10 cores.', [c('beltTier', 6, 'Belt Tier'), c('trips', 500, 'trip'), c('cores', 10, 'core')]),
+  combo('combo.sky', 'Master of the Sky', 'See 100 weathers, catch 500 comets and record a Star Score of 100.', [c('weathers', 100, 'weather'), c('comets', 500, 'comet'), c('starScoreBest', 100, 'Star Score')]),
+  // ---- 1.2.0: unlocks ----
+  { id: 'unlock.10', name: 'Explorer', desc: 'Unlock 10 systems.', icon: 'ascent+arrowup', req: { kind: 'systems', count: 10 } },
+  { id: 'unlock.25', name: 'Pathfinder', desc: 'Unlock 25 systems.', icon: 'ascent+arrowup', req: { kind: 'systems', count: 25 } },
+  { id: 'unlock.40', name: 'Cartographer', desc: 'Unlock 40 systems.', icon: 'ascent+arrowup', req: { kind: 'systems', count: 40 } },
+  { id: 'unlock.all', name: 'Know It All', desc: `Unlock all ${SYSTEMS.length} systems.`, icon: 'ascent+arrowup', req: { kind: 'systems', count: SYSTEMS.length } },
+  opened('starforge', 'the Starforge', 'Hot Metal', 'Unlock the Starforge.'),
+  opened('expeditions', 'Starships', 'Shipshape', 'Unlock Starships.'),
+  opened('runes', 'Constellation Runes', 'Written in the Stars', 'Unlock Constellation Runes.'),
+  opened('blackhole', 'the Black Hole', 'Lights Out', 'Unlock the Black Hole.'),
+  opened('observatory', 'the Observatory', 'First Light', 'Unlock the Observatory.'),
+  opened('altar', 'the Altar', 'Sanctum', 'Find the Altar.'),
+  // ---- 1.2.0: secrets (they show as "???" until found) ----
+  secret('secret.pill', 'Pill Popper', 'Poke your Stardust counter 25 times.', poke('pill', 25)),
+  secret('secret.tier', 'Are We There Yet?', 'Poke the Tier pill 10 times.', poke('tier', 10)),
+  secret('secret.mystery', 'Curiosity', 'Poke a "???" on the rails 10 times.', poke('mystery', 10)),
+  secret('secret.gear', 'Fiddler', 'Open Settings 25 times.', poke('gear', 25)),
+  secret('secret.photo', 'Say Cheese', 'Take a picture in Photo Mode.', poke('photo', 1)),
+  secret('secret.credits', 'Roll Credits', 'Read the credits 3 times.', poke('credits', 3)),
+  secret('secret.name', 'Read the Sign', 'Poke the Engines sign 7 times.', poke('name', 7)),
+  secret('secret.locked', 'Window Shopper', "Poke medals you haven't earned 20 times.", poke('locked', 20)),
+  secret('secret.ascent', 'Look Up', 'Open the Ascent map 30 times.', poke('ascent', 30)),
+  secret('secret.mute', 'Hush', 'Mute and unmute the game 10 times.', poke('mute', 10)),
+  secret('secret.size', 'Honey, I Shrunk the Stars', 'Change the size of the interface.', poke('size', 1)),
+  secret('secret.jackpot', 'Jackpot', 'Reach a combo of 777.', c('maxCombo', 777, 'combo')),
 ];
 
 export const MEDAL_BY_ID: ReadonlyMap<string, MedalDef> = new Map(MEDALS.map((m) => [m.id, m]));

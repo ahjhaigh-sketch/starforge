@@ -329,6 +329,7 @@ export function LeviathansPanel() {
 
 export function ScaleTreePanel() {
   const r = useReport('scaletree', () => kitTreeReport(scaleTree), 200);
+  const treeBulk = useSnap((s) => s.treeBulk);
   return (
     <Panel id="scaletree" title="Scale Tree" color="#1A9DB8" size="wide">
       <div className="tree-head">
@@ -340,7 +341,7 @@ export function ScaleTreePanel() {
           </span>
         )}
       </div>
-      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={sigilAware((id) => commands.buyScaleNode(id))} currencyLabel="scales" legend={NODE_LEGEND} />}
+      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={sigilAware((id) => commands.buyScaleNode(id))} onBuyAll={() => commands.buyAllNodes('scaletree')} bulkLocked={treeBulk ? '' : 'Buy all opens at 5 Supernovas'} currencyLabel="scales" legend={NODE_LEGEND} />}
     </Panel>
   );
 }

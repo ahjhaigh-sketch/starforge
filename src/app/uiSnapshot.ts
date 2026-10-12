@@ -34,6 +34,8 @@ import { darkMatterNeeded, galacticGain, galacticReady, galacticReqs, galaxyOf }
 import { crunchGain, crunchReady, crunchSeen, galaxiesExplored, galaxiesNeeded, nextChrononAt, runCores } from '../engine/systems/crunch';
 import { crunchesThisUniverse, multiverseGain, multiverseReady, multiverseSeen, sparkFlag } from '../engine/systems/multiverse';
 import { automating } from '../engine/systems/eternity';
+import { autoSetting, autoUnlocked, AUTO_BUYERS } from '../engine/systems/automation';
+import { engineView, menuHidden } from './menus';
 import { wyrmSky } from './wyrmReports';
 import { nebulaGain, nebulaReady, runShards } from '../engine/systems/nebula';
 import { BUFF_KINDS, buffLeft, cometOnScreen } from '../engine/systems/comets';
@@ -43,6 +45,7 @@ import { RECIPES } from '../content/alchemy';
 import { elixirLeft } from '../engine/systems/alchemy';
 import { WEATHER_BY_ID } from '../content/weather';
 import { weatherLeft, weatherNow } from '../engine/systems/weather';
+import { treeBulkOpen, upgradeBulkOpen } from '../engine/systems/treeShop';
 import { whenItApplies } from '../content/upgrades';
 import { CONSTANTS } from '../content/constants';
 import { MASTERY_RANKS, ORBITALS } from '../content/early';
@@ -50,7 +53,7 @@ import { constantOpen, constantPlan } from '../engine/systems/constants';
 import { masteryOpen, masteryRank } from '../engine/systems/mastery';
 import { orbitalsOpen, planetPrice } from '../engine/systems/orbitals';
 import { questProgress } from '../engine/systems/quests';
-import { nextShardAt, supernovaGain, supernovaReady } from '../engine/systems/supernova';
+import { nextShardAt, supernovaGain, supernovaReady, novaNeed } from '../engine/systems/supernova';
 import { beltOpen, beltTierNeed, beltUpgradeCost, beltUpgradeMaxed, bitCost, drillOpen, droneCost } from '../engine/systems/belt';
 import { BELT_UPGRADES } from '../content/belt';
 import { GRADE_BY_ID, RELICS } from '../content/forge';
@@ -121,8 +124,31 @@ export interface RailItem {
   alert: boolean;
 }
 
+/** 1.2.0: a big card at the side for a system you just unlocked, or one you're close to. */
+export interface FocusCard {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  blurb: string;
+  kind: 'new' | 'next';
+  req: string;
+  pct: number;
+}
+
 export interface Snapshot {
   notation: Notation;
+  /** 1.2.0 interface settings: size, hidden parts ("buffs teasers"), reset animations, compact engines. */
+  uiScale: number;
+  hiddenHud: string;
+  resetFx: boolean;
+  shipAlerts: boolean;
+  autoHideMenus: boolean;
+  engineList: 'auto' | 'full' | 'compact' | 'min';
+  engineCompact: boolean;
+  /** 1.2.0: the engine list's view ('full', 'compact', 'min'), and the Stardust a second all engines make. */
+  engineView: string;
+  focus: FocusCard[];
   dust: string;
   dustRate: string;
   playtime: string;
@@ -226,11 +252,17 @@ export interface Snapshot {
   storyDue: boolean;
   storySeen: boolean;
   /** The Wardrobe's choices, for the renderer (skin, trail, background ids). */
+  /** 1.2.0: Buy all for upgrades (first Supernova) and for the trees (5 Supernovas). */
+  upgradeBulk: boolean;
+  treeBulk: boolean;
   /** Space Weather in the sky ('' for clear), for the renderer. */
   weatherKind: string;
   skin: string;
   trail: string;
   background: string;
+  /** 1.2.0: tap sparks and the menus' colour. */
+  burst: string;
+  uiTheme: string;
   /** Reset bars of layers Eternity runs by itself ("supernova,nebula"): they shrink to a slim strip. */
   autoBars: string;
   /** Music: the soundtrack, its volume, and how many layers you've reached (each adds an instrument). */
@@ -391,6 +423,12 @@ function railAlert(s: GameState, id: string): boolean {
   }
 }
 
+/** Auto-Supernova earned and switched on: the Supernova bar runs itself. */
+function autoNovaOn(s: GameState): boolean {
+  const a = AUTO_BUYERS.find((x) => x.id === 'auto.supernova');
+  return !!a && autoUnlocked(s, a) && autoSetting(s, a.id).on;
+}
+
 function totalSlots(s: GameState): number {
   return ORBITALS.rings.reduce((a, r) => a + (s.tier >= r.tier ? r.slots : 0), 0);
 }
@@ -420,7 +458,21 @@ function railItems(s: GameState, rail: 'left' | 'right', prev: RailItem[] | unde
       alert: (state === 'open' || state === 'new') && railAlert(s, x.id),
     };
   });
-  return stableList(prev, items);
+  // off the rails: hidden by you (even before you've opened it), or open and running itself
+  const off = (x: RailItem) => (x.state === 'open' && menuHidden(s, x.id)) || (x.state === 'new' && s.settings.hiddenMenus.includes(x.id));
+  return stableList(prev, items.filter((x) => !off(x)));
+}
+
+/** A just-unlocked system you haven't opened, then the next one or two you're closest to. */
+function focusCards(s: GameState, right: RailItem[], prev: FocusCard[] | undefined): FocusCard[] {
+  const card = (x: RailItem, kind: FocusCard['kind']): FocusCard => ({ id: x.id, name: x.name, icon: x.icon, color: x.color, blurb: x.blurb, kind, req: x.req, pct: x.pct });
+  const fresh = right.filter((x) => x.state === 'new').slice(-1).map((x) => card(x, 'new'));
+  const next = right
+    .filter((x) => x.state === 'locked')
+    .sort((a, b) => b.pct - a.pct)
+    .slice(0, fresh.length ? 1 : 2)
+    .map((x) => card(x, 'next'));
+  return stableList(prev, [...fresh, ...next]);
 }
 
 export function buildSnapshot(prev?: Snapshot): Snapshot {
@@ -432,15 +484,18 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
   const money = cur(s, 'stardust');
   const combo = comboNow(game.tapRuntime, performance.now(), stat(s, 'comboDrain').toNumber());
   const comboX = comboMult(combo, stat(s, 'comboPower').toNumber());
-  const { rows, mystery } = engineRows(s, n, prev?.engineRows);
+  const view = engineView(s);
+  // minimized, the list shows no rows: don't build them (30 rows, ten times a second, late in the game)
+  const { rows, mystery } = view === 'min' ? { rows: prev?.engineRows ?? [], mystery: prev?.engineMystery ?? '' } : engineRows(s, n, prev?.engineRows);
   const nova = BALANCE.supernova;
+  const railRight = railItems(s, 'right', prev?.railRight);
   const novaReady = supernovaReady(s);
   const hud = attuneHud();
   const neb = nebulaBar(s, n);
   const lvl = levelInfo(s);
   const novaTier = reqProgress(s, { kind: 'tier', tier: nova.tier });
   const run = (s.totals.run.stardust ?? D(0)).toNumber();
-  const novaDust = Math.min(1, Math.log10(1 + run) / Math.log10(1 + nova.runStardust));
+  const novaDust = Math.min(1, Math.log10(1 + run) / novaNeed(s).add(1).log10().toNumber());
   let enginesOwned = 0;
   for (const e of ENGINES) enginesOwned += owned(s, e.id);
   const fog = s.trials.active.some((id) => TRIAL_BY_ID.get(id)?.fog);
@@ -470,7 +525,15 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     soundtrack: s.settings.soundtrack,
     volumeMusic: s.settings.volumeMusic,
     musicLayers: ['supernovasAll', 'nebulasAll', 'singularitiesAll', 'galacticsAll', 'crunchesAll', 'multiversesAll'].filter((k) => (s.stats[k] ?? 0) > 0).length,
-    autoBars: [...(['supernova', 'nebula', 'singularity', 'galactic'] as const).filter((l) => automating(s, l)), ...(sparkFlag(s, 'autoCrunch') ? ['crunch'] : [])].join(','),
+    autoBars: [...(['supernova', 'nebula', 'singularity', 'galactic'] as const).filter((l) => automating(s, l) || (l === 'supernova' && autoNovaOn(s))), ...(sparkFlag(s, 'autoCrunch') ? ['crunch'] : [])].join(','),
+    uiScale: s.settings.uiScale,
+    hiddenHud: s.settings.hiddenHud.join(' '),
+    resetFx: s.settings.resetFx,
+    shipAlerts: s.settings.shipAlerts,
+    autoHideMenus: s.settings.autoHideMenus,
+    engineList: s.settings.engineList,
+    engineCompact: view !== 'full',
+    engineView: view,
     autosaveSeconds: s.settings.autosaveSeconds,
     confirmResets: s.settings.confirmResets,
     hotkeys: s.settings.hotkeys,
@@ -506,7 +569,8 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     engineMystery: mystery,
     enginesOwned: formatCount(enginesOwned, n),
     railLeft: railItems(s, 'left', prev?.railLeft),
-    railRight: railItems(s, 'right', prev?.railRight),
+    railRight,
+    focus: focusCards(s, railRight, prev?.focus),
     nebulaVisible: neb.visible,
     nebulaReady: neb.ready,
     nebulaGain: neb.gain,
@@ -537,7 +601,7 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     novaPct: novaReady ? 100 : Math.floor((s.tier >= nova.tier ? 0.5 + novaDust * 0.5 : novaTier * 0.5) * 100),
     novaReq: novaReady
       ? `Next shard at ${format(nextShardAt(s), n)} Stardust`
-      : `Reach ${TIERS[nova.tier]!.name} and gather ${format(nova.runStardust, n)} Stardust this run`,
+      : `Reach ${TIERS[nova.tier]!.name} and gather ${format(novaNeed(s), n)} Stardust this run`,
     novaReady,
     novaGain: novaReady ? `+${format(supernovaGain(s), n)}` : '',
     shards: format(cur(s, 'shards'), n),
@@ -632,9 +696,13 @@ function multiverseBar(s: GameState, n: Notation) {
     storyDue: (s.stats.multiversesAll ?? 0) > 0 && !s.multiverse.storySeen,
     storySeen: s.multiverse.storySeen,
     weatherKind: weatherNow(s) ?? '',
+    upgradeBulk: upgradeBulkOpen(s),
+    treeBulk: treeBulkOpen(s),
     skin: s.cosmetics.skin,
     trail: s.cosmetics.trail,
     background: s.cosmetics.background,
+    burst: s.cosmetics.burst,
+    uiTheme: s.cosmetics.theme,
   };
 }
 

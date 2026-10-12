@@ -63,8 +63,13 @@ test('export then import restores the save', async ({ page }) => {
   const code = await page.getByLabel('Save code').inputValue();
   expect(code.startsWith('STARFORGE1:')).toBe(true);
   const settings = page.locator('[data-panel="settings"]');
-  await settings.getByRole('button', { name: 'Wipe save' }).click();
-  await settings.getByRole('button', { name: 'Click again to wipe' }).click();
+  // 1.2.0: the permanent reset asks three times (what it does, are you sure, type RESET)
+  await settings.getByTestId('reset-1').click();
+  await settings.getByTestId('reset-2').click();
+  await settings.getByTestId('reset-3').click();
+  await expect(settings.getByTestId('reset-go')).toBeDisabled();
+  await settings.getByTestId('reset-type').fill('reset');
+  await settings.getByTestId('reset-go').click();
   await expect(page.locator('.pill .val').first()).toHaveText('0');
   await page.getByLabel('Save code').fill(code);
   await page.getByRole('button', { name: 'Import', exact: true }).click();
@@ -249,8 +254,12 @@ test('Phase 3: buy constants, place a planet, claim a quest', async ({ page }) =
     for (let i = 0; i < 20; i++) commands.buyEngine('mote');
     game.state.tier = 3;
   });
-  // Constants: the rail opens the panel, "Next" buys up to the first doubling
-  await page.locator('[data-rail="constants"]').first().click();
+  // Constants: the rail opens the panel, "Next" buys up to the first doubling. The button is there
+  // (locked) before the unlock lands a tick later, and a locked one only shows its tip: wait for it to open
+  const constantsBtn = page.locator('[data-rail="constants"]').first();
+  await page.waitForFunction(() => (window as unknown as { sf: { game: { state: { unlocked: string[] } } } }).sf.game.state.unlocked.includes('constants'));
+  await expect(constantsBtn).toHaveClass(/(^| )(new|open)( |$)/);
+  await constantsBtn.click();
   const panel = page.locator('[data-panel="constants"]');
   await expect(panel).toHaveClass(/open/);
   await panel.getByRole('button', { name: 'Next', exact: true }).click();
@@ -746,10 +755,20 @@ test('Attunements: equip Pulse, tap on the beat, the rating shows in Stats', asy
   await page.keyboard.press('Escape');
   await expect(page.locator('.pulse-ring')).toBeAttached();
   await expect(page.locator('.attune-hud')).toContainText('Pulse');
-  // tap right on beats: wait for each beat with the page's own clock
+  // tap right on beats: the page presses the star itself on each beat of its own clock (a click sent
+  // from the test can arrive after the 240 ms window when many browsers share the machine)
   for (let i = 0; i < 4; i++) {
-    await page.evaluate(() => new Promise((r) => setTimeout(r, 1000 - (performance.now() % 1000))));
-    await page.locator('.star-btn').click({ force: true });
+    await page.evaluate(
+      () =>
+        new Promise<void>((r) =>
+          setTimeout(() => {
+            const btn = document.querySelector<HTMLButtonElement>('.star-btn')!;
+            const box = btn.getBoundingClientRect();
+            btn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, button: 0, pointerType: 'mouse', clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 }));
+            r();
+          }, 1000 - (performance.now() % 1000)),
+        ),
+    );
   }
   const graded = await page.evaluate(() => (window as unknown as Sf7).sf.game.state.attune.pulse.length);
   expect(graded).toBeGreaterThanOrEqual(2);
@@ -758,7 +777,7 @@ test('Attunements: equip Pulse, tap on the beat, the rating shows in Stats', asy
   expect(errors).toEqual([]);
 });
 
-test('the Merchant: four deals, take one and it is replaced', async ({ page }) => {
+test('the Merchant: three deals; a deal taken stays sold, and a swap replaces only the rest', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/?dev=1');
   await page.evaluate(() => {
@@ -770,12 +789,15 @@ test('the Merchant: four deals, take one and it is replaced', async ({ page }) =
   });
   await openRail(page, 'merchant');
   const panel = page.locator('[data-panel="merchant"]');
-  await expect(panel.locator('.deal')).toHaveCount(4);
+  // 1.2.0: three deals a ship, and a deal you take stays sold until the next ship
+  await expect(panel.locator('.deal')).toHaveCount(3);
   await panel.locator('[data-deal="0"]').getByRole('button', { name: /Take the deal/ }).click();
   await expect.poll(() => sf7(page)(() => (window as unknown as Sf7).sf.game.state.stats.deals ?? 0)).toBe(1);
-  await expect(panel.locator('.deal')).toHaveCount(4);
-  await panel.getByRole('button', { name: /New deals for/ }).click();
-  await expect(panel.getByRole('button', { name: /New deals for 10 Nova/ })).toBeVisible();
+  await expect(panel.locator('.deal')).toHaveCount(3);
+  await expect(panel.locator('[data-deal="0"]')).toHaveClass(/sold/);
+  await panel.getByRole('button', { name: /Swap the deals still for sale for 5 Nova/ }).click();
+  await expect(panel.getByRole('button', { name: /Swap the deals still for sale for 10 Nova/ })).toBeVisible();
+  await expect(panel.locator('[data-deal="0"]')).toHaveClass(/sold/);
   expect(errors).toEqual([]);
 });
 
@@ -830,7 +852,8 @@ test('the Nebula: from 30 Supernovas through the confirm screen; Essence arrives
     s.stats.supernovas = 30;
     s.stats.supernovasAll = 30;
     s.stats.supernovasBest = 30;
-    commands.devAdd('shards', 2e5);
+    // 1.2.0: the Nebula starts at 10M shards this run
+    commands.devAdd('shards', 2e7);
   });
   const bar = page.getByTestId('nebula');
   await expect(bar).toBeEnabled();
@@ -2031,5 +2054,60 @@ test('Hidden Sigils: a sigil shows between its two nodes, buys in the tree, and 
   await toggle.click();
   await expect(toggle).toHaveAttribute('aria-pressed', 'false');
   await expect(altar.locator('[data-sigil="sigil.wrath"]')).toContainText('An unknown sigil');
+  expect(errors).toEqual([]);
+});
+
+// ---------- 1.2.0: the interface ----------
+
+type Sf120 = { sf: { game: { state: { stats: Record<string, number>; unlocked: string[]; seen: string[]; achievements: string[]; forge: { grade: string; share: number; upgrades: Record<string, number>; lanes: Array<{ grade: string }> } } }; commands: { devAdd(c: string, n: number): void }; open(id: string): void } };
+
+test('1.2.0: focus cards, All grades in the Starforge, the Wardrobe in Medals, UI size, hidden parts and menus', async ({ page }, info) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf120).sf;
+    game.state.stats.supernovas = 5;
+    game.state.stats.supernovasAll = 5;
+    game.state.achievements = Array.from({ length: 12 }, (_, i) => `x${i}`);
+    for (const ore of ['ore', 'ore.gold']) commands.devAdd(ore, 1e6);
+    game.state.forge.share = 1;
+    game.state.forge.upgrades.crucibles = 1;
+    (game.state.forge as unknown as { on: boolean }).on = false;
+  });
+  // a system you just unlocked is a big card at the side (on a phone, in the engine drawer)
+  if (info.project.name === 'desktop') {
+    const card = page.locator('.focus-card.new');
+    await expect(card).toBeVisible();
+    await expect(card).toContainText('Just unlocked');
+  }
+  // the furnace smelts every grade you have at once
+  await openRail(page, 'starforge');
+  const forge = page.locator('[data-panel="starforge"]');
+  await forge.locator('[data-grade="all"]').click();
+  await expect(forge.locator('[data-grade="all"]')).toHaveAttribute('aria-checked', 'true');
+  await forge.locator('.furnace-status').getByRole('button', { name: 'Off' }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf120).sf.game.state.forge.lanes.map((l) => l.grade).sort().join(','))).toBe('gold,iron');
+  await expect(forge.getByTestId('furnace-status')).toContainText('Smelting every grade');
+  await page.keyboard.press('Escape');
+  // the Wardrobe lives in the Medals menu too
+  await page.evaluate(() => (window as unknown as Sf120).sf.open('medals'));
+  const medals = page.locator('[data-panel="medals"]');
+  await medals.getByTestId('medals-tab-wardrobe').click();
+  await expect(medals.locator('[data-cosmetic="burst.tier"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(medals.locator('[data-cosmetic="theme.violet"]')).toBeVisible();
+  await page.keyboard.press('Escape');
+  // Settings: the interface's size, a part of the screen hidden, a menu hidden
+  await page.evaluate(() => (window as unknown as Sf120).sf.open('settings'));
+  const settings = page.locator('[data-panel="settings"]');
+  const size = () => page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize));
+  const before = await size();
+  await settings.getByTestId('ui-scale').getByRole('button', { name: '120%' }).click();
+  await expect.poll(size).toBeGreaterThan(before * 1.15);
+  await settings.getByTestId('ui-scale').getByRole('button', { name: '100%' }).click();
+  await settings.locator('[data-hud="teasers"]').click();
+  await expect(page.locator('.teasers')).toBeHidden();
+  await settings.locator('[data-menu="ascent"]').getByRole('button', { name: 'Hide' }).click();
+  await expect(settings.locator('[data-menu="ascent"]').getByRole('button', { name: 'Show' })).toBeVisible();
+  await expect(page.locator('nav.rail [data-rail="ascent"]')).toHaveCount(0);
   expect(errors).toEqual([]);
 });

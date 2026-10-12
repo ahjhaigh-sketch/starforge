@@ -13,7 +13,29 @@ import { useUi } from '../store';
 
 const PINK = '#B23A8E';
 
-function Preview({ kind, colors }: { kind: 'skin' | 'trail' | 'background'; colors: string[] }) {
+type Kind = 'skin' | 'trail' | 'background' | 'burst' | 'theme';
+
+function Preview({ kind, colors }: { kind: Kind; colors: string[] }) {
+  if (kind === 'burst') {
+    // six sparks flying out from the middle
+    return (
+      <span className="wd-burst">
+        {Array.from({ length: 6 }, (_, i) => {
+          const a = (i / 6) * Math.PI * 2;
+          const c = colors[i % colors.length] ?? '#fff';
+          return <i key={i} style={{ background: c, color: c, transform: `translate(${(Math.cos(a) * 1.05).toFixed(2)}rem, ${(Math.sin(a) * 1.05).toFixed(2)}rem)` }} />;
+        })}
+      </span>
+    );
+  }
+  if (kind === 'theme') {
+    return (
+      <span className="wd-theme">
+        <i style={{ background: colors[0] }} />
+        <i style={{ background: colors[1] }} />
+      </span>
+    );
+  }
   if (kind === 'skin') {
     const [hot, body, corona] = colors;
     return <span className="wd-star" style={{ '--hot': hot, '--body': body, '--corona': corona } as CSSProperties} />;
@@ -37,7 +59,7 @@ function Preview({ kind, colors }: { kind: 'skin' | 'trail' | 'background'; colo
   );
 }
 
-function Choices({ kind, items, title }: { kind: 'skin' | 'trail' | 'background'; items: WardrobeChoice[]; title: string }) {
+function Choices({ kind, items, title }: { kind: Kind; items: WardrobeChoice[]; title: string }) {
   return (
     <>
       <h4 className="section-h">{title}</h4>
@@ -67,10 +89,10 @@ function Choices({ kind, items, title }: { kind: 'skin' | 'trail' | 'background'
   );
 }
 
-function PhotoMode() {
+function PhotoMode({ panel }: { panel: string }) {
   const [url, setUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const panelOpen = useUi((s) => s.panel === 'wardrobe');
+  const panelOpen = useUi((s) => s.panel === panel);
   // a photo belongs to the moment it was taken: let it go when the panel closes
   useEffect(() => {
     if (!panelOpen && url) {
@@ -86,6 +108,7 @@ function PhotoMode() {
     if (!blob) return;
     if (url) URL.revokeObjectURL(url);
     setUrl(URL.createObjectURL(blob));
+    commands.poke('photo');
   };
   return (
     <>
@@ -108,24 +131,34 @@ function PhotoMode() {
   );
 }
 
-export function WardrobePanel() {
-  const r = useReport('wardrobe', wardrobeReport, 400);
+/** The Wardrobe's contents, for its own panel and for the Medals menu's Wardrobe tab. */
+export function WardrobeBody({ panel }: { panel: string }) {
+  const r = useReport(panel, wardrobeReport, 400);
   const data = r ?? wardrobeReport();
+  if (!data.open)
+    return (
+      <p className="depth-locked">
+        <Icon name="lock" /> The Wardrobe opens at {data.req}.
+      </p>
+    );
+  return (
+    <>
+      <p className="mv-note">How your star, sky and menus look, earned with medals and milestones. Nothing here changes a number.</p>
+      <p className="wd-count">{data.unlocked}</p>
+      <Choices kind="skin" items={data.skins} title="Star skins" />
+      <Choices kind="trail" items={data.trails} title="Cursor trails" />
+      <Choices kind="burst" items={data.bursts} title="Tap sparks" />
+      <Choices kind="background" items={data.backgrounds} title="Backgrounds" />
+      <Choices kind="theme" items={data.themes} title="Menu colour" />
+      <PhotoMode panel={panel} />
+    </>
+  );
+}
+
+export function WardrobePanel() {
   return (
     <Panel id="wardrobe" title="Wardrobe" color={PINK} size="wide">
-      {!data.open ? (
-        <p className="depth-locked">
-          <Icon name="lock" /> The Wardrobe opens at {data.req}.
-        </p>
-      ) : (
-        <>
-          <p className="mv-note">How your star and sky look, earned with medals and milestones. Nothing here changes a number.</p>
-          <Choices kind="skin" items={data.skins} title="Star skins" />
-          <Choices kind="trail" items={data.trails} title="Cursor trails" />
-          <Choices kind="background" items={data.backgrounds} title="Backgrounds" />
-          <PhotoMode />
-        </>
-      )}
+      <WardrobeBody panel="wardrobe" />
     </Panel>
   );
 }

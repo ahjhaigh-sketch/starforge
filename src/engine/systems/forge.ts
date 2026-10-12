@@ -53,8 +53,12 @@ export function buyForgeUpgrade(s: GameState, id: ForgeUpgradeId): boolean {
   return true;
 }
 
+/** The furnace setting that smelts every grade at once (1.2.0). */
+export const FORGE_ALL = 'all';
+export const forgeAll = (s: GameState) => s.forge.grade === FORGE_ALL;
+
 export function setForgeGrade(s: GameState, grade: string): boolean {
-  if (!GRADE_BY_ID.has(grade)) return false;
+  if (grade !== FORGE_ALL && !GRADE_BY_ID.has(grade)) return false;
   s.forge.grade = grade;
   return true;
 }
@@ -99,15 +103,37 @@ function countMined(s: GameState): void {
  * away if the hopper has ore, so one long catch-up step gives what many short ticks would.
  * Offline, the furnace runs at the offline efficiency (slower, never lossy).
  */
+/**
+ * The grade the next batch smelts. One grade: always that one. All grades: the grade with ore for a
+ * batch that the fewest crucibles are already on (rarer first on a tie), so every kind of ore you
+ * have is smelted side by side, and switching to All spreads the crucibles out as batches finish.
+ */
+function nextGrade(s: GameState, lanes: GameState['forge']['lanes']): GradeDef | null {
+  if (!forgeAll(s)) return GRADE_BY_ID.get(s.forge.grade) ?? GRADES[0]!;
+  const ore = batchOre(s);
+  let best: GradeDef | null = null;
+  let fewest = Infinity;
+  for (let i = GRADES.length - 1; i >= 0; i--) {
+    const g = GRADES[i]!;
+    if (hopperOre(s, g).lt(ore)) continue;
+    const on = lanes.reduce((k, l) => k + (l.grade === g.id ? 1 : 0), 0);
+    if (on < fewest) {
+      fewest = on;
+      best = g;
+    }
+  }
+  return best;
+}
+
 export function runFurnace(s: GameState, dt: number): void {
   countMined(s);
   const T = batchSeconds(s);
-  const grade = GRADE_BY_ID.get(s.forge.grade) ?? GRADES[0]!;
   // fill idle crucibles
   const fill = () => {
     while (s.forge.on && s.forge.lanes.length < crucibles(s)) {
       const ore = batchOre(s);
-      if (!takeOre(s, grade, ore)) break;
+      const grade = nextGrade(s, s.forge.lanes);
+      if (!grade || !takeOre(s, grade, ore)) break;
       s.forge.lanes.push({ grade: grade.id, ore, alloy: batchAlloy(s, grade.id), t: 0 });
     }
   };
@@ -126,9 +152,9 @@ export function runFurnace(s: GameState, dt: number): void {
     batches++;
     t -= T;
     // then whole batches back to back while time and ore last (closed form: no loop per batch)
-    const g = GRADE_BY_ID.get(s.forge.grade) ?? GRADES[0]!;
+    const g = nextGrade(s, keep);
     const ore = batchOre(s);
-    if (s.forge.on && keep.length + 1 <= crucibles(s)) {
+    if (g && s.forge.on && keep.length + 1 <= crucibles(s)) {
       const byTime = Math.floor(t / T);
       const byOre = Math.floor(hopperOre(s, g).div(ore).toNumber());
       const k = Math.max(0, Math.min(byTime, byOre));

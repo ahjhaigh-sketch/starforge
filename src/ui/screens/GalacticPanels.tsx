@@ -5,7 +5,7 @@ import { galacticReport, galaxyMapReport, observatoryReport } from '../../app/ga
 import { NODE_LEGEND } from '../../app/novaReports';
 import { layerConfirm } from '../../app/runeReports';
 import { kitTreeReport } from '../../app/treeReports';
-import { snapshotStore } from '../../app/uiSnapshot';
+import { snapshotStore, useSnap } from '../../app/uiSnapshot';
 import { galacticTree } from '../../engine/systems/galactic';
 import { starChart } from '../../engine/systems/observatory';
 import { BuyAmountControl } from '../kit/BuyAmountControl';
@@ -162,13 +162,14 @@ export function GalacticConfirmPanel() {
 
 export function GalacticTreePanel() {
   const r = useReport('galactictree', () => kitTreeReport(galacticTree), 200);
+  const treeBulk = useSnap((s) => s.treeBulk);
   return (
     <Panel id="galactictree" title="Galactic Tree" color="#3F7A12" size="wide">
       <div className="tree-head">
         <p>Five spiral arms, one for each way to play: Active (taps and comets), Idle (production and time), Runes, Wyrms and Production (the reset currencies). Capstones join neighbouring arms; four echoes level up with no cap.</p>
         {r && <CoreChip value={r.money} />}
       </div>
-      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={sigilAware((id) => commands.buyGalacticNode(id))} currencyLabel="Galaxy Cores" legend={NODE_LEGEND} />}
+      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={sigilAware((id) => commands.buyGalacticNode(id))} onBuyAll={() => commands.buyAllNodes('galactictree')} bulkLocked={treeBulk ? '' : 'Buy all opens at 5 Supernovas'} currencyLabel="Galaxy Cores" legend={NODE_LEGEND} />}
     </Panel>
   );
 }
@@ -327,13 +328,14 @@ export function ObservatoryPanel() {
 
 export function StarChartPanel() {
   const r = useReport('starchart', () => kitTreeReport(starChart), 200);
+  const treeBulk = useSnap((s) => s.treeBulk);
   return (
     <Panel id="starchart" title="Stardust Chart" color="#7B3FD6" size="wide">
       <div className="tree-head">
         <p>Constellations you've charted. Spend Star Charts from the Observatory; the chart is never reset.</p>
         {r && <CoreChip value={r.money} icon="telescope" />}
       </div>
-      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={sigilAware((id) => commands.buyChartNode(id))} currencyLabel="Star Charts" legend={NODE_LEGEND} />}
+      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={sigilAware((id) => commands.buyChartNode(id))} onBuyAll={() => commands.buyAllNodes('starchart')} bulkLocked={treeBulk ? '' : 'Buy all opens at 5 Supernovas'} currencyLabel="Star Charts" legend={NODE_LEGEND} />}
     </Panel>
   );
 }

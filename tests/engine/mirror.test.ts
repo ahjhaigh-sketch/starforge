@@ -43,7 +43,7 @@ const labels = (s: GameState, id: string) => breakdown(s, id).map((l) => l.label
 describe('the Mirror runs on the Stardust layer code', () => {
   it('both layers are the one engine kit with different data', () => {
     expect(Object.keys(MIRROR_ENGINES).sort()).toEqual(Object.keys(STARDUST_ENGINES).sort());
-    expect(STARDUST_ENGINES.def.engines).toHaveLength(15);
+    expect(STARDUST_ENGINES.def.engines).toHaveLength(30);
     expect(MIRROR_ENGINES.def.engines).toHaveLength(10);
     // no second copy of the engine code: the Mirror only feeds data to makeEngineLayer
     const src = readFileSync('src/engine/systems/mirror.ts', 'utf8');

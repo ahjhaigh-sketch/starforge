@@ -22,8 +22,9 @@ const N = BALANCE.nebula;
 export const runShards = (s: GameState): Decimal => s.totals.run.shards ?? ZERO;
 
 export function nebulaGain(s: GameState): Decimal {
-  if ((s.stats.nebulasAll ?? 0) === 0) return D(N.firstGain);
-  return runShards(s).div(N.runShards).pow(N.gainPow).mul(stat(s, 'essenceGain')).floor();
+  const g = runShards(s).div(N.runShards).pow(N.gainPow).mul(stat(s, 'essenceGain')).floor();
+  // 1.2.0: the first Nebula pays what your shards are worth too (at least 2), not a flat 2
+  return (s.stats.nebulasAll ?? 0) === 0 ? g.max(N.firstGain) : g;
 }
 
 export function nebulaReady(s: GameState): boolean {

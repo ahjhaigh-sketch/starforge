@@ -65,6 +65,8 @@ function* elapsedSteps(s: GameState, opts: ElapsedOptions, report: OfflineReport
   let done = 0;
   const ctx = { gainScale: opts.efficiency, offline: opts.offline, catchUp: true };
   const t0 = performance.now();
+  /** When the first long step (after the probe) began, while it is still to be measured. */
+  let longFrom: number | null = null;
   try {
     for (let i = 0; i < steps; i++) {
       tick(s, dt, ctx);
@@ -76,6 +78,19 @@ function* elapsedSteps(s: GameState, opts: ElapsedOptions, report: OfflineReport
         const rest = Math.max(MIN_STEPS - PROBE, Math.min(steps - PROBE, fits));
         steps = PROBE + rest;
         dt = (counted - done) / rest;
+        longFrom = performance.now();
+      } else if (longFrom !== null && i === PROBE) {
+        // a long step does more (more resets and rolls) than the short probe steps: measure the first
+        // one and fit what is left again, so the catch-up keeps to its budget (1.2.0 speed budgets)
+        const per = performance.now() - longFrom;
+        const left = steps - (i + 1);
+        const fits = Math.floor((opts.budgetMs! - (performance.now() - t0)) / Math.max(per, 1e-3));
+        const rest = Math.max(MIN_STEPS - (i + 1), Math.min(left, fits));
+        if (rest > 0 && rest !== left) {
+          steps = i + 1 + rest;
+          dt = (counted - done) / rest;
+        }
+        longFrom = null;
       }
       if ((i + 1) % CHUNK === 0 && i + 1 < steps) yield (i + 1) / steps;
     }

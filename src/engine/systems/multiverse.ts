@@ -142,6 +142,7 @@ const PARTS: Record<string, (s: GameState) => void> = {
     s.attune.unlocked = [];
     s.attune.equipped = [];
     s.merchant.deals = [];
+    s.merchant.nextShip = 0;
     s.merchant.luck = 0;
     s.merchant.rerolls = 0;
     s.ships.fleet = [{ sector: null, t: 0, auto: true }];

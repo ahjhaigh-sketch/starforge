@@ -5,7 +5,7 @@ import { TIERS } from '../content/tiers';
 import { cur } from '../engine/state';
 import { constantOpen, constantPlan, doublings, effectValue, level, nextDoubling } from '../engine/systems/constants';
 import { masteryOpen, masteryRank } from '../engine/systems/mastery';
-import { differentNeighbours, levelPrice, planetBonus, planetPrice, ringOpen, slotId } from '../engine/systems/orbitals';
+import { differentNeighbours, levelPlanetPlan, planetBonus, planetPrice, ringOpen, slotId } from '../engine/systems/orbitals';
 import { questProgress, questReward, questsOpen } from '../engine/systems/quests';
 import { reqText } from '../engine/systems/unlocks';
 import { format, formatCount, formatMult } from '../ui/format';
@@ -163,10 +163,17 @@ export interface SlotView {
   color: string;
   band: string;
   level: number;
+  levelText: string;
   bonus: string;
   neighbours: number;
+  /** The level button at the buy amount: how many levels, their total, and the result. */
+  levelCount: number;
+  levelCountText: string;
   levelCost: string;
   canLevel: boolean;
+  /** Level and bonus after that purchase ("Lv 20", "+500%"). */
+  levelTo: string;
+  bonusNext: string;
 }
 
 export interface RingView {
@@ -175,6 +182,8 @@ export interface RingView {
   req: string;
   slots: SlotView[];
 }
+
+const pct = (share: number) => `+${formatCount(Math.round(share * 100), n())}%`;
 
 export function orbitalsReport(): { rings: RingView[]; price: string; canBuy: boolean; types: Array<{ id: string; name: string; color: string; band: string; engines: string }> } {
   const s = game.state;
@@ -188,6 +197,10 @@ export function orbitalsReport(): { rings: RingView[]; price: string; canBuy: bo
       const slot = slotId(index, i);
       const p = s.planets[slot];
       const type = p ? PLANET_TYPES.find((t) => t.id === p.type) : undefined;
+      const plan = levelPlanetPlan(s, slot);
+      // the bonus grows in step with the level, so the bonus after the purchase scales with it
+      const bonus = p ? planetBonus(s, slot) : 0;
+      const bonusNext = p && p.level > 0 ? (bonus * (p.level + plan.count)) / p.level : 0;
       return {
         slot,
         type: p?.type ?? null,
@@ -195,10 +208,15 @@ export function orbitalsReport(): { rings: RingView[]; price: string; canBuy: bo
         color: type?.color ?? '#2B2558',
         band: type?.band ?? '#2B2558',
         level: p?.level ?? 0,
-        bonus: p ? `+${Math.round(planetBonus(s, slot) * 100)}%` : '',
+        levelText: formatCount(p?.level ?? 0, n()),
+        bonus: p ? pct(bonus) : '',
         neighbours: p ? differentNeighbours(s, slot) : 0,
-        levelCost: p ? format(levelPrice(p), n()) : '',
-        canLevel: !!p && money.gte(levelPrice(p)),
+        levelCount: plan.count,
+        levelCountText: formatCount(plan.count, n()),
+        levelCost: p ? format(plan.cost, n()) : '',
+        canLevel: !!p && plan.count > 0 && plan.canAfford,
+        levelTo: p ? `Lv ${formatCount(p.level + plan.count, n())}` : '',
+        bonusNext: p ? pct(bonusNext) : '',
       };
     }),
   }));

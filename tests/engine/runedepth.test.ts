@@ -31,6 +31,8 @@ function player(nebulas = 4, seed = 5): GameState {
   s.stats.nebulas = nebulas;
   s.stats.nebulasAll = nebulas;
   s.forge.on = false;
+  // 1.2.0: Auto-Supernova (40 Supernovas) would reset this run: these tests are about runes and auras
+  s.auto['auto.supernova'] = { on: false, spend: 1 };
   invalidateStats();
   return s;
 }

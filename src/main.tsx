@@ -22,6 +22,8 @@ import './ui/galaxybuild.css';
 import './ui/crunch.css';
 import './ui/multiverse.css';
 import './ui/phase20.css';
+import './ui/panelArt.css';
+import './ui/update120.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

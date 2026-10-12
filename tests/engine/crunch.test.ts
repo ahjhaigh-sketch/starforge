@@ -326,13 +326,15 @@ describe('Eternity', () => {
     expect(s.stats.galaxiesCleared).toBe(3);
   });
 
-  it('Eternal Forge unlocks every auto-buyer from the start, and switching Stardust off takes them back', () => {
+  it('Eternal Forge unlocks every Stardust auto-buyer from the start, and switching Stardust off takes them back', () => {
+    // the tree auto-buyers (1.2.0) are earned by their own counts, not by Eternity
+    const stardust = AUTO_BUYERS.filter((a) => !a.req);
     const s = crunched();
-    expect(AUTO_BUYERS.every((a) => autoUnlocked(s, a))).toBe(false);
+    expect(stardust.every((a) => autoUnlocked(s, a))).toBe(false);
     s.eternity.upgrades = ['et.forge'];
-    expect(AUTO_BUYERS.every((a) => autoUnlocked(s, a))).toBe(true);
+    expect(stardust.every((a) => autoUnlocked(s, a))).toBe(true);
     setEternityAuto(s, 'stardust', { on: false });
-    expect(AUTO_BUYERS.every((a) => autoUnlocked(s, a))).toBe(false);
+    expect(stardust.every((a) => autoUnlocked(s, a))).toBe(false);
   });
 
   it('with every automation upgrade, each layer resets by itself and buys from its own tree', () => {

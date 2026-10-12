@@ -1,0 +1,142 @@
+/*
+ * 1.2.0 interface: UI size, parts of the screen you can hide, focus cards, compact engines, the
+ * Menus list and the permanent reset in Settings. Colours come from the theme tokens.
+ */
+
+/* the interface's size: every size is in rem, so scaling the root scales the UI (never the sky) */
+html { font-size: calc(clamp(13px, 1.55vh, 18px) * var(--ui-scale, 1)); }
+
+/* parts of the screen you hid in Settings (data-hide on <html>) */
+html[data-hide~='buffs'] .hud .buffs,
+html[data-hide~='teasers'] .teasers,
+html[data-hide~='focus'] .focus-cards,
+html[data-hide~='autobars'] .bottom .nova.slim,
+html[data-hide~='evolve'] .bottom-row .evolve:not(.phone-only),
+html[data-hide~='caption'] .star-caption,
+html[data-hide~='floaters'] .floaters,
+html[data-hide~='attune'] .attune-hud,
+html[data-hide~='tier'] .tier-pill,
+html[data-hide~='save'] .save-ind { display: none !important; }
+
+/* ---------- focus cards: the big things, at the top of the side ---------- */
+.focus-cards { flex: none; display: flex; flex-direction: column; gap: 0.5rem; }
+.focus-card {
+  --stroke: 3px;
+  display: grid;
+  grid-template-columns: 3.6rem 1fr;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--r-panel);
+  text-align: left;
+  color: var(--text);
+  min-width: 0;
+}
+.focus-card.next { cursor: default; }
+.focus-card.next:hover { transform: none; }
+/* the glow is its own layer and only its opacity animates (cheap: no repaint per frame) */
+.focus-card { position: relative; }
+.focus-glow { position: absolute; inset: -2px; border-radius: inherit; pointer-events: none; box-shadow: 0 0 1.1rem 0.15rem color-mix(in srgb, var(--c) 70%, transparent); opacity: 0; will-change: opacity; animation: focus-glow 2.4s ease-in-out infinite; }
+@keyframes focus-glow {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 1; }
+}
+html.reduced-motion .focus-glow { animation: none; opacity: 0.6; }
+.focus-ico { width: 3.6rem; height: 3.6rem; display: grid; place-items: center; border-radius: 14px; background: color-mix(in srgb, var(--ink) 35%, transparent); }
+.focus-ico .icon { width: 2.8rem; height: 2.8rem; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.35)); }
+.focus-text { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.focus-kind { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
+.focus-card.new .focus-kind { color: var(--lime); }
+.focus-text b { font-family: var(--font-display); font-weight: 400; font-size: 1.45rem; line-height: 1.05; }
+.focus-blurb { font-size: 0.8rem; font-weight: 600; color: var(--text-dim); line-height: 1.25; }
+.focus-card.new .focus-blurb { color: rgba(255, 255, 255, 0.9); }
+.focus-go { align-self: flex-start; margin-top: 0.25rem; font-weight: 800; font-size: 0.85rem; padding: 0.15rem 0.6rem; border-radius: 999px; background: color-mix(in srgb, var(--ink) 45%, transparent); }
+.focus-req { display: flex; flex-direction: column; gap: 0.2rem; margin-top: 0.2rem; }
+.focus-req small { font-size: 0.75rem; font-weight: 700; color: var(--text-dim); }
+.focus-bar { height: 0.55rem; border-radius: 999px; background: var(--panel-deep); border: 1.5px solid var(--ink); overflow: hidden; }
+.focus-bar i { display: block; height: 100%; transition: width 0.3s; }
+
+/* ---------- compact engines: one slim line each ---------- */
+.store-size { --c: #4a4f7a; margin-left: auto; height: 1.9rem; padding: 0 0.7rem; border-radius: 10px; --stroke: 2px; font-weight: 800; font-size: 0.8rem; color: var(--text); }
+.store.compact { flex: 0 1 auto; }
+.store.compact .eng { grid-template-columns: 2.1rem 1fr auto auto; grid-template-rows: auto; padding-top: 0.25rem; padding-bottom: 0.25rem; column-gap: 0.5rem; }
+.store.compact .eng .tile { grid-row: 1; width: 2.1rem; height: 2.1rem; border-radius: 9px; }
+.store.compact .eng .tile .icon { width: 1.55rem; height: 1.55rem; }
+.store.compact .eng .nm { font-size: 0.9rem; }
+.store.compact .eng .own-col { grid-row: 1; grid-column: 4; flex-direction: row; align-items: baseline; gap: 0.4rem; }
+.store.compact .eng .own { font-size: 1.15rem; min-width: 0; }
+.store.compact .eng .meta { grid-column: 3; grid-row: 1; }
+.store.compact .eng .meta .ms,
+.store.compact .eng .meta .each { display: none; }
+.store.compact .eng.mystery .meta { grid-column: 3; }
+
+/* ---------- Settings: the Menus list and the permanent reset ---------- */
+.menu-list { list-style: none; margin: 0.4rem 0 0.8rem; padding: 0.4rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.35rem; }
+.menu-row { display: grid; grid-template-columns: 2.2rem 1fr auto; gap: 0.55rem; align-items: center; padding: 0.3rem 0.4rem; border-radius: 12px; background: color-mix(in srgb, var(--panel) 60%, transparent); }
+.menu-row.hidden, .menu-row.tucked { opacity: 0.72; }
+.menu-ico { width: 2.2rem; height: 2.2rem; border-radius: 10px; display: grid; place-items: center; background: var(--c); --stroke: 2px; }
+.menu-ico .icon { width: 1.6rem; height: 1.6rem; }
+.menu-name { display: flex; flex-direction: column; min-width: 0; }
+.menu-name b { font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.menu-name small { font-size: 0.7rem; color: var(--text-dim); font-weight: 600; line-height: 1.2; }
+.menu-always { font-size: 0.72rem; font-weight: 700; color: var(--lime); }
+
+.hard-reset { display: flex; flex-direction: column; gap: 0.45rem; padding: 0.7rem 0.8rem; border-radius: 14px; border: 2px solid var(--red); }
+.hard-reset p { margin: 0; font-size: 0.85rem; }
+.hard-reset-step { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--red); }
+.hard-reset-input { height: 2.1rem; width: 8rem; padding: 0 0.6rem; border-radius: 10px; color: var(--text); font: inherit; font-weight: 800; letter-spacing: 0.1em; }
+
+/* ---------- Automation: a reset spends nothing ---------- */
+.auto-note { font-size: 0.75rem; font-weight: 700; color: var(--text-dim); }
+
+/* ---------- the Starforge's "All grades" choice ---------- */
+.grade-all b { color: #fff; }
+
+@media (max-width: 900px) {
+  /* in the phone's engine drawer the cards stay slim, so the engines keep the room */
+  .focus-cards { gap: 0.35rem; }
+  .focus-card { grid-template-columns: 2.2rem 1fr; gap: 0.55rem; padding: 0.4rem 0.6rem; }
+  .focus-ico { width: 2.2rem; height: 2.2rem; border-radius: 10px; }
+  .focus-ico .icon { width: 1.7rem; height: 1.7rem; }
+  .focus-text { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 0.45rem; }
+  .focus-text b { font-size: 1.05rem; }
+  .focus-blurb { display: none; }
+  .focus-go { margin-top: 0; }
+  .focus-req { flex-basis: 100%; margin-top: 0; }
+  .menu-list { grid-template-columns: 1fr; }
+}
+
+/* 1.2.0 Wardrobe backgrounds: their page sky comes from variables the renderer sets */
+html[data-bg-glow] body { background: radial-gradient(60% 50% at 18% 22%, var(--bg-a), transparent 70%), radial-gradient(55% 45% at 85% 75%, var(--bg-b), transparent 70%), linear-gradient(180deg, var(--bg-top), var(--bg-bottom) 70%); }
+
+/* Wardrobe previews for the new categories */
+.wd-burst { position: relative; width: 3rem; height: 3rem; }
+.wd-burst i { position: absolute; left: 50%; top: 50%; width: 0.55rem; height: 0.55rem; margin: -0.275rem; border-radius: 50%; box-shadow: 0 0 6px currentColor; }
+.wd-theme { width: 4.4rem; height: 3rem; border-radius: 10px; border: 3px solid var(--ink); display: grid; grid-template-rows: 1fr 1fr; overflow: hidden; }
+.wd-theme i { display: block; }
+.wd-count { margin: 0 0 0.4rem; font-size: 0.8rem; font-weight: 700; color: var(--text-dim); }
+
+/* ---------- 1.2.0: the Ascent, in more detail ---------- */
+.ascent-top { display: flex; flex-direction: column; gap: 0.3rem; margin: 0 0 0.6rem; padding: 0.55rem 0.7rem; border-radius: 14px; background: var(--panel-deep); }
+.ascent-count { font-weight: 700; }
+.ascent-top small { color: var(--text-dim); font-weight: 600; }
+.deck-detail { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: 3.2rem 1fr auto; gap: 0.7rem; align-items: center; padding: 0.6rem 0.75rem; margin-bottom: 0.6rem; border-radius: 16px; color: #fff; }
+.deck-detail-ico { width: 3.2rem; height: 3.2rem; display: grid; place-items: center; border-radius: 12px; background: color-mix(in srgb, var(--ink) 35%, transparent); }
+.deck-detail-ico .icon { width: 2.4rem; height: 2.4rem; }
+.deck-detail-text { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; font-size: 0.85rem; }
+.deck-detail-text b { font-family: var(--font-display); font-weight: 400; font-size: 1.3rem; }
+.deck-detail-text small { color: rgba(255, 255, 255, 0.82); font-weight: 600; }
+.deck-detail-req { display: flex; flex-direction: column; gap: 0.2rem; }
+.ascent-stage-count { font-family: var(--font-num); font-size: 0.78rem; color: var(--text-dim); margin-left: 0.3rem; }
+.ascent-here { margin-left: 0.5rem; font-family: var(--font-ui); font-size: 0.7rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.1rem 0.5rem; border-radius: 999px; background: var(--magenta); }
+.ascent-stage.here::before { background: var(--magenta); box-shadow: 0 0 0.6rem 0.15rem color-mix(in srgb, var(--magenta) 70%, transparent); }
+.ascent-stage.done::before { background: var(--lime); }
+.deck.chosen { box-shadow: 0 0 0 3px var(--gold), 0 4px 0 rgba(0, 0, 0, 0.35); }
+.deck.tucked { outline: 2px dashed rgba(255, 255, 255, 0.45); outline-offset: 2px; }
+.deck:disabled { cursor: pointer; }
+
+/* ---------- 1.2.0: the engine list minimized to one line ---------- */
+.store.store-min { flex: 0 0 auto; min-height: 0; }
+.store-head .store-size + .store-size { margin-left: 0.35rem; }
+.store-min-line { margin: 0; font-weight: 700; font-size: 0.85rem; color: var(--text-dim); }
+.store-min-line b { color: var(--lime); }

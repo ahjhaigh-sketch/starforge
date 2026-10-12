@@ -117,6 +117,7 @@ export function OrbitalsPanel() {
   return (
     <Panel id="orbitals" title="Orbitals" color="#1A9DB8" size="wide">
       <p>Planets boost the engines of their type by +25% a level. Each neighbour on the same ring of a different type adds 20% to that. Changing a planet's type is free.</p>
+      <BuyAmountControl />
       <div className="orbit-layout">
         <div className="rings">
           {r?.rings.map((ring) => (
@@ -131,11 +132,11 @@ export function OrbitalsPanel() {
                       className={cx('planet-slot pop', p.type ? 'filled' : 'empty', sel === p.slot && 'sel')}
                       style={{ ['--pc' as string]: p.color, ['--pb' as string]: p.band }}
                       onClick={() => setSel(p.slot)}
-                      aria-label={p.type ? `${p.name} planet, level ${p.level}, ${p.bonus}` : 'Empty slot'}
+                      aria-label={p.type ? `${p.name} planet, level ${p.levelText}, ${p.bonus}` : 'Empty slot'}
                       aria-pressed={sel === p.slot}
                       data-slot={p.slot}
                     >
-                      {p.type ? <span className="lv num">{p.level}</span> : '+'}
+                      {p.type ? <span className="lv num">{p.levelText}</span> : '+'}
                     </button>
                   ))}
                 </div>
@@ -177,13 +178,26 @@ export function OrbitalsPanel() {
           {slot?.type && (
             <>
               <h4>
-                {slot.name} planet · Lv {slot.level}
+                {slot.name} planet · Lv <span className="num">{slot.levelText}</span>
               </h4>
               <p>
                 Bonus <b className="num">{slot.bonus}</b> to its engines, with {slot.neighbours} different neighbour{slot.neighbours === 1 ? '' : 's'}.
               </p>
-              <Button color={slot.canLevel ? 'var(--lime)' : '#5A5F8F'} disabled={!slot.canLevel} onClick={() => commands.levelPlanet(slot.slot)}>
-                Level up · {slot.levelCost}
+              <p>
+                After: <b className="num">{slot.levelTo}</b>, bonus <b className="num">{slot.bonusNext}</b>.
+              </p>
+              <Button
+                color={slot.canLevel ? 'var(--lime)' : '#5A5F8F'}
+                disabled={!slot.canLevel}
+                onClick={() => commands.levelPlanet(slot.slot)}
+                aria-label={`Level the ${slot.name} planet up ${slot.levelCountText} for ${slot.levelCost} Stardust`}
+                data-testid="planet-level"
+              >
+                Level <span className="num buy-n">+{slot.levelCountText}</span>
+                <span className="cost-chip">
+                  <Icon name="stardust" />
+                  {slot.levelCost}
+                </span>
               </Button>
               <p>Change type (free):</p>
               <div className="planet-types compact">

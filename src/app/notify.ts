@@ -49,7 +49,7 @@ export function installNotifications(): void {
       const body = names.length === 1 ? sys.blurb : names.length <= 3 ? 'New on the rails. Open them from there.' : `${list}. Open them from the rails.`;
       events.emit({ t: 'toast', title, body, icon: sys.icon });
     }
-    if (ships.length > 0) {
+    if (ships.length > 0 && game.state.settings.shipAlerts) {
       const where = SECTOR_BY_ID.get(ships[0]!)?.name ?? 'a far sector';
       events.emit({ t: 'toast', title: ships.length === 1 ? `Ship home from ${where}` : `${ships.length} ships home`, body: 'Ore, alloy and shards in the hold.', icon: 'ship' });
       ships = [];
@@ -125,6 +125,8 @@ export function installNotifications(): void {
     } else if (e.t === 'milestone' && e.id === 'merchant.mythical') {
       events.emit({ t: 'toast', title: 'The Mythical Merchant!', body: 'One absurd deal is waiting at the Merchant.', icon: 'merchant', priority: true });
     } else if (e.t === 'milestone' && e.id.startsWith('ship.')) {
+      // 1.2.0: ships come home often once they're fast, so this pop-up is off unless switched on
+      if (!game.state.settings.shipAlerts) return;
       ships.push(e.id.slice(5));
       timer ??= setTimeout(flushMedals, MEDAL_BATCH_MS);
     } else if (e.t === 'rune' && e.first) {

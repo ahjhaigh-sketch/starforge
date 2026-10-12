@@ -49,8 +49,12 @@ export const RailButton = memo(function RailButton({ item, side, small }: { item
   const onClick = (e: MouseEvent<HTMLButtonElement>) => {
     if (item.state === 'open' || item.state === 'new') {
       commands.markSeen(item.id);
+      if (item.id === 'ascent') commands.poke('ascent');
       open(item.id);
-    } else showTip(`rail-${item.id}`, e.currentTarget, side, title, tipBody(item));
+    } else {
+      if (hidden) commands.poke('mystery');
+      showTip(`rail-${item.id}`, e.currentTarget, side, title, tipBody(item));
+    }
   };
   const label =
     item.state === 'locked'
@@ -116,11 +120,65 @@ export function LeftRail() {
           <RailButton item={x} side="above" />
         </span>
       ))}
-      <button type="button" className="rail-btn chunk gloss pop open settings-btn" style={tint('#4A4F7A')} onClick={() => open('settings')} aria-label="Open settings and saves">
+      <button type="button" className="rail-btn chunk gloss pop open settings-btn" style={tint('#4A4F7A')} onClick={() => {
+          commands.poke('gear');
+          open('settings');
+        }} aria-label="Open settings and saves">
         <Icon name="gear" className="rail-ico" />
         <span className="lbl">Saves</span>
       </button>
     </nav>
+  );
+}
+
+/**
+ * 1.2.0: the big things, large at the top of the side: a system you just unlocked (until you open
+ * it), and the next one or two you are closest to, with how far along you are.
+ */
+export function FocusCards() {
+  const cards = useSnap((s) => s.focus);
+  const open = useUi((s) => s.open);
+  if (cards.length === 0) return null;
+  return (
+    <div className="focus-cards" aria-label="In focus">
+      {cards.map((c) => (
+        <button
+          key={c.id}
+          type="button"
+          className={cx('focus-card chunk gloss pop', c.kind)}
+          style={tint(c.kind === 'new' ? c.color : '#2B2558')}
+          onClick={() => {
+            if (c.kind !== 'new') return;
+            commands.markSeen(c.id);
+            open(c.id);
+          }}
+          aria-label={c.kind === 'new' ? `Just unlocked: ${c.name}. Open it.` : `Next: ${c.name}. ${c.req}, ${c.pct}% there.`}
+          data-focus-card={c.id}
+        >
+          {c.kind === 'new' && <span className="focus-glow" aria-hidden="true" />}
+          <span className="focus-ico">
+            <Icon name={c.icon} />
+          </span>
+          <span className="focus-text">
+            <small className="focus-kind ol-sm">{c.kind === 'new' ? 'Just unlocked' : 'Next up'}</small>
+            <b className="ol">{c.name}</b>
+            <span className="focus-blurb">{c.blurb}</span>
+            {c.kind === 'new' ? (
+              <span className="focus-go ol-sm">Open it</span>
+            ) : (
+              <span className="focus-req">
+                <span className="focus-bar">
+                  <i style={{ width: `${c.pct}%`, background: c.color }} />
+                </span>
+                <small>
+                  {c.req} · <span className="num">{c.pct}%</span>
+                </small>
+              </span>
+            )}
+          </span>
+        </button>
+      ))}
+    </div>
   );
 }
 

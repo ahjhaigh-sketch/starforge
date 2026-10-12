@@ -199,31 +199,53 @@ describe('Star Pulse Attunements', () => {
 });
 
 describe('the Wandering Merchant', () => {
-  it('docks with four deals; a bought deal is replaced at once', () => {
+  it('docks with three deals; a deal taken stays sold until the next ship, 15 minutes of play later (1.2.0)', () => {
     const s = run(10);
     tick(s, 0.05);
-    expect(s.merchant.deals).toHaveLength(4);
+    expect(s.merchant.deals).toHaveLength(3);
     gain(s, 'stardust', D(1e12));
     gain(s, 'shards', D(1e6));
     gain(s, 'ore', D(1e9));
     const first = s.merchant.deals[0]!;
     expect(buyDeal(s, 0)).toBe(true);
-    expect(s.merchant.deals).toHaveLength(4);
-    expect(s.merchant.deals[0]).not.toBe(first);
+    expect(s.merchant.deals[0]).toBe(first);
+    expect(first.sold).toBe(true);
+    expect(buyDeal(s, 0)).toBe(false); // sold
     expect(s.stats.deals).toBe(1);
+    // a Supernova no longer brings a ship
+    gain(s, 'stardust', D(1e9));
+    s.tier = 3;
+    performReset(s, 'supernova');
+    tick(s, 0.05);
+    expect(s.merchant.deals[0]!.sold).toBe(true);
+    // fifteen minutes of play later, a fresh ship
+    s.playtime = s.merchant.nextShip;
+    tick(s, 0.05);
+    expect(s.merchant.deals).toHaveLength(3);
+    expect(s.merchant.deals.some((d) => d.sold)).toBe(false);
+    expect(s.merchant.nextShip).toBeCloseTo(s.playtime + BALANCE.merchant.restockSeconds, 3);
   });
 
-  it('rerolls cost 5 x 2^n shards, back to 5 after a Supernova (a new ship docks)', () => {
+  it('rerolls cost 5 x 2^n shards and swap only the deals still for sale; back to 5 when a ship docks', () => {
     const s = run(10);
     tick(s, 0.05);
-    gain(s, 'shards', D(100));
+    gain(s, 'stardust', D(1e12));
+    gain(s, 'shards', D(1e6));
+    gain(s, 'ore', D(1e9));
     expect(rerollCost(s).toNumber()).toBe(5);
-    reroll(s);
+    buyDeal(s, 0);
+    const sold = s.merchant.deals[0]!;
+    const rest = s.merchant.deals.slice(1);
+    expect(reroll(s)).toBe(true);
     expect(rerollCost(s).toNumber()).toBe(10);
-    gain(s, 'stardust', D(1e9));
-    performReset(s, 'supernova');
+    expect(s.merchant.deals[0]).toBe(sold); // a reroll never refills what you took
+    expect(s.merchant.deals.slice(1)).not.toEqual(rest);
+    buyDeal(s, 1);
+    buyDeal(s, 2);
+    expect(reroll(s)).toBe(false); // nothing left to swap
+    s.playtime = s.merchant.nextShip;
+    tick(s, 0.05);
     expect(rerollCost(s).toNumber()).toBe(5);
-    expect(s.merchant.deals).toHaveLength(4);
   });
 
   it('about 1% of deals are Mythical (x100) and 10% rare, more with Merchant Luck; it never touches the game RNG', () => {
@@ -379,7 +401,7 @@ describe('save version 8', () => {
     const c = clone(s);
     expect(c.fusion.board).toEqual(s.fusion.board);
     expect(c.attune.equipped).toEqual(['pulse']);
-    expect(c.merchant.deals).toHaveLength(4);
+    expect(c.merchant.deals).toHaveLength(3);
     expect(c.merchant.deals[0]!.pay.amount.eq(s.merchant.deals[0]!.pay.amount)).toBe(true);
     expect(c.ships.fleet[0]!.sector).toBe('kuiper');
   });

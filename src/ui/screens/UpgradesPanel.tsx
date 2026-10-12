@@ -1,4 +1,5 @@
 import { commands } from '../../app/commands';
+import { Button } from '../kit/Chunk';
 import { type UpgradeItem, upgradesReport } from '../../app/reports';
 import { useSnap } from '../../app/uiSnapshot';
 import { cx, tint } from '../kit/Chunk';
@@ -48,11 +49,17 @@ function UpgradeCard({ u }: { u: UpgradeItem }) {
 export function UpgradesPanel() {
   const list = useReport('upgrades', upgradesReport);
   const owned = useSnap((s) => s.upgradesOwned);
+  const bulk = useSnap((s) => s.upgradeBulk);
   return (
     <Panel id="upgrades" title="Upgrades" color="#2E9C78" size="wide">
       <p>
         {owned} bought. New upgrades appear as you grow; each tells you when its effect applies. Available ones also sit above the engine shop.
       </p>
+      <div className="set-row">
+        <Button size="sm" color={bulk ? 'var(--lime)' : '#5A5F8F'} disabled={!bulk} onClick={() => commands.buyAllUpgrades()} data-testid="upgrades-buy-all">
+          {bulk ? 'Buy all I can afford' : 'Buy all (opens at the first Supernova)'}
+        </Button>
+      </div>
       <div className="upg-grid">{list?.map((u) => <UpgradeCard key={u.id} u={u} />)}</div>
     </Panel>
   );

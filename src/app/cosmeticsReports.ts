@@ -1,4 +1,4 @@
-import { BACKGROUNDS, SKINS, TRAILS } from '../content/cosmetics';
+import { BACKGROUNDS, BURSTS, SKINS, THEMES, TRAILS } from '../content/cosmetics';
 import { MEDALS } from '../content/medals';
 import type { Requirement } from '../content/requirements';
 import { TIERS } from '../content/tiers';
@@ -28,10 +28,10 @@ export interface WardrobeChoice {
 
 const reqWords = (r: Requirement) => reqText(r, (x) => formatCount(x, n()));
 
-export function wardrobeReport(): { open: boolean; req: string; skins: WardrobeChoice[]; trails: WardrobeChoice[]; backgrounds: WardrobeChoice[] } {
+export function wardrobeReport(): { open: boolean; req: string; skins: WardrobeChoice[]; trails: WardrobeChoice[]; backgrounds: WardrobeChoice[]; bursts: WardrobeChoice[]; themes: WardrobeChoice[]; unlocked: string } {
   const s = game.state;
   const tier = TIERS[Math.min(s.tier, TIERS.length - 1)]!;
-  const choice = (kind: 'skin' | 'trail' | 'background', id: string, name: string, desc: string, req: Requirement, colors: string[]): WardrobeChoice => {
+  const choice = (kind: 'skin' | 'trail' | 'background' | 'burst' | 'theme', id: string, name: string, desc: string, req: Requirement, colors: string[]): WardrobeChoice => {
     const unlocked = cosmeticUnlocked(s, kind, id);
     return { id, name, desc, unlocked, worn: s.cosmetics[kind] === id, req: unlocked ? '' : reqWords(req), colors };
   };
@@ -41,6 +41,12 @@ export function wardrobeReport(): { open: boolean; req: string; skins: WardrobeC
     skins: SKINS.map((k) => choice('skin', k.id, k.name, k.desc, k.req, k.palette ? [k.palette.hot, k.palette.body, k.palette.corona] : [tier.hot, tier.body, tier.corona])),
     trails: TRAILS.map((t) => choice('trail', t.id, t.name, '', t.req, t.colors.map(hexOf))),
     backgrounds: BACKGROUNDS.map((b) => choice('background', b.id, b.name, '', b.req, [b.swatch, ...b.clouds.slice(0, 3).map(hexOf)])),
+    bursts: BURSTS.map((b) => choice('burst', b.id, b.name, '', b.req, b.colors.length ? b.colors.map(hexOf) : [tier.hot, tier.body, tier.corona])),
+    themes: THEMES.map((t) => choice('theme', t.id, t.name, '', t.req, [t.panel, t.deep])),
+    unlocked: (() => {
+      const all = [...SKINS.map((x) => ['skin', x.id] as const), ...TRAILS.map((x) => ['trail', x.id] as const), ...BACKGROUNDS.map((x) => ['background', x.id] as const), ...BURSTS.map((x) => ['burst', x.id] as const), ...THEMES.map((x) => ['theme', x.id] as const)];
+      return `${all.filter(([k, id]) => cosmeticUnlocked(s, k, id)).length} of ${all.length} unlocked`;
+    })(),
   };
 }
 

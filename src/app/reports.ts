@@ -60,7 +60,7 @@ function shortCount(c: number): string {
 function medalIcon(m: (typeof MEDALS)[number]): string {
   const q = m.req;
   if (q.kind === 'tier') return `${m.icon}#T${q.tier + 1}`;
-  const c = q.kind === 'count' || q.kind === 'medals' || q.kind === 'upgrades' || q.kind === 'engine' ? q.count : q.kind === 'total' || q.kind === 'rate' ? q.amount : 0;
+  const c = q.kind === 'count' || q.kind === 'medals' || q.kind === 'upgrades' || q.kind === 'engine' || q.kind === 'systems' ? q.count : q.kind === 'total' || q.kind === 'rate' ? q.amount : 0;
   return c > 1 ? `${m.icon}#${shortCount(c)}` : m.icon;
 }
 
@@ -115,6 +115,8 @@ export interface MedalItem {
   desc: string;
   icon: string;
   earned: boolean;
+  /** 1.2.0: a secret medal ("???" until earned). */
+  secret: boolean;
 }
 export interface GoalItem {
   id: string;
@@ -129,7 +131,12 @@ export interface GoalItem {
 
 export function medalsReport(): { medals: MedalItem[]; goals: GoalItem[]; summary: string } {
   const s = game.state;
-  const medals = MEDALS.map((m) => ({ id: m.id, name: m.name, desc: m.desc, icon: medalIcon(m), earned: hasMedal(s, m.id) }));
+  const medals = MEDALS.map((m) => {
+    const earned = hasMedal(s, m.id);
+    // 1.2.0: a secret medal shows nothing of itself until you find it
+    if (m.secret && !earned) return { id: m.id, name: '???', desc: 'A secret medal. Poke around to find it.', icon: 'mystery', earned, secret: true };
+    return { id: m.id, name: m.name, desc: m.desc, icon: medalIcon(m), earned, secret: !!m.secret };
+  });
   const goals = GOALS.map((g): GoalItem => {
     const tier = s.goals[g.id] ?? 0;
     const v = goalValue(s, g);

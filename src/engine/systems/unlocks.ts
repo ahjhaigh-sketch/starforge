@@ -43,6 +43,12 @@ export function reqProgress(s: GameState, req: Requirement): number {
       return Math.min(1, s.upgrades.length / req.count);
     case 'medals':
       return Math.min(1, s.achievements.length / req.count);
+    case 'all':
+      return req.of.reduce((m, r) => Math.min(m, reqProgress(s, r)), 1);
+    case 'system':
+      return s.unlocked.includes(req.id) ? 1 : 0;
+    case 'systems':
+      return Math.min(1, SYSTEMS.reduce((k, x) => k + (s.unlocked.includes(x.id) ? 1 : 0), 0) / req.count);
   }
 }
 
@@ -73,6 +79,12 @@ export function reqText(req: Requirement, fmt: (n: number) => string = big): str
       return `Buy ${fmt(req.count)} upgrade${req.count === 1 ? '' : 's'}`;
     case 'medals':
       return `Earn ${fmt(req.count)} medal${req.count === 1 ? '' : 's'}`;
+    case 'all':
+      return req.of.map((r) => reqText(r, fmt)).join(', ');
+    case 'system':
+      return `Unlock ${req.name}`;
+    case 'systems':
+      return `Unlock ${fmt(req.count)} systems`;
   }
 }
 

@@ -6,7 +6,6 @@ import { planLimited, type PurchasePlan } from '../buy';
 import type { CostCurve } from '../cost';
 import { D, type Decimal } from '../decimal';
 import { events } from '../events';
-import { onAnyReset } from '../layers';
 import { nextFloat, nextInt } from '../rng';
 import { cur, type Deal, gain, type GameState, spend } from '../state';
 import { stat } from '../stats';
@@ -17,10 +16,12 @@ import { levelInfo, addXp } from './starsmith';
 import { rawShardGain } from './supernova';
 
 /**
- * The Wandering Merchant: a trader ship with four deals, sized from your economy the moment each
- * appears (so they stay fair at any stage). A bought deal is replaced at once; a new ship docks with
- * fresh deals after every Supernova; rerolling costs shards. Merchant Luck makes deals bigger and
- * the rare Mythical Merchant (x100) more likely. It rolls from its own random stream.
+ * The Wandering Merchant: a trader ship with three deals, sized from your economy the moment each
+ * appears (so they stay fair at any stage). A deal you take stays sold until the next ship, which
+ * docks every 15 minutes of play time (1.2.0: it used to refill at once and dock after every
+ * Supernova, which made it far too generous). Rerolling the deals still for sale costs shards.
+ * Merchant Luck makes deals bigger and the rare Mythical Merchant (x100) more likely. It rolls from
+ * its own random stream.
  */
 const M = BALANCE.merchant;
 
@@ -94,10 +95,16 @@ function nextDeal(s: GameState): Deal {
   return d;
 }
 
-/** Fills the empty slots (a new ship docks with all four). */
-export function restock(s: GameState): void {
+/** A new ship docks: fresh deals, rerolls back to their first price, and the next one booked. */
+export function dockShip(s: GameState): void {
+  s.merchant.deals = [];
   while (s.merchant.deals.length < M.deals) s.merchant.deals.push(nextDeal(s));
+  s.merchant.rerolls = 0;
+  s.merchant.nextShip = s.playtime + M.restockSeconds;
 }
+
+/** Seconds of play until the next ship docks. */
+export const nextShipIn = (s: GameState) => Math.max(0, s.merchant.nextShip - s.playtime);
 
 export function canAfford(s: GameState, d: Deal): boolean {
   return cur(s, d.pay.currency).gte(d.pay.amount);
@@ -105,7 +112,7 @@ export function canAfford(s: GameState, d: Deal): boolean {
 
 export function buyDeal(s: GameState, index: number): boolean {
   const d = s.merchant.deals[index];
-  if (!merchantOpen(s) || !d || !canAfford(s, d) || !spend(s, d.pay.currency, d.pay.amount)) return false;
+  if (!merchantOpen(s) || !d || d.sold || !canAfford(s, d) || !spend(s, d.pay.currency, d.pay.amount)) return false;
   switch (d.kind) {
     case 'relic':
       addRelicLevels(s, d.get.id!, d.get.count ?? 1);
@@ -122,17 +129,18 @@ export function buyDeal(s: GameState, index: number): boolean {
     default:
       gain(s, d.get.currency!, d.get.amount!);
   }
-  s.merchant.deals[index] = nextDeal(s);
+  // sold until the next ship docks
+  d.sold = true;
   s.stats.deals = (s.stats.deals ?? 0) + 1;
   events.emit({ t: 'purchase', kind: 'merchant', id: d.kind, amount: 1 });
   return true;
 }
 
 export function reroll(s: GameState): boolean {
-  if (!merchantOpen(s) || !spend(s, 'shards', rerollCost(s))) return false;
+  // only the deals still for sale are swapped: a reroll never refills what you took
+  if (!merchantOpen(s) || !s.merchant.deals.some((d) => !d.sold) || !spend(s, 'shards', rerollCost(s))) return false;
   s.merchant.rerolls += 1;
-  s.merchant.deals = [];
-  restock(s);
+  s.merchant.deals = s.merchant.deals.map((d) => (d.sold ? d : nextDeal(s)));
   return true;
 }
 
@@ -145,15 +153,10 @@ export function buyLuck(s: GameState): boolean {
 }
 
 export function registerMerchant(): void {
-  // the first ship docks when the Merchant opens
-  registerSystem({ id: 'merchant', order: 70, tick: (s: GameState) => {
-    if (merchantOpen(s) && s.merchant.deals.length < M.deals) restock(s);
+  // a ship docks when the Merchant first opens, then every 15 minutes of play. Away, no ship docks
+  // during the catch-up (deals nobody sees, rolled every step, cost the speed budget): the first tick
+  // back docks one, so one ship is waiting however long you were gone
+  registerSystem({ id: 'merchant', order: 70, tick: (s: GameState, _dt, ctx) => {
+    if (!ctx.catchUp && merchantOpen(s) && s.playtime >= s.merchant.nextShip) dockShip(s);
   } });
-  // a new ship docks after every Supernova: fresh deals, rerolls back to their first price
-  onAnyReset((s, layer) => {
-    if (layer !== 'supernova' || !merchantOpen(s)) return;
-    s.merchant.rerolls = 0;
-    s.merchant.deals = [];
-    restock(s);
-  });
 }

@@ -2,7 +2,8 @@ import { BALANCE } from '../content/balance';
 import { ELEMENTS, type Family, FAMILY_COLORS, FAMILY_NAMES, SPECIAL_PERKS } from '../content/elements';
 import { FORGE_UPGRADES, GRADE_BY_ID, GRADES, type GradeId, RELICS, type RelicDef } from '../content/forge';
 import { TIERS } from '../content/tiers';
-import { D } from '../engine/decimal';
+import { D, Decimal } from '../engine/decimal';
+import { FORGE_ALL, forgeAll } from '../engine/systems/forge';
 import { cur } from '../engine/state';
 import { elementLevel, familyLevels, maxZForTier, rowComplete, rowElements, samples, samplesFor } from '../engine/systems/codex';
 import {
@@ -69,6 +70,8 @@ export interface ForgeReport {
   on: boolean;
   share: number;
   grade: string;
+  /** Smelting every grade at once. */
+  all: boolean;
   gradeColor: string;
   status: string;
   ore: string;
@@ -85,35 +88,47 @@ export interface ForgeReport {
 
 export function forgeReport(): ForgeReport {
   const s = game.state;
-  const g = GRADE_BY_ID.get(s.forge.grade) ?? GRADES[0]!;
+  const all = forgeAll(s);
+  const g = all ? (GRADE_BY_ID.get(s.forge.lanes[0]?.grade ?? '') ?? GRADES[0]!) : (GRADE_BY_ID.get(s.forge.grade) ?? GRADES[0]!);
   const T = batchSeconds(s);
   const ore = batchOre(s);
-  const have = cur(s, g.ore);
+  const have = all ? GRADES.reduce((m, x) => Decimal.max(m, cur(s, x.ore)), D(0)) : cur(s, g.ore);
   const busy = s.forge.lanes.length;
+  const kinds = new Set(s.forge.lanes.map((l) => l.grade)).size;
   const status = !s.forge.on
     ? busy > 0
       ? 'Switched off: finishing what is in the crucibles'
       : 'Switched off'
     : busy === 0 && have.lt(ore)
-      ? g.id === 'iron' && s.forge.share < 1
-        ? `Waiting for ore: a batch needs ${format(ore, n())}, and the hopper takes ${s.forge.share === 0.5 ? 'half' : 'a tenth'} of what you mine`
-        : `Waiting for ${g.name} ore: a batch needs ${format(ore, n())}`
-      : `Smelting ${g.name} ore`;
+      ? all
+        ? `Waiting for ore: a batch of any grade needs ${format(ore, n())}`
+        : g.id === 'iron' && s.forge.share < 1
+          ? `Waiting for ore: a batch needs ${format(ore, n())}, and the hopper takes ${s.forge.share === 0.5 ? 'half' : 'a tenth'} of what you mine`
+          : `Waiting for ${g.name} ore: a batch needs ${format(ore, n())}`
+      : all
+        ? `Smelting every grade with ore: ${kinds} ${kinds === 1 ? 'kind' : 'kinds'} in the crucibles`
+        : `Smelting ${g.name} ore`;
+  const perMinute = all
+    ? s.forge.lanes.reduce((sum, l) => sum.add(l.alloy), D(0)).mul(60 / T)
+    : batchAlloy(s, g.id as GradeId).mul((crucibles(s) * 60) / T);
   return {
     open: forgeOpen(s),
     on: s.forge.on,
     share: s.forge.share,
-    grade: g.id,
+    grade: all ? FORGE_ALL : g.id,
+    all,
     gradeColor: g.color,
     status,
     ore: format(cur(s, 'ore'), n()),
-    grades: GRADES.map((x) => ({ id: x.id, name: x.name, color: x.color, ore: format(cur(s, x.ore), n()), alloy: format(cur(s, x.alloy), n()), selected: x.id === g.id })),
+    grades: GRADES.map((x) => ({ id: x.id, name: x.name, color: x.color, ore: format(cur(s, x.ore), n()), alloy: format(cur(s, x.alloy), n()), selected: !all && x.id === g.id })),
     crucibles: Array.from({ length: crucibles(s) }, (_, i) => {
       const lane = s.forge.lanes[i];
       return { pct: lane ? Math.min(100, Math.floor((lane.t / T) * 100)) : 0, color: lane ? (GRADE_BY_ID.get(lane.grade)?.color ?? g.color) : '#3A3466', busy: !!lane };
     }),
-    batch: `${format(ore, n())} ${g.name} ore into ${format(batchAlloy(s, g.id as GradeId), n())} alloy every ${T >= 10 ? Math.round(T) : T.toFixed(1)}s`,
-    perMinute: format(batchAlloy(s, g.id as GradeId).mul((crucibles(s) * 60) / T), n()),
+    batch: all
+      ? `${format(ore, n())} ore of whichever grades you have into its own alloy every ${T >= 10 ? Math.round(T) : T.toFixed(1)}s, side by side`
+      : `${format(ore, n())} ${g.name} ore into ${format(batchAlloy(s, g.id as GradeId), n())} alloy every ${T >= 10 ? Math.round(T) : T.toFixed(1)}s`,
+    perMinute: format(perMinute, n()),
     busy,
     fill: Math.min(1, have.div(ore.mul(5)).toNumber()),
     seconds: T,

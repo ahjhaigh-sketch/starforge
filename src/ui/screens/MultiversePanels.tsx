@@ -281,7 +281,10 @@ export function StoryPanel() {
         ))}
       </div>
       <div className="set-row center-row">
-        <Button size="lg" color={VIOLET} onClick={() => open('credits')}>
+        <Button size="lg" color={VIOLET} onClick={() => {
+            commands.poke('credits');
+            open('credits');
+          }}>
           Credits
         </Button>
         <Button size="lg" color="#5A5F8F" onClick={close}>
