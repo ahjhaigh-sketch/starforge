@@ -18,6 +18,11 @@ import { buyPlanet } from '../../src/engine/systems/orbitals';
 import { buyEngine, evolve } from '../../src/engine/systems/stardust';
 import { supernovaReady } from '../../src/engine/systems/supernova';
 import { buyUpgrade } from '../../src/engine/systems/upgrades';
+import { bestDesign, buyPart, designMults, designOf, fitBest, fitPart, launch, lootPerHour, rareChance, recallShip, tripLoot, tripSeconds } from '../../src/engine/systems/ships';
+import { DEFAULT_DESIGN, PART_BY_ID, type ShipDesign } from '../../src/content/shipParts';
+import { SECTOR_BY_ID, SECTORS } from '../../src/content/extras';
+import { RELICS } from '../../src/content/forge';
+import { ELEMENTS } from '../../src/content/elements';
 import { advanceWeather, beaconProgress, summonWeather, weatherKindOpen, weatherLeft, weatherNow, weatherOpen } from '../../src/engine/systems/weather';
 import { tick } from '../../src/engine/tick';
 
@@ -404,5 +409,144 @@ describe('20.3 Space Weather', () => {
     const c = clone(s);
     expect(c.weather).toEqual(s.weather);
     expect(weatherNow(c)).toBe('flare');
+  });
+});
+
+/** A fleet at the Galactic Rim's tier, every sector open, the Starforge off. */
+function fleet(seed = 9): GameState {
+  const s = createInitialState(7_000_000, seed);
+  s.tier = 11;
+  s.stats.supernovas = 15;
+  s.forge.on = false;
+  invalidateStats();
+  return s;
+}
+const fitted = (id: string): ShipDesign => ({ ...DEFAULT_DESIGN, [PART_BY_ID.get(id)!.slot]: id });
+
+describe('20.4 the Ship Customizer', () => {
+  it('a ship without a design (every ship in an old save) flies exactly as before', () => {
+    const { state } = importSave(readFileSync('tests/fixtures/save-v19.txt', 'utf8').trim());
+    expect(state.ships.parts).toEqual([]);
+    for (const sh of state.ships.fleet) expect(designOf(sh)).toEqual(DEFAULT_DESIGN);
+    const s = fleet();
+    for (const sec of SECTORS) {
+      expect(designMults(DEFAULT_DESIGN, sec)).toEqual({ speed: 1, loot: 1 });
+      expect(tripSeconds(s, sec)).toBe(sec.distance / stat(s, 'shipSpeed').toNumber());
+      expect(tripLoot(s, sec, DEFAULT_DESIGN)).toEqual(tripLoot(s, sec));
+    }
+    // a bare ship and one carrying the default design: the same trips, loot and random draws
+    const bare = fleet();
+    const dressed = fleet();
+    dressed.ships.fleet[0]!.design = { ...DEFAULT_DESIGN };
+    for (const g of [bare, dressed]) {
+      g.ships.upgrades.crew = 20;
+      launch(g, 0, 'kuiper');
+      simulateElapsed(g, 6 * 600 + 1, { cap: 86_400, efficiency: 1, offline: true });
+    }
+    expect(bare.stats.trips).toBe(6);
+    expect(dressed.stats.trips).toBe(6);
+    expect(cur(dressed, 'ore').eq(cur(bare, 'ore'))).toBe(true);
+    expect(dressed.ships.rng).toEqual(bare.ships.rng);
+    expect(dressed.stats.rareFinds).toBe(bare.stats.rareFinds);
+  });
+
+  it('each part changes exactly its own numbers', () => {
+    const s = fleet();
+    const kuiper = SECTOR_BY_ID.get('kuiper')!;
+    const ember = SECTOR_BY_ID.get('ember')!;
+    const rim = SECTOR_BY_ID.get('rim')!;
+    const P = BALANCE.shipParts;
+    expect(designMults(fitted('hull.freighter'), kuiper)).toEqual({ speed: P.freighterSpeed, loot: P.freighterLoot });
+    // a matched hull: only in its own sectors
+    expect(designMults(fitted('hull.icebreaker'), kuiper)).toEqual({ speed: P.fitSpeed, loot: P.fitLoot });
+    expect(designMults(fitted('hull.icebreaker'), ember)).toEqual({ speed: 1, loot: 1 });
+    expect(designMults(fitted('hull.heatshield'), ember)).toEqual({ speed: P.fitSpeed, loot: P.fitLoot });
+    expect(designMults(fitted('hull.voidplating'), rim)).toEqual({ speed: P.fitSpeed, loot: P.fitLoot });
+    expect(designMults(fitted('engine.fusion'), rim)).toEqual({ speed: 1.5, loot: 1 });
+    expect(designMults(fitted('engine.warp'), rim)).toEqual({ speed: 3, loot: 0.8 });
+    expect(designMults(fitted('engine.sail'), rim)).toEqual({ speed: 1.25, loot: 1.25 });
+    expect(designMults(fitted('cargo.expanded'), rim)).toEqual({ speed: 0.8, loot: 2 });
+    for (const id of ['cargo.vault', 'cargo.seedpod', 'scanner.deep', 'scanner.relic', 'scanner.codex']) expect(designMults(fitted(id), rim)).toEqual({ speed: 1, loot: 1 });
+    expect(tripSeconds(s, rim, fitted('engine.warp'))).toBeCloseTo(tripSeconds(s, rim) / 3, 9);
+    expect(tripLoot(s, rim, fitted('cargo.expanded')).alloy.eq(tripLoot(s, rim).alloy.mul(2))).toBe(true);
+    expect(rareChance(s, fitted('scanner.deep'))).toBeCloseTo(rareChance(s) + 0.1, 12);
+  });
+
+  it('a Vault doubles rare finds from the same draws; the Relic Finder and Codex Scanner send them one way; a Seed Pod brings 4 seeds', () => {
+    const trial = (id: string | null, extra?: (g: GameState) => void) => {
+      const g = fleet();
+      g.ships.upgrades.crew = 20;
+      g.relics.levels[RELICS[0]!.id] = 1;
+      g.codex[ELEMENTS[0]!.id] = 1;
+      extra?.(g);
+      if (id) g.ships.fleet[0]!.design = fitted(id);
+      launch(g, 0, 'kuiper');
+      simulateElapsed(g, 10 * 600 + 1, { cap: 86_400, efficiency: 1, offline: true });
+      return g;
+    };
+    const plain = trial(null);
+    const vault = trial('cargo.vault');
+    expect(plain.stats.rareFinds).toBeGreaterThan(0);
+    expect(vault.stats.rareFinds).toBe(2 * plain.stats.rareFinds!);
+    const relic = trial('scanner.relic');
+    expect(relic.codex[ELEMENTS[0]!.id]).toBe(1);
+    expect(relic.relics.levels[RELICS[0]!.id]).toBe(1 + relic.stats.rareFinds!);
+    const codex = trial('scanner.codex');
+    expect(codex.relics.levels[RELICS[0]!.id]).toBe(1);
+    expect(codex.codex[ELEMENTS[0]!.id]).toBeGreaterThan(1);
+    const nursery = (g: GameState) => (g.stats.nebulasAll = 10);
+    const seeds = (g: GameState) => Object.values(g.nursery.seeds).reduce((a, b) => a + b, 0);
+    expect(seeds(trial('cargo.seedpod', nursery))).toBe(4 * seeds(trial(null, nursery)));
+  });
+
+  it('parts are bought once with alloy; fitting is free while docked and refused mid-trip', () => {
+    const s = fleet();
+    expect(buyPart(s, 'engine.fusion')).toBe(false); // no alloy
+    gain(s, 'alloy.iron', D(5000));
+    expect(buyPart(s, 'engine.fusion')).toBe(true);
+    expect(cur(s, 'alloy.iron').toNumber()).toBe(0);
+    gain(s, 'alloy.iron', D(5000));
+    expect(buyPart(s, 'engine.fusion')).toBe(false); // owned
+    expect(buyPart(s, 'engine.ion')).toBe(false); // a default part is owned from the start
+    expect(buyPart(s, 'engine.nonsense')).toBe(false);
+    expect(fitPart(s, 0, 'engine.warp')).toBe(false); // not owned
+    expect(fitPart(s, 0, 'engine.fusion')).toBe(true);
+    expect(designOf(s.ships.fleet[0])).toEqual(fitted('engine.fusion'));
+    launch(s, 0, 'kuiper');
+    expect(s.ships.fleet[0]!.design).toEqual(fitted('engine.fusion')); // a launch keeps the design
+    expect(s.ships.fleet[0]!.t).toBeCloseTo(600 / 1.5, 9);
+    expect(fitPart(s, 0, 'engine.ion')).toBe(false); // flying
+    expect(fitBest(s, 0, 'kuiper')).toBe(false);
+    expect(recallShip(s, 0)).toBe(true);
+    expect(s.ships.fleet[0]!.sector).toBeNull();
+    expect(fitPart(s, 0, 'engine.ion')).toBe(true);
+    const c = clone(s);
+    expect(c.ships.parts).toEqual(['engine.fusion']);
+    expect(c.ships.fleet[0]!.design).toEqual(DEFAULT_DESIGN);
+  });
+
+  it('Best fit picks the owned hull, engine and pod with the most loot an hour, and keeps the scanner', () => {
+    const s = fleet();
+    s.ships.parts = ['hull.icebreaker', 'hull.freighter', 'engine.warp', 'engine.sail', 'engine.fusion', 'cargo.expanded', 'scanner.deep'];
+    s.ships.fleet[0]!.design = fitted('scanner.deep');
+    expect(fitBest(s, 0, 'kuiper')).toBe(true);
+    expect(s.ships.fleet[0]!.design).toEqual({ hull: 'hull.icebreaker', engine: 'engine.warp', cargo: 'cargo.expanded', scanner: 'scanner.deep' });
+    // away from the Ice-breaker's sectors, the Freighter carries more
+    expect(bestDesign(s, SECTOR_BY_ID.get('ember')!, designOf(s.ships.fleet[0])).hull).toBe('hull.freighter');
+  });
+
+  it("the panel's loot an hour is what an hour of trips brings home", () => {
+    const s = fleet();
+    s.ships.parts = ['engine.fusion', 'cargo.expanded'];
+    s.ships.fleet[0]!.design = { ...DEFAULT_DESIGN, engine: 'engine.fusion', cargo: 'cargo.expanded' };
+    const kuiper = SECTOR_BY_ID.get('kuiper')!;
+    const h = lootPerHour(s, kuiper, designOf(s.ships.fleet[0]));
+    expect(h.trips).toBeCloseTo(3600 / (600 / (1.5 * 0.8)), 9);
+    const trip = tripLoot(s, kuiper, designOf(s.ships.fleet[0]));
+    launch(s, 0, 'kuiper');
+    simulateElapsed(s, 3600 + 1, { cap: 86_400, efficiency: 1, offline: true });
+    expect(s.stats.trips).toBe(Math.floor(h.trips));
+    expect(cur(s, 'alloy.iron').eq(trip.alloy.mul(s.stats.trips!))).toBe(true);
+    expect(h.alloy.div(trip.alloy).toNumber()).toBeCloseTo(h.trips, 9);
   });
 });

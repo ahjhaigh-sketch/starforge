@@ -3,11 +3,13 @@ import { ELEMENT_BY_ID } from '../content/elements';
 import { ATTUNEMENTS, CHAOS_EFFECTS, FUSION_COLORS, SECTORS } from '../content/extras';
 import { GRADE_BY_ID, RELIC_BY_ID } from '../content/forge';
 import { cur, type Deal } from '../engine/state';
+import type { Decimal } from '../engine/decimal';
 import { stat } from '../engine/stats';
 import { attuneOpen, heartMult, pulseRating } from '../engine/systems/attune';
 import { boardSide, fusionLevel, fusionMult, fusionPlan, type FusionUpgradeId, spawnEvery, spawnLevel } from '../engine/systems/fusion';
 import { canAfford, luckPlan, mythicalChance, rerollCost } from '../engine/systems/merchant';
-import { rareChance, sectorOpen, SHIP_UPGRADE_ALLOY, shipCost, shipLevel, shipUpgradePlan, type ShipUpgradeId, tripLoot, tripSeconds } from '../engine/systems/ships';
+import { bestDesign, designOf, lootPerHour, partOwned, partPrice, rareChance, sectorOpen, SHIP_UPGRADE_ALLOY, shipCost, shipLevel, shipUpgradePlan, type ShipUpgradeId, tripLoot, tripSeconds } from '../engine/systems/ships';
+import { PART_BY_ID, PART_SLOTS, PARTS, SLOT_NAMES } from '../content/shipParts';
 import { TIERS } from '../content/tiers';
 import { format, formatMult } from '../ui/format';
 import { dur } from './forgeReports';
@@ -156,7 +158,7 @@ export function merchantReport(): MerchantReport {
 }
 
 export interface ShipsReport {
-  fleet: Array<{ i: number; sector: string; name: string; color: string; pct: number; left: string; auto: boolean }>;
+  fleet: Array<{ i: number; sector: string; name: string; color: string; pct: number; left: string; auto: boolean; design: string }>;
   maxShips: number;
   shipCost: string;
   canShip: boolean;
@@ -177,8 +179,10 @@ export function shipsReport(): ShipsReport {
   return {
     fleet: s.ships.fleet.map((sh, i) => {
       const sec = SECTORS.find((x) => x.id === sh.sector);
-      const total = sec ? tripSeconds(s, sec) : 1;
-      return { i, sector: sh.sector ?? '', name: sec?.name ?? 'Docked', color: sec?.color ?? '#3A3466', pct: sec ? Math.floor((1 - sh.t / total) * 100) : 0, left: sec ? dur(sh.t) : '', auto: sh.auto };
+      const design = designOf(sh);
+      const total = sec ? tripSeconds(s, sec, design) : 1;
+      const names = PART_SLOTS.map((slot) => PART_BY_ID.get(design[slot])?.name ?? '?').join(' · ');
+      return { i, sector: sh.sector ?? '', name: sec?.name ?? 'Docked', color: sec?.color ?? '#3A3466', pct: sec ? Math.floor((1 - sh.t / total) * 100) : 0, left: sec ? dur(sh.t) : '', auto: sh.auto, design: names };
     }),
     maxShips: BALANCE.ships.maxShips,
     shipCost: format(shipCost(s), n()),
@@ -205,3 +209,55 @@ export function shipsReport(): ShipsReport {
   };
 }
 
+
+// ---------- Phase 20.4: the Shipyard ----------
+
+export interface ShipyardReport {
+  ships: Array<{ i: number; docked: boolean; where: string }>;
+  ship: number;
+  docked: boolean;
+  slots: Array<{ slot: string; name: string; parts: Array<{ id: string; name: string; desc: string; owned: boolean; fitted: boolean; price: string; can: boolean }> }>;
+  /** The open sectors, with this ship's trip time and loot an hour in each. */
+  sectors: Array<{ id: string; name: string; color: string; trip: string; perHour: string }>;
+  /** Whether Best fit would change anything for the chosen sector. */
+  better: boolean;
+}
+
+const lootText = (ore: Decimal, alloy: Decimal, grade: string, shards: Decimal) =>
+  `${format(ore, n())} ore, ${format(alloy, n())} ${GRADE_BY_ID.get(grade)!.name} alloy${shards.gt(0) ? `, ${format(shards, n())} shards` : ''}`;
+
+export function shipyardReport(ship: number, sectorId: string): ShipyardReport {
+  const s = game.state;
+  const i = Math.max(0, Math.min(s.ships.fleet.length - 1, ship));
+  const sh = s.ships.fleet[i];
+  const design = designOf(sh);
+  const open = SECTORS.filter((sec) => sectorOpen(s, sec));
+  const target = open.find((x) => x.id === sectorId) ?? open[open.length - 1];
+  const best = target ? bestDesign(s, target, design) : design;
+  return {
+    ships: s.ships.fleet.map((x, k) => ({ i: k, docked: !x.sector, where: x.sector ? (SECTORS.find((sec) => sec.id === x.sector)?.name ?? '') : 'Docked' })),
+    ship: i,
+    docked: !sh?.sector,
+    slots: PART_SLOTS.map((slot) => ({
+      slot,
+      name: SLOT_NAMES[slot],
+      parts: PARTS.filter((p) => p.slot === slot).map((p) => {
+        const price = partPrice(p.id);
+        return {
+          id: p.id,
+          name: p.name,
+          desc: p.desc,
+          owned: partOwned(s, p.id),
+          fitted: design[slot] === p.id,
+          price: price ? `${format(price.amount, n())} ${GRADE_BY_ID.get(price.alloy.replace('alloy.', ''))!.name} alloy` : '',
+          can: !!price && cur(s, price.alloy).gte(price.amount),
+        };
+      }),
+    })),
+    sectors: open.map((sec) => {
+      const h = lootPerHour(s, sec, design);
+      return { id: sec.id, name: sec.name, color: sec.color, trip: dur(tripSeconds(s, sec, design)), perHour: lootText(h.ore, h.alloy, sec.grade, h.shards) };
+    }),
+    better: PART_SLOTS.some((slot) => best[slot] !== design[slot]),
+  };
+}

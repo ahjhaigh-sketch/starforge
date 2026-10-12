@@ -1923,3 +1923,42 @@ test('Space Weather: comets fill the beacon, a charge summons a Meteor Shower, a
   await expect.poll(() => page.evaluate(() => (window as unknown as { sf: { fx: { liveParticles(): number } } }).sf.fx.liveParticles())).toBeGreaterThan(0);
   expect(errors).toEqual([]);
 });
+
+// ---------- Phase 20.4: the Ship Customizer ----------
+
+test('the Shipyard: buy parts once, fit them while docked, Best fit for a sector, and refits wait for a ship to dock', async ({ page }, info) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf7).sf;
+    game.state.stats.supernovas = 15;
+    game.state.stats.bestTier = 6;
+    commands.devAdd('alloy.iron', 1e6);
+    commands.devAdd('alloy.crystal', 1e4);
+  });
+  await openRail(page, 'expeditions');
+  const panel = page.locator('[data-panel="expeditions"]');
+  await panel.locator('[data-ships-tab="yard"]').click();
+  const kuiper = panel.locator('[data-yard-sector="kuiper"]');
+  await expect(kuiper).toContainText('10m');
+  await panel.locator('[data-buy-part="hull.icebreaker"]').click();
+  await panel.locator('[data-buy-part="engine.fusion"]').click();
+  await panel.locator('button[data-part="hull.icebreaker"]').click();
+  await expect(panel.locator('button[data-part="hull.icebreaker"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(kuiper).toContainText('6m 40s');
+  await panel.getByLabel('Sector to fit for').selectOption('kuiper');
+  await panel.getByTestId('best-fit').click();
+  await expect(panel.getByTestId('best-fit')).toHaveText('Fitted best');
+  await expect(panel.locator('button[data-part="engine.fusion"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(kuiper).toContainText('4m 27s');
+  if (info.project.name === 'desktop') await panel.screenshot({ path: 'shots/shipyard.png' });
+  // the Fleet tab shows the design, and a flying ship can't be refitted until it docks
+  await panel.locator('[data-ships-tab="fleet"]').click();
+  await expect(panel.locator('[data-ship="0"]')).toContainText('Ice-breaker · Fusion Drive');
+  await panel.locator('[data-ship="0"]').getByRole('button', { name: 'Launch' }).click();
+  await panel.locator('[data-ships-tab="yard"]').click();
+  await expect(panel.locator('button[data-part="hull.scout"]')).toBeDisabled();
+  await panel.getByTestId('recall').click();
+  await expect(panel.locator('button[data-part="hull.scout"]')).toBeEnabled();
+  expect(errors).toEqual([]);
+});

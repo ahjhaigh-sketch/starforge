@@ -146,6 +146,7 @@ const PARTS: Record<string, (s: GameState) => void> = {
     s.merchant.rerolls = 0;
     s.ships.fleet = [{ sector: null, t: 0, auto: true }];
     s.ships.upgrades = {};
+    s.ships.parts = [];
   },
   nebula: (s) => {
     zero(s, 'essence');

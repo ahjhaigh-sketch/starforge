@@ -782,6 +782,38 @@ export const BALANCE = {
       crew: { base: 10, growth: 2.4 },
     },
   },
+  /** Phase 20.4: the Ship Customizer. A matched hull's bonus in its sectors, the Freighter, and each part's one-off price in alloy. */
+  shipParts: {
+    fitSpeed: 1.5,
+    fitLoot: 2,
+    freighterLoot: 1.5,
+    freighterSpeed: 0.8,
+    fusionSpeed: 1.5,
+    warpSpeed: 3,
+    warpLoot: 0.8,
+    sailSpeed: 1.25,
+    sailLoot: 1.25,
+    expandedLoot: 2,
+    expandedSpeed: 0.8,
+    vaultRares: 2,
+    seedPodSeeds: 4,
+    deepChance: 0.1,
+    prices: {
+      'hull.freighter': ['alloy.gold', 2000],
+      'hull.icebreaker': ['alloy.crystal', 500],
+      'hull.heatshield': ['alloy.prismatic', 300],
+      'hull.voidplating': ['alloy.void', 200],
+      'engine.fusion': ['alloy.iron', 5000],
+      'engine.warp': ['alloy.prismatic', 500],
+      'engine.sail': ['alloy.gold', 3000],
+      'cargo.expanded': ['alloy.gold', 2500],
+      'cargo.vault': ['alloy.crystal', 800],
+      'cargo.seedpod': ['alloy.crystal', 600],
+      'scanner.deep': ['alloy.crystal', 1000],
+      'scanner.relic': ['alloy.prismatic', 250],
+      'scanner.codex': ['alloy.prismatic', 250],
+    } as Record<string, readonly [string, number]>,
+  },
   /** Phase 20.2: Starlight Alchemy. Opens at 12 Supernovas (lifetime). */
   alchemy: {
     supernovas: 12,
@@ -789,6 +821,21 @@ export const BALANCE = {
     doseShare: 0.05,
     /** An elixir's boost stacks its time up to this many seconds. */
     maxSeconds: 3600,
+    /** Each elixir: its boost (a multiplier) and how long one lasts (play-time seconds). */
+    recipes: {
+      minersAle: { value: 10, seconds: 900 },
+      liquidLight: { value: 10, seconds: 600 },
+      shardSyrup: { value: 5, seconds: 600 },
+      starsmithTea: { value: 5, seconds: 600 },
+      cometBrew: { value: 3, seconds: 600 },
+      essenceInfusion: { value: 5, seconds: 600 },
+      forgeTonic: { value: 5, seconds: 600 },
+      critCordial: { value: 5, seconds: 600 },
+      fortune: { value: 5, seconds: 600 },
+      voidPhilter: { value: 3, seconds: 600 },
+      echoElixir: { value: 10, seconds: 600 },
+      haste: { value: 1.5, seconds: 300 },
+    } as Record<string, { value: number; seconds: number }>,
   },
   /** Phase 20.3: Space Weather. Opens at the first Supernova (lifetime). Times are play-time seconds. */
   weather: {

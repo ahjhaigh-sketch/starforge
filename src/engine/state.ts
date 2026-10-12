@@ -1,5 +1,6 @@
 import { D, type Decimal } from './decimal';
 import { seedRng, type RngState } from './rng';
+import type { ShipDesign } from '../content/shipParts';
 
 /** Bump with every change to the save's shape, and add a migration + an old-save fixture test. */
 export const SAVE_VERSION = 20;
@@ -145,7 +146,8 @@ export interface GameState {
   /** The Wandering Merchant: today's deals, Merchant Luck, rerolls since the last Supernova, its own random stream. */
   merchant: { deals: Deal[]; luck: number; rerolls: number; rng: RngState };
   /** Starship Expeditions: each ship's destination and time left, and fleet upgrades. */
-  ships: { fleet: Array<{ sector: string | null; t: number; auto: boolean }>; upgrades: Record<string, number>; rng: RngState };
+  /** Phase 20.4: each ship may carry a design (none: the default parts); parts bought once, for every ship. */
+  ships: { fleet: Array<{ sector: string | null; t: number; auto: boolean; design?: ShipDesign }>; upgrades: Record<string, number>; rng: RngState; parts: string[] };
   /** Nebula Tree node levels. */
   nebulaTree: Record<string, number>;
   /** Nebula settings: auto-Supernova when the gain reaches this many shards (0 = off). */
@@ -291,7 +293,7 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     fusion: { board: new Array<number>(BALANCE_FUSION_CELLS).fill(0), upgrades: {}, acc: 0, best: 0, autoOwned: false, autoOn: true, spawned: 0 },
     attune: { unlocked: ['pulse'], equipped: [], pulse: [], heart: 0, chaosTaps: 0, chaos: null, rng: seedRng(seed ^ 0x0c4a_05d1) },
     merchant: { deals: [], luck: 0, rerolls: 0, rng: seedRng(seed ^ 0x3e7c_4a17) },
-    ships: { fleet: [{ sector: null, t: 0, auto: true }], upgrades: {}, rng: seedRng(seed ^ 0x5417_9e11) },
+    ships: { fleet: [{ sector: null, t: 0, auto: true }], upgrades: {}, rng: seedRng(seed ^ 0x5417_9e11), parts: [] },
     nebulaTree: {},
     nebula: { autoAt: D(0) },
     runes: { shrines: {}, copies: {}, rng: seedRng(seed ^ 0x7b3f_d611), stars: {} },

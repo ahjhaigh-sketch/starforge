@@ -180,7 +180,14 @@ export const plainSaveSchema = z.looseObject({
       rng: z.tuple([finite, finite, finite, finite]),
     })
     .optional(),
-  ships: z.looseObject({ fleet: z.array(z.looseObject({ sector: z.string().nullable(), t: finite, auto: z.boolean() })), upgrades: z.record(z.string(), count), rng: z.tuple([finite, finite, finite, finite]) }).optional(),
+  ships: z
+    .looseObject({
+      fleet: z.array(z.looseObject({ sector: z.string().nullable(), t: finite, auto: z.boolean(), design: z.looseObject({ hull: z.string(), engine: z.string(), cargo: z.string(), scanner: z.string() }).optional() })),
+      upgrades: z.record(z.string(), count),
+      rng: z.tuple([finite, finite, finite, finite]),
+      parts: z.array(z.string()).optional(),
+    })
+    .optional(),
   settings: z.looseObject({
     notation: z.enum(['suffix', 'scientific', 'engineering']),
     autosaveSeconds: finite,

@@ -18,7 +18,7 @@ import type { AttuneId } from '../content/extras';
 import { buyAutoFuse, buyFusionUpgrade, fuse, type FusionUpgradeId } from '../engine/systems/fusion';
 import { equipAttune, unequipAttune, unlockAttune } from '../engine/systems/attune';
 import { buyDeal, buyLuck, reroll } from '../engine/systems/merchant';
-import { buyShip, buyShipUpgrade, launch, setShipAuto, type ShipUpgradeId } from '../engine/systems/ships';
+import { buyPart, buyShip, buyShipUpgrade, fitBest, fitPart, launch, recallShip, setShipAuto, type ShipUpgradeId } from '../engine/systems/ships';
 import { buyNebulaNode } from '../engine/systems/nebulaTree';
 import { rollOnce, type RollResult, setShrine } from '../engine/systems/runes';
 import { craftRune, salvage, starUp } from '../engine/systems/starring';
@@ -236,6 +236,27 @@ export const commands = {
   },
   launchShip(ship: number, sector: string): boolean {
     const ok = launch(game.state, ship, sector);
+    done();
+    return ok;
+  },
+  /** The Ship Customizer: buy a part once, fit it to a docked ship, refit for a sector, or call a ship home. */
+  buyShipPart(id: string): boolean {
+    const ok = buyPart(game.state, id);
+    done();
+    return ok;
+  },
+  fitShipPart(ship: number, id: string): boolean {
+    const ok = fitPart(game.state, ship, id);
+    done();
+    return ok;
+  },
+  fitShipBest(ship: number, sector: string): boolean {
+    const ok = fitBest(game.state, ship, sector);
+    done();
+    return ok;
+  },
+  recallShip(ship: number): boolean {
+    const ok = recallShip(game.state, ship);
     done();
     return ok;
   },

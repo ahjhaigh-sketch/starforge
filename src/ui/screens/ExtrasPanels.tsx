@@ -1,6 +1,7 @@
 import { type PointerEvent, useState } from 'react';
 import { commands } from '../../app/commands';
 import { attuneReport, fusionReport, merchantReport, shipsReport } from '../../app/extrasReports';
+import { ShipyardPane } from './ShipyardPane';
 import type { AttuneId } from '../../content/extras';
 import type { FusionUpgradeId } from '../../engine/systems/fusion';
 import type { ShipUpgradeId } from '../../engine/systems/ships';
@@ -236,8 +237,37 @@ export function MerchantPanel() {
 export function ShipsPanel() {
   const r = useReport('expeditions', shipsReport, 200);
   const [dest, setDest] = useState<Record<number, string>>({});
+  const [tab, setTab] = useState<'fleet' | 'yard'>('fleet');
   return (
     <Panel id="expeditions" title="Starship Expeditions" color="#2B7FD0" size="wide">
+      <div className="forge-tabs" role="tablist" aria-label="Starships">
+        {(
+          [
+            { id: 'fleet', label: 'Fleet', icon: 'ship' },
+            { id: 'yard', label: 'Shipyard', icon: 'forge' },
+          ] as const
+        ).map((x) => (
+          <button
+            key={x.id}
+            type="button"
+            role="tab"
+            id={`ships-tab-${x.id}`}
+            aria-selected={tab === x.id}
+            aria-controls={`ships-pane-${x.id}`}
+            className={cx('forge-tab chunk pop', tab === x.id && 'on')}
+            style={tint(tab === x.id ? '#2B7FD0' : '#2B1F6E')}
+            onClick={() => setTab(x.id)}
+            data-ships-tab={x.id}
+          >
+            <Icon name={x.icon} />
+            {x.label}
+          </button>
+        ))}
+      </div>
+      {tab === 'yard' ? (
+        <ShipyardPane />
+      ) : (
+      <div role="tabpanel" id="ships-pane-fleet" aria-labelledby="ships-tab-fleet">
       <p>Send starships to far sectors. A trip takes its distance divided by your ships' speed ({r?.speed ?? 'x1'}), so Engines shorten every trip; farther sectors pay more. Ships on repeat keep flying while you are away.</p>
       {r && (
         <>
@@ -257,10 +287,12 @@ export function ShipsPanel() {
                       </b>
                       <ProgressBar value={sh.pct / 100} color={sh.color} label={`Ship ${sh.i + 1} trip`} />
                       <small className="num">{sh.left} left</small>
+                      <small className="ship-design">{sh.design}</small>
                     </div>
                   ) : (
                     <div className="belt-up-body">
                       <b>Ship {sh.i + 1}: docked</b>
+                      <small className="ship-design">{sh.design}</small>
                       <select className="ship-dest" value={chosen} onChange={(e) => setDest({ ...dest, [sh.i]: e.target.value })} aria-label={`Destination for ship ${sh.i + 1}`}>
                         {pickable.map((x) => (
                           <option key={x.id} value={x.id}>
@@ -318,6 +350,8 @@ export function ShipsPanel() {
             </div>
           </div>
         </>
+      )}
+      </div>
       )}
     </Panel>
   );
