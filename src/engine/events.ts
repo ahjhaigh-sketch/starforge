@@ -12,6 +12,8 @@ export type GameEvent =
   | { t: 'achievement'; id: string }
   | { t: 'milestone'; id: string }
   | { t: 'comet'; kind: string }
+  /** Space Weather rolled in (`summoned`: from a Weather Beacon). Never sent during a catch-up. */
+  | { t: 'weather'; kind: string; summoned: boolean }
   /** `hand`: swept by the player (drones harvest quietly). */
   | { t: 'harvest'; rarity: string; hand: boolean }
   /** A batch (or several) of this alloy grade came out of the furnace. */

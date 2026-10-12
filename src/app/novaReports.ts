@@ -138,7 +138,7 @@ const STAGES: Array<{ name: string; ids: string[] }> = [
   { name: 'Protostar', ids: ['ascent', 'upgrades', 'medals', 'stats'] },
   { name: 'Red Dwarf to Golden Sun', ids: ['belt', 'level', 'constants', 'quests'] },
   { name: 'Blue Giant and beyond', ids: ['orbitals', 'mastery', 'wardrobe'] },
-  { name: 'Supernova', ids: ['novatree', 'automation', 'starforge', 'drill'] },
+  { name: 'Supernova', ids: ['novatree', 'automation', 'starforge', 'drill', 'weather'] },
   { name: 'Supernova extras', ids: ['fusion', 'attune', 'merchant', 'alchemy', 'expeditions'] },
   { name: 'Nebula', ids: ['nebula', 'nebulatree', 'runes', 'index', 'wyrms'] },
   { name: 'Nebula depths', ids: ['starring', 'mutations', 'auras', 'nursery', 'spectral', 'tarot'] },

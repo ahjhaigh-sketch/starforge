@@ -4,6 +4,7 @@ import { D, type Decimal } from '../decimal';
 import { events } from '../events';
 import { cur, type GameState, spend } from '../state';
 import { invalidateStats, registerSources } from '../stats';
+import { hurryComet } from './comets';
 
 /**
  * Starlight Alchemy (Ideas menu 6). Three ingredients in the cauldron make an elixir when they
@@ -104,6 +105,7 @@ export function drink(s: GameState, id: string): boolean {
   const from = Math.max(s.alchemy.active[id] ?? 0, s.playtime);
   s.alchemy.active[id] = Math.min(s.playtime + A.maxSeconds, from + r.seconds);
   s.stats.elixirsDrunk = (s.stats.elixirsDrunk ?? 0) + 1;
+  if (r.stat === 'cometRate') hurryComet(s, BALANCE.weather.hurryComet);
   invalidateStats();
   return true;
 }

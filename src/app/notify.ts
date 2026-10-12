@@ -4,6 +4,7 @@ import { SECTOR_BY_ID } from '../content/extras';
 import { RUNE_BY_ID, SHRINE_BY_ID } from '../content/runes';
 import { AURA_BY_ID, MUTATION_BY_ID } from '../content/runeDepth';
 import { WYRM_BY_ID } from '../content/wyrms';
+import { WEATHER_BY_ID } from '../content/weather';
 import { CARD_BY_ID } from '../content/nebulaExtras';
 import { BH_STAGES } from '../engine/systems/blackhole';
 import { SYSTEM_BY_ID } from '../content/systems';
@@ -129,6 +130,9 @@ export function installNotifications(): void {
     } else if (e.t === 'rune' && e.first) {
       const r = RUNE_BY_ID.get(e.id);
       if (r) events.emit({ t: 'toast', title: `New rune: ${r.name}`, body: `${r.hidden ? 'A hidden' : r.anomaly ? 'An Anomaly' : 'A ' + r.rarity} rune from the ${SHRINE_BY_ID.get(r.shrine)?.name ?? 'shrine'}.`, icon: 'rune' });
+    } else if (e.t === 'weather') {
+      const w = WEATHER_BY_ID.get(e.kind);
+      if (w) events.emit({ t: 'toast', title: e.summoned ? `You called a ${w.name}` : `${w.name}!`, body: w.desc, icon: 'weather' });
     } else if (e.t === 'aura' && e.first) {
       const a = AURA_BY_ID.get(e.id);
       if (a) events.emit({ t: 'toast', title: `New aura: ${a.name}`, body: 'Wear it in the Celestial Auras panel.', icon: 'aura' });

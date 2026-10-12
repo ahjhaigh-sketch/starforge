@@ -192,6 +192,13 @@ export const sounds = {
     const t = ctx.currentTime;
     [0, 7, 12, 19].forEach((n, i) => tone(660 * semis(n), t + i * 0.05, 0.3, 'sine', 0.2));
   },
+  weather() {
+    if (!ensure() || !ctx || !throttle('weather', 1)) return;
+    const t = ctx.currentTime;
+    tone(110, t, 1.6, 'sine', 0.22, 165);
+    whoosh(t + 0.1, 1.4, 400, 3200, 0.06);
+    [0, 7, 14].forEach((n, i) => tone(1320 * semis(n), t + 0.5 + i * 0.12, 0.6, 'sine', 0.06));
+  },
   medal() {
     if (!ensure() || !ctx) return;
     const t = ctx.currentTime;
@@ -312,6 +319,9 @@ export function installAudio(): void {
       case 'comet':
         if (e.kind === 'spawn') sounds.comet();
         else sounds.catchComet();
+        break;
+      case 'weather':
+        sounds.weather();
         break;
       case 'achievement':
         sounds.medal();

@@ -96,7 +96,8 @@ const migrations: Record<number, (d: PlainSave) => void> = {
     d.stats = stats;
   },
   // 20 (Phase 20): the Wardrobe, Starlight Alchemy, Space Weather, ship designs, Planet Defense and the Hidden Sigils.
-  // New fields with defaults (a ship without a design flies the default one); nothing moves.
+  // New fields with defaults (a ship without a design flies the default one); nothing moves. An old
+  // save's weather starts unscheduled and its comets so far fill the Weather Beacon (up to 5 charges).
   20: () => {},
 };
 

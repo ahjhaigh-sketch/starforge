@@ -30,6 +30,14 @@ function nextGap(s: GameState): number {
   return (c.minGap + nextFloat(s.rng) * (c.maxGap - c.minGap)) / Math.max(0.01, stat(s, 'cometRate').toNumber());
 }
 
+/**
+ * The next comet is scheduled when the last one appears, so a faster comet rate (a Meteor Shower, a
+ * Comet Brew) would wait out the old gap first: this brings the next comet within `seconds`.
+ */
+export function hurryComet(s: GameState, seconds: number): void {
+  s.comet.nextAt = Math.min(s.comet.nextAt, s.playtime + seconds);
+}
+
 /** True while a comet is on screen and can be caught. */
 export function cometOnScreen(s: GameState): boolean {
   return s.comet.until > s.playtime;

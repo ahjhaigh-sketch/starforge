@@ -39,6 +39,8 @@ import { availableUpgrades } from '../engine/systems/upgrades';
 import { MEDALS } from '../content/medals';
 import { RECIPES } from '../content/alchemy';
 import { elixirLeft } from '../engine/systems/alchemy';
+import { WEATHER_BY_ID } from '../content/weather';
+import { weatherLeft, weatherNow } from '../engine/systems/weather';
 import { whenItApplies } from '../content/upgrades';
 import { CONSTANTS } from '../content/constants';
 import { MASTERY_RANKS, ORBITALS } from '../content/early';
@@ -219,6 +221,8 @@ export interface Snapshot {
   storyDue: boolean;
   storySeen: boolean;
   /** The Wardrobe's choices, for the renderer (skin, trail, background ids). */
+  /** Space Weather in the sky ('' for clear), for the renderer. */
+  weatherKind: string;
   skin: string;
   trail: string;
   background: string;
@@ -340,6 +344,9 @@ const BUFF_LABELS: Record<string, string> = {
 
 function buffChips(s: GameState, prev: BuffChip[] | undefined): BuffChip[] {
   const chips: BuffChip[] = [];
+  const sky = weatherNow(s);
+  const w = sky ? WEATHER_BY_ID.get(sky) : undefined;
+  if (w) chips.push({ kind: 'weather', label: `${w.name}: ${w.chip}`, secs: formatTime(weatherLeft(s)), color: w.color, icon: 'weather' });
   for (const k of BUFF_KINDS) {
     const left = buffLeft(s, k);
     if (left > 0) chips.push({ kind: k, label: BUFF_LABELS[k]!, secs: `${Math.ceil(left)}s` });
@@ -617,6 +624,7 @@ function multiverseBar(s: GameState, n: Notation) {
     sparksVisible: (s.stats.multiversesAll ?? 0) > 0 || cur(s, 'sparks').gt(0),
     storyDue: (s.stats.multiversesAll ?? 0) > 0 && !s.multiverse.storySeen,
     storySeen: s.multiverse.storySeen,
+    weatherKind: weatherNow(s) ?? '',
     skin: s.cosmetics.skin,
     trail: s.cosmetics.trail,
     background: s.cosmetics.background,

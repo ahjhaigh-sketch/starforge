@@ -40,6 +40,7 @@ import { BigCrunchPanel, CrunchConfirmPanel, EchoesPanel, EternityPanel } from '
 import { UpdateBanner } from './screens/UpdateBanner';
 import { WardrobePanel } from './screens/WardrobePanel';
 import { AlchemyPanel } from './screens/AlchemyPanel';
+import { WeatherPanel } from './screens/WeatherPanel';
 import { CreditsPanel, MultiverseConfirmPanel, MultiversePanel, SparkTreePanel, StoryPanel, UniverseForgePanel } from './screens/MultiversePanels';
 import { useUi } from './store';
 
@@ -153,6 +154,7 @@ export function App() {
       <CreditsPanel />
       <WardrobePanel />
       <AlchemyPanel />
+      <WeatherPanel />
       <SettingsPanel />
       <PanelHost />
       <ToastHost />

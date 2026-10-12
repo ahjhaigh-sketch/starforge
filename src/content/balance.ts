@@ -790,4 +790,28 @@ export const BALANCE = {
     /** An elixir's boost stacks its time up to this many seconds. */
     maxSeconds: 3600,
   },
+  /** Phase 20.3: Space Weather. Opens at the first Supernova (lifetime). Times are play-time seconds. */
+  weather: {
+    supernovas: 1,
+    /** Clear sky between one weather and the next, and how long a weather lasts. */
+    gapMin: 360,
+    gapMax: 720,
+    lastMin: 90,
+    lastMax: 180,
+    /** A beacon-summoned weather lasts the longest a natural one can. */
+    summonSeconds: 180,
+    /** A beacon charge for every this many comets caught, and the most that can be stored. */
+    cometsPerCharge: 25,
+    maxCharges: 5,
+    /** A Meteor Shower (or a Comet Brew) brings the next comet within this many seconds. */
+    hurryComet: 5,
+    meteor: 4,
+    flare: 10,
+    eclipseLuck: 3,
+    eclipseEssence: 2,
+    aurora: 3,
+    windShips: 2,
+    windBelt: 2,
+    storm: 3,
+  },
 } as const;

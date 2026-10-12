@@ -1892,3 +1892,34 @@ test('Starlight Alchemy: a right mix finds a recipe, a wrong one gives a hint, a
   if (info.project.name === 'desktop') await panel.screenshot({ path: 'shots/alchemy.png' });
   expect(errors).toEqual([]);
 });
+
+// ---------- Phase 20.3: Space Weather ----------
+
+test('Space Weather: comets fill the beacon, a charge summons a Meteor Shower, and it shows on the HUD and in the sky', async ({ page }, info) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const s = (window as unknown as { sf: { game: { state: { stats: Record<string, number> } } } }).sf.game.state;
+    s.stats.supernovasAll = 1;
+    s.stats.comets = 60;
+  });
+  await openRail(page, 'weather');
+  const panel = page.locator('[data-panel="weather"]');
+  await expect(panel.getByTestId('beacon-charges')).toHaveAttribute('data-charges', '2');
+  await expect(panel).toContainText('10 of 25');
+  await expect(panel.locator('[data-weather="aurora"]')).toContainText('3 Nebulas');
+  await panel.locator('[data-summon="meteor"]').click();
+  await expect(panel.getByTestId('weather-now')).toContainText('Meteor Shower');
+  await expect(panel.getByTestId('beacon-charges')).toHaveAttribute('data-charges', '1');
+  await expect(panel.locator('[data-summon="flare"]')).toBeDisabled();
+  await expect(page.locator('[data-buff="weather"]')).toBeVisible();
+  if (info.project.name === 'desktop') {
+    await expect(page.locator('[data-buff="weather"]')).toContainText('Meteor Shower');
+    await panel.screenshot({ path: 'shots/weather.png' });
+  }
+  await page.keyboard.press('Escape');
+  // the sky: the shower fades in and meteors streak across
+  await expect.poll(() => page.evaluate(() => (window as unknown as { sf: { fx: { weather(k: string): number } } }).sf.fx.weather('meteor'))).toBe(1);
+  await expect.poll(() => page.evaluate(() => (window as unknown as { sf: { fx: { liveParticles(): number } } }).sf.fx.liveParticles())).toBeGreaterThan(0);
+  expect(errors).toEqual([]);
+});

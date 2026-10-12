@@ -13,6 +13,9 @@ interface Particle {
   life: number;
   decay: number;
   size: number;
+  /** Streaks are stretched along their flight and keep their speed; bursts and motes slow down. */
+  stretch: number;
+  drag: boolean;
 }
 
 export class ParticlePool {
@@ -30,7 +33,7 @@ export class ParticlePool {
       sprite.blendMode = 'add';
       sprite.visible = false;
       layer.addChild(sprite);
-      this.pool.push({ sprite, vx: 0, vy: 0, life: 0, decay: 1, size: 1 });
+      this.pool.push({ sprite, vx: 0, vy: 0, life: 0, decay: 1, size: 1, stretch: 1, drag: true });
     }
   }
 
@@ -52,6 +55,9 @@ export class ParticlePool {
       p.life = 1;
       p.decay = 1.1 + Math.random() * 0.8;
       p.size = size * (0.5 + Math.random() * 0.9);
+      p.stretch = 1;
+      p.drag = true;
+      p.sprite.rotation = 0;
       p.sprite.position.set(x, y);
       p.sprite.tint = color;
       p.sprite.visible = true;
@@ -69,6 +75,27 @@ export class ParticlePool {
     p.life = 1;
     p.decay = 1.8 + Math.random() * 0.6;
     p.size = size * (0.7 + Math.random() * 0.6);
+    p.stretch = 1;
+    p.drag = true;
+    p.sprite.rotation = 0;
+    p.sprite.position.set(x, y);
+    p.sprite.tint = color;
+    p.sprite.visible = true;
+  }
+
+  /** A streak (a meteor, a gust of stellar wind): flies straight at (vx, vy) px/s, stretched `stretch` times along its path. */
+  streak(x: number, y: number, vx: number, vy: number, color: number, size: number, stretch: number, decay: number): void {
+    if (!this.enabled) return;
+    const p = this.pool[this.cursor]!;
+    this.cursor = (this.cursor + 1) % this.max;
+    p.vx = vx;
+    p.vy = vy;
+    p.life = 1;
+    p.decay = decay;
+    p.size = size;
+    p.stretch = stretch;
+    p.drag = false;
+    p.sprite.rotation = Math.atan2(vy, vx);
     p.sprite.position.set(x, y);
     p.sprite.tint = color;
     p.sprite.visible = true;
@@ -85,10 +112,13 @@ export class ParticlePool {
       }
       p.sprite.x += p.vx * dt;
       p.sprite.y += p.vy * dt;
-      p.vx *= drag;
-      p.vy *= drag;
+      if (p.drag) {
+        p.vx *= drag;
+        p.vy *= drag;
+      }
       p.sprite.alpha = p.life;
-      p.sprite.scale.set((p.size * (0.4 + p.life * 0.6)) / 64);
+      const k = (p.size * (0.4 + p.life * 0.6)) / 64;
+      p.sprite.scale.set(k * p.stretch, k);
     }
   }
 
@@ -118,6 +148,11 @@ export function burst(x: number, y: number, count: number, color: number, reach 
 /** A cursor-trail mote on the main stage. */
 export function trailMote(x: number, y: number, color: number): void {
   main?.mote(x, y, color);
+}
+
+/** A weather streak on the main stage (meteors, stellar wind, a nebula storm). */
+export function weatherStreak(x: number, y: number, vx: number, vy: number, color: number, size: number, stretch: number, decay: number): void {
+  main?.streak(x, y, vx, vy, color, size, stretch, decay);
 }
 
 export function updateParticles(dt: number): void {

@@ -59,3 +59,25 @@ html[data-bg='dawn'] body { background: radial-gradient(60% 50% at 18% 22%, rgba
   .alc-book { grid-template-columns: 1fr; }
 }
 .alc-text small.alc-batch { color: var(--gold); }
+
+/* ---------- Phase 20.3: Space Weather ---------- */
+.wx-top { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+.wx-now, .wx-beacon { padding: 0.7rem; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.84rem; }
+.wx-now h4, .wx-beacon h4 { margin: 0; }
+.wx-now { border-left: 6px solid var(--c); }
+.wx-name { font-family: var(--font-display); font-weight: 400; font-size: 1.35rem; color: var(--c); text-shadow: var(--outline-sm); }
+.wx-left { color: var(--lime); font-weight: 800; }
+.wx-beacon small { color: var(--text-dim); }
+.wx-pips { display: flex; gap: 0.35rem; }
+.wx-pip { width: 1.4rem; height: 1.4rem; border-radius: 50%; border: 3px solid var(--ink); background: #2a2f55; }
+.wx-pip.on { background: radial-gradient(circle at 35% 35%, #fff 0 18%, var(--cyan) 40%, #1e8fa8 100%); box-shadow: 0 0 8px rgba(46, 230, 255, 0.6); }
+.wx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr)); gap: 0.45rem; margin-top: 0.45rem; }
+.wx-kind { display: flex; align-items: center; gap: 0.55rem; padding: 0.5rem 0.6rem; }
+.wx-kind.locked { opacity: 0.6; }
+.wx-swatch { flex: none; width: 1.6rem; height: 1.6rem; border-radius: 50%; border: 3px solid var(--ink); background: radial-gradient(circle at 35% 35%, #fff 0 12%, var(--c) 55%); }
+.wx-text { display: flex; flex-direction: column; flex: 1; min-width: 0; font-size: 0.78rem; }
+.wx-text b { font-family: var(--font-display); font-weight: 400; font-size: 0.98rem; }
+@media (max-width: 900px) {
+  .wx-top { grid-template-columns: 1fr; }
+  .wx-grid { grid-template-columns: 1fr; }
+}

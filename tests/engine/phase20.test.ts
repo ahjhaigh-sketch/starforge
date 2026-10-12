@@ -4,8 +4,11 @@ import { registerContent } from '../../src/content';
 import { INGREDIENTS, mixKey, RECIPES } from '../../src/content/alchemy';
 import { BALANCE } from '../../src/content/balance';
 import { BACKGROUNDS, SKINS, TRAILS } from '../../src/content/cosmetics';
+import { WEATHERS } from '../../src/content/weather';
 import { D } from '../../src/engine/decimal';
+import { events, type GameEvent } from '../../src/engine/events';
 import { performReset } from '../../src/engine/layers';
+import { simulateElapsed } from '../../src/engine/offline';
 import { exportSave, importSave } from '../../src/engine/save/store';
 import { createInitialState, cur, gain, type GameState, SAVE_VERSION } from '../../src/engine/state';
 import { breakdown, invalidateStats, isStat, resetStatRegistry, stat } from '../../src/engine/stats';
@@ -15,6 +18,8 @@ import { buyPlanet } from '../../src/engine/systems/orbitals';
 import { buyEngine, evolve } from '../../src/engine/systems/stardust';
 import { supernovaReady } from '../../src/engine/systems/supernova';
 import { buyUpgrade } from '../../src/engine/systems/upgrades';
+import { advanceWeather, beaconProgress, summonWeather, weatherKindOpen, weatherLeft, weatherNow, weatherOpen } from '../../src/engine/systems/weather';
+import { tick } from '../../src/engine/tick';
 
 beforeAll(() => {
   resetStatRegistry();
@@ -215,5 +220,189 @@ describe('20.2 Starlight Alchemy', () => {
     const c = clone(s);
     expect(c.alchemy).toEqual(s.alchemy);
     expect(elixirLeft(c, 'minersAle')).toBe(900);
+  });
+});
+
+/** A game just past its first Supernova, with the sky not yet scheduled. */
+function sky(seed = 20): GameState {
+  const s = fresh(seed);
+  s.stats.supernovasAll = 1;
+  return s;
+}
+const W = BALANCE.weather;
+
+describe('20.3 Space Weather', () => {
+  it('starts after the first Supernova; kinds join with the systems they touch', () => {
+    const s = fresh();
+    expect(weatherOpen(s)).toBe(false);
+    advanceWeather(s, false);
+    expect(s.weather.next).toBe(0);
+    s.stats.supernovasAll = 1;
+    expect(WEATHERS.filter((k) => weatherKindOpen(s, k.id)).map((k) => k.id)).toEqual(['meteor', 'flare']);
+    s.stats.supernovasAll = 15;
+    s.stats.nebulasAll = 3;
+    expect(WEATHERS.every((k) => weatherKindOpen(s, k.id))).toBe(true);
+    for (const k of WEATHERS) for (const e of k.effects) expect(isStat(e.stat), e.stat).toBe(true);
+  });
+
+  it('rolls in every 6 to 12 minutes, lasts 90 to 180 seconds, one at a time', () => {
+    const s = sky();
+    advanceWeather(s, false);
+    const first = s.weather.next - s.playtime;
+    expect(first).toBeGreaterThanOrEqual(W.gapMin);
+    expect(first).toBeLessThanOrEqual(W.gapMax);
+    let lastEnd = -1;
+    let starts = 0;
+    for (let i = 0; i < 6 * 3600; i++) {
+      const wasKind = s.weather.kind;
+      const due = s.weather.next;
+      const until = s.weather.until;
+      s.playtime += 1;
+      advanceWeather(s, false);
+      if (wasKind && s.weather.kind !== wasKind) lastEnd = until;
+      if (s.weather.kind && s.weather.until !== until) {
+        // a new weather began at the moment it was due, and lasts its roll
+        starts++;
+        const start = s.weather.kind && wasKind ? until : due;
+        expect(s.weather.until - start).toBeGreaterThanOrEqual(W.lastMin);
+        expect(s.weather.until - start).toBeLessThanOrEqual(W.lastMax);
+        if (lastEnd >= 0) {
+          expect(start - lastEnd).toBeGreaterThanOrEqual(W.gapMin);
+          expect(start - lastEnd).toBeLessThanOrEqual(W.gapMax);
+        }
+      }
+    }
+    // 6 hours at one weather every 7.5 to 15 minutes
+    expect(starts).toBeGreaterThanOrEqual(24);
+    expect(starts).toBeLessThanOrEqual(48);
+    expect(s.stats.weathers).toBe(starts);
+  });
+
+  it('a long catch-up, one giant step and second-by-second play roll exactly the same skies', () => {
+    // the first weather is set from the tick that first sees the sky open (within one step of it);
+    // after that, the schedule runs on play time alone
+    const live = sky(7);
+    advanceWeather(live, false);
+    for (let i = 0; i < 3 * 3600; i++) tick(live, 1);
+    const away = sky(7);
+    advanceWeather(away, false);
+    simulateElapsed(away, 3 * 3600, { cap: 86_400, efficiency: 1, offline: true });
+    // game speed is integrated per step, so the two clocks differ by a few seconds in 3 hours:
+    // bring the one behind up to the same play-time moment (the sky only reads play time)
+    for (const [a, b] of [[live, away], [away, live]] as const) {
+      if (a.playtime < b.playtime) {
+        a.playtime = b.playtime;
+        advanceWeather(a, false);
+      }
+    }
+    const jump = sky(7);
+    advanceWeather(jump, false);
+    jump.playtime = live.playtime;
+    advanceWeather(jump, false);
+    expect(live.stats.weathers).toBeGreaterThan(10);
+    for (const other of [away, jump]) {
+      expect(other.playtime).toBe(live.playtime);
+      expect(other.stats.weathers).toBe(live.stats.weathers);
+      expect(other.weather.kind).toBe(live.weather.kind);
+      expect(other.weather.until).toBeCloseTo(live.weather.until, 6);
+      expect(other.weather.next).toBeCloseTo(live.weather.next, 6);
+      expect(other.weather.rng).toEqual(live.weather.rng);
+    }
+  });
+
+  it('a weather boosts its stats (in the breakdowns) and ends on time', () => {
+    const s = sky();
+    advanceWeather(s, false);
+    const rate = stat(s, 'cometRate');
+    const taps = stat(s, 'tapPower');
+    while (!weatherNow(s)) {
+      s.playtime += 5;
+      advanceWeather(s, false);
+    }
+    if (weatherNow(s) === 'meteor') {
+      expect(stat(s, 'cometRate').eq(rate.mul(W.meteor))).toBe(true);
+      expect(breakdown(s, 'cometRate').some((l) => l.label === 'Meteor Shower (weather)')).toBe(true);
+    } else {
+      expect(stat(s, 'tapPower').eq(taps.mul(W.flare))).toBe(true);
+      expect(breakdown(s, 'tapPower').some((l) => l.label === 'Solar Flare (weather)')).toBe(true);
+    }
+    s.playtime += weatherLeft(s);
+    advanceWeather(s, false);
+    expect(weatherNow(s)).toBeNull();
+    expect(stat(s, 'cometRate').eq(rate)).toBe(true);
+    expect(stat(s, 'tapPower').eq(taps)).toBe(true);
+  });
+
+  it('the beacon gets a charge for every 25 comets caught, stores at most 5, and never banks past that', () => {
+    const s = sky();
+    s.stats.comets = 24;
+    advanceWeather(s, false);
+    expect(s.weather.charges).toBe(0);
+    expect(beaconProgress(s)).toBe(24);
+    s.stats.comets = 25;
+    advanceWeather(s, false);
+    expect(s.weather.charges).toBe(1);
+    s.stats.comets = 1000;
+    advanceWeather(s, false);
+    expect(s.weather.charges).toBe(5);
+    expect(summonWeather(s, 'meteor')).toBe(true);
+    expect(s.weather.charges).toBe(4);
+    // the comets caught while full were not saved up: the next charge takes 25 more
+    s.stats.comets = 1024;
+    advanceWeather(s, false);
+    expect(s.weather.charges).toBe(4);
+    s.stats.comets = 1025;
+    advanceWeather(s, false);
+    expect(s.weather.charges).toBe(5);
+  });
+
+  it('a charge summons the weather you choose while the sky is clear, and the natural schedule carries on', () => {
+    const s = sky();
+    advanceWeather(s, false);
+    expect(summonWeather(s, 'meteor')).toBe(false); // no charge
+    s.weather.charges = 2;
+    expect(summonWeather(s, 'aurora')).toBe(false); // not open yet
+    expect(summonWeather(s, 'nonsense')).toBe(false);
+    s.comet.nextAt = s.playtime + 100;
+    expect(summonWeather(s, 'meteor')).toBe(true);
+    expect(weatherNow(s)).toBe('meteor');
+    expect(weatherLeft(s)).toBe(W.summonSeconds);
+    // the shower's first comet comes at once, not after the old gap
+    expect(s.comet.nextAt).toBe(s.playtime + W.hurryComet);
+    expect(summonWeather(s, 'flare')).toBe(false); // one at a time
+    expect(s.weather.charges).toBe(1);
+    expect(s.weather.spent).toBe(1);
+    // a natural weather that came due under the summoned one follows straight after it
+    s.weather.next = s.playtime + 60;
+    const ends = s.weather.until;
+    s.playtime = ends + 0.5;
+    advanceWeather(s, false);
+    expect(weatherNow(s)).not.toBeNull();
+    expect(s.weather.summoned).toBe(false);
+    expect(s.weather.until - ends).toBeGreaterThanOrEqual(W.lastMin);
+    expect(s.weather.until - ends).toBeLessThanOrEqual(W.lastMax);
+  });
+
+  it('only live weather is announced; the sky and the beacon survive a Supernova and a save', () => {
+    const s = sky();
+    const seen: GameEvent[] = [];
+    const off = events.on((e) => {
+      if (e.t === 'weather') seen.push(e);
+    });
+    simulateElapsed(s, 3600, { cap: 86_400, efficiency: 1, offline: true });
+    expect(s.stats.weathers).toBeGreaterThan(0);
+    expect(seen).toHaveLength(0);
+    // into a clear sky, then summon
+    while (weatherNow(s)) {
+      s.playtime += 10;
+      advanceWeather(s, false);
+    }
+    s.weather.charges = 3;
+    expect(summonWeather(s, 'flare')).toBe(true);
+    off();
+    expect(seen).toEqual([{ t: 'weather', kind: 'flare', summoned: true }]);
+    const c = clone(s);
+    expect(c.weather).toEqual(s.weather);
+    expect(weatherNow(c)).toBe('flare');
   });
 });

@@ -199,6 +199,12 @@ export interface GameState {
   cosmetics: { skin: string; trail: string; background: string };
   /** Phase 20.2: Starlight Alchemy: recipes found, mixes tried, elixirs on the shelf, and when each boost ends (play time). */
   alchemy: { known: string[]; tried: string[]; shelf: Record<string, number>; active: Record<string, number> };
+  /**
+   * Phase 20.3: Space Weather: the weather now (null: clear) and when it ends, when the next natural
+   * one rolls in (0: not scheduled yet), whether this one came from a beacon, beacon charges, the
+   * comets already counted toward charges, charges ever spent, and the weather's own random stream.
+   */
+  weather: { kind: string | null; until: number; next: number; summoned: boolean; charges: number; counted: number; spent: number; rng: RngState };
   settings: Settings;
 }
 
@@ -317,6 +323,7 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     multiverse: { tree: {}, rules: [], next: [], storySeen: false },
     cosmetics: { skin: 'classic', trail: 'none', background: 'violet' },
     alchemy: { known: [], tried: [], shelf: {}, active: {} },
+    weather: { kind: null, until: 0, next: 0, summoned: false, charges: 0, counted: 0, spent: 0, rng: seedRng(seed ^ 0x3a7e_e417) },
     settings: defaultSettings(),
   };
 }

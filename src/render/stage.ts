@@ -11,6 +11,7 @@ import { OrbitalsView } from './orbitals';
 import { StarCore } from './star';
 import { initStarfield, resizeStarfield, setCloudPalette, setNebulaClouds, updateClouds, updateStarfield } from './starfield';
 import { WyrmSky } from './wyrms';
+import { WeatherSky } from './weather';
 import { BlackHoleView } from './blackhole';
 import { LeviathanView } from './leviathan';
 import { MegaView } from './megastructures';
@@ -30,9 +31,12 @@ let hole: BlackHoleView | null = null;
 let whale: LeviathanView | null = null;
 let mega: MegaView | null = null;
 let megaSpec = '';
+let weather: WeatherSky | null = null;
 let holeMass = 0;
 /** Wyrms swimming in the sky right now (tests and the dev panel). */
 export const swimmingWyrms = () => wyrms?.count ?? 0;
+/** How far a weather's sky effect has faded in (tests). */
+export const weatherLevel = (kind: string) => weather?.levelOf(kind) ?? 0;
 let still = false;
 let wornSkin = '';
 let wornBackground = '';
@@ -114,6 +118,8 @@ export async function initRender(): Promise<boolean> {
   const fx = new Container();
   app.stage.addChild(sky, mid, fx);
   initStarfield(sky);
+  weather = new WeatherSky();
+  sky.addChild(weather.sky);
   wyrms = new WyrmSky();
   whale = new LeviathanView();
   sky.addChild(whale.root, wyrms.root);
@@ -122,7 +128,8 @@ export async function initRender(): Promise<boolean> {
   hole = new BlackHoleView();
   // the Black Hole sits behind everything at the star: orbits and the star are in front of it
   mega = new MegaView();
-  mid.addChild(hole.mesh, mega.root, orbitals.behind, star.root, orbitals.infront);
+  // a solar flare glows behind the star; an eclipse's shadow crosses in front of it
+  mid.addChild(hole.mesh, mega.root, orbitals.behind, weather.glow, star.root, weather.shadow, orbitals.infront);
   initParticles(fx);
 
   const apply = () => {
@@ -146,6 +153,7 @@ export async function initRender(): Promise<boolean> {
       document.documentElement.dataset.bg = s.background;
     }
     trailColors = TRAIL_BY_ID.get(s.trail)?.colors ?? [];
+    weather!.set(s.weatherKind);
     wyrms!.set(s.wyrmSky, app!.screen.width, app!.screen.height);
     hole!.setStage(s.bhStage, BH_STAGES[Math.max(0, s.bhStage - 1)]?.color ?? '#FFB347');
     holeMass = s.bhMassLog;
@@ -232,6 +240,7 @@ export async function initRender(): Promise<boolean> {
       mega?.update(dt, r.left + r.width / 2, r.top + r.height / 2, star.lastRadius, still);
       orbitals?.update(dt, r.left + r.width / 2, r.top + r.height / 2, star.lastRadius, still);
     }
+    weather?.update(dt, width, height, r && r.width > 0 ? { x: r.left + r.width / 2, y: r.top + r.height / 2, r: star.lastRadius } : null, still, flashScale);
     updateParticles(dt);
     app.render();
     renderMs = renderMs * 0.95 + (performance.now() - t0) * 0.05;

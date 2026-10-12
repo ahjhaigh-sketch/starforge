@@ -43,6 +43,7 @@ import type { AutoLayer } from '../content/crunch';
 import { ECHO_BOARD, echoTap } from '../engine/systems/echoes';
 import { buyEternity, setEternityAuto } from '../engine/systems/eternity';
 import { brew, type BrewResult, drink } from '../engine/systems/alchemy';
+import { summonWeather } from '../engine/systems/weather';
 import { type CosmeticKind, setCosmetic } from '../engine/systems/cosmetics';
 import { setNextRule, sparkTree } from '../engine/systems/multiverse';
 import { buyForgeUpgrade, buyRelic, equipRelic, setForgeGrade, setForgeOn, setForgeShare, unequipRelic } from '../engine/systems/forge';
@@ -690,6 +691,12 @@ export const commands = {
   },
   drink(id: string): boolean {
     const ok = drink(game.state, id);
+    done();
+    return ok;
+  },
+  /** Space Weather: spend a Weather Beacon charge on the weather you choose, while the sky is clear. */
+  summonWeather(kind: string): boolean {
+    const ok = summonWeather(game.state, kind);
     done();
     return ok;
   },
