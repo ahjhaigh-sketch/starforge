@@ -165,6 +165,8 @@ const PARTS: Record<string, (s: GameState) => void> = {
     s.reactor.charge = ZERO;
     s.mirror = { engines: {}, ever: {}, depth: 0, upgrades: [] };
     s.wormholes.links = [];
+    // Planet Defense starts again in each universe (its battles keep their seed)
+    s.defense = { sockets: s.defense.sockets.map(() => ''), levels: {}, best: 0, wave: 0, auto: false, seed: s.defense.seed, acc: 0, lost: '' };
   },
   galactic: (s) => {
     zero(s, 'galaxyCores', 'starCharts', 'supply');

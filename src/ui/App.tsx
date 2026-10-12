@@ -41,6 +41,7 @@ import { UpdateBanner } from './screens/UpdateBanner';
 import { WardrobePanel } from './screens/WardrobePanel';
 import { AlchemyPanel } from './screens/AlchemyPanel';
 import { WeatherPanel } from './screens/WeatherPanel';
+import { DefensePanel } from './screens/DefensePanel';
 import { CreditsPanel, MultiverseConfirmPanel, MultiversePanel, SparkTreePanel, StoryPanel, UniverseForgePanel } from './screens/MultiversePanels';
 import { useUi } from './store';
 
@@ -155,6 +156,7 @@ export function App() {
       <WardrobePanel />
       <AlchemyPanel />
       <WeatherPanel />
+      <DefensePanel />
       <SettingsPanel />
       <PanelHost />
       <ToastHost />

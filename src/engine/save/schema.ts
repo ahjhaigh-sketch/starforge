@@ -141,6 +141,9 @@ export const plainSaveSchema = z.looseObject({
   echoes: z.looseObject({ engines: z.record(z.string(), count), ever: z.record(z.string(), count) }).optional(),
   multiverse: z.looseObject({ tree: z.record(z.string(), count), rules: z.array(z.string()), next: z.array(z.string()), storySeen: z.boolean() }).optional(),
   cosmetics: z.looseObject({ skin: z.string(), trail: z.string(), background: z.string() }).optional(),
+  defense: z
+    .looseObject({ sockets: z.array(z.string()), levels: z.record(z.string(), count), best: count, wave: count, auto: z.boolean(), seed: finite, acc: finite, lost: z.string() })
+    .optional(),
   weather: z.looseObject({ kind: z.string().nullable(), until: finite, next: finite, summoned: z.boolean(), charges: count, counted: count, spent: count, rng: z.tuple([finite, finite, finite, finite]) }).optional(),
   alchemy: z.looseObject({ known: z.array(z.string()), tried: z.array(z.string()), shelf: z.record(z.string(), count), active: z.record(z.string(), finite) }).optional(),
   colonies: z

@@ -25,6 +25,9 @@ import { RELICS } from '../../src/content/forge';
 import { ELEMENTS } from '../../src/content/elements';
 import { advanceWeather, beaconProgress, summonWeather, weatherKindOpen, weatherLeft, weatherNow, weatherOpen } from '../../src/engine/systems/weather';
 import { tick } from '../../src/engine/tick';
+import { TURRET_BY_ID, socketAt } from '../../src/content/defense';
+import { advanceDefense, battleResult, battleSetup, buyTurretLevels, clearSocket, defenseOpen, fightWave, placeCost, placeTurret, setDefenseAuto, winAlloy } from '../../src/engine/systems/defense';
+import { createBattle, hasArmour, hasBoss, relativeHit, runBattle, stepBattle, swarmCount } from '../../src/engine/systems/defenseBattle';
 
 beforeAll(() => {
   resetStatRegistry();
@@ -548,5 +551,158 @@ describe('20.4 the Ship Customizer', () => {
     expect(s.stats.trips).toBe(Math.floor(h.trips));
     expect(cur(s, 'alloy.iron').eq(trip.alloy.mul(s.stats.trips!))).toBe(true);
     expect(h.alloy.div(trip.alloy).toNumber()).toBeCloseTo(h.trips, 9);
+  });
+});
+
+/** A game past its third Singularity, with a planet and plenty of every alloy. */
+function bastion(alloy = 1e9): GameState {
+  const s = createInitialState(7_000_000, 31);
+  s.stats.singularitiesAll = 3;
+  s.planets['0.0'] = { type: 'rocky', level: 1 } as never;
+  for (const a of ['alloy.iron', 'alloy.gold', 'alloy.crystal', 'alloy.prismatic', 'alloy.void']) gain(s, a, D(alloy));
+  invalidateStats();
+  return s;
+}
+const only = (kind: string, n = 12) => Array.from({ length: n }, (_, i) => (i === 0 ? kind : ''));
+const hits = (kind: string, wave = 1, level = 0) => ({ [kind]: relativeHit(TURRET_BY_ID.get(kind)!.damage, level, wave) });
+
+describe('20.5 Planet Defense', () => {
+  it('opens at 3 Singularities with a planet; waves grow as planned', () => {
+    const s = createInitialState(7_000_000, 31);
+    s.stats.singularitiesAll = 3;
+    expect(defenseOpen(s)).toBe(false); // no planet yet
+    s.planets['0.0'] = { type: 'rocky', level: 1 } as never;
+    expect(defenseOpen(s)).toBe(true);
+    expect(swarmCount(1)).toBe(8);
+    expect(swarmCount(20)).toBe(18);
+    expect(swarmCount(500)).toBe(60);
+    expect([hasArmour(5), hasArmour(6), hasBoss(10), hasBoss(15)]).toEqual([true, false, true, false]);
+    // health and damage are relative to the wave: no Infinity or NaN at any wave or level
+    for (const [wave, level] of [[1, 0], [6000, 0], [6000, 10_000], [1e6, 5]] as const) expect(Number.isFinite(relativeHit(12, level, wave))).toBe(true);
+  });
+
+  it('the panel replays exactly the battle the engine scored', () => {
+    const setup = { wave: 7, seed: 99, sockets: ['laser', '', 'flak', '', 'frost', '', 'prism', '', 'lance', '', '', ''], hit: { ...hits('laser', 7), ...hits('flak', 7), ...hits('frost', 7), ...hits('prism', 7), ...hits('lance', 7) } };
+    const scored = runBattle(setup);
+    const watched = createBattle(setup);
+    let shots = 0;
+    while (!watched.done) {
+      stepBattle(watched);
+      shots += watched.shots.length;
+    }
+    expect({ win: watched.win, seconds: watched.t, kills: watched.kills, leaks: watched.leaks }).toEqual(scored);
+    expect(shots).toBeGreaterThan(0);
+    expect(runBattle(setup)).toEqual(scored); // and again: a pure function
+  });
+
+  it('each turret does what it says', () => {
+    const firstShot = (kind: string) => {
+      const b = createBattle({ wave: 3, seed: 5, sockets: only(kind), hit: hits(kind, 3) });
+      const before = () => Array.from(b.hp);
+      let prev = before();
+      while (!b.done) {
+        stepBattle(b);
+        if (b.shots.length > 0) break;
+        prev = before();
+      }
+      const damaged = [...b.hp.keys()].filter((i) => b.hp[i]! < prev[i]!);
+      return { b, shot: b.shots[0]!, damaged };
+    };
+    const laser = firstShot('laser');
+    expect(laser.shot.to).toHaveLength(1);
+    expect(laser.damaged).toHaveLength(1);
+    const flak = firstShot('flak');
+    const [fx, fy] = flak.shot.to[0]!;
+    for (const i of flak.damaged) expect(Math.hypot(flak.b.x[i]! - fx, flak.b.y[i]! - fy)).toBeLessThanOrEqual(TURRET_BY_ID.get('flak')!.splash! + 1e-9);
+    const frost = firstShot('frost');
+    for (const i of frost.damaged) expect(frost.b.slowUntil[i]).toBeGreaterThan(frost.b.t);
+    const prism = firstShot('prism');
+    expect(prism.damaged.length).toBeLessThanOrEqual(3);
+    expect(prism.shot.to.length).toBe(prism.damaged.length);
+    const lance = firstShot('lance');
+    const s0 = socketAt(0);
+    const [lx, ly] = lance.shot.to[0]!;
+    const len = Math.hypot(lx - s0.x, ly - s0.y);
+    for (const i of lance.damaged) {
+      const px = lance.b.x[i]! - s0.x;
+      const py = lance.b.y[i]! - s0.y;
+      expect(Math.abs((px * (ly - s0.y) - py * (lx - s0.x)) / len)).toBeLessThanOrEqual(TURRET_BY_ID.get('lance')!.pierce! + 1e-9);
+    }
+    // an armoured swarmer takes half damage; a slowed one moves at half speed
+    expect(BALANCE.defense.armourTaken).toBe(0.5);
+    expect(TURRET_BY_ID.get('frost')!.slow).toBe(0.5);
+  });
+
+  it('wave 500 simulates in under 50 ms', () => {
+    const sockets = ['laser', 'flak', 'frost', 'prism', 'lance', 'laser', 'flak', 'frost', 'prism', 'lance', 'laser', 'flak'];
+    const hit: Record<string, number> = {};
+    for (const k of new Set(sockets)) hit[k] = relativeHit(TURRET_BY_ID.get(k)!.damage, 1000, 500);
+    runBattle({ wave: 500, seed: 1, sockets, hit }); // warm up the JIT
+    const t0 = performance.now();
+    const r = runBattle({ wave: 500, seed: 2, sockets, hit });
+    expect(performance.now() - t0).toBeLessThan(50);
+    expect(r.win).toBe(true);
+  });
+
+  it('turrets cost alloy, clearing one pays it back, and levels buy in bulk', () => {
+    const s = bastion(1000);
+    expect(placeCost(s, 'laser').toNumber()).toBe(200);
+    expect(placeTurret(s, 0, 'laser')).toBe(true);
+    expect(placeTurret(s, 0, 'flak')).toBe(false); // taken
+    expect(placeCost(s, 'laser').toNumber()).toBe(800);
+    expect(cur(s, 'alloy.iron').toNumber()).toBe(800);
+    expect(clearSocket(s, 0)).toBe(true);
+    expect(cur(s, 'alloy.iron').toNumber()).toBe(1000);
+    placeTurret(s, 0, 'laser');
+    s.settings.buyAmount = 'max';
+    expect(buyTurretLevels(s, 'laser')).toBe(true);
+    // 50 x 1.4^k summed: as many as 800 Iron buys
+    expect(s.defense.levels.laser).toBe(5);
+    const c = clone(s);
+    expect(c.defense).toEqual(s.defense);
+  });
+
+  it('a win sets a new best with lasting boosts; a loss costs nothing', () => {
+    const s = bastion();
+    expect(fightWave(s)).toBeNull(); // nothing placed
+    const dust = stat(s, 'productionMult');
+    placeTurret(s, 0, 'laser');
+    const r = fightWave(s)!;
+    expect(r.result.win).toBe(true);
+    expect(s.defense.best).toBe(1);
+    expect(stat(s, 'productionMult').eq(dust.mul(1 + BALANCE.defense.stardustPerBest))).toBe(true);
+    expect(breakdown(s, 'planetPower').some((l) => l.label === 'Planet Defense')).toBe(true);
+    // fight until a loss: the best stays, nothing is spent
+    let last = r;
+    while (last.result.win) last = fightWave(s)!;
+    const best = s.defense.best;
+    const alloy = cur(s, 'alloy.iron');
+    expect(fightWave(s)!.result.win).toBe(false);
+    expect(s.defense.best).toBe(best);
+    expect(cur(s, 'alloy.iron').eq(alloy)).toBe(true);
+  });
+
+  it('auto-defend pushes on, then farms its best wave for alloy, offline too', () => {
+    const s = bastion();
+    for (let i = 0; i < 4; i++) placeTurret(s, i * 3, 'laser');
+    s.defense.levels.laser = 6;
+    while (fightWave(s)!.result.win);
+    const best = s.defense.best;
+    expect(best).toBeGreaterThanOrEqual(BALANCE.defense.autoFrom);
+    setDefenseAuto(s, true);
+    expect(s.defense.auto).toBe(true);
+    const lose = battleResult(battleSetup(s, best + 1));
+    const farm = battleResult(battleSetup(s, best));
+    expect(lose.win).toBe(false);
+    const iron = cur(s, 'alloy.iron');
+    simulateElapsed(s, lose.seconds + 10 * farm.seconds + 1, { cap: 86_400, efficiency: 1, offline: true });
+    expect(s.defense.best).toBe(best);
+    expect(s.defense.lost).not.toBe('');
+    expect(s.stats.defenseWins).toBe(10);
+    expect(cur(s, 'alloy.iron').sub(iron).eq(winAlloy(s, best)[0]!.amount.mul(10))).toBe(true);
+    // stronger turrets: it pushes on again by itself
+    s.defense.levels.laser = 40;
+    advanceDefense(s, 3600, 1);
+    expect(s.defense.best).toBeGreaterThan(best);
   });
 });

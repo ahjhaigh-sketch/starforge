@@ -134,7 +134,7 @@ const ARMS: ArmDef[] = [
     key: 'singularity',
     name: 'Singularity',
     color: '#9B7CFF',
-    keeps: 'Dark Matter, the Singularity Tree, Void Constants, the key, the Black Hole, the Prism Wheel, the Reactor, the Antimatter Mirror and the Wormhole Network',
+    keeps: 'Dark Matter, the Singularity Tree, Void Constants, the key, the Black Hole, the Prism Wheel, the Reactor, the Antimatter Mirror, the Wormhole Network and Planet Defense',
     milestones: ['Remembered Voids', 'Keep your Singularity count and milestones.', flag('keepMilestones.singularity')],
     automation: ['Undying Void', 'Eternal Void stays through the Multiverse.', flag('keepEternity.et.void')],
     inner: [

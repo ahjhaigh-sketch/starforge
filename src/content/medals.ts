@@ -133,6 +133,8 @@ export const MEDALS: readonly MedalDef[] = [
   { id: 'alchemy.all', name: "Master Alchemist", desc: "Find all 12 recipes.", icon: 'alchemy', req: { kind: 'count', stat: 'recipesFound', count: 12, noun: 'recipe' } },
   { id: 'weather.summon', name: "Rain Dance", desc: "Summon weather with the Weather Beacon.", icon: 'weather', req: { kind: 'count', stat: 'weatherSummoned', count: 1, noun: 'summoned weather' } },
   { id: 'weather.50', name: "Storm Chaser", desc: "See 50 weathers roll through the sky.", icon: 'weather', req: { kind: 'count', stat: 'weathers', count: 50, noun: 'weather' } },
+  { id: 'defense.10', name: "Holding the Line", desc: "Win wave 10 of Planet Defense.", icon: 'defense', req: { kind: 'count', stat: 'defenseBest', count: 10, noun: 'wave' } },
+  { id: 'defense.100', name: "Planetary Shield", desc: "Win wave 100 of Planet Defense.", icon: 'defense', req: { kind: 'count', stat: 'defenseBest', count: 100, noun: 'wave' } },
   { id: 'sparks.all', name: "Every Spark", desc: "Own all 114 Spark choices.", icon: 'spark', req: { kind: 'count', stat: 'sparkChoices', count: 114, noun: 'Spark choice' } },
   { id: 'omni.1m', name: "Omnipresent", desc: "Raise an Omni Constant to level 1,000,000.", icon: 'constants', req: { kind: 'count', stat: 'omniBest', count: 1e6, noun: 'level' } },
   // Phase 7: Comet Fusion, Attunements, the Merchant and starships

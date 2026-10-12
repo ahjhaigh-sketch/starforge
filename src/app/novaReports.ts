@@ -142,7 +142,7 @@ const STAGES: Array<{ name: string; ids: string[] }> = [
   { name: 'Supernova extras', ids: ['fusion', 'attune', 'merchant', 'alchemy', 'expeditions'] },
   { name: 'Nebula', ids: ['nebula', 'nebulatree', 'runes', 'index', 'wyrms'] },
   { name: 'Nebula depths', ids: ['starring', 'mutations', 'auras', 'nursery', 'spectral', 'tarot'] },
-  { name: 'Singularity', ids: ['singularity', 'singularitytree', 'blackhole', 'reactor', 'prismwheel'] },
+  { name: 'Singularity', ids: ['singularity', 'singularitytree', 'blackhole', 'reactor', 'prismwheel', 'defense'] },
   { name: 'Challenges', ids: ['trials', 'spire', 'leviathans', 'scaletree'] },
   { name: 'Mirror and Wormholes', ids: ['wormholes', 'mirror'] },
   { name: 'Galactic', ids: ['galactic', 'galaxymap', 'galactictree', 'observatory', 'starchart'] },

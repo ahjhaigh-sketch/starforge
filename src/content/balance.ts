@@ -814,6 +814,51 @@ export const BALANCE = {
       'scanner.codex': ['alloy.prismatic', 250],
     } as Record<string, readonly [string, number]>,
   },
+  /** Phase 20.5: Planet Defense. Opens at 3 Singularities (lifetime) with a planet in orbit. */
+  defense: {
+    singularities: 3,
+    sockets: 12,
+    /** Wave N: 8 + N/2 swarmers (at most 60), each with 20 x 1.13^N health. */
+    baseCount: 8,
+    countPerWave: 0.5,
+    maxCount: 60,
+    baseHealth: 20,
+    healthGrowth: 1.13,
+    /** Every 5th wave: a quarter of the swarm armoured (3x health, half damage taken). Every 10th: a boss. */
+    armourEvery: 5,
+    armourHealth: 3,
+    armourTaken: 0.5,
+    bossEvery: 10,
+    bossHealth: 25,
+    /** Three swarmers reaching your planets lose the wave. */
+    leaks: 3,
+    /** Damage x1.25 a turret level. */
+    damagePerLevel: 1.25,
+    /** Auto-defend runs waves on its own from this best wave. */
+    autoFrom: 10,
+    /** Rewards for each new best wave, and alloy per repeat win (each grade your turrets use). */
+    planetPerBest: 0.03,
+    stardustPerBest: 0.02,
+    alloyBase: 5,
+    alloyGrowth: 1.08,
+    /** Placing a turret: its price x this for each of that kind already placed. Levels: base x growth^level. */
+    placeGrowth: 4,
+    levelGrowth: 1.4,
+    /** Swarmer speeds (field units a second; the field's radius is 1) and the gap between spawns (seconds). */
+    speed: { swarmer: 0.12, armoured: 0.09, boss: 0.06 },
+    spawnGap: 0.6,
+    /**
+     * Each turret: price to place the first and to buy the first level (its alloy), damage a hit at
+     * level 0 (wave 1 has 22.6 health a swarmer), seconds between shots, reach, and its trick.
+     */
+    turrets: {
+      laser: { placeCost: 200, levelCost: 50, damage: 12, every: 0.25, range: 0.62 },
+      flak: { placeCost: 200, levelCost: 50, damage: 10, every: 0.9, range: 0.5, splash: 0.12 },
+      frost: { placeCost: 100, levelCost: 30, damage: 4, every: 0.5, range: 0.45, splash: 0.1, slow: 0.5, slowFor: 1.5 },
+      prism: { placeCost: 50, levelCost: 20, damage: 8, every: 0.6, range: 0.55, chain: 3, jump: 0.2 },
+      lance: { placeCost: 30, levelCost: 10, damage: 30, every: 1.4, range: 0.75, pierce: 0.045 },
+    } as Record<string, { placeCost: number; levelCost: number; damage: number; every: number; range: number; splash?: number; slow?: number; slowFor?: number; chain?: number; jump?: number; pierce?: number }>,
+  },
   /** Phase 20.2: Starlight Alchemy. Opens at 12 Supernovas (lifetime). */
   alchemy: {
     supernovas: 12,

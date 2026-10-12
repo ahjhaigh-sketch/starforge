@@ -1962,3 +1962,30 @@ test('the Shipyard: buy parts once, fit them while docked, Best fit for a sector
   await expect(panel.locator('button[data-part="hull.scout"]')).toBeEnabled();
   expect(errors).toEqual([]);
 });
+
+// ---------- Phase 20.5: Planet Defense ----------
+
+test('Planet Defense: place a turret, fight wave 1, watch the replay to a win, and clear a socket for a refund', async ({ page }, info) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf7).sf;
+    game.state.stats.singularitiesAll = 3;
+    (game.state as unknown as { planets: Record<string, { type: string; level: number }> }).planets['0.0'] = { type: 'rocky', level: 1 };
+    commands.devAdd('alloy.iron', 1000);
+  });
+  await openRail(page, 'defense');
+  const panel = page.locator('[data-panel="defense"]');
+  await expect(panel.getByTestId('fight')).toBeDisabled();
+  await panel.locator('[data-socket="0"]').click();
+  await expect(panel.locator('[data-socket="0"]')).toContainText('Laser');
+  await panel.getByTestId('fight').click();
+  await panel.locator('.df-chip', { hasText: 'x4' }).click();
+  await expect(panel.getByTestId('defense-result')).toContainText('Wave 1 won', { timeout: 15_000 });
+  await expect(panel).toContainText('Best wave 1');
+  if (info.project.name === 'desktop') await panel.screenshot({ path: 'shots/defense.png' });
+  await panel.locator('[data-socket="0"]').click();
+  await expect(panel.locator('[data-socket="0"]')).toContainText('Place');
+  expect(await page.evaluate(() => (window as unknown as Sf7).sf.game.state.currencies['alloy.iron']!.toNumber())).toBe(1000);
+  expect(errors).toEqual([]);
+});

@@ -22,7 +22,7 @@ function ShardChip({ value }: { value: string }) {
 }
 
 /** One upgrade row with the buy amount's count and price. */
-function UpRow(p: { name: string; desc: string; level: string; count: number; cost: string; can: boolean; maxed?: boolean; icon: string; costIcon: string; onBuy: () => void; testid: string }) {
+export function UpRow(p: { name: string; desc: string; level: string; count: number; cost: string; can: boolean; maxed?: boolean; icon: string; costIcon: string; onBuy: () => void; testid: string }) {
   return (
     <div className="belt-up chunk" style={tint('#2B1F6E')} data-up={p.testid}>
       <span className="tile chunk" style={tint('#4A4F9A')}>

@@ -44,6 +44,8 @@ import { ECHO_BOARD, echoTap } from '../engine/systems/echoes';
 import { buyEternity, setEternityAuto } from '../engine/systems/eternity';
 import { brew, type BrewResult, drink } from '../engine/systems/alchemy';
 import { summonWeather } from '../engine/systems/weather';
+import { buyTurretLevels, clearSocket, fightWave, placeTurret, setDefenseAuto } from '../engine/systems/defense';
+import type { BattleResult, BattleSetup } from '../engine/systems/defenseBattle';
 import { type CosmeticKind, setCosmetic } from '../engine/systems/cosmetics';
 import { setNextRule, sparkTree } from '../engine/systems/multiverse';
 import { buyForgeUpgrade, buyRelic, equipRelic, setForgeGrade, setForgeOn, setForgeShare, unequipRelic } from '../engine/systems/forge';
@@ -238,6 +240,31 @@ export const commands = {
     const ok = launch(game.state, ship, sector);
     done();
     return ok;
+  },
+  /** Planet Defense: place or clear a turret, level a kind, fight the next wave, auto-defend. */
+  placeTurret(socket: number, kind: string): boolean {
+    const ok = placeTurret(game.state, socket, kind);
+    done();
+    return ok;
+  },
+  clearSocket(socket: number): boolean {
+    const ok = clearSocket(game.state, socket);
+    done();
+    return ok;
+  },
+  buyTurretLevels(kind: string): boolean {
+    const ok = buyTurretLevels(game.state, kind);
+    done();
+    return ok;
+  },
+  fightWave(): { setup: BattleSetup; result: BattleResult } | null {
+    const r = fightWave(game.state);
+    done();
+    return r;
+  },
+  setDefenseAuto(on: boolean): void {
+    setDefenseAuto(game.state, on);
+    done();
   },
   /** The Ship Customizer: buy a part once, fit it to a docked ship, refit for a sector, or call a ship home. */
   buyShipPart(id: string): boolean {
