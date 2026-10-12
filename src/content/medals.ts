@@ -129,6 +129,8 @@ export const MEDALS: readonly MedalDef[] = [
   { id: 'multiverse.1', name: "The Last Starsmith", desc: "Enter the Multiverse.", icon: 'multiverse', req: { kind: 'count', stat: 'multiversesAll', count: 1, noun: 'Multiverse' } },
   { id: 'multiverse.10', name: "Many Worlds", desc: "Enter the Multiverse 10 times.", icon: 'multiverse', req: { kind: 'count', stat: 'multiversesAll', count: 10, noun: 'Multiverse' } },
   { id: 'multiverse.rules', name: "Against the Odds", desc: "Finish a universe played under 4 rules.", icon: 'universe', req: { kind: 'count', stat: 'rulesBest', count: 4, noun: 'rule' } },
+  { id: 'alchemy.1', name: "Something Bubbling", desc: "Find a recipe in Starlight Alchemy.", icon: 'alchemy', req: { kind: 'count', stat: 'recipesFound', count: 1, noun: 'recipe' } },
+  { id: 'alchemy.all', name: "Master Alchemist", desc: "Find all 12 recipes.", icon: 'alchemy', req: { kind: 'count', stat: 'recipesFound', count: 12, noun: 'recipe' } },
   { id: 'sparks.all', name: "Every Spark", desc: "Own all 114 Spark choices.", icon: 'spark', req: { kind: 'count', stat: 'sparkChoices', count: 114, noun: 'Spark choice' } },
   { id: 'omni.1m', name: "Omnipresent", desc: "Raise an Omni Constant to level 1,000,000.", icon: 'constants', req: { kind: 'count', stat: 'omniBest', count: 1e6, noun: 'level' } },
   // Phase 7: Comet Fusion, Attunements, the Merchant and starships

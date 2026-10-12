@@ -31,6 +31,7 @@ import { registerCrunch } from '../engine/systems/crunch';
 import { registerEchoes } from '../engine/systems/echoes';
 import { registerEternity } from '../engine/systems/eternity';
 import { registerMultiverse } from '../engine/systems/multiverse';
+import { registerAlchemy } from '../engine/systems/alchemy';
 import { registerStarsmith } from '../engine/systems/starsmith';
 import { registerComets } from '../engine/systems/comets';
 import { registerNovaTree } from '../engine/systems/novaTree';
@@ -92,5 +93,6 @@ export function registerContent(): void {
   registerEchoes();
   registerEternity();
   registerMultiverse();
+  registerAlchemy();
   registerUnlocks();
 }

@@ -1856,3 +1856,39 @@ test('the Wardrobe: wear an earned skin, a locked one says what it needs, a trai
   }
   expect(errors).toEqual([]);
 });
+
+// ---------- Phase 20.2: Starlight Alchemy ----------
+
+test('Starlight Alchemy: a right mix finds a recipe, a wrong one gives a hint, and a drunk elixir shows on the HUD', async ({ page }, info) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const sf = (window as unknown as { sf: { D(n: number): unknown; game: { state: { currencies: Record<string, unknown>; stats: Record<string, number> } } } }).sf;
+    sf.game.state.stats.supernovasAll = 12;
+    for (const id of ['ore', 'ore.gold', 'ore.crystal', 'ore.prismatic', 'ore.void', 'alloy.iron', 'alloy.gold', 'alloy.crystal']) sf.game.state.currencies[id] = sf.D(1e6);
+  });
+  await openRail(page, 'alchemy');
+  const panel = page.locator('[data-panel="alchemy"]');
+  const ore = panel.locator('[data-ingredient="ore"]');
+  await ore.click();
+  await ore.click();
+  await ore.click();
+  await expect(panel.locator('[data-slot="2"]')).toContainText('Ore');
+  await panel.getByTestId('brew').click();
+  await expect(panel.getByRole('status')).toContainText("New recipe: Miner's Ale");
+  const ale = panel.locator('[data-recipe="minersAle"]');
+  await expect(ale).toContainText('x1');
+  // the same mix again from the book, at the buy amount
+  await panel.locator('[data-brew="minersAle"]').click();
+  await expect(ale.locator('.alc-shelf')).toHaveText('x2');
+  await panel.locator('[data-drink="minersAle"]').click();
+  await expect(page.locator('[data-buff="alchemy.minersAle"]')).toContainText('Ore x10');
+  // a wrong mix: sludge, and a hint that two of these belong together
+  const vo = panel.locator('[data-ingredient="ore.void"]');
+  for (let i = 0; i < 3; i++) await vo.click();
+  await panel.getByTestId('brew').click();
+  await expect(panel.getByRole('status')).toContainText('Two of these belong together');
+  await expect(panel.locator('[data-recipe="echoElixir"]')).toContainText('???');
+  if (info.project.name === 'desktop') await panel.screenshot({ path: 'shots/alchemy.png' });
+  expect(errors).toEqual([]);
+});

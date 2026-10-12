@@ -782,4 +782,12 @@ export const BALANCE = {
       crew: { base: 10, growth: 2.4 },
     },
   },
+  /** Phase 20.2: Starlight Alchemy. Opens at 12 Supernovas (lifetime). */
+  alchemy: {
+    supernovas: 12,
+    /** A brew takes this share of what you hold of each ingredient in it, and at least its floor. */
+    doseShare: 0.05,
+    /** An elixir's boost stacks its time up to this many seconds. */
+    maxSeconds: 3600,
+  },
 } as const;

@@ -197,6 +197,8 @@ export interface GameState {
   multiverse: { tree: Record<string, number>; rules: string[]; next: string[]; storySeen: boolean };
   /** Phase 20: the Wardrobe's choices (what's unlocked is worked out from medals and stats, never stored). */
   cosmetics: { skin: string; trail: string; background: string };
+  /** Phase 20.2: Starlight Alchemy: recipes found, mixes tried, elixirs on the shelf, and when each boost ends (play time). */
+  alchemy: { known: string[]; tried: string[]; shelf: Record<string, number>; active: Record<string, number> };
   settings: Settings;
 }
 
@@ -314,6 +316,7 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     echoes: { engines: {}, ever: {} },
     multiverse: { tree: {}, rules: [], next: [], storySeen: false },
     cosmetics: { skin: 'classic', trail: 'none', background: 'violet' },
+    alchemy: { known: [], tried: [], shelf: {}, active: {} },
     settings: defaultSettings(),
   };
 }

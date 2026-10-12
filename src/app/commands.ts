@@ -42,6 +42,7 @@ import type { BuildingId } from '../content/galaxyBuild';
 import type { AutoLayer } from '../content/crunch';
 import { ECHO_BOARD, echoTap } from '../engine/systems/echoes';
 import { buyEternity, setEternityAuto } from '../engine/systems/eternity';
+import { brew, type BrewResult, drink } from '../engine/systems/alchemy';
 import { type CosmeticKind, setCosmetic } from '../engine/systems/cosmetics';
 import { setNextRule, sparkTree } from '../engine/systems/multiverse';
 import { buyForgeUpgrade, buyRelic, equipRelic, setForgeGrade, setForgeOn, setForgeShare, unequipRelic } from '../engine/systems/forge';
@@ -680,6 +681,17 @@ export const commands = {
   markStorySeen() {
     game.state.multiverse.storySeen = true;
     done();
+  },
+  /** Starlight Alchemy: brew a mix (bulk only for known recipes), drink an elixir from the shelf. */
+  brew(mix: string[], count = 1): BrewResult | null {
+    const r = brew(game.state, mix, count);
+    done();
+    return r;
+  },
+  drink(id: string): boolean {
+    const ok = drink(game.state, id);
+    done();
+    return ok;
   },
   /** The Wardrobe: wear an unlocked skin, trail or background. */
   setCosmetic(kind: CosmeticKind, id: string): boolean {

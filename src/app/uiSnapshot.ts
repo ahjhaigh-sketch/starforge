@@ -37,6 +37,8 @@ import { nebulaGain, nebulaReady, runShards } from '../engine/systems/nebula';
 import { BUFF_KINDS, buffLeft, cometOnScreen } from '../engine/systems/comets';
 import { availableUpgrades } from '../engine/systems/upgrades';
 import { MEDALS } from '../content/medals';
+import { RECIPES } from '../content/alchemy';
+import { elixirLeft } from '../engine/systems/alchemy';
 import { whenItApplies } from '../content/upgrades';
 import { CONSTANTS } from '../content/constants';
 import { MASTERY_RANKS, ORBITALS } from '../content/early';
@@ -92,6 +94,9 @@ export interface BuffChip {
   kind: string;
   label: string;
   secs: string;
+  /** Elixirs carry their own colour and the flask icon; comet buffs use the comet. */
+  color?: string;
+  icon?: string;
 }
 
 export type RailState = 'open' | 'new' | 'soon' | 'locked' | 'hidden';
@@ -338,6 +343,10 @@ function buffChips(s: GameState, prev: BuffChip[] | undefined): BuffChip[] {
   for (const k of BUFF_KINDS) {
     const left = buffLeft(s, k);
     if (left > 0) chips.push({ kind: k, label: BUFF_LABELS[k]!, secs: `${Math.ceil(left)}s` });
+  }
+  for (const r of RECIPES) {
+    const left = elixirLeft(s, r.id);
+    if (left > 0) chips.push({ kind: `alchemy.${r.id}`, label: r.chip, secs: formatTime(left), color: r.color, icon: 'alchemy' });
   }
   return stableList(prev, chips);
 }

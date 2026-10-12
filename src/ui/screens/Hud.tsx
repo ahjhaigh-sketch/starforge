@@ -20,15 +20,25 @@ const BUFF_COLORS: Record<string, string> = { frenzy: '#FF7A2E', tapstorm: '#2EE
 
 const Buff = memo(function Buff({ chip }: { chip: BuffChip }) {
   return (
-    <div className="buff chunk" style={tint(BUFF_COLORS[chip.kind] ?? 'var(--cyan)')} data-buff={chip.kind}>
-      <Icon name="comet" />
+    <div className="buff chunk" style={tint(chip.color ?? BUFF_COLORS[chip.kind] ?? 'var(--cyan)')} data-buff={chip.kind}>
+      <Icon name={chip.icon ?? 'comet'} />
       <span className="ol-sm">{chip.label}</span>
       <span className="num ol-sm">{chip.secs}</span>
     </div>
   );
 });
 
-/** Top bar: currencies, the star tier, active comet buffs, and the save indicator. */
+const BUFFS_SHOWN = { desk: 7, phone: 4 } as const;
+
+function MoreBuffs({ n, className }: { n: number; className: string }) {
+  return (
+    <div className={`buff buff-more chunk ${className}`} style={tint('var(--panel)')} title={`${n} more boosts`} data-testid={`more-buffs-${className}`}>
+      <span className="num ol-sm">+{n}</span>
+    </div>
+  );
+}
+
+/** Top bar: currencies, the star tier, active boosts (comet buffs and elixirs), and the save indicator. */
 export function Hud() {
   const saveLabel = useSnap((s) => s.saveLabel);
   const tierIndex = useSnap((s) => s.tierIndex);
@@ -63,10 +73,13 @@ export function Hud() {
       </div>
       <LevelChip />
       {buffs.length > 0 && (
-        <div className="buffs" aria-label="Active comet buffs">
+        <div className="buffs" aria-label="Active boosts">
           {buffs.map((b) => (
             <Buff key={b.kind} chip={b} />
           ))}
+          {/* with many boosts at once, the rest fold into a count (7 on a wide screen, 4 on a phone) */}
+          {buffs.length > BUFFS_SHOWN.desk && <MoreBuffs n={buffs.length - BUFFS_SHOWN.desk} className="desk" />}
+          {buffs.length > BUFFS_SHOWN.phone && <MoreBuffs n={buffs.length - BUFFS_SHOWN.phone} className="phone" />}
         </div>
       )}
       <div className="hud-spacer" />

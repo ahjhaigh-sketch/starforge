@@ -24,3 +24,38 @@ html[data-bg='emerald'] body { background: radial-gradient(60% 50% at 18% 22%, r
 html[data-bg='crimson'] body { background: radial-gradient(60% 50% at 18% 22%, rgba(255, 79, 110, 0.3), transparent 70%), radial-gradient(55% 45% at 85% 75%, rgba(255, 122, 46, 0.2), transparent 70%), linear-gradient(180deg, #2a0a16, #12030a 70%); }
 html[data-bg='midnight'] body { background: radial-gradient(60% 50% at 18% 22%, rgba(43, 127, 208, 0.32), transparent 70%), radial-gradient(55% 45% at 85% 75%, rgba(46, 230, 255, 0.18), transparent 70%), linear-gradient(180deg, #06122e, #020714 70%); }
 html[data-bg='dawn'] body { background: radial-gradient(60% 50% at 18% 22%, rgba(255, 200, 61, 0.28), transparent 70%), radial-gradient(55% 45% at 85% 75%, rgba(255, 111, 181, 0.2), transparent 70%), linear-gradient(180deg, #2a1a0a, #120a03 70%); }
+
+/* ---------- Phase 20.2: Starlight Alchemy ---------- */
+.alc-cols { display: grid; grid-template-columns: minmax(16rem, 22rem) 1fr; gap: 0.7rem; align-items: start; }
+.alc-cauldron { padding: 0.7rem; display: flex; flex-direction: column; gap: 0.5rem; align-items: center; }
+.alc-cauldron h4, .alc-ings h4 { margin: 0; align-self: flex-start; }
+.alc-slots { display: flex; gap: 0.45rem; }
+.alc-slot { width: 5.4rem; height: 4.2rem; border-radius: 50% 50% 40% 40%; --stroke: 3px; color: #fff; font-weight: 700; font-size: 0.74rem; text-shadow: var(--outline-sm); padding: 0.2rem; cursor: pointer; }
+.alc-slot.empty { font-size: 1.6rem; opacity: 0.6; cursor: default; }
+.alc-cost { margin: 0; font-size: 0.8rem; color: var(--text-dim); text-align: center; }
+.alc-cost b { color: var(--gold); }
+.alc-msg { margin: 0; font-size: 0.86rem; font-weight: 700; text-align: center; }
+.alc-msg.good { color: var(--lime); }
+.alc-msg.bad { color: var(--text-dim); }
+.alc-ings { padding: 0.7rem; }
+.alc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: 0.4rem; margin-top: 0.4rem; }
+.alc-ing { border-radius: 12px; --stroke: 2.5px; padding: 0.4rem 0.45rem; display: flex; flex-direction: column; gap: 0.1rem; color: #fff; text-align: left; font-size: 0.74rem; text-shadow: var(--outline-sm); }
+.alc-ing b { font-size: 0.82rem; }
+.alc-ing small { color: rgba(255, 255, 255, 0.85); }
+.alc-ing:disabled { cursor: default; transform: none; }
+.alc-book { display: grid; grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr)); gap: 0.45rem; margin-top: 0.45rem; }
+.alc-recipe { display: flex; align-items: center; gap: 0.55rem; padding: 0.5rem 0.6rem; }
+.alc-recipe.unknown { opacity: 0.6; }
+.alc-flask { flex: none; width: 1.6rem; height: 2rem; border-radius: 0.35rem 0.35rem 0.9rem 0.9rem; border: 3px solid var(--ink); background: linear-gradient(180deg, transparent 38%, var(--c) 38%); }
+.alc-recipe.unknown .alc-flask { background: linear-gradient(180deg, transparent 38%, #3b4370 38%); }
+.alc-text { display: flex; flex-direction: column; min-width: 0; flex: 1; font-size: 0.78rem; }
+.alc-text b { font-family: var(--font-display); font-weight: 400; font-size: 0.98rem; }
+.alc-text small { color: var(--text-dim); }
+.alc-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem; }
+.alc-shelf { font-weight: 800; }
+.alc-left { font-size: 0.72rem; color: var(--lime); }
+@media (max-width: 900px) {
+  .alc-cols { grid-template-columns: 1fr; }
+  .alc-book { grid-template-columns: 1fr; }
+}
+.alc-text small.alc-batch { color: var(--gold); }

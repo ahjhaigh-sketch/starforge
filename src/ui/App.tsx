@@ -39,6 +39,7 @@ import { ColoniesPanel, MegastructuresPanel, TerraformPanel } from './screens/Ga
 import { BigCrunchPanel, CrunchConfirmPanel, EchoesPanel, EternityPanel } from './screens/CrunchPanels';
 import { UpdateBanner } from './screens/UpdateBanner';
 import { WardrobePanel } from './screens/WardrobePanel';
+import { AlchemyPanel } from './screens/AlchemyPanel';
 import { CreditsPanel, MultiverseConfirmPanel, MultiversePanel, SparkTreePanel, StoryPanel, UniverseForgePanel } from './screens/MultiversePanels';
 import { useUi } from './store';
 
@@ -151,6 +152,7 @@ export function App() {
       <StoryPanel />
       <CreditsPanel />
       <WardrobePanel />
+      <AlchemyPanel />
       <SettingsPanel />
       <PanelHost />
       <ToastHost />

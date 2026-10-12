@@ -8,6 +8,9 @@
 .buff { height: 2.2rem; border-radius: 999px; padding: 0 0.8rem 0 0.4rem; display: flex; align-items: center; gap: 0.4rem; font-weight: 700; font-size: 0.85rem; animation: buffIn 0.3s var(--back-out); }
 .buff .icon { width: 1.5rem; height: 1.5rem; }
 .buff .num { min-width: 2.2em; text-align: right; }
+.buff-more { padding: 0 0.8rem; }
+.buff-more.phone { display: none; }
+.buffs > .buff:nth-child(n + 8):not(.buff-more) { display: none; }
 @keyframes buffIn { from { transform: scale(0.6); opacity: 0; } }
 
 /* ---------- comet ---------- */
@@ -135,6 +138,9 @@ kbd {
 
 @media (max-width: 900px) {
   .buff .ol-sm:not(.num) { display: none; }
+  .buffs > .buff:nth-child(n + 5):not(.buff-more) { display: none; }
+  .buff-more.desk { display: none; }
+  .buff-more.phone { display: flex; }
   .toast:nth-last-child(n + 3) { display: none; }
   .toast { min-width: 0; width: min(19rem, 86vw); padding: 0.4rem 0.8rem 0.45rem 3rem; }
   .toast span { font-size: 0.78rem; }
