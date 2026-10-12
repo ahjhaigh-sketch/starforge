@@ -58,6 +58,22 @@ export class ParticlePool {
     }
   }
 
+  /** One slow mote left behind (a cursor trail): it drifts a little and fades in about half a second. */
+  mote(x: number, y: number, color: number, size = 9): void {
+    if (!this.enabled) return;
+    const p = this.pool[this.cursor]!;
+    this.cursor = (this.cursor + 1) % this.max;
+    const a = Math.random() * Math.PI * 2;
+    p.vx = Math.cos(a) * 18;
+    p.vy = Math.sin(a) * 18 + 12;
+    p.life = 1;
+    p.decay = 1.8 + Math.random() * 0.6;
+    p.size = size * (0.7 + Math.random() * 0.6);
+    p.sprite.position.set(x, y);
+    p.sprite.tint = color;
+    p.sprite.visible = true;
+  }
+
   update(dt: number): void {
     const drag = Math.max(0, 1 - dt * 2.4);
     for (const p of this.pool) {
@@ -97,6 +113,11 @@ export function setParticlesEnabled(on: boolean): void {
 
 export function burst(x: number, y: number, count: number, color: number, reach = 120, size = 10): void {
   main?.burst(x, y, count, color, reach, size);
+}
+
+/** A cursor-trail mote on the main stage. */
+export function trailMote(x: number, y: number, color: number): void {
+  main?.mote(x, y, color);
 }
 
 export function updateParticles(dt: number): void {

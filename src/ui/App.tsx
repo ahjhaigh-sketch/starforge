@@ -38,6 +38,7 @@ import { GalacticConfirmPanel, GalacticPanel, GalacticTreePanel, GalaxyMapPanel,
 import { ColoniesPanel, MegastructuresPanel, TerraformPanel } from './screens/GalaxyBuildPanels';
 import { BigCrunchPanel, CrunchConfirmPanel, EchoesPanel, EternityPanel } from './screens/CrunchPanels';
 import { UpdateBanner } from './screens/UpdateBanner';
+import { WardrobePanel } from './screens/WardrobePanel';
 import { CreditsPanel, MultiverseConfirmPanel, MultiversePanel, SparkTreePanel, StoryPanel, UniverseForgePanel } from './screens/MultiversePanels';
 import { useUi } from './store';
 
@@ -149,6 +150,7 @@ export function App() {
       <UniverseForgePanel />
       <StoryPanel />
       <CreditsPanel />
+      <WardrobePanel />
       <SettingsPanel />
       <PanelHost />
       <ToastHost />

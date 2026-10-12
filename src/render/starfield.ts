@@ -70,7 +70,14 @@ interface Cloud {
 let clouds: Cloud[] = [];
 let cloudLayer: Container | null = null;
 let cloudCount = 0;
-const CLOUD_TINTS = [0x2ee6ff, 0x1e8fa8, 0x7b3fd6, 0x2ee6ff, 0x5fd3c4, 0x9b7cff];
+let CLOUD_TINTS: readonly number[] = [0x2ee6ff, 0x1e8fa8, 0x7b3fd6, 0x2ee6ff, 0x5fd3c4, 0x9b7cff];
+
+/** A Wardrobe background: the nebula clouds take its colours (now and when more appear). */
+export function setCloudPalette(tints: readonly number[]): void {
+  if (tints.length === 0) return;
+  CLOUD_TINTS = tints;
+  clouds.forEach((c, i) => (c.sprite.tint = tints[i % tints.length]!));
+}
 
 /** Big soft cyan clouds drift behind the stars: two after the first Nebula, up to eight. */
 export function setNebulaClouds(nebulas: number): void {

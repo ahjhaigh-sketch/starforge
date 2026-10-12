@@ -95,6 +95,9 @@ const migrations: Record<number, (d: PlainSave) => void> = {
     stats.crunchesCycle = stats.crunchesCycle ?? stats.crunchesAll ?? 0;
     d.stats = stats;
   },
+  // 20 (Phase 20): the Wardrobe, Starlight Alchemy, Space Weather, ship designs, Planet Defense and the Hidden Sigils.
+  // New fields with defaults (a ship without a design flies the default one); nothing moves.
+  20: () => {},
 };
 
 export function migrate(version: number, data: PlainSave): PlainSave {

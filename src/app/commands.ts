@@ -42,6 +42,7 @@ import type { BuildingId } from '../content/galaxyBuild';
 import type { AutoLayer } from '../content/crunch';
 import { ECHO_BOARD, echoTap } from '../engine/systems/echoes';
 import { buyEternity, setEternityAuto } from '../engine/systems/eternity';
+import { type CosmeticKind, setCosmetic } from '../engine/systems/cosmetics';
 import { setNextRule, sparkTree } from '../engine/systems/multiverse';
 import { buyForgeUpgrade, buyRelic, equipRelic, setForgeGrade, setForgeOn, setForgeShare, unequipRelic } from '../engine/systems/forge';
 import { backupNow, readBackup } from './backups';
@@ -679,6 +680,12 @@ export const commands = {
   markStorySeen() {
     game.state.multiverse.storySeen = true;
     done();
+  },
+  /** The Wardrobe: wear an unlocked skin, trail or background. */
+  setCosmetic(kind: CosmeticKind, id: string): boolean {
+    const ok = setCosmetic(game.state, kind, id);
+    done();
+    return ok;
   },
   toggleMute() {
     game.state.settings.muted = !game.state.settings.muted;

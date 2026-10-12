@@ -2,7 +2,7 @@ import { D, type Decimal } from './decimal';
 import { seedRng, type RngState } from './rng';
 
 /** Bump with every change to the save's shape, and add a migration + an old-save fixture test. */
-export const SAVE_VERSION = 19;
+export const SAVE_VERSION = 20;
 /** A new Fusion board is 3 x 3 (BALANCE.fusion.baseSize). */
 const BALANCE_FUSION_CELLS = 9;
 
@@ -195,6 +195,8 @@ export interface GameState {
   echoes: { engines: Record<string, number>; ever: Record<string, number> };
   /** Phase 18: Spark choices owned (levels; echoes go past 1), this universe's rules, the next universe's rules, and whether the story has been told. */
   multiverse: { tree: Record<string, number>; rules: string[]; next: string[]; storySeen: boolean };
+  /** Phase 20: the Wardrobe's choices (what's unlocked is worked out from medals and stats, never stored). */
+  cosmetics: { skin: string; trail: string; background: string };
   settings: Settings;
 }
 
@@ -311,6 +313,7 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     eternity: { upgrades: [], auto: {} },
     echoes: { engines: {}, ever: {} },
     multiverse: { tree: {}, rules: [], next: [], storySeen: false },
+    cosmetics: { skin: 'classic', trail: 'none', background: 'violet' },
     settings: defaultSettings(),
   };
 }

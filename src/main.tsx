@@ -21,6 +21,7 @@ import './ui/galactic.css';
 import './ui/galaxybuild.css';
 import './ui/crunch.css';
 import './ui/multiverse.css';
+import './ui/wardrobe.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

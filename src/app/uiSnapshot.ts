@@ -213,6 +213,10 @@ export interface Snapshot {
   /** The ending is waiting to be told (after the first Multiverse, once). */
   storyDue: boolean;
   storySeen: boolean;
+  /** The Wardrobe's choices, for the renderer (skin, trail, background ids). */
+  skin: string;
+  trail: string;
+  background: string;
   /** Reset bars of layers Eternity runs by itself ("supernova,nebula"): they shrink to a slim strip. */
   autoBars: string;
   /** Music: the soundtrack, its volume, and how many layers you've reached (each adds an instrument). */
@@ -604,6 +608,9 @@ function multiverseBar(s: GameState, n: Notation) {
     sparksVisible: (s.stats.multiversesAll ?? 0) > 0 || cur(s, 'sparks').gt(0),
     storyDue: (s.stats.multiversesAll ?? 0) > 0 && !s.multiverse.storySeen,
     storySeen: s.multiverse.storySeen,
+    skin: s.cosmetics.skin,
+    trail: s.cosmetics.trail,
+    background: s.cosmetics.background,
   };
 }
 

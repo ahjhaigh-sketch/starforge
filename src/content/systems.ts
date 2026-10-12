@@ -33,6 +33,7 @@ export const SYSTEMS: readonly SystemDef[] = [
   { id: 'constants', name: 'Constants', icon: 'constants', color: '#7B3FD6', rail: 'left', req: { kind: 'tier', tier: 2 }, panel: 'constants', built: true, blurb: 'Infinite upgrades: Gravity, Light and Heat.' },
   { id: 'quests', name: 'Quests', icon: 'quests', color: '#C2561E', rail: 'left', req: { kind: 'tier', tier: 2 }, panel: 'quests', built: true, blurb: 'Three goals at a time, each with a reward.' },
   { id: 'orbitals', name: 'Orbitals', icon: 'orbit', color: '#1A9DB8', rail: 'left', req: { kind: 'tier', tier: 3 }, panel: 'orbitals', built: true, blurb: 'Planets in rings around your star.' },
+  { id: 'wardrobe', name: 'Wardrobe', icon: 'wardrobe', color: '#B23A8E', rail: 'left', req: { kind: 'medals', count: 10 }, panel: 'wardrobe', built: true, blurb: 'Star skins, cursor trails and backgrounds you earn, and Photo Mode.' },
   { id: 'mastery', name: 'Mastery', icon: 'mastery', color: '#B23A8E', rail: 'left', req: { kind: 'tier', tier: 4 }, panel: 'mastery', built: true, blurb: 'Ranks for every engine, kept through every reset.' },
   // ---- right stack: upcoming shops and layers ----
   { id: 'novatree', name: 'Nova Tree', icon: 'tree', color: '#C23FA0', rail: 'right', req: { kind: 'count', stat: 'supernovas', count: 1, noun: 'Supernova' }, panel: 'novatree', built: true, blurb: 'Spend Nova Shards on an 80-node spiral.' },

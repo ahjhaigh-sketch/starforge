@@ -140,6 +140,7 @@ export const plainSaveSchema = z.looseObject({
     .optional(),
   echoes: z.looseObject({ engines: z.record(z.string(), count), ever: z.record(z.string(), count) }).optional(),
   multiverse: z.looseObject({ tree: z.record(z.string(), count), rules: z.array(z.string()), next: z.array(z.string()), storySeen: z.boolean() }).optional(),
+  cosmetics: z.looseObject({ skin: z.string(), trail: z.string(), background: z.string() }).optional(),
   colonies: z
     .looseObject({
       list: z.array(

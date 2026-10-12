@@ -1,14 +1,15 @@
-import { Application, Container } from 'pixi.js';
+import { Application, Container, Rectangle } from 'pixi.js';
 import { onFrame } from '../app/clock';
 import { snapshotStore } from '../app/uiSnapshot';
 import { useUi } from '../ui/store';
+import { BACKGROUND_BY_ID, SKIN_BY_ID, TRAIL_BY_ID } from '../content/cosmetics';
 import { TIERS } from '../content/tiers';
 import { events } from '../engine/events';
 import { isEchoLayer, layer } from '../engine/layers';
-import { burst, initParticles, setParticlesEnabled, updateParticles } from './particles';
+import { burst, initParticles, setParticlesEnabled, trailMote, updateParticles } from './particles';
 import { OrbitalsView } from './orbitals';
 import { StarCore } from './star';
-import { initStarfield, resizeStarfield, setNebulaClouds, updateClouds, updateStarfield } from './starfield';
+import { initStarfield, resizeStarfield, setCloudPalette, setNebulaClouds, updateClouds, updateStarfield } from './starfield';
 import { WyrmSky } from './wyrms';
 import { BlackHoleView } from './blackhole';
 import { LeviathanView } from './leviathan';
@@ -33,6 +34,20 @@ let holeMass = 0;
 /** Wyrms swimming in the sky right now (tests and the dev panel). */
 export const swimmingWyrms = () => wyrms?.count ?? 0;
 let still = false;
+let wornSkin = '';
+let wornBackground = '';
+let trailColors: readonly number[] = [];
+let trailAt = 0;
+let trailIndex = 0;
+
+/** A cursor trail: a mote every 25 ms where the pointer moves over the game (not over an open panel). */
+function onPointerMove(e: PointerEvent): void {
+  if (trailColors.length === 0 || still || useUi.getState().panel) return;
+  const now = performance.now();
+  if (now - trailAt < 25) return;
+  trailAt = now;
+  trailMote(e.clientX, e.clientY, trailColors[trailIndex++ % trailColors.length]!);
+}
 let flashScale = 1;
 /** Average CPU time of one rendered frame, ms (dev panel). */
 export let renderMs = 0;
@@ -52,6 +67,21 @@ function anchorRect(): DOMRect | null {
   return anchorCache.rect;
 }
 if (typeof window !== 'undefined') window.addEventListener('resize', () => (anchorCache.at = -Infinity));
+
+/**
+ * Photo Mode: the sky around the star (the star, its motes, planets and whatever orbits), drawn
+ * fresh into a square canvas of `size` pixels, or null before the renderer is up.
+ */
+export function captureStar(size: number, starAt = 0.5): HTMLCanvasElement | null {
+  const r = anchorRect();
+  if (!app || !r || r.width <= 0) return null;
+  app.render();
+  const side = Math.min(app.screen.width, app.screen.height, r.width * 4.2);
+  const x = Math.max(0, Math.min(app.screen.width - side, r.left + r.width / 2 - side / 2));
+  // the star sits `starAt` of the way down (the photo's card covers the bottom); see-through where the sky is empty
+  const y = Math.max(0, Math.min(app.screen.height - side, r.top + r.height / 2 - side * starAt));
+  return app.renderer.extract.canvas({ target: app.stage, frame: new Rectangle(x, y, side, side), resolution: size / side, clearColor: [0, 0, 0, 0] }) as HTMLCanvasElement;
+}
 
 export async function initRender(): Promise<boolean> {
   try {
@@ -104,6 +134,18 @@ export async function initRender(): Promise<boolean> {
     orbitals!.set(s.planets, s.ringsOpen);
     star!.setTier(s.tierIndex, false);
     setNebulaClouds(s.nebulasAll);
+    // the Wardrobe: star skin, background (clouds here, the page's own gradient in CSS) and cursor trail
+    if (s.skin !== wornSkin) {
+      wornSkin = s.skin;
+      const skin = SKIN_BY_ID.get(s.skin);
+      star!.setSkin(skin && skin.id !== 'classic' ? skin : null);
+    }
+    if (s.background !== wornBackground) {
+      wornBackground = s.background;
+      setCloudPalette(BACKGROUND_BY_ID.get(s.background)?.clouds ?? []);
+      document.documentElement.dataset.bg = s.background;
+    }
+    trailColors = TRAIL_BY_ID.get(s.trail)?.colors ?? [];
     wyrms!.set(s.wyrmSky, app!.screen.width, app!.screen.height);
     hole!.setStage(s.bhStage, BH_STAGES[Math.max(0, s.bhStage - 1)]?.color ?? '#FFB347');
     holeMass = s.bhMassLog;
@@ -114,6 +156,7 @@ export async function initRender(): Promise<boolean> {
     }
   };
   star.setTier(snapshotStore.getState().tierIndex, true);
+  window.addEventListener('pointermove', onPointerMove, { passive: true });
   apply();
   snapshotStore.subscribe(apply);
 

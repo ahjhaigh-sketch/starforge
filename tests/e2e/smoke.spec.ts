@@ -1819,3 +1819,40 @@ test('a new game follows the system "reduce motion" setting', async ({ browser }
   await expect.poll(() => page.evaluate(() => document.documentElement.classList.contains('reduced-motion'))).toBe(true);
   await context.close();
 });
+
+// ---------- Phase 20.1: the Wardrobe ----------
+
+test('the Wardrobe: wear an earned skin, a locked one says what it needs, a trail follows the pointer, and Photo Mode makes a picture', async ({ page }, info) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const s = (window as unknown as { sf: { game: { state: { achievements: string[]; stats: Record<string, number> } } } }).sf.game.state;
+    s.achievements = Array.from({ length: 12 }, (_, i) => `x${i}`);
+    s.stats.bhStageBest = 8;
+    s.stats.comets = 100;
+  });
+  await openRail(page, 'wardrobe');
+  const panel = page.locator('[data-panel="wardrobe"]');
+  await panel.locator('[data-cosmetic="skin.blacksun"]').click();
+  await expect(panel.locator('[data-cosmetic="skin.blacksun"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(panel.locator('[data-cosmetic="skin.prism"]')).toBeDisabled();
+  await expect(panel.locator('[data-cosmetic="skin.prism"]')).toContainText('Multiverse');
+  await panel.locator('[data-cosmetic="trail.comet"]').click();
+  await panel.getByTestId('take-photo').click();
+  const photo = panel.getByTestId('photo');
+  await expect(photo).toBeVisible();
+  const size = await photo.evaluate((img: HTMLImageElement) => [img.naturalWidth, img.naturalHeight]);
+  expect(size).toEqual([1200, 1200]);
+  if (info.project.name === 'desktop') {
+    const href = await panel.getByTestId('save-photo').getAttribute('href');
+    const bytes = await page.evaluate(async (u) => Array.from(new Uint8Array(await (await fetch(u!)).arrayBuffer())), href);
+    (await import('node:fs')).writeFileSync('shots/photo.png', Buffer.from(bytes));
+  }
+  // the trail: motes behind the pointer over the game, with the panel closed (a phone has no cursor: there it follows a dragging finger)
+  await page.keyboard.press('Escape');
+  if (info.project.name === 'desktop') {
+    for (let i = 0; i < 12; i++) await page.mouse.move(400 + i * 15, 300 + i * 6);
+    await expect.poll(() => page.evaluate(() => (window as unknown as { sf: { fx: { liveParticles(): number } } }).sf.fx.liveParticles())).toBeGreaterThan(0);
+  }
+  expect(errors).toEqual([]);
+});

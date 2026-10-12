@@ -37,6 +37,7 @@ uniform float uFeature;
 uniform float uSpin;
 uniform float uPx;
 uniform float uFlash;
+uniform float uSkin;
 
 float hash(vec2 p) {
   p = fract(p * vec2(123.34, 456.21));
@@ -65,6 +66,8 @@ vec3 hue(float h) {
 
 void main() {
   vec2 p = (vUV * 2.0 - 1.0) * uExtent;
+  // Pixel Star: everything snaps to a coarse grid
+  if (uSkin > 0.5 && uSkin < 1.5) p = (floor(p * 9.0) + 0.5) / 9.0;
   float r = length(p);
   float a = atan(p.y, p.x);
   float t = uTime;
@@ -115,6 +118,10 @@ void main() {
     c = mix(c, uHot, smoothstep(0.6, 1.0, heat) * 0.55 + pow(light, 3.0) * 0.5);
     c *= mix(1.0, 0.6, smoothstep(0.5, 1.0, r));
     c += uHot * pow(c2, 5.0) * 0.7;
+    // Candy Star: a white swirl turning through the body
+    if (uSkin > 1.5 && uSkin < 2.5) c = mix(c, vec3(1.0), step(0.5, fract((a + r * 2.6 - t * 0.35) * 0.95)) * 0.55 * inside);
+    // Prism Star: colours sliding over the plasma
+    if (uSkin > 2.5) c = mix(c, hue(fract(sp.x * 0.15 + sp.y * 0.1 + t * 0.06)), 0.55);
     c = mix(c, vec3(1.0), uFlash);
     col = col * (1.0 - inside) + vec4(c, 1.0) * inside;
 
@@ -188,6 +195,8 @@ export class StarCore {
   private flash = 0;
   private motes = 0;
   private collapseT = -1;
+  /** A Wardrobe skin's colours in place of the tier's, and its shader mode (null: Classic). */
+  private skin: { mode: number; hot: [number, number, number]; body: [number, number, number]; corona: [number, number, number] } | null = null;
 
   constructor() {
     const geometry = new Geometry({
@@ -213,6 +222,7 @@ export class StarCore {
           uSpin: { value: 0.05, type: 'f32' },
           uPx: { value: 0.01, type: 'f32' },
           uFlash: { value: 0, type: 'f32' },
+          uSkin: { value: 0, type: 'f32' },
         },
       },
     });
@@ -244,6 +254,12 @@ export class StarCore {
     this.blend = instant ? 1 : 0;
     this.feature = def.feature;
     this.tier = tier;
+  }
+
+  /** Wears a Wardrobe skin (null for Classic: the tier's own look). */
+  setSkin(skin: { mode: number; palette?: { hot: string; body: string; corona: string } } | null): void {
+    this.skin = skin?.palette ? { mode: skin.mode, hot: hex(skin.palette.hot), body: hex(skin.palette.body), corona: hex(skin.palette.corona) } : null;
+    this.u.uSkin = skin?.mode ?? 0;
   }
 
   setMotes(n: number): void {
@@ -315,9 +331,11 @@ export class StarCore {
     const u = this.u;
     u.uTime = this.time;
     u.uExtent = extent;
-    (u.uHot as Float32Array).set(look.hot);
-    (u.uBody as Float32Array).set(look.body);
-    (u.uCorona as Float32Array).set(look.corona);
+    // a Wardrobe skin keeps the tier's size and rays but brings its own colours
+    const colours = this.skin ?? look;
+    (u.uHot as Float32Array).set(colours.hot);
+    (u.uBody as Float32Array).set(colours.body);
+    (u.uCorona as Float32Array).set(colours.corona);
     u.uRays = look.rays;
     u.uRayLen = look.rayLength;
     u.uChurn = still ? 0 : look.churn;
