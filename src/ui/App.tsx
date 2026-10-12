@@ -42,6 +42,7 @@ import { WardrobePanel } from './screens/WardrobePanel';
 import { AlchemyPanel } from './screens/AlchemyPanel';
 import { WeatherPanel } from './screens/WeatherPanel';
 import { DefensePanel } from './screens/DefensePanel';
+import { AltarPanel } from './screens/AltarPanel';
 import { CreditsPanel, MultiverseConfirmPanel, MultiversePanel, SparkTreePanel, StoryPanel, UniverseForgePanel } from './screens/MultiversePanels';
 import { useUi } from './store';
 
@@ -157,6 +158,7 @@ export function App() {
       <AlchemyPanel />
       <WeatherPanel />
       <DefensePanel />
+      <AltarPanel />
       <SettingsPanel />
       <PanelHost />
       <ToastHost />

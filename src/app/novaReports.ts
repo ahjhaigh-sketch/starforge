@@ -1,4 +1,5 @@
 import { NOVA_TREE, type NodeColor } from '../content/novaTree';
+import { withSigil } from './sigilReports';
 import { SYSTEMS } from '../content/systems';
 import { layer, resetPreview, resetsDone } from '../engine/layers';
 import { cur } from '../engine/state';
@@ -100,6 +101,7 @@ export function treeReport(): { open: boolean; shards: string; nodes: TreeNodeVi
   const ids = new Set(nodes.map((x) => x.id));
   const edges: Array<[string, string]> = [];
   for (const node of NOVA_TREE) for (const p of node.parents) if (ids.has(node.id) && ids.has(p)) edges.push([p, node.id]);
+  withSigil('nova', nodes, edges);
   return { open: treeOpen(s), shards: format(money, n()), nodes, edges };
 }
 
@@ -149,6 +151,7 @@ const STAGES: Array<{ name: string; ids: string[] }> = [
   { name: 'Building the galaxy', ids: ['megastructures', 'colonies', 'terraform'] },
   { name: 'Big Crunch', ids: ['bigcrunch', 'eternity', 'echoes'] },
   { name: 'Multiverse', ids: ['multiverse', 'universeforge', 'sparktree'] },
+  { name: 'Secrets', ids: ['altar'] },
 ];
 
 /** Every system id on the Ascent map (a test checks that each built system is on it). */

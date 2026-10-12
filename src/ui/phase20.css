@@ -132,3 +132,16 @@ html[data-bg='dawn'] body { background: radial-gradient(60% 50% at 18% 22%, rgba
   .df-top { grid-template-columns: 1fr; }
   .df-sockets { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
+
+/* ---------- Phase 20.6: the Sigil Altar ---------- */
+.alt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr)); gap: 0.5rem; }
+.alt-card { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.65rem; }
+.alt-card.unknown { opacity: 0.55; }
+.alt-card.lit { box-shadow: 0 0 0 3px #6b4bc8 inset, 0 0 14px rgba(155, 124, 255, 0.35); }
+.alt-glyph .icon { width: 2.2rem; height: 2.2rem; }
+.alt-text { display: flex; flex-direction: column; flex: 1; min-width: 0; font-size: 0.8rem; }
+.alt-text b { font-family: var(--font-display); font-weight: 400; font-size: 1rem; }
+.alt-text small { color: var(--text-dim); }
+.alt-boon { color: var(--lime); font-weight: 700; }
+.alt-bane { color: #ff8a9e; font-weight: 700; }
+.alt-state { color: var(--text-dim); font-size: 0.74rem; text-align: right; }

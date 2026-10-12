@@ -1,5 +1,5 @@
 import { type CSSProperties, useEffect, type ReactNode } from 'react';
-import { commands } from '../../app/commands';
+import { commands, sigilAware } from '../../app/commands';
 import { constantsReport } from '../../app/earlyReports';
 import { creditsText, forgeReport, multiverseReport, storyText } from '../../app/multiverseReports';
 import { NODE_COLORS } from '../../app/novaReports';
@@ -195,7 +195,7 @@ export function SparkTreePanel() {
           <Icon name="lock" /> Spark choices open with your first Multiverse.
         </p>
       )}
-      {r && r.open && <TreeView nodes={r.nodes} edges={r.edges} onBuy={(id) => commands.buySparkNode(id)} currencyLabel="Sparks" legend={SPARK_LEGEND} />}
+      {r && r.open && <TreeView nodes={r.nodes} edges={r.edges} onBuy={sigilAware((id) => commands.buySparkNode(id))} currencyLabel="Sparks" legend={SPARK_LEGEND} />}
     </Panel>
   );
 }

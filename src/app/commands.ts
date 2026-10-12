@@ -44,6 +44,7 @@ import { ECHO_BOARD, echoTap } from '../engine/systems/echoes';
 import { buyEternity, setEternityAuto } from '../engine/systems/eternity';
 import { brew, type BrewResult, drink } from '../engine/systems/alchemy';
 import { summonWeather } from '../engine/systems/weather';
+import { buySigil, toggleSigil } from '../engine/systems/sigils';
 import { buyTurretLevels, clearSocket, fightWave, placeTurret, setDefenseAuto } from '../engine/systems/defense';
 import type { BattleResult, BattleSetup } from '../engine/systems/defenseBattle';
 import { type CosmeticKind, setCosmetic } from '../engine/systems/cosmetics';
@@ -238,6 +239,17 @@ export const commands = {
   },
   launchShip(ship: number, sector: string): boolean {
     const ok = launch(game.state, ship, sector);
+    done();
+    return ok;
+  },
+  /** The Hidden Sigils: buy one where it hides, switch it at the Altar. */
+  buySigil(id: string): boolean {
+    const ok = buySigil(game.state, id);
+    done();
+    return ok;
+  },
+  toggleSigil(id: string): boolean {
+    const ok = toggleSigil(game.state, id);
     done();
     return ok;
   },
@@ -847,3 +859,11 @@ export const commands = {
     done();
   },
 };
+
+/** A tree's buy handler that also buys the sigil hiding in it. */
+export const sigilAware =
+  (buy: (id: string) => unknown) =>
+  (id: string): void => {
+    if (id.startsWith('sigil.')) commands.buySigil(id);
+    else buy(id);
+  };

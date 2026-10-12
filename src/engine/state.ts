@@ -213,6 +213,8 @@ export interface GameState {
    * won, the wave auto-defend last fought, whether it's on, the battles' seed, auto-defend's unspent
    * seconds, and the loadout that last lost the next wave ('' none: auto-defend pushes on).
    */
+  /** Phase 20.6: the Hidden Sigils bought (kept for good) and the ones switched on. */
+  sigils: { owned: string[]; on: string[] };
   defense: { sockets: string[]; levels: Record<string, number>; best: number; wave: number; auto: boolean; seed: number; acc: number; lost: string };
   settings: Settings;
 }
@@ -332,6 +334,7 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     multiverse: { tree: {}, rules: [], next: [], storySeen: false },
     cosmetics: { skin: 'classic', trail: 'none', background: 'violet' },
     alchemy: { known: [], tried: [], shelf: {}, active: {} },
+    sigils: { owned: [], on: [] },
     defense: { sockets: Array.from({ length: BALANCE.defense.sockets }, () => ''), levels: {}, best: 0, wave: 0, auto: false, seed: (seed ^ 0x0def_e45e) >>> 0, acc: 0, lost: '' },
     weather: { kind: null, until: 0, next: 0, summoned: false, charges: 0, counted: 0, spent: 0, rng: seedRng(seed ^ 0x3a7e_e417) },
     settings: defaultSettings(),

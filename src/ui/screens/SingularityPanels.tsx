@@ -1,5 +1,5 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
-import { commands } from '../../app/commands';
+import { commands, sigilAware } from '../../app/commands';
 import { constantsReport } from '../../app/earlyReports';
 import { NODE_LEGEND } from '../../app/novaReports';
 import { layerConfirm } from '../../app/runeReports';
@@ -174,7 +174,7 @@ export function SingularityTreePanel() {
         <p>Four rings round the accretion disk, each in four sectors: Mass (the Black Hole and game speed), Matter (Dark Matter and Essence), Fate (runes and Luck Root) and Memory (what a Singularity keeps). Only a Galactic Rebirth resets it, and from 3 Galactic Rebirths not even that.</p>
         {r && <DarkChip value={r.money} />}
       </div>
-      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={(id) => commands.buySingularityNode(id)} currencyLabel="Dark Matter" legend={NODE_LEGEND} />}
+      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={sigilAware((id) => commands.buySingularityNode(id))} currencyLabel="Dark Matter" legend={NODE_LEGEND} />}
     </Panel>
   );
 }

@@ -1,4 +1,6 @@
 import type { Decimal } from '../engine/decimal';
+import type { SigilTree } from '../content/sigils';
+import { withSigil } from './sigilReports';
 import { cur, type Notation } from '../engine/state';
 import type { Tree } from '../engine/treeKit';
 import { format } from '../ui/format';
@@ -41,5 +43,6 @@ export function kitTreeReport(tree: Tree, fmt: (x: Decimal, n: Notation) => stri
   const edges: Array<[string, string]> = [];
   for (const node of tree.def.nodes) for (const p of node.parents) if (ids.has(node.id) && ids.has(p)) edges.push([p, node.id]);
   for (const [a, b] of tree.def.links ?? []) if (ids.has(a) && ids.has(b)) edges.push([a, b]);
+  withSigil(tree.def.id as SigilTree, nodes, edges);
   return { open: tree.def.open(s), money: fmt(cur(s, tree.def.currency), n), nodes, edges };
 }

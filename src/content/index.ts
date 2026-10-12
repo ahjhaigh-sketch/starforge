@@ -34,6 +34,7 @@ import { registerMultiverse } from '../engine/systems/multiverse';
 import { registerAlchemy } from '../engine/systems/alchemy';
 import { registerWeather } from '../engine/systems/weather';
 import { registerDefense } from '../engine/systems/defense';
+import { registerSigils } from '../engine/systems/sigils';
 import { registerStarsmith } from '../engine/systems/starsmith';
 import { registerComets } from '../engine/systems/comets';
 import { registerNovaTree } from '../engine/systems/novaTree';
@@ -98,5 +99,6 @@ export function registerContent(): void {
   registerAlchemy();
   registerWeather();
   registerDefense();
+  registerSigils();
   registerUnlocks();
 }

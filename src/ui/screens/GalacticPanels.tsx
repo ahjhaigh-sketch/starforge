@@ -1,5 +1,5 @@
 import { useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
-import { commands } from '../../app/commands';
+import { commands, sigilAware } from '../../app/commands';
 import { constantsReport } from '../../app/earlyReports';
 import { galacticReport, galaxyMapReport, observatoryReport } from '../../app/galacticReports';
 import { NODE_LEGEND } from '../../app/novaReports';
@@ -168,7 +168,7 @@ export function GalacticTreePanel() {
         <p>Five spiral arms, one for each way to play: Active (taps and comets), Idle (production and time), Runes, Wyrms and Production (the reset currencies). Capstones join neighbouring arms; four echoes level up with no cap.</p>
         {r && <CoreChip value={r.money} />}
       </div>
-      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={(id) => commands.buyGalacticNode(id)} currencyLabel="Galaxy Cores" legend={NODE_LEGEND} />}
+      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={sigilAware((id) => commands.buyGalacticNode(id))} currencyLabel="Galaxy Cores" legend={NODE_LEGEND} />}
     </Panel>
   );
 }
@@ -333,7 +333,7 @@ export function StarChartPanel() {
         <p>Constellations you've charted. Spend Star Charts from the Observatory; the chart is never reset.</p>
         {r && <CoreChip value={r.money} icon="telescope" />}
       </div>
-      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={(id) => commands.buyChartNode(id)} currencyLabel="Star Charts" legend={NODE_LEGEND} />}
+      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={sigilAware((id) => commands.buyChartNode(id))} currencyLabel="Star Charts" legend={NODE_LEGEND} />}
     </Panel>
   );
 }

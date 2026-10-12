@@ -814,6 +814,27 @@ export const BALANCE = {
       'scanner.codex': ['alloy.prismatic', 250],
     } as Record<string, readonly [string, number]>,
   },
+  /** Phase 20.6: the Hidden Sigils. Price: x10 the two nodes beside it, x100 for each sigil owned. */
+  sigils: {
+    priceMult: 10,
+    priceGrowth: 100,
+    /** How far from the line between its two nodes a sigil sits (tree units). */
+    offset: 42,
+    greedCrit: 10,
+    greedDust: 0.5,
+    hasteSpeed: 1.5,
+    hasteOffline: 0.5,
+    hungerDm: 10,
+    hungerMass: 0.1,
+    prideCores: 5,
+    prideDust: 0.95,
+    envyLuck: 10,
+    envyBulk: 0.1,
+    slothCap: 4,
+    slothTaps: 0.1,
+    wrathDamage: 100,
+    wrathComets: 0.5,
+  },
   /** Phase 20.5: Planet Defense. Opens at 3 Singularities (lifetime) with a planet in orbit. */
   defense: {
     singularities: 3,

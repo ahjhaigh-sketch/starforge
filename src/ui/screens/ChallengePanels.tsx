@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from 'react';
 import { leviathansReport, spireReport, trialsReport, type TrialCard } from '../../app/challengeReports';
-import { commands } from '../../app/commands';
+import { commands, sigilAware } from '../../app/commands';
 import { NODE_LEGEND } from '../../app/novaReports';
 import { kitTreeReport } from '../../app/treeReports';
 import { useSnap } from '../../app/uiSnapshot';
@@ -340,7 +340,7 @@ export function ScaleTreePanel() {
           </span>
         )}
       </div>
-      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={(id) => commands.buyScaleNode(id)} currencyLabel="scales" legend={NODE_LEGEND} />}
+      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={sigilAware((id) => commands.buyScaleNode(id))} currencyLabel="scales" legend={NODE_LEGEND} />}
     </Panel>
   );
 }

@@ -25,6 +25,8 @@ import { RELICS } from '../../src/content/forge';
 import { ELEMENTS } from '../../src/content/elements';
 import { advanceWeather, beaconProgress, summonWeather, weatherKindOpen, weatherLeft, weatherNow, weatherOpen } from '../../src/engine/systems/weather';
 import { tick } from '../../src/engine/tick';
+import { SIGIL_BY_ID, SIGILS } from '../../src/content/sigils';
+import { buySigil, SIGIL_TREES, sigilPrice, sigilRevealed, toggleSigil } from '../../src/engine/systems/sigils';
 import { TURRET_BY_ID, socketAt } from '../../src/content/defense';
 import { advanceDefense, battleResult, battleSetup, buyTurretLevels, clearSocket, defenseOpen, fightWave, placeCost, placeTurret, setDefenseAuto, winAlloy } from '../../src/engine/systems/defense';
 import { createBattle, hasArmour, hasBoss, relativeHit, runBattle, stepBattle, swarmCount } from '../../src/engine/systems/defenseBattle';
@@ -704,5 +706,59 @@ describe('20.5 Planet Defense', () => {
     s.defense.levels.laser = 40;
     advanceDefense(s, 3600, 1);
     expect(s.defense.best).toBeGreaterThan(best);
+  });
+});
+
+describe('20.6 the Hidden Sigils', () => {
+  it('each hides between two real nodes of its tree and bends real stats', () => {
+    expect(SIGILS).toHaveLength(7);
+    expect(new Set(SIGILS.map((x) => x.tree)).size).toBe(7);
+    for (const def of SIGILS) {
+      for (const id of def.between) expect(SIGIL_TREES[def.tree].node(id), `${def.id}: ${id}`).toBeDefined();
+      for (const e of def.effects) expect(isStat(e.stat), e.stat).toBe(true);
+    }
+  });
+
+  it('shows only once both nodes beside it are owned, then costs x10 their price, x100 per sigil owned', () => {
+    const s = fresh();
+    const greed = SIGIL_BY_ID.get('sigil.greed')!;
+    gain(s, 'shards', D('1e40'));
+    expect(sigilRevealed(s, greed)).toBe(false);
+    expect(buySigil(s, greed.id)).toBe(false);
+    s.novaTree['strike.11'] = 1;
+    expect(sigilRevealed(s, greed)).toBe(false);
+    s.novaTree['strike.12'] = 1;
+    expect(sigilRevealed(s, greed)).toBe(true);
+    const base = greed.between.reduce((a, id) => a + SIGIL_TREES.nova.node(id)!.cost, 0);
+    expect(sigilPrice(s, greed).eq(D(base).mul(10))).toBe(true);
+    const before = cur(s, 'shards');
+    expect(buySigil(s, greed.id)).toBe(true);
+    expect(cur(s, 'shards').eq(before.sub(D(base).mul(10)))).toBe(true);
+    expect(buySigil(s, greed.id)).toBe(false); // once
+    const sloth = SIGIL_BY_ID.get('sigil.sloth')!;
+    const chartBase = sloth.between.reduce((a, id) => a + SIGIL_TREES.starChart.node(id)!.cost, 0);
+    expect(sigilPrice(s, sloth).eq(D(chartBase).mul(10).mul(100))).toBe(true);
+  });
+
+  it('works only while switched on (in the breakdowns), switching is free, and it lasts through resets and saves', () => {
+    const s = fresh();
+    gain(s, 'shards', D('1e40'));
+    s.novaTree['strike.11'] = 1;
+    s.novaTree['strike.12'] = 1;
+    const crit = stat(s, 'critMult');
+    const dust = stat(s, 'productionMult');
+    buySigil(s, 'sigil.greed');
+    expect(stat(s, 'critMult').eq(crit.mul(BALANCE.sigils.greedCrit))).toBe(true);
+    expect(stat(s, 'productionMult').eq(dust.mul(BALANCE.sigils.greedDust))).toBe(true);
+    expect(breakdown(s, 'critMult').some((l) => l.label === 'Sigil of Greed')).toBe(true);
+    const shards = cur(s, 'shards');
+    expect(toggleSigil(s, 'sigil.greed')).toBe(true);
+    expect(stat(s, 'critMult').eq(crit)).toBe(true);
+    expect(cur(s, 'shards').eq(shards)).toBe(true);
+    expect(toggleSigil(s, 'sigil.wrath')).toBe(false); // not owned
+    toggleSigil(s, 'sigil.greed');
+    const c = clone(s);
+    expect(c.sigils).toEqual({ owned: ['sigil.greed'], on: ['sigil.greed'] });
+    expect(c.stats.sigils).toBe(1);
   });
 });

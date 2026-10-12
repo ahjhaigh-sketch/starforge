@@ -1,5 +1,5 @@
 import { BALANCE } from '../../content/balance';
-import { commands } from '../../app/commands';
+import { commands, sigilAware } from '../../app/commands';
 import { ascentReport, automationReport, NODE_LEGEND, supernovaReport, treeReport } from '../../app/novaReports';
 import { Button, cx, tint } from '../kit/Chunk';
 import { Icon } from '../kit/Icon';
@@ -83,7 +83,7 @@ export function NovaTreePanel() {
           <span className="val ol num">{r?.shards}</span>
         </div>
       </div>
-      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={(id) => commands.buyNode(id)} currencyLabel="shards" legend={NODE_LEGEND} />}
+      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={sigilAware((id) => commands.buyNode(id))} currencyLabel="shards" legend={NODE_LEGEND} />}
     </Panel>
   );
 }

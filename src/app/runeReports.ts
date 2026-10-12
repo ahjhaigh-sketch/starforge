@@ -1,4 +1,5 @@
 import { BALANCE } from '../content/balance';
+import { withSigil } from './sigilReports';
 import { NEBULA_TREE } from '../content/nebulaTree';
 import { RUNE_RARITIES, RUNE_STAT_WORDS, runesOf, SHRINE_BY_ID, SHRINES, type RuneDef } from '../content/runes';
 import { D, type Decimal } from '../engine/decimal';
@@ -105,6 +106,7 @@ export function nebulaTreeReport(): { open: boolean; essence: string; nodes: Tre
   const ids = new Set(nodes.map((x) => x.id));
   const edges: Array<[string, string]> = [];
   for (const node of NEBULA_TREE) for (const p of node.parents) if (ids.has(node.id) && ids.has(p)) edges.push([p, node.id]);
+  withSigil('nebula', nodes, edges);
   return { open: nebulaTreeOpen(s), essence: format(money, n()), nodes, edges };
 }
 

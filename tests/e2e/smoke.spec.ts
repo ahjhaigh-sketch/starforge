@@ -1989,3 +1989,37 @@ test('Planet Defense: place a turret, fight wave 1, watch the replay to a win, a
   expect(await page.evaluate(() => (window as unknown as Sf7).sf.game.state.currencies['alloy.iron']!.toNumber())).toBe(1000);
   expect(errors).toEqual([]);
 });
+
+// ---------- Phase 20.6: the Hidden Sigils ----------
+
+test('Hidden Sigils: a sigil shows between its two nodes, buys in the tree, and switches at the Altar', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const { game, commands } = (window as unknown as Sf7).sf;
+    const s = game.state as unknown as { stats: Record<string, number>; novaTree: Record<string, number> };
+    s.stats.supernovas = 5;
+    s.stats.supernovasAll = 5;
+    s.novaTree.root = 1;
+    for (let i = 1; i <= 12; i++) s.novaTree[`strike.${i}`] = 1;
+    commands.devAdd('shards', 1e40);
+  });
+  await page.evaluate(() => (window as unknown as { sf: { open(id: string): void } }).sf.open('novatree'));
+  const tree = page.locator('[data-panel="novatree"]');
+  await expect(tree).toHaveClass(/open/);
+  const sigil = tree.locator('[data-node="sigil.greed"]');
+  await expect(sigil).toHaveClass(/affordable/);
+  await sigil.click();
+  await expect(tree.locator('.tree-card')).toContainText('Sigil of Greed');
+  await tree.locator('.tree-card').getByRole('button', { name: /Buy/ }).click();
+  await expect(sigil).toHaveClass(/owned/);
+  await page.evaluate(() => (window as unknown as { sf: { open(id: string): void } }).sf.open('altar'));
+  const altar = page.locator('[data-panel="altar"]');
+  await expect(altar).toHaveClass(/open/);
+  const toggle = altar.locator('[data-toggle="sigil.greed"]');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await expect(altar.locator('[data-sigil="sigil.wrath"]')).toContainText('An unknown sigil');
+  expect(errors).toEqual([]);
+});
