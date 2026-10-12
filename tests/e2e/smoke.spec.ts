@@ -1492,7 +1492,9 @@ test('the 200-node Galactic Tree stays smooth to pan, and the Observatory draws 
   await openRail(page, 'galactictree');
   const view = page.locator('[data-panel="galactictree"] .tree-view');
   await expect(view).toBeVisible();
-  await expect(page.locator('[data-panel="galactictree"] [data-node]')).toHaveCount(200);
+  // the tree's 200 nodes, and (every node owned) the Sigil of Pride that hides among them
+  await expect(page.locator('[data-panel="galactictree"] [data-node]:not([data-node^="sigil."])')).toHaveCount(200);
+  await expect(page.locator('[data-panel="galactictree"] [data-node="sigil.pride"]')).toHaveCount(1);
   const box = (await view.boundingBox())!;
   await page.evaluate(() => {
     const w = window as unknown as { __frames: number[]; __on: boolean };
@@ -1520,6 +1522,14 @@ test('the 200-node Galactic Tree stays smooth to pan, and the Observatory draws 
   expect(avg).toBeLessThan(50);
   await page.keyboard.press('Escape');
   // the Observatory: two stars make a link, and a record pays Star Charts
+  // a known sky (each Galactic run rolls one from the game's random stream, and the order of other
+  // draws varies with timing): in sky 6 the link between stars 0 and 1 scores 7
+  await page.evaluate(() => {
+    const o = (window as unknown as { sf: { game: { state: { observatory: { seed: number; best: number; links: unknown[] } } } } }).sf.game.state.observatory;
+    o.seed = 6;
+    o.best = 0;
+    o.links = [];
+  });
   await openRail(page, 'observatory');
   const obs = page.locator('[data-panel="observatory"]');
   await expect(obs.locator('[data-star]')).toHaveCount(24);
