@@ -130,7 +130,7 @@ export const plainSaveSchema = z.looseObject({
     .looseObject({ engines: z.record(z.string(), count), ever: z.record(z.string(), count), depth: count, upgrades: z.array(z.string()) })
     .optional(),
   wormholes: z.looseObject({ links: z.array(z.looseObject({ from: z.string(), to: z.string(), share: z.number().min(0).max(1) })) }).optional(),
-  galactic: z.looseObject({ galaxy: z.string(), next: z.string(), cleared: z.array(z.string()), autoAt: dec }).optional(),
+  galactic: z.looseObject({ galaxy: z.string(), next: z.string(), cleared: z.array(z.string()), autoAt: dec, here: z.record(z.string(), dec).optional(), explore: z.boolean().optional() }).optional(),
   galacticTree: z.record(z.string(), count).optional(),
   observatory: z
     .looseObject({ seed: count, links: z.array(z.tuple([count, count])), best: z.number().min(0) })
@@ -142,6 +142,11 @@ export const plainSaveSchema = z.looseObject({
     .optional(),
   echoes: z.looseObject({ engines: z.record(z.string(), count), ever: z.record(z.string(), count) }).optional(),
   multiverse: z.looseObject({ tree: z.record(z.string(), count), rules: z.array(z.string()), next: z.array(z.string()), storySeen: z.boolean() }).optional(),
+  // 1.4.0: beyond the Multiverse
+  tesseract: z.looseObject({ axes: z.array(z.string()).length(4), levels: z.array(count).length(4) }).optional(),
+  pantheon: z.looseObject({ awake: z.array(z.string()), devotion: z.record(z.string(), count), ascendant: z.array(z.string()).max(8), rites: z.array(z.string()) }).optional(),
+  laws: z.record(z.string(), z.number().int().min(-10).max(10)).optional(),
+  lives: z.looseObject({ list: z.array(z.looseObject({ n: count, score: z.number().min(0) })), guide: z.number().int(), miracles: z.array(z.string()), storySeen: z.boolean() }).optional(),
   cosmetics: z.looseObject({ skin: z.string(), trail: z.string(), background: z.string() }).optional(),
   sigils: z.looseObject({ owned: z.array(z.string()), on: z.array(z.string()) }).optional(),
   defense: z

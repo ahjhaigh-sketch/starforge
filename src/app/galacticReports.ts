@@ -1,10 +1,11 @@
+import { galaxiesNeeded } from '../engine/systems/crunch';
 import { BALANCE } from '../content/balance';
 import { GALAXIES, starColor } from '../content/galactic';
 import { layer, milestoneReached, resetsDone } from '../engine/layers';
 import { cur } from '../engine/state';
 import { stat } from '../engine/stats';
 import { darkMatterNeeded, galacticGain, galacticReady, galacticReqs, galaxyAvailable, galaxyCleared, galaxyMapOpen, galaxyOf, goalProgress, nextCoreAt } from '../engine/systems/galactic';
-import { autoChartLinks, bestNextLink, constellationScore, currentScore, linkScore, loopsOf, maxLinks, observatoryOpen, skyOf } from '../engine/systems/observatory';
+import { autoChartLinks, bestNextLink, constellationScore, currentScore, linkScore, loopsOf, maxLinks, observatoryOpen, skyOf, chartBonus } from '../engine/systems/observatory';
 import { format, formatMult } from '../ui/format';
 import { game } from './game';
 
@@ -73,14 +74,43 @@ export interface GalaxyCard {
   progress: string;
 }
 
-export function galaxyMapReport(): { open: boolean; started: boolean; cleared: number; cards: GalaxyCard[] } {
+/** 1.4.0: the strip at the top of the map: where you are, how far its goal is, and where the next rebirth goes. */
+export interface GalaxyStatus {
+  here: string;
+  hereColor: string;
+  goal: string;
+  pct: number;
+  progress: string;
+  explored: boolean;
+  next: string;
+  explore: boolean;
+  /** For the Big Crunch: galaxies explored this Crunch run, of how many. */
+  crunch: string;
+}
+
+export function galaxyMapReport(): { open: boolean; started: boolean; cleared: number; status: GalaxyStatus; cards: GalaxyCard[] } {
   const s = game.state;
   const here = galaxyOf(s).id;
   const started = (s.stats.galacticsAll ?? 0) > 0;
+  const g0 = galaxyOf(s);
+  const p0 = goalProgress(s, g0.goal);
+  const big0 = p0.target.gt(1000);
+  const nextG = GALAXIES.find((g) => g.id === s.galactic.next);
   return {
     open: galaxyMapOpen(s),
     started,
     cleared: s.galactic.cleared.length,
+    status: {
+      here: started ? g0.name : 'Not in a galaxy yet',
+      hereColor: g0.color,
+      goal: g0.goalText,
+      pct: started ? Math.floor(Math.min(1, big0 ? p0.now.add(1).log10().toNumber() / p0.target.log10().toNumber() : p0.now.div(p0.target).toNumber()) * 100) : 0,
+      progress: `${format(p0.now, n())} / ${format(p0.target, n())}`,
+      explored: galaxyCleared(s, g0.id),
+      next: nextG?.name ?? '',
+      explore: s.galactic.explore,
+      crunch: `${s.galactic.cleared.length} / ${galaxiesNeeded(s)}`,
+    },
     cards: GALAXIES.map((g) => {
       const current = started && g.id === here;
       const { now, target } = goalProgress(s, g.goal);
@@ -116,6 +146,9 @@ export interface ObservatoryReport {
   charts: string;
   /** Star Charts a record would pay now. */
   pays: number;
+  /** 1.4.0: skies recorded ever, and the Star Chart bonus they give (percent). */
+  skies: number;
+  bonus: number;
   /** 1.3.0: the best link to draw next (the Hint), and what Auto-draw would score. */
   hint: { a: number; b: number; gain: string } | null;
   autoScore: string;
@@ -135,7 +168,9 @@ export function observatoryReport(): ObservatoryReport {
     used: s.observatory.links.length,
     max: maxLinks(s),
     charts: format(cur(s, 'starCharts'), n()),
-    pays: Math.max(0, Math.floor(score) - Math.floor(s.observatory.best)),
+    pays: Math.floor(Math.max(0, Math.floor(score) - Math.floor(s.observatory.best)) * chartBonus(s)),
+    skies: s.stats.skiesCharted ?? 0,
+    bonus: Math.round((chartBonus(s) - 1) * 100),
     hint: (() => {
       const h = bestNextLink(s);
       return h ? { a: h.a, b: h.b, gain: h.gain.toFixed(1) } : null;

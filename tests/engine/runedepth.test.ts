@@ -1,3 +1,4 @@
+import { manual } from './manual';
 import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { registerContent } from '../../src/content';
@@ -34,7 +35,7 @@ function player(nebulas = 4, seed = 5): GameState {
   // 1.2.0: Auto-Supernova (40 Supernovas) would reset this run: these tests are about runes and auras
   s.auto['auto.supernova'] = { on: false, spend: 1 };
   invalidateStats();
-  return s;
+  return manual(s);
 }
 
 function clone(s: GameState): GameState {

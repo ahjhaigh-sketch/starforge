@@ -3,7 +3,7 @@ import { SPECTRAL, SPECTRAL_BY_ID } from '../../content/nebulaExtras';
 import { planLimited, type PurchasePlan } from '../buy';
 import { type CostCurve, lateRamp } from '../cost';
 import { D, type Decimal, ZERO } from '../decimal';
-import { cur, type GameState, spend } from '../state';
+import { cur, type GameState, spend, usable } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
 
@@ -62,7 +62,7 @@ function curve(id: 'lens' | 'afterglow'): CostCurve {
 }
 
 export function spectralPlan(s: GameState, id: 'lens' | 'afterglow'): PurchasePlan {
-  return planLimited(curve(id), spectralLevel(s, id), cur(s, 'essence'), s.settings.buyAmount, s.settings.customBuyAmount, id === 'afterglow' ? SP.afterglowMax : Infinity);
+  return planLimited(curve(id), spectralLevel(s, id), usable(s, 'essence'), s.settings.buyAmount, s.settings.customBuyAmount, id === 'afterglow' ? SP.afterglowMax : Infinity);
 }
 
 export function buySpectral(s: GameState, id: 'lens' | 'afterglow'): boolean {

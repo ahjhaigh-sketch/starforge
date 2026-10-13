@@ -202,8 +202,9 @@ const HEX = 34;
 export function TerraformPanel() {
   const [pick, setPick] = useState(0);
   const [biome, setBiome] = useState('ocean');
-  const r = useReport('terraform', () => terraformReport(pick), 150);
-  const data = r ?? terraformReport(pick);
+  const r = useReport('terraform', () => terraformReport(pick), 150, [pick]);
+  // the read-out for the planet picked (a stale one for another planet never shows)
+  const data = r && r.pick === pick ? r : terraformReport(pick);
   const pos = (q: number, rr: number) => ({ x: HEX * Math.sqrt(3) * (q + rr / 2), y: HEX * 1.5 * rr });
   const corners = (x: number, y: number) =>
     Array.from({ length: 6 }, (_, k) => {
@@ -279,9 +280,14 @@ export function TerraformPanel() {
                   {data.name} ({data.type}): {data.filled} of {data.total} hexes. {data.what} {data.mult} when finished.
                 </span>
                 {data.finished === null ? (
-                  <Button color={data.canFinish ? '#3E9E2A' : '#5A5F8F'} disabled={!data.canFinish} onClick={() => commands.finishPlanet(pick)} data-testid="terra-finish">
-                    {data.canFinish ? 'Finish this planet' : 'Fill every hex to finish'}
-                  </Button>
+                  <>
+                    <Button size="sm" color="#2B7FD0" onClick={() => commands.paintBestLayout(pick)} data-testid="terra-best">
+                      Paint the best layout (scores {data.best})
+                    </Button>
+                    <Button color={data.canFinish ? '#3E9E2A' : '#5A5F8F'} disabled={!data.canFinish} onClick={() => commands.finishPlanet(pick)} data-testid="terra-finish">
+                      {data.canFinish ? 'Finish this planet' : 'Fill every hex to finish'}
+                    </Button>
+                  </>
                 ) : (
                   <span className="col-line done">Finished: the score is locked in.</span>
                 )}

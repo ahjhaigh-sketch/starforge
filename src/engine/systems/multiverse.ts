@@ -11,6 +11,7 @@ import { registerSystem } from '../tick';
 import { makeTree } from '../treeKit';
 import { crunchGain, crunchReady } from './crunch';
 import { gainPeaked } from './eternity';
+import { arriveIn } from './galactic';
 import { goalMet as trialGoalMet, inTrial } from './trials';
 
 /**
@@ -173,8 +174,8 @@ const PARTS: Record<string, (s: GameState) => void> = {
     zero(s, 'galaxyCores', 'starCharts', 'supply');
     s.galacticTree = {};
     zeroConstants(s, 'galactic');
-    s.galactic.galaxy = 'milkyway';
     s.galactic.next = 'milkyway';
+    arriveIn(s, 'milkyway');
     s.galactic.cleared = [];
     s.stats.galaxiesCleared = 0;
     s.observatory = { seed: Math.floor(nextFloat(s.rng) * 2 ** 31), links: [], best: 0 };
@@ -192,6 +193,16 @@ const PARTS: Record<string, (s: GameState) => void> = {
 
 const COUNTERS: Record<string, string> = { supernova: 'supernovas', nebula: 'nebulas', singularity: 'singularities', galactic: 'galactics', crunch: 'crunches' };
 
+/**
+ * 1.4.0, the barrier: a reset wipes at most the three layers just below it. The Multiverse (layer 6) never touches
+ * the Stardust, Supernova or Nebula layers again, so they stay as they are, running themselves ("say you do the sixth
+ * reset layer, it shouldn't reset anything or touch anything below the third").
+ */
+export const BARRIER_KEEPS: ReadonlySet<string> = new Set(['stardust', 'supernova', 'nebula']);
+const BARRIER = 'Never reset again: three layers down (1.4.0)';
+/** Hyperverse milestone 10: a Multiverse resets nothing. */
+const multiverseFree = (s: GameState) => milestoneReached(s, 'hyperverse', 'multiverseFree');
+
 function layerPart(key: string, name: string, keepsWhat: string): ResetPart {
   return {
     id: key,
@@ -200,9 +211,34 @@ function layerPart(key: string, name: string, keepsWhat: string): ResetPart {
       PARTS[key]!(s);
       if (COUNTERS[key]) counter(s, key, COUNTERS[key]!);
     },
-    keptBy: (s) => (keeps(s, key) ? `${name} Unbound (Spark choice)` : null),
+    keptBy: (s) => (BARRIER_KEEPS.has(key) ? BARRIER : multiverseFree(s) ? 'Milestone: 10 Hyperverses' : keeps(s, key) ? `${name} Unbound (Spark choice)` : null),
   };
 }
+
+/**
+ * 1.4.0: what a reset beyond the Multiverse does to each layer it wipes (systems/beyond): the Multiverse's own parts
+ * for the Galactic and Big Crunch layers, and the Multiverse layer itself. Counters stay (their milestones keep the
+ * layers below running); the Big Crunch count of this universe starts again.
+ */
+export const LAYER_WIPES: Readonly<Record<string, (s: GameState) => void>> = {
+  galactic: (s) => PARTS.galactic!(s),
+  crunch: (s) => {
+    PARTS.crunch!(s);
+    s.stats.crunchesCycle = 0;
+  },
+  multiverse: (s) => {
+    zero(s, 'sparks');
+    if (!milestoneReached(s, 'hyperverse', 'keepSparks') && !milestoneReached(s, 'omniverse', 'keepSparks')) {
+      s.multiverse.tree = {};
+      s.stats.sparkChoices = 0;
+    }
+    if (!milestoneReached(s, 'hyperverse', 'keepOmni')) {
+      zeroConstants(s, 'omni');
+      s.multiverse.rules = [];
+      s.multiverse.next = [];
+    }
+  },
+};
 
 export function registerMultiverse(): void {
   defineStat({ id: 'sparkGain', label: 'Spark gain', base: () => D(1) });
@@ -232,16 +268,20 @@ export function registerMultiverse(): void {
     parts: MULTIVERSE_ARMS.map((a) => layerPart(a.key, a.name, a.keeps)),
     alwaysKept: [
       'Multiverse Sparks, your Spark choices, Omni Constants and the Universe Forge',
+      'The Stardust, Supernova and Nebula layers: a reset never reaches more than three layers down',
       'Trials, the Spire, the Void Leviathans and the Scale Tree',
       'Runes, auras, mutations, the Index, Wyrms, the Nursery and your tarot cards',
       'Relics, the Codex, Engine Mastery and your Starsmith Level',
       'Medals and everything you have unlocked',
     ],
+    // 1.4.0: a Hyperverse keeps Multiverse milestones from its first one
+    milestoneFloor: (s) => (milestoneReached(s, 'hyperverse', 'keepMultiverse') ? (s.stats.multiversesBest ?? 0) : 0),
     milestones: [
       { at: 1, id: 'omni', text: "Omni Constants open, and the Last Starsmith's story ends" },
       { at: 2, id: 'forge4', text: 'The Universe Forge takes up to 4 rules' },
       { at: 4, id: 'forgeAll', text: 'The Universe Forge takes every rule at once' },
       { at: 6, id: 'sparkPlus', text: '+1 Spark from every Multiverse' },
+      { at: 8, id: 'hyperverse', text: 'The Hyperverse stirs (60 Sparks in one Hyperverse run)' },
       { at: 10, id: 'eternal', text: 'Start every universe with all ten Eternity upgrades' },
     ],
     onReset: (s) => {

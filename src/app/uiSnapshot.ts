@@ -3,7 +3,7 @@ import { createStore } from 'zustand/vanilla';
 import { BALANCE } from '../content/balance';
 import { recommend } from './recommend';
 import { ENGINES } from '../content/engines';
-import { SYSTEMS, type SystemDef } from '../content/systems';
+import { SYSTEMS, type SystemDef, systemSection } from '../content/systems';
 import { TIERS } from '../content/tiers';
 import { planPurchase } from '../engine/buy';
 import { D } from '../engine/decimal';
@@ -35,6 +35,8 @@ import { darkMatterNeeded, galacticGain, galacticReady, galacticReqs, galaxyOf }
 import { crunchGain, crunchReady, crunchSeen, galaxiesExplored, galaxiesNeeded, nextChrononAt, runCores } from '../engine/systems/crunch';
 import { crunchesThisUniverse, multiverseGain, multiverseReady, multiverseSeen, sparkFlag } from '../engine/systems/multiverse';
 import { automating } from '../engine/systems/eternity';
+import { fullyAutomated } from '../engine/layerAuto';
+import type { AutoLayer } from '../content/layers';
 import { autoSetting, autoUnlocked, AUTO_BUYERS } from '../engine/systems/automation';
 import { engineView, menuHidden } from './menus';
 import { wyrmSky } from './wyrmReports';
@@ -123,6 +125,8 @@ export interface RailItem {
   pct: number;
   /** Something here can be bought or claimed right now. */
   alert: boolean;
+  /** 1.4.0: the layer it belongs to (the rails' sections). */
+  section: string;
 }
 
 /** 1.2.0: a big card at the side for a system you just unlocked, or one you're close to. */
@@ -271,6 +275,8 @@ export interface Snapshot {
   uiTheme: string;
   /** Reset bars of layers Eternity runs by itself ("supernova,nebula"): they shrink to a slim strip. */
   autoBars: string;
+  /** 1.4.0: reset bars of layers that run themselves completely (two layers on): they leave the screen. */
+  goneBars: string;
   /** Music: the soundtrack, its volume, and how many layers you've reached (each adds an instrument). */
   soundtrack: string;
   volumeMusic: number;
@@ -443,11 +449,16 @@ const RAIL_DETAILS = { left: 3, right: 2 } as const;
 
 function railItems(s: GameState, rail: 'left' | 'right', prev: RailItem[] | undefined): RailItem[] {
   let details: number = RAIL_DETAILS[rail];
-  const items = SYSTEMS.filter((x: SystemDef) => x.rail === rail).map((x): RailItem => {
+  const list = SYSTEMS.filter((x: SystemDef) => x.rail === rail);
+  // 1.4.0: on the side's layer sections, everything in a layer you've reached shows what it needs; the first few of
+  // the next layer do too, and the rest are silhouettes
+  const reached = new Set(rail === 'right' ? list.filter((x) => s.unlocked.includes(x.id)).map(systemSection) : []);
+  const items = list.map((x): RailItem => {
     const met = s.unlocked.includes(x.id);
     let state: RailState;
     if (met && x.built) state = s.seen.includes(x.id) ? 'open' : 'new';
     else if (met) state = 'soon';
+    else if (reached.has(systemSection(x))) state = 'locked';
     else if (details > 0) {
       state = 'locked';
       details--;
@@ -462,6 +473,7 @@ function railItems(s: GameState, rail: 'left' | 'right', prev: RailItem[] | unde
       req: state === 'soon' ? 'Arrives in a later update' : reqText(x.req),
       pct: Math.floor(reqProgress(s, x.req) * 100),
       alert: (state === 'open' || state === 'new') && railAlert(s, x.id),
+      section: systemSection(x),
     };
   });
   // off the rails: hidden by you (even before you've opened it), or open and running itself
@@ -545,7 +557,8 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     soundtrack: s.settings.soundtrack,
     volumeMusic: s.settings.volumeMusic,
     musicLayers: ['supernovasAll', 'nebulasAll', 'singularitiesAll', 'galacticsAll', 'crunchesAll', 'multiversesAll'].filter((k) => (s.stats[k] ?? 0) > 0).length,
-    autoBars: [...(['supernova', 'nebula', 'singularity', 'galactic'] as const).filter((l) => automating(s, l) || (l === 'supernova' && autoNovaOn(s))), ...(sparkFlag(s, 'autoCrunch') ? ['crunch'] : [])].join(','),
+    autoBars: [...(['supernova', 'nebula', 'singularity', 'galactic', 'crunch'] as const).filter((l) => automating(s, l) || (l === 'supernova' && autoNovaOn(s))), ...(sparkFlag(s, 'autoCrunch') ? ['crunch'] : [])].join(','),
+    goneBars: s.settings.autoHideMenus ? ['stardust', 'supernova', 'nebula', 'singularity', 'galactic', 'crunch', 'multiverse'].filter((l) => fullyAutomated(s, l as AutoLayer)).join(',') : '',
     uiScale: s.settings.uiScale,
     hiddenHud: s.settings.hiddenHud.join(' '),
     resetFx: s.settings.resetFx,
@@ -692,7 +705,7 @@ function crunchBar(s: GameState, n: Notation) {
     ? `Next Chronon at ${format(nextChrononAt(s), n)} Galaxy Cores this Crunch run`
     : explored < need
       ? `Explore ${need} galaxies this Crunch run (${explored}/${need})`
-      : `Gain ${format(C.gainDiv, n)} Galaxy Cores this Crunch run (${format(cores, n)})`;
+      : `Gain ${format(C.need, n)} Galaxy Cores this Crunch run (${format(cores, n)})`;
   return {
     crunchVisible: crunchSeen(s),
     crunchReady: ready,
@@ -759,12 +772,12 @@ function singularityBar(s: GameState, n: Notation): { singularityVisible: boolea
   const visible = keyOnSale(s);
   const ready = singularityReady(s);
   const ne = runEssence(s);
-  const pct = ready ? 100 : !s.singularity.key ? Math.floor(Math.min(1, cur(s, 'embers').div(BALANCE.singularity.keyEmbers).toNumber()) * 100) : Math.floor(Math.min(1, ne.add(1).log10().toNumber() / 6) * 100);
+  const pct = ready ? 100 : !s.singularity.key ? Math.floor(Math.min(1, cur(s, 'embers').div(BALANCE.singularity.keyEmbers).toNumber()) * 100) : Math.floor(Math.min(1, ne.add(1).log10().toNumber() / Math.log10(BALANCE.singularity.need)) * 100);
   const req = ready
     ? 'Dark Matter buys the Singularity Tree and boosts all Essence'
     : !s.singularity.key
       ? `Buy the Event Horizon key: ${format(BALANCE.singularity.keyEmbers, n)} Embers (${format(cur(s, 'embers'), n)})`
-      : `Gather ${format(BALANCE.singularity.runEssence, n)} Essence this Singularity run (${format(ne, n)})`;
+      : `Gather ${format(BALANCE.singularity.need, n)} Essence this Singularity run (${format(ne, n)})`;
   return { singularityVisible: visible, singularityReady: ready, singularityGain: ready ? `+${format(singularityGain(s), n)}` : '', singularityReq: req, singularityPct: pct };
 }
 

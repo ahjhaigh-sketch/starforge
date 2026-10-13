@@ -33,8 +33,8 @@ export interface ConstantCard {
   currencyName: string;
 }
 
-const CURRENCY_ICONS: Record<string, string> = { stardust: 'stardust', essence: 'nebula', shards: 'shard', darkMatter: 'darkmatter', galaxyCores: 'galaxy', chronons: 'chronon' };
-const CURRENCY_NAMES: Record<string, string> = { stardust: 'Stardust', essence: 'Essence', shards: 'Nova Shards', darkMatter: 'Dark Matter', galaxyCores: 'Galaxy Cores', chronons: 'Chronons' };
+const CURRENCY_ICONS: Record<string, string> = { stardust: 'stardust', essence: 'nebula', shards: 'shard', darkMatter: 'darkmatter', galaxyCores: 'galaxy', chronons: 'chronon', sparks: 'spark', tesseracts: 'tesseract', aether: 'aether', originSeeds: 'seed', divinity: 'divinity' };
+const CURRENCY_NAMES: Record<string, string> = { stardust: 'Stardust', essence: 'Essence', shards: 'Nova Shards', darkMatter: 'Dark Matter', galaxyCores: 'Galaxy Cores', chronons: 'Chronons', sparks: 'Multiverse Sparks', tesseracts: 'Tesseracts', aether: 'Aether', originSeeds: 'Origin Seeds', divinity: 'Divinity' };
 
 /** One set of Cosmic Constants (Stellar on the Constants panel, Nebula on the Nebula panel). */
 export function constantsReport(setId = 'stellar'): { title: string; cards: ConstantCard[] } {

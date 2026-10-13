@@ -237,7 +237,7 @@ const ROOT: NebulaNode = { id: 'nroot', name: 'First Mist', desc: 'The cloud rem
  * of once a minute (which a run of Supernovas a minute apart held at level 50). Still a step at a time: buying the
  * most it could afford turned e546 Essence into 1,300 Drift levels in one second.
  */
-const FLOW: NebulaNode = { id: 'nflow.constants', name: 'Constant Flow', desc: 'Auto-Constants steps every constant to its next doubling every second, not once a minute.', wisp: 'root', parents: ['nroot'], cost: Math.round(stepCost(BALANCE.nebula.flowStep) * 100) / 100, effect: flag('constantFlow', 1), color: 'unlock', x: 0, y: -175 };
+const FLOW: NebulaNode = { id: 'nflow.constants', name: 'Constant Flow', desc: 'Auto-Constants spends everything it may on constants, whatever its spending limit.', wisp: 'root', parents: ['nroot'], cost: Math.round(stepCost(BALANCE.nebula.flowStep) * 100) / 100, effect: flag('constantFlow', 1), color: 'unlock', x: 0, y: -175 };
 
 export const NEBULA_TREE: readonly NebulaNode[] = [ROOT, ...wisps, ...CAPS, ...ECHOES, FLOW];
 export const NEBULA_NODE: ReadonlyMap<string, NebulaNode> = new Map(NEBULA_TREE.map((n) => [n.id, n]));

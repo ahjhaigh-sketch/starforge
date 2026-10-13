@@ -1,3 +1,6 @@
+import { AUTO_LAYERS, type AutoLayer } from '../../src/content/layers';
+import { setLayerAuto } from '../../src/engine/layerAuto';
+import { manual } from './manual';
 import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { registerContent } from '../../src/content';
@@ -36,7 +39,7 @@ function ready(seed = 7): GameState {
   s.stats.galacticsBest = 9;
   s.stats.singularitiesAll = 120;
   s.stats.nebulasAll = 400;
-  s.galactic = { galaxy: 'lenticular', next: 'starburst', cleared: [...EXPLORED], autoAt: D(0) };
+  s.galactic = { galaxy: 'lenticular', next: 'starburst', cleared: [...EXPLORED], autoAt: D(0), here: {}, explore: true };
   s.galacticTree = { 'gal.core': 1 };
   s.constants['gal.expansion'] = 4;
   s.megastructures = { dyson: 2 };
@@ -45,11 +48,23 @@ function ready(seed = 7): GameState {
   s.mirror.upgrades = ['mu.spark', 'mu.key'];
   s.mirror.depth = 11;
   s.blackHole.mass = D(2e7);
-  gain(s, 'galaxyCores', D(20_000));
+  gain(s, 'galaxyCores', D(2e14));
   gain(s, 'darkMatter', D(1e12));
   invalidateStats();
+  return manual(s);
+}
+
+/** 1.4.0: switches one layer's automation back on (the others stay off), or every layer's. */
+function only(s: GameState, layer: AutoLayer): GameState {
+  setLayerAuto(s, layer, { on: true });
   return s;
 }
+function everyLayer(s: GameState): GameState {
+  for (const l of AUTO_LAYERS) setLayerAuto(s, l, { on: true });
+  return s;
+}
+const crunchedManual = (seed?: number) => crunched(seed);
+const readyManual = (seed?: number) => ready(seed);
 
 function clone(s: GameState): GameState {
   const r = exportSave(s);
@@ -64,20 +79,20 @@ function crunched(seed = 11): GameState {
   s.stats.crunches = 1;
   s.stats.crunchesAll = 1;
   invalidateStats();
-  return s;
+  return manual(s);
 }
 
 describe('the Big Crunch', () => {
-  it('needs 7 galaxies explored; gives floor((log10(GC / 10) + 1)^1.5) x Chronon gain', () => {
+  it('needs 7 galaxies explored and 1e11 Galaxy Cores; gives floor((log10(GC / 1e11) + 1)^1.5) x Chronon gain', () => {
     const s = ready();
-    const expected = Math.floor((Math.log10(20_000 / 10) + 1) ** 1.5 * stat(s, 'chrononGain').toNumber());
+    const expected = Math.floor((Math.log10(2e14 / 1e11) + 1) ** 1.5 * stat(s, 'chrononGain').toNumber());
     expect(crunchGain(s).toNumber()).toBe(expected);
     expect(expected).toBeGreaterThanOrEqual(5);
     expect(crunchReady(s)).toBe(true);
     s.galactic.cleared.pop();
     expect(crunchReady(s)).toBe(false);
     const poor = ready();
-    poor.totals.run.galaxyCores = D(9);
+    poor.totals.run.galaxyCores = D(9e10);
     expect(crunchGain(poor).toNumber()).toBe(0);
     // "next Chronon at": exactly where the gain steps up
     const at = nextChrononAt(s);
@@ -123,7 +138,7 @@ describe('the Big Crunch', () => {
     expect(s.stats.crunchesCycle).toBe(1);
     expect(galaxiesNeeded(s)).toBe(9);
     s.galactic.cleared = GALAXIES.slice(0, 8).map((g) => g.id);
-    s.totals.run.galaxyCores = D(1000);
+    s.totals.run.galaxyCores = D(2e11);
     expect(crunchReady(s)).toBe(false);
     s.galactic.cleared = GALAXIES.slice(0, 9).map((g) => g.id);
     expect(crunchReady(s)).toBe(true);
@@ -164,7 +179,7 @@ describe('the Big Crunch', () => {
     const s = ready();
     s.stats.crunches = 10;
     s.galactic.galaxy = 'milkyway';
-    s.totals.run.darkMatter = D(1.6e9);
+    s.totals.run.darkMatter = D(1.6e13);
     s.singularityTree = { score: 1 };
     invalidateStats();
     expect(galacticReady(s)).toBe(true);
@@ -173,7 +188,7 @@ describe('the Big Crunch', () => {
     expect(s.blackHole.mass.toNumber()).toBe(2e7);
     expect(s.totals.run.darkMatter!.toNumber()).toBe(0);
     expect(performReset(s, 'galactic')).toBeNull();
-    s.totals.run.darkMatter = D(1.6e9);
+    s.totals.run.darkMatter = D(1.6e13);
     s.currencies.galaxyCores = D(0);
     invalidateStats();
     tick(s, 1);
@@ -327,19 +342,21 @@ describe('Eternity', () => {
     expect(s.stats.galaxiesCleared).toBe(3);
   });
 
-  it('Eternal Forge unlocks every Stardust auto-buyer from the start, and switching Stardust off takes them back', () => {
-    // the tree auto-buyers (1.2.0) are earned by their own counts, not by Eternity
+  it('1.4.0: every Stardust auto-buyer unlocks once the Stardust layer runs itself (from the first Nebula), not from Eternity', () => {
+    // the tree auto-buyers (1.2.0) are earned by their own counts; Auto-Supernova is the Supernova layer's
     const stardust = AUTO_BUYERS.filter((a) => !a.req);
-    const s = crunched();
+    const s = createInitialState(1, 3);
     expect(stardust.every((a) => autoUnlocked(s, a))).toBe(false);
     s.eternity.upgrades = ['et.forge'];
-    expect(stardust.every((a) => autoUnlocked(s, a))).toBe(true);
-    setEternityAuto(s, 'stardust', { on: false });
     expect(stardust.every((a) => autoUnlocked(s, a))).toBe(false);
+    s.stats.nebulasAll = 1;
+    expect(stardust.every((a) => autoUnlocked(s, a))).toBe(true);
   });
 
-  it('with every automation upgrade, each layer resets by itself and buys from its own tree', () => {
-    const auto = ['et.forge', 'et.nova', 'et.mist', 'et.void', 'et.galaxy'];
+  it('1.4.0: every layer you have passed resets by itself and buys from its own tree', () => {
+    const auto = ['et.galaxy'];
+    const crunched = (seed = 11) => everyLayer(crunchedManual(seed));
+    const ready = (seed = 7) => everyLayer(readyManual(seed));
     // Supernova
     const a = crunched();
     a.eternity.upgrades = [...auto];
@@ -377,9 +394,9 @@ describe('Eternity', () => {
     const d = ready();
     d.stats.crunchesAll = 1;
     d.eternity.upgrades = [...auto];
-    d.galactic = { galaxy: 'milkyway', next: 'milkyway', cleared: ['milkyway'], autoAt: D(0) };
+    d.galactic = { galaxy: 'milkyway', next: 'milkyway', cleared: ['milkyway'], autoAt: D(0), here: {}, explore: true };
     d.totals.run.galaxyCores = D(0);
-    d.totals.run.darkMatter = D(1.6e9);
+    d.totals.run.darkMatter = D(1.6e13);
     d.galacticTree = {};
     invalidateStats();
     tick(d, 1.01);
@@ -389,7 +406,7 @@ describe('Eternity', () => {
   });
 
   it('never cuts an unfinished Trial short, and "amount" waits for your number', () => {
-    const s = crunched();
+    const s = only(crunched(), 'supernova');
     s.eternity.upgrades = ['et.nova'];
     s.tier = BALANCE.supernova.tier;
     s.trials.active = ['dim'];
@@ -407,7 +424,7 @@ describe('Eternity', () => {
   });
 
   it('"double" also goes once the run\'s gain per second starts to fall, so passive income can never stall it', () => {
-    const s = crunched();
+    const s = only(crunched(), 'supernova');
     s.eternity.upgrades = ['et.nova'];
     s.tier = BALANCE.supernova.tier;
     s.stats.supernovasAll = 5;
@@ -421,7 +438,7 @@ describe('Eternity', () => {
   });
 
   it('a layer whose reset is free goes as soon as it is ready, however far passive income has run ahead (found by the simulator)', () => {
-    const s = crunched();
+    const s = only(crunched(), 'supernova');
     s.eternity.upgrades = ['et.nova'];
     s.tier = BALANCE.supernova.tier;
     s.stats.supernovasAll = 5;
@@ -437,7 +454,7 @@ describe('Eternity', () => {
   });
 
   it('buys quietly: automated purchases are marked auto', () => {
-    const s = crunched();
+    const s = only(crunched(), 'supernova');
     s.eternity.upgrades = ['et.nova'];
     gain(s, 'shards', D(1e6));
     s.stats.supernovas = 1;
@@ -478,7 +495,7 @@ describe('save version 18', () => {
 
 describe('quiet automation', () => {
   it("resets made by automation inside a tick are marked auto (no cinematic, toast or chord); the player's own are not", () => {
-    const s = crunched();
+    const s = only(crunched(), 'supernova');
     s.eternity.upgrades = ['et.nova'];
     s.tier = BALANCE.supernova.tier;
     s.stats.supernovasAll = 5;

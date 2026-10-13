@@ -1,3 +1,4 @@
+import { manual } from './manual';
 import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { registerContent } from '../../src/content';
@@ -29,7 +30,7 @@ function player(singularities = 8, seed = 5): GameState {
   s.stats.nebulasAll = 30;
   s.forge.on = false;
   invalidateStats();
-  return s;
+  return manual(s);
 }
 
 function clone(s: GameState): GameState {

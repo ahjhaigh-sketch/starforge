@@ -6,7 +6,7 @@ import { type CostCurve, lateRamp } from '../cost';
 import { D, type Decimal, ONE, ZERO } from '../decimal';
 import { events } from '../events';
 import { drawHits, effLog10 } from '../odds';
-import { cur, gain, type GameState, spend } from '../state';
+import { cur, gain, type GameState, spend, usable } from '../state';
 import { registerSources, stat } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
 import { catchComet, cometOnScreen } from './comets';
@@ -37,7 +37,7 @@ export function teamSlots(s: GameState): number {
 }
 
 const eggCurve: CostCurve = lateRamp({ base: W.eggBase, brackets: [{ from: 0, ratio: W.eggGrowth }] });
-export const eggPlan = (s: GameState): PurchasePlan => planLimited(eggCurve, s.wyrms.eggs, cur(s, 'essence'), s.settings.buyAmount, s.settings.customBuyAmount, Infinity);
+export const eggPlan = (s: GameState): PurchasePlan => planLimited(eggCurve, s.wyrms.eggs, usable(s, 'essence'), s.settings.buyAmount, s.settings.customBuyAmount, Infinity);
 
 /** log10 of the effective odds of a species: rune odds at the square root of your luck. */
 export function speciesEffLog(s: GameState, w: WyrmSpecies): number {
@@ -159,7 +159,7 @@ const trainCurve: CostCurve = lateRamp({ base: W.trainBase, brackets: [{ from: 0
 /** Levels for a stack: Iron alloy, with Wyrm XP making every alloy count for more. */
 export function trainPlan(s: GameState, key: string): PurchasePlan {
   const xp = stat(s, 'wyrmXp').max(1);
-  const plan = planLimited(trainCurve, stackLevel(s, key), cur(s, 'alloy.iron').mul(xp), s.settings.buyAmount, s.settings.customBuyAmount, Infinity);
+  const plan = planLimited(trainCurve, stackLevel(s, key), usable(s, 'alloy.iron').mul(xp), s.settings.buyAmount, s.settings.customBuyAmount, Infinity);
   return { ...plan, cost: plan.cost.div(xp) };
 }
 

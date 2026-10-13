@@ -45,7 +45,8 @@ function CrunchBar() {
   const pct = useSnap((s) => s.crunchPct);
   const slim = useSnap((s) => s.autoBars.includes('crunch'));
   const open = useUi((s) => s.open);
-  if (!visible) return null;
+  const gone = useSnap((s) => s.goneBars.split(',').includes('crunch'));
+  if (!visible || gone) return null;
   return (
     <button
       type="button"
@@ -119,7 +120,8 @@ function GalacticBar() {
   const pct = useSnap((s) => s.galacticPct);
   const slim = useSnap((s) => s.autoBars.includes('galactic'));
   const open = useUi((s) => s.open);
-  if (!visible) return null;
+  const gone = useSnap((s) => s.goneBars.split(',').includes('galactic'));
+  if (!visible || gone) return null;
   return (
     <button
       type="button"
@@ -154,7 +156,8 @@ function SingularityBar() {
   const pct = useSnap((s) => s.singularityPct);
   const slim = useSnap((s) => s.autoBars.includes('singularity'));
   const open = useUi((s) => s.open);
-  if (!visible) return null;
+  const gone = useSnap((s) => s.goneBars.split(',').includes('singularity'));
+  if (!visible || gone) return null;
   return (
     <button
       type="button"
@@ -189,14 +192,14 @@ function NebulaBar() {
   const pct = useSnap((s) => s.nebulaPct);
   const slim = useSnap((s) => s.autoBars.includes('nebula'));
   const open = useUi((s) => s.open);
-  if (!visible) return null;
+  const gone = useSnap((s) => s.goneBars.split(',').includes('nebula'));
+  if (!visible || gone) return null;
   return (
     <button
       type="button"
       className={cx('nova nebula-bar chunk pop', ready ? 'ready' : 'locked', slim && 'slim')}
       style={tint('#1E6F88')}
-      disabled={!ready}
-      onClick={() => startNebula(open)}
+      onClick={() => (ready ? startNebula(open) : open('nebula'))}
       aria-label={ready ? `Go Nebula for ${gain} Nebula Essence` : `Nebula. ${req}.`}
       data-testid="nebula"
     >
@@ -228,55 +231,62 @@ export function BottomBar() {
   const ready = useSnap((s) => s.novaReady);
   const gain = useSnap((s) => s.novaGain);
   const novaSlim = useSnap((s) => s.autoBars.includes('supernova'));
+  // 1.4.0: a layer that runs itself completely leaves the screen (its bar, and a fully evolved star's Evolve button)
+  const novaGone = useSnap((s) => s.goneBars.split(',').includes('supernova'));
+  const evolveGone = useSnap((s) => s.goneBars.split(',').includes('stardust')) && !next;
   const setDrawer = useUi((s) => s.setDrawer);
   const open = useUi((s) => s.open);
   return (
     <div className="bottom">
       <div className="bottom-row">
-        <button
-          type="button"
-          className={cx('evolve chunk gloss pop', can && 'can')}
-          style={tint('#4C3BC4')}
-          onClick={() => commands.evolve()}
-          disabled={!next}
-          aria-label={next ? `Evolve to ${next} for ${cost} Stardust` : 'Your star is fully evolved'}
-        >
-          <span className="evolve-fill" style={{ width: `${pct}%` }} />
-          <span className="ol-sm">{next ? `Evolve to ${next}` : 'Fully evolved'}</span>
-          {next && (
-            <span className="cost ol-sm">
-              <Icon name="stardust" />
-              {cost}
-            </span>
-          )}
-        </button>
+        {!evolveGone && (
+          <button
+            type="button"
+            className={cx('evolve chunk gloss pop', can && 'can')}
+            style={tint('#4C3BC4')}
+            onClick={() => commands.evolve()}
+            disabled={!next}
+            aria-label={next ? `Evolve to ${next} for ${cost} Stardust` : 'Your star is fully evolved'}
+          >
+            <span className="evolve-fill" style={{ width: `${pct}%` }} />
+            <span className="ol-sm">{next ? `Evolve to ${next}` : 'Fully evolved'}</span>
+            {next && (
+              <span className="cost ol-sm">
+                <Icon name="stardust" />
+                {cost}
+              </span>
+            )}
+          </button>
+        )}
         <button type="button" className="evolve chunk gloss pop phone-only" style={tint('#5546B8')} onClick={() => setDrawer(true)}>
           <span className="ol-sm">Engines</span>
         </button>
       </div>
-      <button
-        type="button"
-        className={cx('nova chunk pop', ready ? 'ready' : 'locked', novaSlim && 'slim')}
-        disabled={!ready}
-        onClick={() => startSupernova(open)}
-        aria-label={ready ? `Go Supernova for ${gain} Nova Shards. ${novaReq}.` : `Supernova. ${novaReq}.`}
-        data-testid="supernova"
-        {...tipProps('nova', 'above', 'Supernova', <span>{ready ? 'Reset engines, Stardust and your star for Nova Shards. Shards buy the Nova Tree and boost all Stardust.' : novaReq}.</span>)}
-      >
-        <span className="fill" style={{ width: `${novaPct}%` }} />
-        <span className="inner">
-          {!ready && <Icon name="lock" className="nova-lock" />}
-          <span className="title ol">SUPERNOVA</span>
-          {novaSlim && <AutoTag />}
-          {ready && (
-            <span className="gain ol">
-              {gain}
-              <Icon name="shard" />
-            </span>
-          )}
-          <span className="req ol-sm">{novaReq}</span>
-        </span>
-      </button>
+      {!novaGone && (
+        <button
+          type="button"
+          className={cx('nova chunk pop', ready ? 'ready' : 'locked', novaSlim && 'slim')}
+          disabled={!ready}
+          onClick={() => startSupernova(open)}
+          aria-label={ready ? `Go Supernova for ${gain} Nova Shards. ${novaReq}.` : `Supernova. ${novaReq}.`}
+          data-testid="supernova"
+          {...tipProps('nova', 'above', 'Supernova', <span>{ready ? 'Reset engines, Stardust and your star for Nova Shards. Shards buy the Nova Tree and boost all Stardust.' : novaReq}.</span>)}
+        >
+          <span className="fill" style={{ width: `${novaPct}%` }} />
+          <span className="inner">
+            {!ready && <Icon name="lock" className="nova-lock" />}
+            <span className="title ol">SUPERNOVA</span>
+            {novaSlim && <AutoTag />}
+            {ready && (
+              <span className="gain ol">
+                {gain}
+                <Icon name="shard" />
+              </span>
+            )}
+            <span className="req ol-sm">{novaReq}</span>
+          </span>
+        </button>
+      )}
       <NebulaBar />
       <SingularityBar />
       <GalacticBar />

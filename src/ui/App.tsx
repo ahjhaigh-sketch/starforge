@@ -45,6 +45,7 @@ import { WeatherPanel } from './screens/WeatherPanel';
 import { DefensePanel } from './screens/DefensePanel';
 import { AltarPanel } from './screens/AltarPanel';
 import { CreditsPanel, MultiverseConfirmPanel, MultiversePanel, SparkTreePanel, StoryPanel, UniverseForgePanel } from './screens/MultiversePanels';
+import { ApotheosisPanel, GenesisPanel, HyperversePanel, LawsPanel, LivesPanel, OmniversePanel, PantheonPanel, TesseractPanel } from './screens/BeyondPanels';
 import { useUi } from './store';
 
 /** Shown while time away is being simulated; fades in only if that takes a moment. */
@@ -176,6 +177,14 @@ export function App() {
       <MultiverseConfirmPanel />
       <SparkTreePanel />
       <UniverseForgePanel />
+      <HyperversePanel />
+      <TesseractPanel />
+      <OmniversePanel />
+      <PantheonPanel />
+      <GenesisPanel />
+      <LawsPanel />
+      <ApotheosisPanel />
+      <LivesPanel />
       <StoryPanel />
       <CreditsPanel />
       <WardrobePanel />

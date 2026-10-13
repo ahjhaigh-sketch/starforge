@@ -36,8 +36,8 @@ export const MEGASTRUCTURES: readonly MegastructureDef[] = [
     desc: 'A cloud of mirrors round your star, drinking every photon.',
     galactics: 1,
     cost: { stardust: [380, 20], 'alloy.iron': [50, 4], darkMatter: [7, 1] },
-    reward: { stat: 'productionMult', op: 'mul', value: 1e10 },
-    rewardText: 'Stardust x1e10',
+    reward: { stat: 'productionMult', op: 'mul', value: 1e11 },
+    rewardText: 'Stardust x1e11',
   },
   {
     id: 'ringworld',
@@ -46,8 +46,8 @@ export const MEGASTRUCTURES: readonly MegastructureDef[] = [
     desc: 'A habitable band all the way round the star.',
     galactics: 1,
     cost: { ore: [90, 1.5], 'alloy.gold': [52, 2.5], galaxyCores: [0.7, 0.4] },
-    reward: { stat: 'colonyCapacity', op: 'mul', value: 3 },
-    rewardText: 'Colony capacity x3',
+    reward: { stat: 'colonyCapacity', op: 'mul', value: 4 },
+    rewardText: 'Colony capacity x4',
   },
   {
     id: 'matrioshka',
@@ -55,9 +55,10 @@ export const MEGASTRUCTURES: readonly MegastructureDef[] = [
     color: '#B06BFF',
     desc: 'Nested shells of thought, each fed by the waste heat of the last.',
     galactics: 2,
-    cost: { essence: [150, 25], embers: [16, 1], antimatter: [12, 4] },
-    reward: { stat: 'essenceGain', op: 'mul', value: 1e10 },
-    rewardText: 'Essence x1e10',
+    // 1.4.0: Antimatter was the wall (the playtest: "way too hard to get that much antimatter"); rewards a notch up too
+    cost: { essence: [150, 25], embers: [16, 1], antimatter: [12, 3] },
+    reward: { stat: 'essenceGain', op: 'mul', value: 1e11 },
+    rewardText: 'Essence x1e11',
   },
   {
     id: 'starlifter',
@@ -66,8 +67,8 @@ export const MEGASTRUCTURES: readonly MegastructureDef[] = [
     desc: 'Magnetic funnels that pull matter from the poles.',
     galactics: 3,
     cost: { shards: [270, 25], darkMatter: [10, 1.5], scales: [3, 0.5] },
-    reward: { stat: 'darkMatterGain', op: 'mul', value: 1.25 },
-    rewardText: 'Dark Matter x1.25',
+    reward: { stat: 'darkMatterGain', op: 'mul', value: 1.35 },
+    rewardText: 'Dark Matter x1.35',
   },
   {
     id: 'stellarengine',
@@ -75,9 +76,9 @@ export const MEGASTRUCTURES: readonly MegastructureDef[] = [
     color: '#2EE6FF',
     desc: 'A mirror the size of a world: it steers the whole star.',
     galactics: 4,
-    cost: { antimatter: [18, 3], 'alloy.iron': [60, 2], galaxyCores: [1, 0.5] },
-    reward: { stat: 'gameSpeed', op: 'add', value: 0.1 },
-    rewardText: 'The game runs 10% faster',
+    cost: { antimatter: [16, 2.5], 'alloy.iron': [60, 2], galaxyCores: [1, 0.5] },
+    reward: { stat: 'gameSpeed', op: 'add', value: 0.12 },
+    rewardText: 'The game runs 12% faster',
   },
   {
     id: 'birch',
@@ -86,8 +87,8 @@ export const MEGASTRUCTURES: readonly MegastructureDef[] = [
     desc: 'A shell round a black hole, wider than a solar system.',
     galactics: 5,
     cost: { essence: [250, 10], darkMatter: [13, 1], galaxyCores: [1.5, 0.5] },
-    reward: { stat: 'galaxyCoreGain', op: 'mul', value: 1.2 },
-    rewardText: 'Galaxy Cores x1.2',
+    reward: { stat: 'galaxyCoreGain', op: 'mul', value: 1.25 },
+    rewardText: 'Galaxy Cores x1.25',
   },
 ];
 
@@ -107,6 +108,11 @@ export const CURRENCY_LABEL: Record<string, string> = {
   'alloy.iron': 'Iron alloy',
   'alloy.gold': 'Gold alloy',
   supply: 'Supply',
+  // 1.4.0: beyond the Multiverse
+  tesseracts: 'Tesseracts',
+  aether: 'Aether',
+  originSeeds: 'Origin Seeds',
+  divinity: 'Divinity',
 };
 
 // ---------- Colonies ----------

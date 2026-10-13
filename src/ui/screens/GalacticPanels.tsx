@@ -128,6 +128,7 @@ export function GalacticConfirmPanel() {
           </div>
           <p className="center">Galaxy Cores buy the Galactic Tree and Galactic Constants. You will restart in {g?.nextGalaxy ?? 'the Milky Way'}.</p>
           {r.warn && <p className="reset-warn" role="note">{r.warn}</p>}
+          {r.note && <p className="reset-note" role="note">{r.note}</p>}
           <div className="confirm-cols">
             <div className="well">
               <h4>Resets</h4>
@@ -191,7 +192,37 @@ export function GalaxyMapPanel() {
       ) : (
         <>
           <div className="tree-head">
-            <p>Pick where your next Galactic Rebirth takes you. A galaxy's rule holds only while you are there; meet its goal there and its reward is yours for good. Explore one to open the next. {data.cleared} of 20 explored.</p>
+            <p>Pick where your next Galactic Rebirth takes you. A galaxy's rule holds only while you are there; meet its goal there (everything you gain after arriving counts, passive income too) and its reward is yours for good. Explore one to open the next. {data.cleared} of 20 explored.</p>
+          </div>
+          <div className="galaxy-status chunk" style={tint('#1E2A5E')} data-testid="galaxy-status">
+            <span className="galaxy-status-here">
+              <small>You are in</small>
+              <b className="ol" style={{ color: data.status.hereColor }}>
+                {data.status.here}
+              </b>
+            </span>
+            {data.started && (
+              <span className="galaxy-status-goal">
+                <small>{data.status.explored ? 'Explored: its reward is yours' : `Goal: ${data.status.goal}`}</small>
+                {!data.status.explored && (
+                  <>
+                    <ProgressBar value={data.status.pct / 100} color="#B4F04A" label="Goal here" />
+                    <span className="num">{data.status.progress}</span>
+                  </>
+                )}
+              </span>
+            )}
+            <span className="galaxy-status-next">
+              <small>Next Galactic Rebirth goes to</small>
+              <b>{data.status.next}</b>
+            </span>
+            <span className="galaxy-status-next">
+              <small>Explored this Crunch run</small>
+              <b className="num">{data.status.crunch}</b>
+            </span>
+            <Button size="sm" gloss={false} color={data.status.explore ? 'var(--lime)' : '#5A5F8F'} onClick={() => commands.setAutoExplore(!data.status.explore)} aria-pressed={data.status.explore} data-testid="auto-explore">
+              Auto-explore {data.status.explore ? 'on' : 'off'}
+            </Button>
           </div>
           <div className="galaxy-grid">
             {data.cards.map((g) => (
@@ -265,7 +296,7 @@ export function ObservatoryPanel() {
       ) : (
         <>
           <div className="tree-head">
-            <p>A new sky every Galactic run. Pick a star, then another, to draw a link (pick a linked pair again to erase it). Long links between heavy, near stars score most, and every closed shape adds 25%. Record a better constellation for Star Charts. Stuck? Hint shows the best next link; Auto-draw draws a strong shape for you.</p>
+            <p>A new sky every Galactic run. Pick a star, then another, to draw a link (pick a linked pair again to erase it). Long links between heavy, near stars score most, and every closed shape adds 25%. Record a better constellation for Star Charts; every sky you record on adds 5% to Star Charts for good. Stuck? Hint shows the best next link; Auto-draw draws a strong shape and records it.</p>
             <CoreChip value={data.charts} icon="telescope" />
           </div>
           <div className="obs-cols">
@@ -303,6 +334,9 @@ export function ObservatoryPanel() {
                 <span>Star Score (best on this sky {data.best})</span>
                 <span>
                   {data.used} of {data.max} links · {data.loops} closed {data.loops === 1 ? 'shape' : 'shapes'}
+                </span>
+                <span>
+                  Skies charted: <b className="num">{data.skies}</b> (Star Charts +{data.bonus}%)
                 </span>
                 <Button color={data.pays > 0 ? '#5B45C2' : '#5A5F8F'} disabled={data.pays <= 0} onClick={() => commands.recordConstellation()} data-testid="obs-record">
                   {data.pays > 0 ? `Record: +${data.pays} Star Charts` : 'Beat your best to record'}

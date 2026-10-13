@@ -44,7 +44,7 @@ export function singularityReport(): SingularityReport {
     embers: format(cur(s, 'embers'), n()),
     canKey: !s.singularity.key && keyOnSale(s) && cur(s, 'embers').gte(SG.keyEmbers),
     essence: format(runEssence(s), n()),
-    essenceNeed: format(SG.runEssence, n()),
+    essenceNeed: format(SG.need, n()),
     next: format(nextDarkMatterAt(s), n()),
     done: resetsDone(s, def),
     autoUnlocked: milestoneReached(s, 'singularity', 'autoNebula'),

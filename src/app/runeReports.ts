@@ -3,7 +3,8 @@ import { withSigil } from './sigilReports';
 import { NEBULA_TREE } from '../content/nebulaTree';
 import { RUNE_RARITIES, RUNE_STAT_WORDS, runesOf, SHRINE_BY_ID, SHRINES, type RuneDef } from '../content/runes';
 import { D, type Decimal } from '../engine/decimal';
-import { bestGainLog, layer, milestoneReached, resetPreview, resetsDone, weakReset } from '../engine/layers';
+import { bestGainLog, ceilingFor, layer, milestoneReached, resetPreview, resetsDone, weakReset } from '../engine/layers';
+import { LAYER_COUNTERS } from '../content/layers';
 import { cur } from '../engine/state';
 import { stat } from '../engine/stats';
 import { nebulaGain, nebulaReady, nextEssenceAt, runShards } from '../engine/systems/nebula';
@@ -65,6 +66,19 @@ export interface LayerConfirm {
   kept: Array<{ label: string; why: string }>;
   /** 1.3.0: a warning when this reset pays under 1% of the layer's best ('' when it doesn't). */
   warn: string;
+  /** 1.4.0: when the reset ceiling holds this reset back, why ('' when it doesn't). */
+  note: string;
+}
+
+/** 1.4.0: a line for the confirm screen when the reset ceiling (BALANCE.resetCeiling) is holding a reset back. */
+export function ceilingNote(id: string, gain: Decimal): string {
+  const s = game.state;
+  const def = layer(id);
+  const done = def ? resetsDone(s, def) : 0;
+  const ever = s.stats[LAYER_COUNTERS[id]?.all ?? ''] ?? done;
+  const cap = ceilingFor(ever);
+  if (!def || !cap || gain.lt(D(10).pow(cap.c - cap.a))) return '';
+  return `${ever === 0 ? `Your first ${def.name}` : `${def.name} ${ever + 1}`} is held under about ${format(D(10).pow(cap.c), n())} by the reset ceiling, so the next tree opens slowly; every ${def.name} lifts it.`;
 }
 
 /** What raises each layer's gain, for the weak-reset warning. */
@@ -83,7 +97,7 @@ export function layerConfirm(id: string): LayerConfirm | null {
   if (!def || !p) return null;
   const best = bestGainLog(s, id);
   const warn = weakReset(s, id, p.gain) && best !== null ? `This pays far less than your best ${def.name} (about +${format(D(10).pow(Math.min(best, 9e15)), n())}). ${BUILD_UP[id] ?? ''}` : '';
-  return { name: def.name, action: def.action, gain: (def.currency === 'sparks' ? formatFifths : format)(p.gain, n()), currency: def.currency === 'essence' ? 'Nebula Essence' : def.currency, ready: def.ready(s), resets: p.resets, kept: p.kept, warn };
+  return { name: def.name, action: def.action, gain: (def.currency === 'sparks' ? formatFifths : format)(p.gain, n()), currency: def.currency === 'essence' ? 'Nebula Essence' : def.currency, ready: def.ready(s), resets: p.resets, kept: p.kept, warn, note: ceilingNote(id, p.gain) };
 }
 
 export function nebulaTreeReport(): { open: boolean; essence: string; nodes: TreeNodeView[]; edges: Array<[string, string]> } {

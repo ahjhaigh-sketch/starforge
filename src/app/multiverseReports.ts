@@ -2,7 +2,7 @@ import { BALANCE } from '../content/balance';
 import { CREDITS, MULTIVERSE_ARMS, STORY, UNIVERSE_RULES } from '../content/multiverse';
 import { layer, milestoneReached, resetsDone } from '../engine/layers';
 import { cur } from '../engine/state';
-import { crunchesThisUniverse, keeps, maxRules, multiverseGain, multiverseReady, multiverseSeen, ruleReward, sparkFlag } from '../engine/systems/multiverse';
+import { crunchesThisUniverse, keeps, maxRules, multiverseGain, multiverseReady, multiverseSeen, ruleReward, sparkFlag, BARRIER_KEEPS } from '../engine/systems/multiverse';
 import { formatFifths } from '../ui/format';
 import { game } from './game';
 
@@ -45,7 +45,7 @@ export function multiverseReport(): MultiverseReport {
     reward: pct(ruleReward(s)),
     done: resetsDone(s, def),
     omniOpen: milestoneReached(s, 'multiverse', 'omni'),
-    unbound: MULTIVERSE_ARMS.map((a) => ({ name: a.name, color: a.color, kept: keeps(s, a.key) })),
+    unbound: MULTIVERSE_ARMS.map((a) => ({ name: a.name, color: a.color, kept: BARRIER_KEEPS.has(a.key) || keeps(s, a.key) })),
     autoCrunch: sparkFlag(s, 'autoCrunch'),
     storySeen: s.multiverse.storySeen,
     milestones: def.milestones.map((m) => ({ at: m.at, text: m.text, reached: milestoneReached(s, 'multiverse', m.id) })),

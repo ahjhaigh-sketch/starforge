@@ -185,15 +185,75 @@ export function FocusCards() {
   );
 }
 
-/** Under the shop: upcoming shops and layers, so there is always something in reach. */
+const SECTION_NAMES: Readonly<Record<string, string>> = {
+  stardust: 'Start',
+  supernova: 'Supernova',
+  nebula: 'Nebula',
+  singularity: 'Singularity',
+  galactic: 'Galactic',
+  crunch: 'Big Crunch',
+  multiverse: 'Multiverse',
+  hyperverse: 'Hyperverse',
+  omniverse: 'Omniverse',
+  genesis: 'Genesis',
+  apotheosis: 'Apotheosis',
+};
+const SECTION_ORDER = Object.keys(SECTION_NAMES);
+
+export interface RailSection {
+  id: string;
+  name: string;
+  /** The first layer you haven't reached: titled "Coming up", with its "???" silhouettes. */
+  coming: boolean;
+  open: number;
+  total: number;
+  items: RailItem[];
+}
+
+/**
+ * 1.4.0: the side's systems, layer by layer (the playtest: "organizing them into different sections, layer by
+ * layer ... and it'll display the title name above it"). Every layer you've reached shows its systems under its
+ * name; the next one is "Coming up", silhouettes and all; anything further stays out of sight. A layer whose
+ * systems all run themselves has tucked them away, so it drops out of the list.
+ */
+export function railSections(items: readonly RailItem[]): RailSection[] {
+  const out: RailSection[] = [];
+  let coming = false;
+  for (const id of SECTION_ORDER) {
+    const list = items.filter((x) => x.section === id);
+    if (list.length === 0) continue;
+    const open = list.filter((x) => x.state === 'open' || x.state === 'new' || x.state === 'soon').length;
+    // every layer you've reached shows; of those you haven't, only the first (a layer can open before an earlier
+    // one has anything to show, when everything in that one runs itself or was hidden)
+    if (open > 0) out.push({ id, name: SECTION_NAMES[id]!, coming: false, open, total: list.length, items: list.filter((x) => x.state !== 'hidden') });
+    else if (!coming) {
+      coming = true;
+      out.push({ id, name: SECTION_NAMES[id]!, coming: true, open: 0, total: list.length, items: list });
+    }
+  }
+  // "Coming up" goes last, after every layer you have
+  return [...out.filter((x) => !x.coming), ...out.filter((x) => x.coming)];
+}
+
+/** Under the shop: every layer's systems in sections, then what's coming up. */
 export function TeaserStack() {
   const right = useSnap((s) => s.railRight);
+  const sections = railSections(right);
   return (
-    <div className="teasers" aria-label="Coming up">
-      <div className="teasers-head ol-sm">Coming up</div>
-      <div className="teasers-grid">
-        {visibleItems(right, 'right').map((x) => (
-          <RailButton key={x.id} item={x} side="left" small />
+    <div className="teasers" aria-label="Systems by layer">
+      <div className="teasers-scroll">
+        {sections.map((sec) => (
+          <section key={sec.id} className={cx('teaser-section', sec.coming && 'coming')} data-section={sec.id} aria-label={sec.coming ? `Coming up: ${sec.name}` : sec.name}>
+            <div className="teasers-head ol-sm">
+              <span>{sec.coming ? 'Coming up' : sec.name}</span>
+              <small>{sec.coming ? sec.name : <span className="num">{`${sec.open} / ${sec.total}`}</span>}</small>
+            </div>
+            <div className="teasers-grid">
+              {sec.items.map((x) => (
+                <RailButton key={x.id} item={x} side="left" small />
+              ))}
+            </div>
+          </section>
         ))}
       </div>
     </div>

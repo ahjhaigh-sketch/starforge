@@ -58,3 +58,10 @@
 @keyframes obs-hint { 50% { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) { .obs-hint { animation: none; } }
 .reduced-motion .obs-hint { animation: none; }
+
+/* 1.4.0: where you are on the Galaxy Map, its goal, and where the next rebirth goes */
+.galaxy-status { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1.1rem; padding: 0.6rem 0.8rem; border-radius: 14px; margin: 0.3rem 0 0.6rem; }
+.galaxy-status > span { display: flex; flex-direction: column; gap: 0.15rem; min-width: 8rem; }
+.galaxy-status small { color: var(--text-dim); font-weight: 700; font-size: 0.74rem; }
+.galaxy-status-here b { font-family: var(--font-display); font-weight: 400; font-size: 1.15rem; }
+.galaxy-status-goal { flex: 1 1 14rem; }

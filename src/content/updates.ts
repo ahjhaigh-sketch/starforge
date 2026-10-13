@@ -8,6 +8,24 @@ export interface UpdateNote {
 
 export const UPDATES: readonly UpdateNote[] = [
   {
+    version: '1.4.0',
+    date: '13 October 2026',
+    title: 'Everything runs itself, and four more layers',
+    notes: [
+      'Every layer you have passed runs itself. One layer on, its reset, tree, constants and main systems take care of themselves; two layers on, all of it does, and its menus and bars leave the screen so only what matters is left. The Automation menu lists every layer with its own switch and reset rule, and has an Auto all button.',
+      'Automation is instant: constants, planets and every tree buy everything they can at once, and the tree auto-buyers start switched on. The Starforge, Deep Core, Fusion, starships, the Merchant, shrines, auras, Wyrms, the Nursery, tarot, the Mirror, Planet Defense, the Spire, the Leviathans, megastructures, colonies, the Observatory and terraforming all have automation now.',
+      'Galactic milestones: at 6 Galactic Rebirths the Antimatter Mirror runs itself, at 8 Galactic Rebirths happen by themselves once your galaxy is explored, and at 9 megastructures, colonies and Galactic Constants build themselves.',
+      'Galaxies explore properly: a galaxy counts everything you gain after arriving, passive income too. Auto-explore sends your next Galactic Rebirth to the first galaxy you have not explored, and the Galaxy Map shows where you are, how far its goal is and where you go next. Goals are bigger now.',
+      'Galaxy Cores no longer run away: past a billion in one rebirth they grow far more slowly. The Big Crunch needs 100 billion Galaxy Cores gathered in its run.',
+      "A layer's first reset can no longer hand you millions of its currency: it bends towards 100,000 however much you stacked up, and every reset of that layer lifts the limit, so each new tree opens slowly.",
+      'Four new resets beyond the Multiverse: the Hyperverse and its Tesseract, the Omniverse and its Pantheon of eight Aspects, Genesis and the Laws of Physics, and Apotheosis with Past Lives, Miracles and the end of the story. A reset never reaches more than three layers down, so the Multiverse no longer resets the Stardust, Supernova or Nebula layers.',
+      'The systems at the side are grouped by layer, each with its title, and "Coming up" is the next layer you have not reached.',
+      'Leviathans and the Scale Tree are easier to finish; megastructures need far less Antimatter for their last stages and reward a little more; Auto-draw in the Observatory records too, every sky you chart adds 5% Star Charts for good, and the Star Chart has three charts that level up for ever.',
+      'Terraforming: a Paint the best layout button, and the planet tabs now show the planet you picked.',
+      "Stats shows every layer's gains and counts; there are 17 new medals and two new Index pages.",
+    ],
+  },
+  {
     version: '1.3.0',
     date: '13 October 2026',
     title: 'Keep what you earn',

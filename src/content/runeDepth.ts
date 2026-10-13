@@ -161,6 +161,9 @@ export const INDEX_PAGES: readonly IndexPage[] = [
   { id: 'banners', name: 'Spire banners', icon: 'spire', stat: 'spirePower', per: 1.25, built: true, req: { kind: 'count', stat: 'spireBest', count: 10, noun: 'Spire floor' } },
   { id: 'sigils', name: 'Sigils', icon: 'sigil', stat: 'essenceGain', per: 1.25, built: true, req: { kind: 'count', stat: 'sigils', count: 1, noun: 'sigil' } },
   { id: 'mega', name: 'Megastructures', icon: 'mega', stat: 'darkMatterGain', per: 1.05, built: true, req: { kind: 'count', stat: 'megaStages', count: 1, noun: 'megastructure stage' } },
+  // 1.4.0: beyond the Multiverse
+  { id: 'rites', name: 'Rites', icon: 'pantheon', stat: 'aetherGain', per: 1.05, built: true, req: { kind: 'count', stat: 'omniversesAll', count: 1, noun: 'Omniverse' } },
+  { id: 'miracles', name: 'Miracles', icon: 'divinity', stat: 'divinityGain', per: 1.1, built: true, req: { kind: 'count', stat: 'apotheosesAll', count: 1, noun: 'Apotheosis' } },
 ];
 
 export const INDEX_PAGE_BY_ID: ReadonlyMap<string, IndexPage> = new Map(INDEX_PAGES.map((p) => [p.id, p]));

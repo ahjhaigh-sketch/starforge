@@ -8,7 +8,7 @@ import { buyConstant } from '../engine/systems/constants';
 import { buyPlanet, levelPlanet, setPlanetType } from '../engine/systems/orbitals';
 import { claimQuest } from '../engine/systems/quests';
 import { performReset } from '../engine/layers';
-import { setAuto } from '../engine/systems/automation';
+import { AUTO_BUYERS, setAuto } from '../engine/systems/automation';
 import { buyNode } from '../engine/systems/novaTree';
 import { type BeltUpgradeId } from '../content/belt';
 import { beltTierUp, buyBeltUpgrade, buyDrillBit, buyDrillDrone, harvest, tapCore } from '../engine/systems/belt';
@@ -43,6 +43,12 @@ import type { BuildingId } from '../content/galaxyBuild';
 import type { AutoLayer } from '../content/crunch';
 import { ECHO_BOARD, echoTap } from '../engine/systems/echoes';
 import { buyEternity, setEternityAuto } from '../engine/systems/eternity';
+import { autoAll } from '../engine/systems/autoEntries';
+import { AUTO_LAYERS } from '../content/layers';
+import { setLayerAuto } from '../engine/layerAuto';
+import { paintBestLayout } from '../engine/systems/colonies';
+import { buyAxis, buyDevotion, buyMiracle, setAscendant, setAxis, setGuide, setLaw, wakeAspect } from '../engine/systems/beyond';
+import { autoPickGalaxy } from '../engine/systems/galactic';
 import { brew, drink, hintRecipe, type BrewResult } from '../engine/systems/alchemy';
 import { setAutoWeather, summonWeather } from '../engine/systems/weather';
 import { buySigil, toggleSigil } from '../engine/systems/sigils';
@@ -605,8 +611,10 @@ export const commands = {
     done();
   },
   /** 1.3.0: the Observatory draws a strong shape for you. */
+  /** 1.4.0: Auto-draw records the shape too, if it beats your best on this sky. */
   autoChart(): boolean {
     const ok = autoChart(game.state);
+    if (ok) recordConstellation(game.state);
     done();
     return ok;
   },
@@ -788,6 +796,70 @@ export const commands = {
     done();
     return ok;
   },
+  /** 1.4.0: every automation you've earned, switched on (the Automation menu's Auto all). */
+  autoAll(): number {
+    const n = autoAll(game.state);
+    done();
+    events.emit({ t: 'toast', title: 'Auto all', body: n > 0 ? `${n} switch${n === 1 ? '' : 'es'} turned on: everything you've earned now runs itself.` : 'Everything you have earned is already running itself.', icon: 'auto' });
+    return n;
+  },
+  /** 1.4.0, beyond the Multiverse: the Tesseract, the Pantheon, the Laws, Past Lives and Miracles. */
+  buyAxis(i: number): boolean {
+    const ok = buyAxis(game.state, i);
+    done();
+    return ok;
+  },
+  setAxis(i: number, layerId: string): boolean {
+    const ok = setAxis(game.state, i, layerId);
+    done();
+    return ok;
+  },
+  wakeAspect(id: string): boolean {
+    const ok = wakeAspect(game.state, id);
+    done();
+    return ok;
+  },
+  buyDevotion(id: string): boolean {
+    const ok = buyDevotion(game.state, id);
+    done();
+    return ok;
+  },
+  setAscendant(id: string, on: boolean): boolean {
+    const ok = setAscendant(game.state, id, on);
+    done();
+    return ok;
+  },
+  setLaw(id: string, value: number): boolean {
+    const ok = setLaw(game.state, id, value);
+    done();
+    return ok;
+  },
+  setGuide(i: number): boolean {
+    const ok = setGuide(game.state, i);
+    done();
+    return ok;
+  },
+  buyMiracle(id: string): boolean {
+    const ok = buyMiracle(game.state, id);
+    done();
+    return ok;
+  },
+  markEpilogueSeen() {
+    game.state.lives.storySeen = true;
+    done();
+  },
+  /** 1.4.0: paints the best layout on a planet (each hex costs its Supply). */
+  paintBestLayout(i: number): number {
+    const n = paintBestLayout(game.state, i);
+    done();
+    return n;
+  },
+  /** 1.4.0: the Galaxy Map's Auto-explore. */
+  setAutoExplore(on: boolean) {
+    game.state.galactic.explore = on;
+    autoPickGalaxy(game.state);
+    done();
+  },
   setEternityAuto(layer: AutoLayer, change: { on?: boolean; mode?: 'double' | 'amount'; at?: number }) {
     const { at, ...rest } = change;
     setEternityAuto(game.state, layer, at === undefined ? rest : { ...rest, at: D(Math.max(0, Number.isFinite(at) ? Math.floor(at) : 0)) });
@@ -951,6 +1023,12 @@ export const commands = {
     game.saveBlocked = 'Reloading';
     saveToSlots(webStore, copy);
     location.reload();
+  },
+  /** 1.4.0, for tests: every layer's automation and every auto-buyer switched off. */
+  devManual() {
+    for (const l of AUTO_LAYERS) setLayerAuto(game.state, l, { on: false });
+    for (const a of AUTO_BUYERS) setAuto(game.state, a.id, { on: false });
+    done();
   },
   devWarp(seconds: number) {
     simulateElapsed(game.state, seconds, { cap: Infinity, efficiency: 1, offline: false });

@@ -1,3 +1,4 @@
+import { manual } from './manual';
 import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { BALANCE } from '../../src/content/balance';
@@ -21,8 +22,8 @@ const playtest = () => importSave(readFileSync('tests/fixtures/save-v21.txt', 'u
 describe('1.3.0: save version 22 loads the real playtest save (version 21)', () => {
   it('keeps everything, and starts with a tenth of each currency kept safe', () => {
     const s = playtest();
-    expect(SAVE_VERSION).toBe(22);
-    expect(s.version).toBe(22);
+    expect(SAVE_VERSION).toBeGreaterThanOrEqual(22);
+    expect(s.version).toBe(SAVE_VERSION);
     expect(s.stats.singularitiesAll).toBe(23);
     expect(s.stats.galacticsAll).toBe(1);
     const stardust = cur(s, 'stardust');
@@ -31,7 +32,7 @@ describe('1.3.0: save version 22 loads the real playtest save (version 21)', () 
   });
 
   it('unsticks the full Comet Fusion board (two of every level from 6 to 16, plus 1, 1 and 2)', () => {
-    const s = playtest();
+    const s = manual(playtest());
     const before = s.fusion.best;
     expect(before).toBe(16);
     tick(s, 60);
@@ -83,7 +84,8 @@ describe('1.3.0: the safe tenth', () => {
 
 describe('1.3.0: passive gains and the Galactic requirement', () => {
   it('Singularity milestone 15 pays 1% of the Singularity gain a second without resetting', () => {
-    const s = playtest();
+    // (1.4.0: with layer automation off, so no Singularity happens by itself in the second)
+    const s = manual(playtest());
     expect(milestoneReached(s, 'singularity', 'passive')).toBe(true);
     const before = cur(s, 'darkMatter');
     const run = s.totals.run.darkMatter!;
@@ -96,7 +98,7 @@ describe('1.3.0: passive gains and the Galactic requirement', () => {
   it('a Galactic Rebirth needs the anti-star at Protostar, not 8 Black Hole stages', () => {
     const s = playtest();
     s.blackHole.mass = D(0);
-    s.totals.run.darkMatter = D(1e10);
+    s.totals.run.darkMatter = D(1e13);
     invalidateStats();
     expect(s.mirror.depth).toBe(11);
     expect(galacticReady(s)).toBe(true);

@@ -3,7 +3,7 @@ import { planFlat, type FlatPlan } from '../buy';
 import { D, Decimal, ONE, ZERO } from '../decimal';
 import { events } from '../events';
 import { onAnyReset } from '../layers';
-import { automatedSpend, cur, free, type GameState, spend } from '../state';
+import { automatedSpend, cur, free, type GameState, spend, usable } from '../state';
 import { registerSources, stat } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
 
@@ -59,7 +59,7 @@ export function bhStage(s: GameState): number {
 export const wheelOpen = (s: GameState) => bhStage(s) >= 8;
 
 /** Feeding Dark Matter with the buy amount: 1 Dark Matter each. */
-export const feedPlan = (s: GameState): FlatPlan => planFlat(ONE, cur(s, 'darkMatter').floor(), s.settings.buyAmount, s.settings.customBuyAmount);
+export const feedPlan = (s: GameState): FlatPlan => planFlat(ONE, usable(s, 'darkMatter').floor(), s.settings.buyAmount, s.settings.customBuyAmount);
 
 export function feedDarkMatter(s: GameState): boolean {
   if (!bhOpen(s)) return false;
@@ -136,7 +136,7 @@ export const wheelBank = (s: GameState, id: string): Decimal => s.wheel.banks[id
 export const reactorPower = (s: GameState): number => Math.min(B.reactorPowerCap, stat(s, 'reactorPower').toNumber());
 export const reactorMult = (s: GameState): Decimal => s.reactor.charge.add(1).pow(B.reactorPow * reactorPower(s));
 
-export const reactorPlan = (s: GameState): FlatPlan => planFlat(ONE, cur(s, 'darkMatter').floor(), s.settings.buyAmount, s.settings.customBuyAmount);
+export const reactorPlan = (s: GameState): FlatPlan => planFlat(ONE, usable(s, 'darkMatter').floor(), s.settings.buyAmount, s.settings.customBuyAmount);
 
 export function feedReactor(s: GameState): boolean {
   if (!reactorOpen(s)) return false;

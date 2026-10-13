@@ -1,3 +1,4 @@
+import { manual } from './manual';
 import { readFileSync } from 'node:fs';
 import fc from 'fast-check';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -37,7 +38,7 @@ function nebulaPlayer(seed = 3): GameState {
   // 1.2.0: Auto-Supernova (40 Supernovas) would reset this run: these tests are about other things
   s.auto['auto.supernova'] = { on: false, spend: 1 };
   invalidateStats();
-  return s;
+  return manual(s);
 }
 
 function clone(s: GameState): GameState {
@@ -230,9 +231,12 @@ describe('the Nebula', () => {
     s.stats.nebulasAll = 0;
     s.totals.run.shards = D(1.5e7);
     expect(nebulaGain(s).toNumber()).toBe(2);
-    // 1.2.0: a big first run pays for its shards (it used to be a flat 2 whatever you had)
+    // 1.2.0: a big first run pays for its shards (it used to be a flat 2 whatever you had); 1.4.0: the reset ceiling
+    // bends a first reset's gain above 1,000 towards 100,000 (452,300 here pays about 13,800)
     s.totals.run.shards = D(1.44e23);
-    expect(nebulaGain(s).toNumber()).toBe(Math.floor((1.44e16) ** 0.35));
+    const big = nebulaGain(s).toNumber();
+    expect(big).toBeGreaterThan(1e4);
+    expect(big).toBeLessThan(1e5);
     s.totals.run.shards = D(1e10);
     expect(nebulaGain(s).toNumber()).toBe(Math.floor((1e3) ** 0.35));
     s.stats.nebulasAll = 1;

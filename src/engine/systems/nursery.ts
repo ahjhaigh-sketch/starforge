@@ -4,7 +4,7 @@ import { planFlat, planLimited, type FlatPlan, type PurchasePlan } from '../buy'
 import type { CostCurve } from '../cost';
 import { D, type Decimal } from '../decimal';
 import { drawHits } from '../odds';
-import { cur, gain, type GameState, spend } from '../state';
+import { cur, gain, type GameState, spend, usable } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
 import { pacedDt, registerSystem, type TickContext } from '../tick';
 import { recordMutation, rollMutations } from './mutations';
@@ -56,7 +56,7 @@ function curveOf(id: string): CostCurve {
 
 export function upgradePlan(s: GameState, id: string): PurchasePlan {
   const def = NURSERY_UPGRADES.find((u) => u.id === id)!;
-  return planLimited(curveOf(id), nurseryLevel(s, id), cur(s, 'essence'), s.settings.buyAmount, s.settings.customBuyAmount, def.max);
+  return planLimited(curveOf(id), nurseryLevel(s, id), usable(s, 'essence'), s.settings.buyAmount, s.settings.customBuyAmount, def.max);
 }
 
 export function buyNurseryUpgrade(s: GameState, id: string): boolean {
@@ -68,7 +68,7 @@ export function buyNurseryUpgrade(s: GameState, id: string): boolean {
   return true;
 }
 
-export const seedPlan = (s: GameState): FlatPlan => planFlat(D(N.seedPrice), cur(s, 'essence'), s.settings.buyAmount, s.settings.customBuyAmount);
+export const seedPlan = (s: GameState): FlatPlan => planFlat(D(N.seedPrice), usable(s, 'essence'), s.settings.buyAmount, s.settings.customBuyAmount);
 
 /** Base seeds are for sale; every other species comes from crossbreeding. */
 export function buySeeds(s: GameState, id: string): boolean {

@@ -1,4 +1,7 @@
 import { BALANCE } from '../content/balance';
+import { BEYOND_BY_ID } from '../content/beyond';
+import { AUTO_LAYERS, LAYER_NAMES, layerIndex } from '../content/layers';
+import { autoLevel } from '../engine/layerAuto';
 import { NOVA_TREE, type NodeColor } from '../content/novaTree';
 import { menuHidden } from './menus';
 import { withSigil } from './sigilReports';
@@ -195,6 +198,24 @@ const PERKS: Record<string, PerkDef[]> = {
   'Big Crunch': [{ name: 'Passive Chronons (1% a second)', req: `${BALANCE.passive.at.crunch} Big Crunches`, lit: (s) => milestoneReached(s, 'crunch', 'passive') }],
 };
 
+/** 1.4.0: each stage of a layer shows the layers it sets running (one layer down mostly, two layers down fully), and its own perks. */
+const STAGE_LAYER: Record<string, string> = { Supernova: 'supernova', Nebula: 'nebula', Singularity: 'singularity', Galactic: 'galactic', 'Big Crunch': 'crunch', Multiverse: 'multiverse', Hyperverse: 'hyperverse', Omniverse: 'omniverse', Genesis: 'genesis', Apotheosis: 'apotheosis' };
+for (const [stage, id] of Object.entries(STAGE_LAYER)) {
+  const i = layerIndex(id);
+  const list = (PERKS[stage] ??= []);
+  const one = AUTO_LAYERS[i - 1];
+  const two = AUTO_LAYERS[i - 2];
+  if (one) list.push({ name: `The ${LAYER_NAMES[one]} layer runs itself (all but its last few things)`, req: `Your first ${LAYER_NAMES[id as keyof typeof LAYER_NAMES]}`, lit: (s) => autoLevel(s, one) >= 1 });
+  if (two) list.push({ name: `The ${LAYER_NAMES[two]} layer runs itself fully, and its menus tuck away`, req: `Your first ${LAYER_NAMES[id as keyof typeof LAYER_NAMES]}`, lit: (s) => autoLevel(s, two) >= 2 });
+  const def = BEYOND_BY_ID.get(id);
+  if (def) for (const m of def.milestones.filter((x) => x.id === 'passive' || x.id.endsWith('Free'))) list.push({ name: m.text, req: `${m.at} ${def.name}s`, lit: (s) => milestoneReached(s, id, m.id) });
+}
+PERKS.Galactic!.push(
+  { name: 'The Antimatter Mirror runs itself', req: '6 Galactic Rebirths', lit: (s) => milestoneReached(s, 'galactic', 'autoMirror') },
+  { name: 'Auto-Galactic Rebirth once a galaxy is explored', req: '8 Galactic Rebirths', lit: (s) => milestoneReached(s, 'galactic', 'autoGalactic') },
+  { name: 'Megastructures, colonies and Galactic Constants build themselves', req: '9 Galactic Rebirths', lit: (s) => milestoneReached(s, 'galactic', 'autoBuild') },
+);
+
 const STAGES: Array<{ name: string; ids: string[] }> = [
   { name: 'Protostar', ids: ['ascent', 'upgrades', 'medals', 'stats'] },
   { name: 'Red Dwarf to Golden Sun', ids: ['belt', 'level', 'constants', 'quests'] },
@@ -210,6 +231,10 @@ const STAGES: Array<{ name: string; ids: string[] }> = [
   { name: 'Building the galaxy', ids: ['megastructures', 'colonies', 'terraform'] },
   { name: 'Big Crunch', ids: ['bigcrunch', 'eternity', 'echoes'] },
   { name: 'Multiverse', ids: ['multiverse', 'universeforge', 'sparktree'] },
+  { name: 'Hyperverse', ids: ['hyperverse', 'tesseract'] },
+  { name: 'Omniverse', ids: ['omniverse', 'pantheon'] },
+  { name: 'Genesis', ids: ['genesis', 'laws'] },
+  { name: 'Apotheosis', ids: ['apotheosis', 'lives'] },
   { name: 'Secrets', ids: ['altar'] },
 ];
 

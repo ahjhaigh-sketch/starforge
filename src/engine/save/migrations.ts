@@ -123,6 +123,18 @@ const migrations: Record<number, (d: PlainSave) => void> = {
     }
     d.kept = kept;
   },
+  // 23 (1.4.0): a galaxy's goal counts what you gain after arriving (the one you're in counts from now), and
+  // Auto-explore starts on.
+  23: (d) => {
+    const g = d.galactic as Record<string, unknown> | undefined;
+    if (g) {
+      g.here = {};
+      g.explore = true;
+    }
+    // menus you'd shown again tuck away once more when their layer runs itself (you can show them again in Settings)
+    const st = d.settings as Record<string, unknown> | undefined;
+    if (st) st.shownMenus = [];
+  },
 };
 
 export function migrate(version: number, data: PlainSave): PlainSave {

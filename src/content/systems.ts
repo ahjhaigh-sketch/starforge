@@ -84,6 +84,40 @@ export const SYSTEMS: readonly SystemDef[] = [
   { id: 'multiverse', name: 'Multiverse', icon: 'multiverse', color: '#7B3FD6', rail: 'right', req: { kind: 'count', stat: 'crunchesAll', count: 8, noun: 'Big Crunch' }, panel: 'multiverse', built: true, blurb: 'The sixth and last reset: 10 Big Crunches for 6 Sparks, then Omni Constants.' },
   { id: 'universeforge', name: 'Universe Forge', icon: 'universe', color: '#B23A8E', rail: 'right', req: { kind: 'count', stat: 'crunchesAll', count: 8, noun: 'Big Crunch' }, panel: 'universeforge', built: true, blurb: 'Pick the rules of the next universe: each makes it harder and pays more Sparks.' },
   { id: 'sparktree', name: 'Spark Choices', icon: 'spark', color: '#5A2A8C', rail: 'right', req: { kind: 'count', stat: 'multiversesAll', count: 1, noun: 'Multiverse' }, panel: 'sparktree', built: true, blurb: '114 choices at 0.2 Sparks each, in any order: keep layers, automate them, boost them.' },
+  // ---- 1.4.0: beyond the Multiverse (layers 7 to 10) ----
+  { id: 'hyperverse', name: 'Hyperverse', icon: 'tesseract+arrowup', color: '#1E9C82', rail: 'right', req: { kind: 'count', stat: 'multiversesAll', count: 8, noun: 'Multiverse' }, panel: 'hyperverse', built: true, blurb: 'The seventh reset: fold the Multiverse, Big Crunch and Galactic layers into Tesseracts.' },
+  { id: 'tesseract', name: 'Tesseract', icon: 'tesseract', color: '#2A8F7A', rail: 'right', req: { kind: 'count', stat: 'hyperversesAll', count: 1, noun: 'Hyperverse' }, panel: 'tesseract', built: true, blurb: 'Four axes, each folded through an earlier layer. Neighbours in order resonate.' },
+  { id: 'omniverse', name: 'Omniverse', icon: 'aether+arrowup', color: '#B08A1A', rail: 'right', req: { kind: 'count', stat: 'hyperversesAll', count: 6, noun: 'Hyperverse' }, panel: 'omniverse', built: true, blurb: 'The eighth reset: every Hyperverse at once, for Aether.' },
+  { id: 'pantheon', name: 'Pantheon', icon: 'pantheon', color: '#C99A1E', rail: 'right', req: { kind: 'count', stat: 'omniversesAll', count: 1, noun: 'Omniverse' }, panel: 'pantheon', built: true, blurb: 'Wake eight Aspects; three stand Ascendant, and every pair of them finds a Rite.' },
+  { id: 'genesis', name: 'Genesis', icon: 'seed+arrowup', color: '#3E9E2A', rail: 'right', req: { kind: 'count', stat: 'omniversesAll', count: 6, noun: 'Omniverse' }, panel: 'genesis', built: true, blurb: 'The ninth reset: start creation over from Origin Seeds.' },
+  { id: 'laws', name: 'Laws', icon: 'laws', color: '#2E9C78', rail: 'right', req: { kind: 'count', stat: 'genesesAll', count: 1, noun: 'Genesis' }, panel: 'laws', built: true, blurb: 'Rewrite five laws of physics: what one law gains, another gives up.' },
+  { id: 'apotheosis', name: 'Apotheosis', icon: 'divinity+arrowup', color: '#8C97C2', rail: 'right', req: { kind: 'count', stat: 'genesesAll', count: 6, noun: 'Genesis' }, panel: 'apotheosis', built: true, blurb: 'The tenth and last reset: the Starsmith becomes a star.' },
+  { id: 'lives', name: 'Past Lives', icon: 'lives', color: '#6B4BC8', rail: 'right', req: { kind: 'count', stat: 'apotheosesAll', count: 1, noun: 'Apotheosis' }, panel: 'lives', built: true, blurb: 'Every Apotheosis becomes a Life that guides the next; Divinity buys Miracles.' },
 ];
 
 export const SYSTEM_BY_ID: ReadonlyMap<string, SystemDef> = new Map(SYSTEMS.map((x) => [x.id, x]));
+
+/** 1.4.0: the layer a system belongs to, for the rails' sections: what unlocks it, or the layer it is the reset of. */
+const SECTION_OF_STAT: Readonly<Record<string, string>> = {
+  supernovas: 'supernova',
+  supernovasAll: 'supernova',
+  nebulasAll: 'nebula',
+  singularitiesAll: 'singularity',
+  bhStageBest: 'singularity',
+  sigils: 'singularity',
+  leviathanKills: 'singularity',
+  mirrorKey: 'galactic',
+  galacticsAll: 'galactic',
+  coloniesFounded: 'galactic',
+  crunchesAll: 'crunch',
+  multiversesAll: 'multiverse',
+  hyperversesAll: 'hyperverse',
+  omniversesAll: 'omniverse',
+  genesesAll: 'genesis',
+  apotheosesAll: 'apotheosis',
+};
+const RESET_SECTION: Readonly<Record<string, string>> = { nebula: 'nebula', singularity: 'singularity', galactic: 'galactic', bigcrunch: 'crunch', multiverse: 'multiverse', hyperverse: 'hyperverse', omniverse: 'omniverse', genesis: 'genesis', apotheosis: 'apotheosis' };
+export function systemSection(x: SystemDef): string {
+  if (RESET_SECTION[x.id]) return RESET_SECTION[x.id]!;
+  return x.req.kind === 'count' ? (SECTION_OF_STAT[x.req.stat] ?? 'stardust') : 'stardust';
+}

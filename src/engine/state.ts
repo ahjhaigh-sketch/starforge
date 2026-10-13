@@ -4,7 +4,7 @@ import { BALANCE } from '../content/balance';
 import type { ShipDesign } from '../content/shipParts';
 
 /** Bump with every change to the save's shape, and add a migration + an old-save fixture test. */
-export const SAVE_VERSION = 22;
+export const SAVE_VERSION = 23;
 /** A new Fusion board is 3 x 3 (BALANCE.fusion.baseSize). */
 const BALANCE_FUSION_CELLS = 9;
 
@@ -211,7 +211,8 @@ export interface GameState {
   mirror: { engines: Record<string, number>; ever: Record<string, number>; depth: number; upgrades: string[] };
   wormholes: { links: Array<{ from: string; to: string; share: number }> };
   /** Phase 15: the galaxy you are in, the one you will go to next, and those whose goal you met. */
-  galactic: { galaxy: string; next: string; cleared: string[]; autoAt: Decimal };
+  /** 1.4.0: here = Dark Matter and Essence gained since arriving in this galaxy (its goal counts them); explore = Auto-explore. */
+  galactic: { galaxy: string; next: string; cleared: string[]; autoAt: Decimal; here: Record<string, Decimal>; explore: boolean };
   galacticTree: Record<string, number>;
   /** The Observatory: this run's sky (a seed), the links drawn, and the best score recorded on it. */
   observatory: { seed: number; links: Array<[number, number]>; best: number };
@@ -224,6 +225,14 @@ export interface GameState {
   echoes: { engines: Record<string, number>; ever: Record<string, number> };
   /** Phase 18: Spark choices owned (levels; echoes go past 1), this universe's rules, the next universe's rules, and whether the story has been told. */
   multiverse: { tree: Record<string, number>; rules: string[]; next: string[]; storySeen: boolean };
+  /** 1.4.0, the Hyperverse's Tesseract: which layer each of the four axes folds through ('' for none) and each axis's level. */
+  tesseract: { axes: string[]; levels: number[] };
+  /** 1.4.0, the Omniverse's Pantheon: woken Aspects, their devotion levels, the (up to three) Ascendant, and the Rites found. */
+  pantheon: { awake: string[]; devotion: Record<string, number>; ascendant: string[]; rites: string[] };
+  /** 1.4.0, Genesis: how far each law of physics is turned (-5 to 5). */
+  laws: Record<string, number>;
+  /** 1.4.0, Apotheosis: the remembered Past Lives (the run's number and score), the guiding Life, Miracles bought, and whether the ending was told. */
+  lives: { list: Array<{ n: number; score: number }>; guide: number; miracles: string[]; storySeen: boolean };
   /** Phase 20: the Wardrobe's choices (what's unlocked is worked out from medals and stats, never stored). */
   cosmetics: { skin: string; trail: string; background: string; burst: string; theme: string };
   /** Phase 20.2: Starlight Alchemy: recipes found, mixes tried, elixirs on the shelf, and when each boost ends (play time). */
@@ -361,7 +370,7 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     scaleTree: {},
     mirror: { engines: {}, ever: {}, depth: 0, upgrades: [] },
     wormholes: { links: [] },
-    galactic: { galaxy: 'milkyway', next: 'milkyway', cleared: [], autoAt: D(0) },
+    galactic: { galaxy: 'milkyway', next: 'milkyway', cleared: [], autoAt: D(0), here: {}, explore: true },
     galacticTree: {},
     observatory: { seed: (seed ^ 0x2545f491) >>> 0, links: [], best: 0 },
     starChart: {},
@@ -370,6 +379,10 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     eternity: { upgrades: [], auto: {} },
     echoes: { engines: {}, ever: {} },
     multiverse: { tree: {}, rules: [], next: [], storySeen: false },
+    tesseract: { axes: ['', '', '', ''], levels: [0, 0, 0, 0] },
+    pantheon: { awake: [], devotion: {}, ascendant: [], rites: [] },
+    laws: {},
+    lives: { list: [], guide: -1, miracles: [], storySeen: false },
     cosmetics: { skin: 'classic', trail: 'none', background: 'violet', burst: 'tier', theme: 'violet' },
     alchemy: { known: [], tried: [], shelf: {}, active: {} },
     sigils: { owned: [], on: [] },
@@ -386,6 +399,8 @@ export function gain(s: GameState, currency: string, amount: Decimal): void {
   s.currencies[currency] = have.add(amount);
   s.totals.run[currency] = (s.totals.run[currency] ?? D(0)).add(amount);
   s.totals.all[currency] = (s.totals.all[currency] ?? D(0)).add(amount);
+  // 1.4.0: what the galaxy you're in counts towards its goal (passive income too)
+  if (currency === 'darkMatter' || currency === 'essence') s.galactic.here[currency] = (s.galactic.here[currency] ?? D(0)).add(amount);
   // the safe tenth: a share of every gain is kept away from automation (never more than was held
   // before it, so a reset or a Belt Tier that emptied the currency leaves nothing stale behind)
   const k = s.kept[currency];
@@ -428,6 +443,17 @@ export function automatedSpend<T>(name: string, fn: () => T): T {
     return fn();
   } finally {
     sink = outer;
+  }
+}
+
+/** 1.4.0: runs fn with the bulk amount at Max (automation buys all it can at once), then puts yours back. */
+export function withBuyMax<T>(s: GameState, fn: () => T): T {
+  const was = s.settings.buyAmount;
+  s.settings.buyAmount = 'max';
+  try {
+    return fn();
+  } finally {
+    s.settings.buyAmount = was;
   }
 }
 

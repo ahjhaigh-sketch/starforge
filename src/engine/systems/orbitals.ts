@@ -115,8 +115,9 @@ export function bestPlanetType(s: GameState, ring: number, index: number): strin
 }
 
 /** Most planet levels one auto-planets pass buys, in at most this many bulk steps (it runs 4 times a second). */
-const AUTO_LEVELS_PER_PASS = 200;
-const AUTO_STEPS_PER_PASS = 4;
+// 1.4.0: all it can at once (it was 200 levels a pass)
+const AUTO_LEVELS_PER_PASS = 1e12;
+const AUTO_STEPS_PER_PASS = 64;
 
 /**
  * Auto-planets (1.2.0): fills every open empty slot it can pay for, then levels the lowest planet

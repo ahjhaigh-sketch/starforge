@@ -783,6 +783,16 @@ it('balance simulation', async () => {
         if (process.env.SIM_DEBUG_MAG) {
           const lg = (c: string) => cur(s, c).add(1).log10().toNumber().toFixed(0);
           console.log(`[mag] Galactic ${(s.stats.galacticsAll ?? 0) + 1}: ${['stardust', 'shards', 'essence', 'darkMatter', 'galaxyCores', 'antimatter', 'embers', 'ore', 'scales', 'alloy.iron', 'alloy.gold'].map((c) => `${c} e${lg(c)}`).join(', ')}, run essence e${(s.totals.run.essence ?? D(0)).add(1).log10().toNumber().toFixed(0)}`);
+          const { breakdown } = await import('../src/engine/stats');
+          for (const id of ['darkMatterGain', 'essenceGain']) {
+            const top = breakdown(s, id)
+              .filter((l) => !l.value.eq(1))
+              .sort((x, y) => y.value.abs().add(1).log10().toNumber() - x.value.abs().add(1).log10().toNumber())
+              .slice(0, 6)
+              .map((l) => `${l.label} ${l.op} ${fmt(l.value)}`)
+              .join('; ');
+            console.log(`[mag]   ${id} = ${fmt(stat(s, id))}: ${top}`);
+          }
         }
         performReset(s, 'galactic');
         galacticStart = s.playtime;

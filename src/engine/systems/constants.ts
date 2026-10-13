@@ -64,7 +64,7 @@ export function constantOpen(s: GameState, c: ConstantDef): boolean {
 /** The plan for one click with the current buy amount; "next" buys up to the next doubling. */
 export function constantPlan(s: GameState, c: ConstantDef, amount: BuyAmount = s.settings.buyAmount): PurchasePlan {
   const L = level(s, c.id);
-  return planPurchase(constantCurve(c), L, cur(s, c.currency), amount, s.settings.customBuyAmount, D(1), nextDoubling(L));
+  return planPurchase(constantCurve(c), L, usable(s, c.currency), amount, s.settings.customBuyAmount, D(1), nextDoubling(L));
 }
 
 export function buyConstant(s: GameState, id: string, amount?: BuyAmount, auto = false): boolean {
@@ -73,32 +73,24 @@ export function buyConstant(s: GameState, id: string, amount?: BuyAmount, auto =
   const plan = constantPlan(s, c, amount);
   if (!plan.canAfford || !spend(s, c.currency, plan.cost)) return false;
   s.constants[id] = level(s, id) + plan.count;
-  // your own purchase: Auto-Constants waits a while before its next step
-  if (!auto) s.stats.constantsByHand = s.playtime;
   events.emit({ t: 'purchase', kind: 'constant', id, amount: plan.count });
   return true;
 }
 
-/** Seconds of play until Auto-Constants next steps (0: now). With Constant Flow (Nebula Tree) it acts every second. */
-export function autoConstantsIn(s: GameState, flow = false): number {
-  const every = flow ? 1 : BALANCE.automation.constantsEvery;
-  const last = Math.max(s.stats.constantsAuto ?? -every, s.stats.constantsByHand ?? -every);
-  return Math.max(0, last + every - s.playtime);
-}
-
 /**
- * 1.2.0 Auto-Constants: once a minute of play, steps every open constant up to its next doubling if
- * its share of that constant's currency pays for it. Not instant: a jump a minute, and it waits a
- * minute after you buy one yourself, so your own choices come first.
+ * 1.2.0 Auto-Constants; 1.4.0: every open constant, as many levels as its share of the currency pays for, at
+ * once, on every pass (it stepped to the next doubling once a minute; the playtest: "it shouldn't be a case of
+ * gradual, it should be instant highest upgrade"). With Constant Flow (Nebula Tree) the spending limit is ignored.
  */
 export function autoConstants(s: GameState, share: number, flow = false): void {
-  if (autoConstantsIn(s, flow) > 0) return;
-  s.stats.constantsAuto = s.playtime;
+  const part = flow ? 1 : share;
   for (const c of CONSTANTS) {
     if (!constantOpen(s, c)) continue;
-    const plan = constantPlan(s, c, 'next');
-    if (plan.count <= 0 || plan.cost.gt(usable(s, c.currency).mul(share))) continue;
-    buyConstant(s, c.id, 'next', true);
+    const L = level(s, c.id);
+    const plan = planPurchase(constantCurve(c), L, usable(s, c.currency).mul(part), 'max', 0, D(1));
+    if (plan.count <= 0 || !plan.canAfford || !spend(s, c.currency, plan.cost)) continue;
+    s.constants[c.id] = L + plan.count;
+    events.emit({ t: 'purchase', kind: 'constant', id: c.id, amount: plan.count });
   }
 }
 

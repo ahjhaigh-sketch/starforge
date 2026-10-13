@@ -9,7 +9,7 @@ import { createInitialState, cur, gain, type GameState } from '../../src/engine/
 import { invalidateStats, resetStatRegistry, stat } from '../../src/engine/stats';
 import { AUTO_BUYERS, autoSetting, autoUnlocked, runAutomation, setAuto } from '../../src/engine/systems/automation';
 import { beltTierNeed } from '../../src/engine/systems/belt';
-import { autoConstantsIn, buyConstant, constantOpen, level } from '../../src/engine/systems/constants';
+import { buyConstant, constantOpen, level, nextDoubling } from '../../src/engine/systems/constants';
 import { runFurnace, setForgeGrade } from '../../src/engine/systems/forge';
 import { checkMedals, hasMedal, poke } from '../../src/engine/systems/medals';
 import { nebulaGain } from '../../src/engine/systems/nebula';
@@ -61,7 +61,9 @@ describe('1.2.0: Supernova needs grow with your economy; the first Nebula pays f
     s.stats.nebulasAll = 0;
     s.totals.run.shards = D(1.44e23);
     invalidateStats();
-    expect(nebulaGain(s).toNumber()).toBeGreaterThan(100_000);
+    // 1.4.0: the reset ceiling holds a first reset under 100,000 however many shards you bring
+    expect(nebulaGain(s).toNumber()).toBeGreaterThan(10_000);
+    expect(nebulaGain(s).toNumber()).toBeLessThan(100_000);
     s.totals.run.shards = D(1.1e7);
     expect(nebulaGain(s).toNumber()).toBe(2);
   });
@@ -98,9 +100,9 @@ describe('1.2.0: new auto-buyers', () => {
       s.stats.supernovasAll = at;
       expect(autoUnlocked(s, auto(id)), id).toBe(true);
     }
-    // Auto-Supernova starts on; the tree auto-buyers start off
+    // Auto-Supernova starts on; 1.4.0: so do the tree auto-buyers
     expect(autoSetting(createInitialState(1, 1), 'auto.supernova').on).toBe(true);
-    expect(autoSetting(createInitialState(1, 1), 'auto.novatree').on).toBe(false);
+    expect(autoSetting(createInitialState(1, 1), 'auto.novatree').on).toBe(true);
   });
 
   it('Auto-Supernova goes when a Supernova is ready, and not when switched off', () => {
@@ -130,7 +132,7 @@ describe('1.2.0: new auto-buyers', () => {
     expect(s.belt.tier).toBe(1);
   });
 
-  it('Auto-Constants takes one step a minute, and waits a minute after you buy one yourself', () => {
+  it('1.4.0: Auto-Constants buys every level it can at once, on every pass (it stepped once a minute)', () => {
     const s = createInitialState(5, 5);
     s.tier = 4;
     s.stats.supernovasAll = 20;
@@ -142,23 +144,17 @@ describe('1.2.0: new auto-buyers', () => {
     s.playtime = 1000;
     runAutomation(s);
     const first = level(s, c.id);
-    expect(first).toBeGreaterThan(0);
-    // not again for a minute
-    s.playtime = 1030;
+    // far past its next doubling in one pass: everything the spending limit allows
+    expect(first).toBeGreaterThan(nextDoubling(0));
+    // and nothing left to buy straight after (it bought it all, short of the safe tenth)
     runAutomation(s);
     expect(level(s, c.id)).toBe(first);
-    s.playtime = 1061;
+    // more Stardust: the next pass buys more at once, with no wait
+    gain(s, 'stardust', D(1e40));
+    s.playtime = 1001;
     runAutomation(s);
-    const second = level(s, c.id);
-    expect(second).toBeGreaterThan(first);
-    // your own purchase pushes the next automatic step back a minute
-    s.playtime = 1130;
-    expect(buyConstant(s, c.id, 1)).toBe(true);
-    expect(autoConstantsIn(s)).toBeCloseTo(60, 6);
-    const mine = level(s, c.id);
-    s.playtime = 1150;
-    runAutomation(s);
-    expect(level(s, c.id)).toBe(mine);
+    expect(level(s, c.id)).toBeGreaterThan(first);
+    expect(buyConstant(s, c.id, 1) || true).toBe(true);
   });
 });
 

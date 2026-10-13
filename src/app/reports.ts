@@ -1,3 +1,6 @@
+import { AUTO_LAYERS, LAYER_NAMES } from '../content/layers';
+import { CURRENCY_LABEL } from '../content/galaxyBuild';
+import { autoLevel } from '../engine/layerAuto';
 import { ENGINES } from '../content/engines';
 import { GOALS, MEDALS } from '../content/medals';
 import { UPGRADES, whenItApplies } from '../content/upgrades';
@@ -19,6 +22,7 @@ import { GRADES, RELICS } from '../content/forge';
  * anything in the 10 Hz snapshot. Everything is a ready-to-show string.
  */
 const n = () => game.state.settings.notation;
+const CURRENCY_NAMES: Record<string, string> = { ...CURRENCY_LABEL, chronons: 'Chronons', sparks: 'Multiverse Sparks' };
 const f = (x: Decimal | number) => format(x, n());
 
 export interface StatLine {
@@ -86,6 +90,37 @@ export function statsReport(): { sections: StatSection[]; counters: StatLine[] }
     section('runeLuck', 'Rune Luck (from Goals)', 'mult'),
     section('runeBulk', 'Rune Bulk (from Goals)', 'mult'),
   ];
+  // 1.4.0: every layer's gains, from the layer that brings them (the playtest: "add all of that onto ... the stats menu")
+  const has = (counter: string) => (s.stats[counter] ?? 0) > 0;
+  const later: Array<[string, string, string, 'num' | 'pct' | 'mult' | 'time']> = [
+    ['supernovasAll', 'gameSpeed', 'Game speed', 'mult'],
+    ['supernovasAll', 'autoSpeed', 'Auto-buyer speed', 'mult'],
+    ['supernovasAll', 'shipSpeed', 'Starship speed', 'mult'],
+    ['supernovasAll', 'shipLoot', 'Starship loot', 'mult'],
+    ['nebulasAll', 'essenceGain', 'Essence gain', 'mult'],
+    ['nebulasAll', 'runeSpeed', 'Rune speed', 'mult'],
+    ['nebulasAll', 'auraLuck', 'Aura luck', 'mult'],
+    ['nebulasAll', 'mutationLuck', 'Mutation luck', 'mult'],
+    ['nebulasAll', 'emberGain', 'Ember gain', 'mult'],
+    ['nebulasAll', 'wyrmXp', 'Wyrm XP', 'mult'],
+    ['nebulasAll', 'nurseryGrowth', 'Nursery growth', 'mult'],
+    ['singularitiesAll', 'darkMatterGain', 'Dark Matter gain', 'mult'],
+    ['singularitiesAll', 'massGain', 'Black Hole mass gain', 'mult'],
+    ['singularitiesAll', 'antimatterMult', 'Antimatter multiplier', 'mult'],
+    ['singularitiesAll', 'leviathanDamage', 'Leviathan damage', 'mult'],
+    ['singularitiesAll', 'scaleGain', 'Scale gain', 'mult'],
+    ['galacticsAll', 'galaxyCoreGain', 'Galaxy Core gain', 'mult'],
+    ['galacticsAll', 'colonyCapacity', 'Colony capacity', 'mult'],
+    ['galacticsAll', 'megaRewardPower', 'Megastructure rewards', 'mult'],
+    ['crunchesAll', 'chrononGain', 'Chronon gain', 'mult'],
+    ['crunchesAll', 'echoMult', 'Echo output', 'mult'],
+    ['multiversesAll', 'sparkGain', 'Spark gain', 'mult'],
+    ['hyperversesAll', 'tesseractGain', 'Tesseract gain', 'mult'],
+    ['omniversesAll', 'aetherGain', 'Aether gain', 'mult'],
+    ['genesesAll', 'seedGain', 'Origin Seed gain', 'mult'],
+    ['apotheosesAll', 'divinityGain', 'Divinity gain', 'mult'],
+  ];
+  for (const [counter, id, title, shape] of later) if (has(counter)) sections.push(section(id, title, shape));
   for (const e of ENGINES) if ((s.engines[e.id] ?? 0) > 0) sections.push(section(`engineMult.${e.id}`, `${e.name} multiplier`, 'mult'));
   const c = s.stats;
   const counters: StatLine[] = [
@@ -106,6 +141,43 @@ export function statsReport(): { sections: StatSection[]; counters: StatLine[] }
     { label: 'Relics crafted', value: `${c.relics ?? 0} / ${RELICS.length}` },
     { label: 'Elements found', value: `${c.elements ?? 0} / 118` },
   ];
+  // 1.4.0: every reset layer you've reached, its resets over all time and its best currency, and the systems that grew
+  const layerRows: Array<[string, string, string]> = [
+    ['supernovasAll', 'Supernovas', 'shards'],
+    ['nebulasAll', 'Nebulas', 'essence'],
+    ['singularitiesAll', 'Singularities', 'darkMatter'],
+    ['galacticsAll', 'Galactic Rebirths', 'galaxyCores'],
+    ['crunchesAll', 'Big Crunches', 'chronons'],
+    ['multiversesAll', 'Multiverses', 'sparks'],
+    ['hyperversesAll', 'Hyperverses', 'tesseracts'],
+    ['omniversesAll', 'Omniverses', 'aether'],
+    ['genesesAll', 'Geneses', 'originSeeds'],
+    ['apotheosesAll', 'Apotheoses', 'divinity'],
+  ];
+  for (const [counter, label, cur] of layerRows) {
+    if (!has(counter)) continue;
+    counters.push({ label, value: formatCount(c[counter] ?? 0, n()) });
+    counters.push({ label: `${CURRENCY_NAMES[cur] ?? cur}, all time`, value: f(s.totals.all[cur] ?? D(0)) });
+  }
+  if (has('galacticsAll')) {
+    counters.push({ label: 'Galaxies explored (this Crunch run)', value: `${s.galactic.cleared.length} / 20` });
+    counters.push({ label: 'Galaxies explored, all time', value: formatCount(c.galaxiesClearedAll ?? s.galactic.cleared.length, n()) });
+    counters.push({ label: 'Skies charted', value: formatCount(c.skiesCharted ?? 0, n()) });
+    counters.push({ label: 'Best Star Score', value: formatCount(c.starScoreBest ?? 0, n()) });
+  }
+  if (has('singularitiesAll')) {
+    counters.push({ label: 'Leviathans beaten', value: `${c.leviathansBeaten ?? 0} / 12` });
+    counters.push({ label: 'Leviathan kills', value: formatCount(c.leviathanKills ?? 0, n()) });
+    counters.push({ label: 'Highest Spire floor', value: formatCount(c.spireBest ?? 0, n()) });
+    counters.push({ label: 'Best Planet Defense wave', value: formatCount(c.defenseBest ?? 0, n()) });
+  }
+  if (has('omniversesAll')) counters.push({ label: 'Rites found', value: `${c.ritesFound ?? 0} / 28` });
+  if (has('apotheosesAll')) {
+    counters.push({ label: 'Miracles', value: `${c.miracles ?? 0} / 10` });
+    counters.push({ label: 'Best Past Life', value: formatCount(c.bestLife ?? 0, n()) });
+  }
+  const running = AUTO_LAYERS.filter((l) => autoLevel(s, l) > 0);
+  if (running.length) counters.push({ label: 'Layers that run themselves', value: running.map((l) => `${LAYER_NAMES[l]}${autoLevel(s, l) === 2 ? '' : ' (mostly)'}`).join(', ') });
   return { sections, counters };
 }
 

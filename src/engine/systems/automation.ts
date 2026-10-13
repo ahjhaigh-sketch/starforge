@@ -16,7 +16,7 @@ import { goalMet, inTrial } from './trials';
 import { automatedSpend, type GameState, usable } from '../state';
 import { defineStat, stat } from '../stats';
 import { registerSystem, upkeepDue } from '../tick';
-import { automating } from './eternity';
+import { autoLevel } from '../layerAuto';
 import { buyEngine, engineCurve, engineRevealed, evolve, nextTierCost, owned } from './stardust';
 import { availableUpgrades, buyUpgrade } from './upgrades';
 
@@ -74,12 +74,23 @@ export const AUTO_BUYERS: readonly AutoBuyerDef[] = [
       ['scaletree', { kind: 'count', stat: 'leviathansBeaten', count: 6, noun: 'Leviathan' }],
       ['starchart', { kind: 'count', stat: 'galacticsAll', count: 5, noun: 'Galactic Rebirth' }],
     ] as const
-  ).map(([tree, req]): AutoBuyerDef => ({ id: `auto.${tree}`, name: TREE_SHOP_BY_ID.get(tree)!.name, milestone: '', kind: 'tree', tree, req, defaultOn: false })),
+  // 1.4.0: on from the start (they began switched off)
+  ).map(([tree, req]): AutoBuyerDef => ({ id: `auto.${tree}`, name: TREE_SHOP_BY_ID.get(tree)!.name, milestone: '', kind: 'tree', tree, req })),
 ];
 const AUTO_BY_ID: ReadonlyMap<string, AutoBuyerDef> = new Map(AUTO_BUYERS.map((a) => [a.id, a]));
 
-/** Unlocked by its Supernova milestone, or by Eternal Forge (Eternity) from the start of every run. */
-export const autoUnlocked = (s: GameState, a: AutoBuyerDef) => (a.req ? reqMet(s, a.req) : milestoneReached(s, 'supernova', a.milestone) || automating(s, 'stardust'));
+/**
+ * Unlocked by its Supernova milestone (or what it needs). 1.4.0: every auto-buyer for the Stardust layer is unlocked
+ * once that layer runs itself (two layers up: the first Nebula), and a tree's once its own layer does.
+ */
+const TREE_LAYER: Readonly<Record<string, 'supernova' | 'nebula' | 'singularity' | 'galactic'>> = { novatree: 'supernova', nebulatree: 'nebula', singularitytree: 'singularity', galactictree: 'galactic', scaletree: 'singularity', starchart: 'galactic' };
+export const autoUnlocked = (s: GameState, a: AutoBuyerDef): boolean => {
+  if (a.kind === 'tree') return reqMet(s, a.req!) || autoLevel(s, TREE_LAYER[a.tree!]!) > 0;
+  const earned = a.req ? reqMet(s, a.req) : milestoneReached(s, 'supernova', a.milestone);
+  // Auto-Supernova is the Supernova layer's own (it runs itself one layer on)
+  if (a.kind === 'supernova') return earned || autoLevel(s, 'supernova') > 0;
+  return earned || autoLevel(s, 'stardust') >= 2;
+};
 
 /** Unlocked auto-buyers start switched on, spending everything. */
 export function autoSetting(s: GameState, id: string): { on: boolean; spend: number } {

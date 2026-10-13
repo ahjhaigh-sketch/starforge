@@ -21,6 +21,7 @@ import { PARTS } from '../../content/shipParts';
 import { LEVIATHANS, SPIRE_BANNERS, TRIALS } from '../../content/challenges';
 import { SIGILS } from '../../content/sigils';
 import { MEGASTRUCTURES } from '../../content/galaxyBuild';
+import { MIRACLES, RITES } from '../../content/beyond';
 
 /**
  * The Index (Game design: "Across the whole game"): a collection book of every rune, aura,
@@ -75,6 +76,10 @@ export function pageCount(s: GameState, id: string): { found: number; total: num
       return { found: s.sigils.owned.length, total: SIGILS.length };
     case 'mega':
       return { found: MEGASTRUCTURES.reduce((t, m) => t + Math.min(5, s.megastructures[m.id] ?? 0), 0), total: MEGASTRUCTURES.length * 5 };
+    case 'rites':
+      return { found: s.pantheon.rites.length, total: RITES.length };
+    case 'miracles':
+      return { found: s.lives.miracles.length, total: MIRACLES.length };
     default:
       return { found: 0, total: 0 };
   }

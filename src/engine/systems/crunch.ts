@@ -2,17 +2,17 @@ import { BALANCE } from '../../content/balance';
 import { CONSTANTS } from '../../content/constants';
 import { GALAXIES } from '../../content/galactic';
 import { D, type Decimal, ZERO } from '../decimal';
-import { layer, milestoneReached, registerLayer } from '../layers';
+import { layer, milestoneReached, registerLayer, resetCeiling, unResetCeiling } from '../layers';
 import { cur, gain, type GameState, gainPassive } from '../state';
 import { registerSources, stat } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
 import { hasEternity } from './eternity';
-import { galacticGain, galacticReady } from './galactic';
+import { arriveIn, galacticGain, galacticReady } from './galactic';
 
 /**
  * The Big Crunch: the fifth reset (Game design: "Galactic Rebirth, Big Crunch and Multiverse").
- * - Needs 7 galaxies explored in the Crunch run. Gives floor((log10(GC / 100) + 1)^1.5) x Chronon
- *   gain, GC = Galaxy Cores gained this Crunch run. Lifetime Chronons give Galaxy Cores
+ * - Needs 7 galaxies explored in the Crunch run and 1e11 Galaxy Cores gained in it (1.4.0). Gives
+ *   floor((log10(GC / 1e11) + 1)^1.5) x Chronon gain, GC = Galaxy Cores gained this Crunch run. Lifetime Chronons give Galaxy Cores
  *   x(1 + Chronons)^0.5.
  * - Resets the Galactic layer and everything below: Galaxy Cores, explored galaxies, the Galactic
  *   Tree and Galactic Constants (until milestones keep them). Keeps megastructures, colonies, the
@@ -30,8 +30,8 @@ export const galaxiesNeeded = (s: GameState): number => Math.min(GALAXIES.length
 
 export function crunchGain(s: GameState): Decimal {
   const gc = runCores(s);
-  if (gc.lt(C.gainDiv)) return ZERO;
-  return gc.div(C.gainDiv).log10().add(1).pow(C.gainPow).mul(stat(s, 'chrononGain')).floor();
+  if (gc.lt(C.need)) return ZERO;
+  return resetCeiling(s, 'crunch', gc.div(C.need).log10().add(1).pow(C.gainPow).mul(stat(s, 'chrononGain'))).floor();
 }
 
 export function crunchReady(s: GameState): boolean {
@@ -40,8 +40,8 @@ export function crunchReady(s: GameState): boolean {
 
 /** Galaxy Cores this run needed for one more Chronon. */
 export function nextChrononAt(s: GameState): Decimal {
-  const next = crunchGain(s).add(1).div(stat(s, 'chrononGain'));
-  return D(10).pow(next.pow(1 / C.gainPow).sub(1)).mul(C.gainDiv);
+  const next = unResetCeiling(s, 'crunch', crunchGain(s).add(1)).div(stat(s, 'chrononGain'));
+  return D(10).pow(next.pow(1 / C.gainPow).sub(1)).mul(C.need);
 }
 
 /** The Crunch appears with Galactic milestone 7 (and stays once you've crunched). */
@@ -95,8 +95,8 @@ export function registerCrunch(): void {
             s.totals.run[c] = ZERO;
           }
           s.galactic.cleared = hasEternity(s, 'et.dawn') ? [...DAWN] : [];
-          s.galactic.galaxy = 'milkyway';
           s.galactic.next = 'milkyway';
+          arriveIn(s, 'milkyway');
           s.stats.galaxiesCleared = s.galactic.cleared.length;
         },
       },

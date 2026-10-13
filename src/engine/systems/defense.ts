@@ -4,7 +4,7 @@ import { planLimited, type PurchasePlan } from '../buy';
 import { type CostCurve, lateRamp } from '../cost';
 import { D, type Decimal } from '../decimal';
 import { events } from '../events';
-import { cur, gain, type GameState, spend } from '../state';
+import { cur, gain, type GameState, spend, usable } from '../state';
 import { invalidateStats, registerSources } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
 import { type BattleResult, type BattleSetup, relativeHit, runBattle } from './defenseBattle';
@@ -61,7 +61,7 @@ function levelCurve(kind: string): CostCurve {
 
 /** Levels at the buy amount (x1 to Max, closed-form). */
 export const levelPlan = (s: GameState, kind: string): PurchasePlan =>
-  planLimited(levelCurve(kind), turretLevel(s, kind), cur(s, TURRET_BY_ID.get(kind)!.alloy), s.settings.buyAmount, s.settings.customBuyAmount, Infinity);
+  planLimited(levelCurve(kind), turretLevel(s, kind), usable(s, TURRET_BY_ID.get(kind)!.alloy), s.settings.buyAmount, s.settings.customBuyAmount, Infinity);
 
 export function buyTurretLevels(s: GameState, kind: string): boolean {
   const t = TURRET_BY_ID.get(kind);

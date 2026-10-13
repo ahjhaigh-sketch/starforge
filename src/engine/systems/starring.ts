@@ -4,7 +4,7 @@ import { STAR_RANKS } from '../../content/runeDepth';
 import { planFlat, type FlatPlan } from '../buy';
 import { D, type Decimal, ZERO } from '../decimal';
 import { events } from '../events';
-import { cur, gain, type GameState, spend } from '../state';
+import { cur, gain, type GameState, spend, usable } from '../state';
 import { mutatedTotal, trimMutations } from './mutations';
 import { copies, shrineOpen } from './runes';
 
@@ -96,7 +96,7 @@ export function craftable(s: GameState, r: RuneDef): boolean {
 
 export const craftPlan = (s: GameState, id: string): FlatPlan => {
   const r = RUNE_BY_ID.get(id)!;
-  return planFlat(oddsOf(r), cur(s, 'runeShards'), s.settings.buyAmount, s.settings.customBuyAmount);
+  return planFlat(oddsOf(r), usable(s, 'runeShards'), s.settings.buyAmount, s.settings.customBuyAmount);
 };
 
 /** Crafts copies of a chosen rune with the buy amount. */

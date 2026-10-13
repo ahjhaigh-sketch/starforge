@@ -1,3 +1,4 @@
+import { manual } from './manual';
 import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { registerContent } from '../../src/content';
@@ -30,7 +31,7 @@ function player(galactics = 2, seed = 9): GameState {
   s.galactic.cleared = ['milkyway', 'spiral'];
   for (const c of ['stardust', 'shards', 'essence', 'darkMatter', 'galaxyCores', 'antimatter', 'embers', 'ore', 'scales', 'alloy.iron', 'alloy.gold', 'supply']) gain(s, c, D('1e600'));
   invalidateStats();
-  return s;
+  return manual(s);
 }
 
 function clone(s: GameState): GameState {
@@ -68,7 +69,7 @@ describe('Megastructures', () => {
     s.blackHole.mass = D(2e7);
     s.mirror.depth = 11;
     s.mirror.upgrades = ['mu.key'];
-    s.totals.run.darkMatter = D(1e9);
+    s.totals.run.darkMatter = D(1e13);
     invalidateStats();
     expect(performReset(s, 'galactic')).not.toBeNull();
     for (const m of MEGASTRUCTURES) expect(megaStage(s, m.id)).toBe(1);

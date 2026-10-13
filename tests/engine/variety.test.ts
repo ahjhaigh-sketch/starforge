@@ -111,6 +111,8 @@ describe('medals and goals', () => {
     // 1.2.0 medals: further counts, combinations, unlocks and the secrets
     Object.assign(s.stats, { maxCombo: 800, evolves: 300, supernovasAll: 3000, nebulasAll: 300, singularitiesAll: 60, galacticsAll: 60, crunchesAll: 60, multiversesAll: 30, beltTier: 10, level: 50, cores: 30, deals: 200, trips: 2000, chaosRolls: 250, perfects: 1000, questsDone: 500, weathers: 250, weatherSummoned: 10, elixirsDrunk: 25, brews: 100, defenseFights: 100, wyrmsHatched: 1000, nurseryHarvests: 100, runesCrafted: 100, spireBest: 100, coloniesFounded: 5, megaDone: 3, wormholesOpened: 10, tradeRoutes: 5, diceRolled: 100 });
     for (const [id, n] of [['pill', 25], ['tier', 10], ['mystery', 10], ['gear', 25], ['photo', 1], ['credits', 3], ['name', 7], ['locked', 20], ['ascent', 30], ['mute', 10], ['size', 1]] as const) s.stats[pokeStat(id)] = n;
+    // 1.4.0 medals: the layers beyond the Multiverse and the systems that grew
+    Object.assign(s.stats, { hyperversesAll: 10, omniversesAll: 10, genesesAll: 10, apotheosesAll: 5, ritesFound: 28, miracles: 10, bestLife: 100, galaxiesCleared: 20, galaxiesClearedAll: 50, skiesCharted: 25 });
     s.unlocked = SYSTEMS.map((x) => x.id);
     s.upgrades = UPGRADES.map((u) => u.id);
     invalidateStats();

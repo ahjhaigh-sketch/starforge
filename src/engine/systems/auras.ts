@@ -4,7 +4,7 @@ import { planFlat, type FlatPlan } from '../buy';
 import { D, type Decimal, ONE, ZERO } from '../decimal';
 import { events } from '../events';
 import { drawHits, effLog10 } from '../odds';
-import { cur, gain, type GameState, spend } from '../state';
+import { cur, gain, type GameState, spend, usable } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
 import { registerSystem } from '../tick';
 
@@ -57,7 +57,7 @@ export function rollAuraDice(s: GameState, dice: Decimal): AuraRoll {
   return { dice, hits, best };
 }
 
-export const dicePlan = (s: GameState): FlatPlan => planFlat(ONE, cur(s, 'auraDice').floor(), s.settings.buyAmount, s.settings.customBuyAmount);
+export const dicePlan = (s: GameState): FlatPlan => planFlat(ONE, usable(s, 'auraDice').floor(), s.settings.buyAmount, s.settings.customBuyAmount);
 
 /** Rolls dice with the buy amount (x1, x10 ... Max, typed). */
 export function rollAuras(s: GameState): AuraRoll | null {
@@ -144,9 +144,27 @@ function wornScore(s: GameState): number {
   return t;
 }
 
-/** 1.3.0 Best auras: tries every set of owned auras for your slots (families included) and wears the strongest. */
-export function bestAuras(s: GameState): void {
-  const owned = AURAS.filter((a) => auraCopies(s, a.id).gt(0)).map((a) => a.id);
+/**
+ * 1.3.0 Best auras: tries every set of owned auras for your slots (families included) and wears the strongest.
+ * 1.4.0: `pool` limits the search to the strongest few on their own (automation: 20 sets, not 4,060).
+ */
+export function bestAuras(s: GameState, pool = Infinity): void {
+  let owned = AURAS.filter((a) => auraCopies(s, a.id).gt(0)).map((a) => a.id);
+  if (owned.length > pool) {
+    const solo = (id: string) => {
+      s.auras.equipped = id;
+      s.auras.more = [];
+      return wornScore(s);
+    };
+    const keepWorn = { equipped: s.auras.equipped, more: s.auras.more };
+    owned = owned
+      .map((id) => ({ id, v: solo(id) }))
+      .sort((a, b) => b.v - a.v || a.id.localeCompare(b.id))
+      .slice(0, pool)
+      .map((x) => x.id);
+    s.auras.equipped = keepWorn.equipped;
+    s.auras.more = keepWorn.more;
+  }
   const n = Math.min(auraSlots(s), owned.length);
   if (n === 0) return;
   let best: string[] = [];

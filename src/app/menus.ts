@@ -5,6 +5,13 @@ import { milestoneReached } from '../engine/layers';
 import { AUTO_BUYERS, autoSetting, autoUnlocked } from '../engine/systems/automation';
 import { wardrobeOpen } from '../engine/systems/cosmetics';
 import { automating } from '../engine/systems/eternity';
+import { systemFullyAutomated } from '../engine/layerAuto';
+import { NEBULA_TREE } from '../content/nebulaTree';
+import { NOVA_TREE } from '../content/novaTree';
+import { galacticTree } from '../engine/systems/galactic';
+import { scaleTree } from '../engine/systems/leviathans';
+import { starChart } from '../engine/systems/observatory';
+import { singularityTree } from '../engine/systems/singularity';
 import { game } from './game';
 
 /**
@@ -12,15 +19,37 @@ import { game } from './game';
  * menus that run themselves tuck away by themselves once you're past them (switch that off, or show
  * one again, in Settings). A just-unlocked menu always shows until you've opened it.
  */
-export const NEVER_HIDE: ReadonlySet<string> = new Set(['starforge', 'novatree', 'fusion']);
+// 1.4.0: Automation stays: its Auto all and layer switches are how you run everything else
+export const NEVER_HIDE: ReadonlySet<string> = new Set<string>(['automation']);
 
 const on = (s: GameState, id: string) => {
   const a = AUTO_BUYERS.find((x) => x.id === id);
   return !!a && autoUnlocked(s, a) && autoSetting(s, id).on;
 };
 
-/** Why a menu can tuck itself away (it runs itself), or null while it still needs you. */
+/** The big trees' menus, and whether every one-off node in each is bought. */
+const TREE_MENUS = new Set(['novatree', 'nebulatree', 'singularitytree', 'galactictree', 'scaletree', 'starchart']);
+function treeDone(s: GameState, id: string): boolean {
+  const trees: Record<string, { nodes: ReadonlyArray<{ id: string; repeat?: unknown }>; levels: Record<string, number> }> = {
+    novatree: { nodes: NOVA_TREE, levels: s.novaTree },
+    nebulatree: { nodes: NEBULA_TREE, levels: s.nebulaTree },
+    singularitytree: { nodes: singularityTree.def.nodes, levels: s.singularityTree },
+    galactictree: { nodes: galacticTree.def.nodes, levels: s.galacticTree },
+    scaletree: { nodes: scaleTree.def.nodes, levels: s.scaleTree },
+    starchart: { nodes: starChart.def.nodes, levels: s.starChart },
+  };
+  const t = trees[id];
+  return !!t && t.nodes.every((n) => !!n.repeat || (t.levels[n.id] ?? 0) > 0);
+}
+
+/**
+ * Why a menu can tuck itself away (it runs itself), or null while it still needs you. 1.4.0: any menu whose layer
+ * runs itself (two layers up), and a big tree with nothing left to buy and its auto-buyer on ("automatically hide
+ * any of the buttons for previous already fully automated things, such as Nova Tree, Starforge, Ships, Nebula").
+ */
 export function runsItself(s: GameState, id: string): string | null {
+  if (systemFullyAutomated(s, id)) return 'its whole layer runs itself';
+  if (TREE_MENUS.has(id) && on(s, `auto.${id}`) && treeDone(s, id)) return 'every node is bought and its auto-buyer keeps buying';
   switch (id) {
     case 'automation': {
       // every Supernova auto-buyer earned, and no new one waiting for you to switch it on
@@ -107,7 +136,7 @@ export function setMenuHidden(s: GameState, id: string, hide: boolean): void {
 /** Parts of the screen you can hide in Settings (each is a data-hide word on the page). */
 export const HUD_PARTS: ReadonlyArray<{ id: string; name: string }> = [
   { id: 'focus', name: 'Focus cards' },
-  { id: 'teasers', name: 'Coming up' },
+  { id: 'teasers', name: 'Systems by layer (and what is coming up)' },
   { id: 'buffs', name: 'Boosts' },
   { id: 'autobars', name: 'Bars that run themselves' },
   { id: 'evolve', name: 'Evolve button' },

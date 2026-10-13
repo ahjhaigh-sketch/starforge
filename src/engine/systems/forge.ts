@@ -4,7 +4,7 @@ import { planLimited, type PurchasePlan } from '../buy';
 import { type CostCurve, lateRamp } from '../cost';
 import { D, Decimal, ONE, ZERO } from '../decimal';
 import { events } from '../events';
-import { cur, gain, type GameState, spend } from '../state';
+import { cur, gain, type GameState, spend, usable } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
 
@@ -41,7 +41,7 @@ export const batchAlloy = (s: GameState, grade: GradeId): Decimal => D(F.alloyPe
 export const batchSeconds = (s: GameState): number => F.batchSeconds / stat(s, 'forgeSpeed').toNumber();
 
 export function forgePlan(s: GameState, id: ForgeUpgradeId): PurchasePlan {
-  return planLimited(forgeCurve(id), forgeLevel(s, id), cur(s, 'ore'), s.settings.buyAmount, s.settings.customBuyAmount, forgeLimit(id));
+  return planLimited(forgeCurve(id), forgeLevel(s, id), usable(s, 'ore'), s.settings.buyAmount, s.settings.customBuyAmount, forgeLimit(id));
 }
 
 export function buyForgeUpgrade(s: GameState, id: ForgeUpgradeId): boolean {

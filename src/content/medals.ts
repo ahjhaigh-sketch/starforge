@@ -267,6 +267,24 @@ export const MEDALS: readonly MedalDef[] = [
   secret('secret.mute', 'Hush', 'Mute and unmute the game 10 times.', poke('mute', 10)),
   secret('secret.size', 'Honey, I Shrunk the Stars', 'Change the size of the interface.', poke('size', 1)),
   secret('secret.jackpot', 'Jackpot', 'Reach a combo of 777.', c('maxCombo', 777, 'combo')),
+  // ---- 1.4.0: beyond the Multiverse, and the systems that grew ----
+  { id: 'hyper.1', name: 'Folded', desc: 'Fold into the Hyperverse.', icon: 'tesseract', req: c('hyperversesAll', 1, 'Hyperverse') },
+  { id: 'hyper.10', name: 'Origami Cosmos', desc: 'Fold into the Hyperverse 10 times.', icon: 'tesseract', req: c('hyperversesAll', 10, 'Hyperverse') },
+  { id: 'omni.1', name: 'All at Once', desc: 'Become the Omniverse.', icon: 'aether', req: c('omniversesAll', 1, 'Omniverse') },
+  { id: 'omni.10', name: 'Everywhere', desc: 'Become the Omniverse 10 times.', icon: 'aether', req: c('omniversesAll', 10, 'Omniverse') },
+  { id: 'genesis.1', name: 'Let There Be', desc: 'Begin Genesis.', icon: 'seed', req: c('genesesAll', 1, 'Genesis') },
+  { id: 'genesis.10', name: 'Gardener of Worlds', desc: 'Begin Genesis 10 times.', icon: 'seed', req: c('genesesAll', 10, 'Genesis') },
+  { id: 'apotheosis.1', name: 'The Last Star', desc: 'Ascend to Apotheosis.', icon: 'divinity', req: c('apotheosesAll', 1, 'Apotheosis') },
+  { id: 'apotheosis.5', name: 'Many Lives', desc: 'Ascend to Apotheosis 5 times.', icon: 'divinity', req: c('apotheosesAll', 5, 'Apotheosis') },
+  { id: 'rites.10', name: 'High Priest', desc: 'Find 10 Rites in the Pantheon.', icon: 'pantheon', req: c('ritesFound', 10, 'Rite') },
+  { id: 'rites.all', name: 'Every Pair', desc: 'Find all 28 Rites.', icon: 'pantheon', req: c('ritesFound', 28, 'Rite') },
+  { id: 'miracles.all', name: 'Miracle Worker', desc: 'Buy all ten Miracles.', icon: 'divinity', req: c('miracles', 10, 'Miracle') },
+  { id: 'life.100', name: 'A Life Well Lived', desc: 'Live a Past Life scoring 100.', icon: 'lives', req: c('bestLife', 100, 'score') },
+  { id: 'galaxies.20', name: 'Cartographer', desc: 'Explore all 20 galaxies in one Crunch run.', icon: 'galaxy+map', req: c('galaxiesCleared', 20, 'galaxy') },
+  { id: 'galaxies.50', name: 'Wanderer', desc: 'Explore 50 galaxies over all time.', icon: 'galaxy+map', req: c('galaxiesClearedAll', 50, 'galaxy') },
+  { id: 'skies.25', name: 'Sky Reader', desc: 'Record a constellation on 25 different skies.', icon: 'telescope', req: c('skiesCharted', 25, 'sky') },
+  opened('hyperverse', 'the Hyperverse', 'Fourth Dimension', 'Unlock the Hyperverse.'),
+  opened('laws', 'the Laws', 'Lawgiver', 'Unlock the Laws of Physics.'),
 ];
 
 export const MEDAL_BY_ID: ReadonlyMap<string, MedalDef> = new Map(MEDALS.map((m) => [m.id, m]));

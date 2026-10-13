@@ -2,7 +2,7 @@ import { BALANCE } from '../content/balance';
 import { BIOMES, BUILDINGS, COLONY_TYPE_BY_ID, COLONY_TYPES, CURRENCY_LABEL, HEX_EDGES, HEXES, MEGASTRUCTURES, pairValue, planetScore, RESEARCH } from '../content/galaxyBuild';
 import { D } from '../engine/decimal';
 import { cur } from '../engine/state';
-import { buildingCost, capacity, colonyBonus, colonySlots, coloniesOpen, finishedMult, foundCost, growthRate, hasResearch, maxRoutes, routesOf, supplyRate, terraOpen, totalSupplyRate } from '../engine/systems/colonies';
+import { bestLayout, buildingCost, capacity, colonyBonus, colonySlots, coloniesOpen, finishedMult, foundCost, growthRate, hasResearch, maxRoutes, routesOf, supplyRate, terraOpen, totalSupplyRate } from '../engine/systems/colonies';
 import { canBuildStage, megaCost, megaOpen, megaReward, megaStage, STAGES } from '../engine/systems/megastructures';
 import { format, formatMult, formatRate } from '../ui/format';
 import { game } from './game';
@@ -128,6 +128,10 @@ export function coloniesReport(): ColoniesReport {
 }
 
 export interface TerraformReport {
+  /** 1.4.0: which planet this read-out is for. */
+  pick: number;
+  /** What the best layout would score. */
+  best: number;
   open: boolean;
   colonies: Array<{ i: number; name: string; finished: boolean }>;
   biomes: Array<{ id: string; name: string; color: string }>;
@@ -148,6 +152,9 @@ export interface TerraformReport {
   pairs: Array<{ a: string; b: string; value: number }>;
 }
 
+let bestCache: number | null = null;
+const bestScore = (): number => (bestCache ??= planetScore(bestLayout()));
+
 export function terraformReport(pick: number): TerraformReport {
   const s = game.state;
   const c = s.colonies.list[pick];
@@ -156,6 +163,8 @@ export function terraformReport(pick: number): TerraformReport {
   const score = planetScore(grid);
   const color = (b: string | null) => BIOMES.find((x) => x.id === b)?.color ?? '';
   return {
+    pick,
+    best: bestScore(),
     open: terraOpen(s),
     colonies: s.colonies.list.map((x, i) => ({ i, name: x.name, finished: x.finished !== null })),
     biomes: BIOMES.map((b) => ({ id: b.id, name: b.name, color: b.color })),

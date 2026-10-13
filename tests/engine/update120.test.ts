@@ -108,6 +108,7 @@ describe('1.2.0: save version 21, the Merchant, auto-planets, buy all', () => {
     s.stats.supernovas = 30; // the Nova Tree opens with its Supernova milestone
     gain(s, 'shards', D(1e6));
     expect(buyAllNodes(s, TREE_SHOP_BY_ID.get('novatree')!)).toBeGreaterThan(3);
-    for (const id of ['novatree', 'nebulatree', 'singularitytree', 'galactictree', 'scaletree', 'starchart']) expect(autoSetting(s, `auto.${id}`).on).toBe(false);
+    // 1.4.0: the tree auto-buyers start switched on (they began off)
+    for (const id of ['novatree', 'nebulatree', 'singularitytree', 'galactictree', 'scaletree', 'starchart']) expect(autoSetting(s, `auto.${id}`).on).toBe(true);
   });
 });

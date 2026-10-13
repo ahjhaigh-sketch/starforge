@@ -48,6 +48,31 @@ export function softcap(value: Decimal, start: DecimalSource, power: number): De
   return s.mul(value.div(s).pow(power));
 }
 
+/** The value softcap() turns into `out` (its inverse, for "next one at" read-outs). */
+export function unSoftcap(out: Decimal, start: DecimalSource, power: number): Decimal {
+  const s = D(start);
+  if (out.lte(s)) return out;
+  return s.mul(out.div(s).pow(1 / power));
+}
+
+/**
+ * 1.4.0: above `start`, growth is logarithmic: start x (1 + log10(value / start))^power. For a gain that
+ * a runaway currency feeds (Galaxy Cores from Dark Matter that reached e62 in the playtest), so a
+ * thousand times more in gives a few times more out, not a thousand.
+ */
+export function logSoftcap(value: Decimal, start: DecimalSource, power: number): Decimal {
+  const s = D(start);
+  if (value.lte(s)) return value;
+  return s.mul(value.div(s).log10().add(1).pow(power));
+}
+
+/** The value logSoftcap() turns into `out` (its inverse). */
+export function unLogSoftcap(out: Decimal, start: DecimalSource, power: number): Decimal {
+  const s = D(start);
+  if (out.lte(s)) return out;
+  return s.mul(D(10).pow(out.div(s).pow(1 / power).sub(1)));
+}
+
 export function dmax(a: Decimal, b: Decimal): Decimal {
   return a.gte(b) ? a : b;
 }

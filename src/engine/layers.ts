@@ -1,4 +1,5 @@
 import { BALANCE } from '../content/balance';
+import { LAYER_COUNTERS } from '../content/layers';
 import { D, type Decimal } from './decimal';
 import { events } from './events';
 import { gain, type GameState } from './state';
@@ -127,6 +128,44 @@ export function weakReset(s: GameState, id: string, gain: Decimal): boolean {
   const best = bestGainLog(s, id);
   return best !== null && best >= 2 && gain.add(1).log10().toNumber() < best - BALANCE.recommend.weakOoM;
 }
+
+/** 1.4.0: the reset ceiling's order of magnitude and margin for a layer with `done` resets ever (see BALANCE.resetCeiling). */
+export function ceilingFor(done: number): { c: number; a: number } | null {
+  const R = BALANCE.resetCeiling;
+  const g = R.growth ** done;
+  const c = R.capLog * g;
+  return Number.isFinite(c) && c < 1e6 ? { c, a: R.margin * g } : null;
+}
+
+const resetsEver = (s: GameState, layerId: string): number => s.stats[`${LAYER_COUNTERS[layerId]?.all ?? layerId}`] ?? 0;
+
+/**
+ * 1.4.0, the reset ceiling: what a reset of this layer really pays for a gain worked out as `raw`. Up to
+ * 10^(c - a) nothing changes; above, the order of magnitude x becomes c - a^2 / (a + x - (c - a)), which
+ * leaves at slope 1 and never reaches c.
+ */
+export function resetCeiling(s: GameState, layerId: string, raw: Decimal): Decimal {
+  const cap = ceilingFor(resetsEver(s, layerId));
+  if (!cap || raw.lte(1)) return raw;
+  const x = raw.log10().toNumber();
+  const x0 = cap.c - cap.a;
+  if (x <= x0) return raw;
+  return D(10).pow(cap.c - (cap.a * cap.a) / (cap.a + x - x0)).floor();
+}
+
+/** The raw gain that the ceiling turns into `out` (its inverse, for "next one at" read-outs); Infinity past the ceiling. */
+export function unResetCeiling(s: GameState, layerId: string, out: Decimal): Decimal {
+  const cap = ceilingFor(resetsEver(s, layerId));
+  if (!cap || out.lte(1)) return out;
+  const y = out.log10().toNumber();
+  const x0 = cap.c - cap.a;
+  if (y <= x0) return out;
+  if (y >= cap.c) return D(Infinity);
+  return D(10).pow(x0 + (cap.a * cap.a) / (cap.c - y) - cap.a);
+}
+
+/** Whether the ceiling is holding this reset back now (for the reset screens). */
+export const ceilingBites = (s: GameState, layerId: string, raw: Decimal): boolean => resetCeiling(s, layerId, raw).lt(raw.floor());
 
 /** The one reset function. Returns the gain, or null if the layer isn't ready. */
 export function performReset(s: GameState, id: string): Decimal | null {

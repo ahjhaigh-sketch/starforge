@@ -1,8 +1,8 @@
 import { BALANCE } from '../../content/balance';
 import { CONSTANTS } from '../../content/constants';
 import { TIERS } from '../../content/tiers';
-import { D, Decimal, ZERO } from '../decimal';
-import { milestoneReached, registerLayer, onAnyReset } from '../layers';
+import { D, Decimal, ZERO, unSoftcap } from '../decimal';
+import { milestoneReached, onAnyReset, registerLayer, resetCeiling, unResetCeiling } from '../layers';
 import { gain, type GameState } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
@@ -37,7 +37,8 @@ export function rawShardGain(s: GameState): Decimal {
 export function supernovaGain(s: GameState): Decimal {
   // the first Supernova ever (not the first of each Nebula run) is a fixed 3
   if ((s.stats.supernovasAll ?? 0) === 0) return D(B.firstGain);
-  return rawShardGain(s).floor();
+  // 1.4.0: the reset ceiling (BALANCE.resetCeiling)
+  return resetCeiling(s, 'supernova', rawShardGain(s)).floor();
 }
 
 /**
@@ -58,7 +59,7 @@ export function supernovaReady(s: GameState): boolean {
 
 /** Stardust this run needed for one more shard than now ("next shard at X"). */
 export function nextShardAt(s: GameState): Decimal {
-  const next = supernovaGain(s).add(1);
+  const next = unSoftcap(unResetCeiling(s, 'supernova', supernovaGain(s).add(1)), B.softcapAt, B.softcapPow);
   const mult = stat(s, 'shardGain').mul(quickBurn(s));
   return D(B.runStardust).mul(next.div(mult).pow(1 / B.gainPow));
 }

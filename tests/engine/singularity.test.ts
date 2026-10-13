@@ -1,3 +1,4 @@
+import { manual } from './manual';
 import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { registerContent } from '../../src/content';
@@ -35,7 +36,7 @@ function player(seed = 41): GameState {
   s.singularity.key = true;
   gain(s, 'essence', D('1e94'));
   invalidateStats();
-  return s;
+  return manual(s);
 }
 
 function clone(s: GameState): GameState {
@@ -45,7 +46,7 @@ function clone(s: GameState): GameState {
 }
 
 describe('the Singularity', () => {
-  it('needs the key and a million Essence this run; gives floor(1.05^(log10 NE - 6)) x Dark Matter gain', () => {
+  it('needs the key and (1.4.0) 1e40 Essence this run; gives floor(1.05^(log10 NE - 6)) x Dark Matter gain', () => {
     const s = player();
     expect(singularityGain(s).toNumber()).toBe(Math.floor(1.05 ** 88 * stat(s, 'darkMatterGain').toNumber()));
     expect(singularityReady(s)).toBe(true);
@@ -53,11 +54,11 @@ describe('the Singularity', () => {
     expect(singularityReady(s)).toBe(false);
     const small = createInitialState(1, 1);
     small.singularity.key = true;
-    gain(small, 'essence', D(999_999));
+    gain(small, 'essence', D('9.9e39'));
     expect(singularityReady(small)).toBe(false);
-    gain(small, 'essence', D(1));
+    gain(small, 'essence', D('1e38'));
     invalidateStats();
-    expect(singularityGain(small).toNumber()).toBe(Math.floor(stat(small, 'darkMatterGain').toNumber()));
+    expect(singularityGain(small).toNumber()).toBe(Math.floor(1.05 ** 34 * stat(small, 'darkMatterGain').toNumber()));
   });
 
   it('the Event Horizon key costs Embers and is on sale from Nebula milestone 8', () => {
@@ -148,7 +149,7 @@ describe('game speed', () => {
       gain(s, 'stardust', D(1e6));
       buyEngine(s, 'mote', 20);
       invalidateStats();
-      return s;
+      return manual(s);
     };
     const online = make();
     const away = make();

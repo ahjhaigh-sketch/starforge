@@ -7,7 +7,7 @@ import type { CostCurve } from '../cost';
 import { D, type Decimal } from '../decimal';
 import { events } from '../events';
 import { nextFloat, nextInt } from '../rng';
-import { cur, type Deal, gain, type GameState, spend } from '../state';
+import { cur, type Deal, gain, type GameState, spend, usable } from '../state';
 import { stat } from '../stats';
 import { registerSystem } from '../tick';
 import { addSamples } from './codex';
@@ -28,7 +28,7 @@ const M = BALANCE.merchant;
 export const merchantOpen = (s: GameState) => (s.stats.supernovas ?? 0) >= M.supernovas || s.unlocked.includes('merchant');
 
 const luckCurve: CostCurve = { base: M.luck.base, brackets: [{ from: 0, ratio: M.luck.growth }] };
-export const luckPlan = (s: GameState): PurchasePlan => planLimited(luckCurve, s.merchant.luck, cur(s, 'shards'), s.settings.buyAmount, s.settings.customBuyAmount, M.luck.max);
+export const luckPlan = (s: GameState): PurchasePlan => planLimited(luckCurve, s.merchant.luck, usable(s, 'shards'), s.settings.buyAmount, s.settings.customBuyAmount, M.luck.max);
 export const rerollCost = (s: GameState): Decimal => D(M.rerollBase).mul(D(M.rerollGrowth).pow(s.merchant.rerolls));
 export const mythicalChance = (s: GameState) => M.mythicalChance + M.mythicalPerLevel * s.merchant.luck;
 

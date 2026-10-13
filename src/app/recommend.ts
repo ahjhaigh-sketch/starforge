@@ -1,3 +1,5 @@
+import { GALAXY_BY_ID } from '../content/galactic';
+import { beyondGain, beyondReady } from '../engine/systems/beyond';
 import { BALANCE } from '../content/balance';
 import { CURRENCY_LABEL, MEGASTRUCTURES } from '../content/galaxyBuild';
 import type { Decimal } from '../engine/decimal';
@@ -6,7 +8,7 @@ import { cur, type GameState } from '../engine/state';
 import { autoSetting, AUTO_BUYERS, autoUnlocked } from '../engine/systems/automation';
 import { crunchGain, crunchReady } from '../engine/systems/crunch';
 import { automating } from '../engine/systems/eternity';
-import { galacticGain, galacticReady, galacticReqs, galaxyMapOpen } from '../engine/systems/galactic';
+import { galacticGain, galacticReady, galacticReqs, galaxyMapOpen, galaxyCleared, galaxyOf } from '../engine/systems/galactic';
 import { canBuildStage, megaOpen } from '../engine/systems/megastructures';
 import { collapsePrice, mirrorKey, mirrorOpen } from '../engine/systems/mirror';
 import { multiverseGain, multiverseReady, sparkFlag } from '../engine/systems/multiverse';
@@ -57,7 +59,22 @@ const autoNova = (s: GameState) => {
   return autoUnlocked(s, a) && autoSetting(s, a.id).on;
 };
 
+const beyond = (id: 'hyperverse' | 'omniverse' | 'genesis' | 'apotheosis', icon: string, buildUp: string): ResetCase => ({
+  id,
+  ready: (s) => beyondReady(s, id),
+  gain: (s) => beyondGain(s, id),
+  auto: (s) => id !== 'apotheosis' && automating(s, id),
+  icon,
+  panel: id,
+  buildUp,
+});
+
 const RESETS: readonly ResetCase[] = [
+  // 1.4.0: beyond the Multiverse
+  beyond('apotheosis', 'divinity', 'More Geneses this run gather more Origin Seeds.'),
+  beyond('genesis', 'seed', 'More Omniverses this run gather more Aether.'),
+  beyond('omniverse', 'aether', 'More Hyperverses this run gather more Tesseracts.'),
+  beyond('hyperverse', 'tesseract', 'More Multiverses this run gather more Sparks.'),
   { id: 'multiverse', ready: multiverseReady, gain: multiverseGain, auto: () => false, icon: 'spark', panel: 'multiverse', buildUp: 'Another Big Crunch adds more Sparks.' },
   { id: 'crunch', ready: crunchReady, gain: crunchGain, auto: (s) => sparkFlag(s, 'autoCrunch'), icon: 'crunch', panel: 'bigcrunch', buildUp: 'More Galactic Rebirths this Crunch run gather more Galaxy Cores, and Cores set the Chronons.' },
   { id: 'galactic', ready: galacticReady, gain: galacticGain, auto: (s) => automating(s, 'galactic'), icon: 'galaxy', panel: 'galactic', buildUp: 'Go Singularity a few more times first: Dark Matter gained this Galactic run sets the Galaxy Cores.' },
@@ -72,6 +89,11 @@ function resetAdvice(s: GameState): Recommendation | null {
     if (!def || !r.ready(s) || r.auto(s)) continue;
     const g = r.gain(s);
     const money = LABEL[def.currency] ?? def.currency;
+    // 1.4.0: the galaxy you're in is explored and the next isn't: a rebirth is the only way on, however small
+    if (r.id === 'galactic' && galaxyCleared(s, s.galactic.galaxy) && !galaxyCleared(s, s.galactic.next)) {
+      const next = GALAXY_BY_ID.get(s.galactic.next);
+      return { id: 'go.explore', title: `Explore ${next?.name ?? 'the next galaxy'}`, text: `${galaxyOf(s).name} is explored. Go Galactic to reach ${next?.name ?? 'the next galaxy'} (+${format(g, n())} Galaxy Cores): ${next?.goalText ?? ''}.`, icon: 'galaxy+map', color: '#2B7FD0', panel: 'galactic' };
+    }
     if (weakReset(s, r.id, g)) {
       const best = bestGainLog(s, r.id) ?? 0;
       return { id: `weak.${r.id}`, title: `Build up before your next ${def.name}`, text: `It would give +${format(g, n())} ${money}; your best gave about +${format(Math_pow10(best), n())}. ${r.buildUp}`, icon: r.icon, color: '#FF7A2E', panel: r.panel };

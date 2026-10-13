@@ -1,5 +1,7 @@
 import { BALANCE } from '../content/balance';
 import { AUTO_LAYER_NAMES, AUTO_LAYERS, type AutoLayer, ECHO_ENGINES, ETERNITY_UPGRADES } from '../content/crunch';
+import { layerIndex } from '../content/layers';
+import { autoLevel, reachedLayer } from '../engine/layerAuto';
 import { planPurchase } from '../engine/buy';
 import { D, ZERO } from '../engine/decimal';
 import { layer, milestoneReached, resetsDone } from '../engine/layers';
@@ -43,8 +45,8 @@ export function crunchReport(): CrunchReport {
     explored: galaxiesExplored(s),
     need: galaxiesNeeded(s),
     cores: format(runCores(s), n()),
-    coresNeed: format(C.gainDiv, n()),
-    coresMet: runCores(s).gte(C.gainDiv),
+    coresNeed: format(C.need, n()),
+    coresMet: runCores(s).gte(C.need),
     done: resetsDone(s, def),
     passive: formatMult(D(1).add(s.totals.all.chronons ?? ZERO).pow(C.passivePow), n()),
     milestones: def.milestones.map((m) => ({ at: m.at, text: m.text, reached: milestoneReached(s, 'crunch', m.id) })),
@@ -78,10 +80,10 @@ export function eternityReport(): { open: boolean; chronons: string; cards: Eter
     open: eternityOpen(s),
     chronons: format(cur(s, 'chronons'), n()),
     cards: ETERNITY_UPGRADES.map((u) => ({ id: u.id, name: u.name, desc: u.desc, cost: u.cost, owned: hasEternity(s, u.id), can: canBuyEternity(s, u), automation: !!u.layer })),
-    auto: AUTO_LAYERS.map((l) => {
+    // 1.4.0: every layer you've passed runs itself (systems/layerAuto); Eternal Galaxy runs the Galactic layer early
+    auto: AUTO_LAYERS.filter((l) => layerIndex(l) <= Math.max(4, reachedLayer(s))).map((l) => {
       const a = eternityAuto(s, l);
-      const up = ETERNITY_UPGRADES.find((u) => u.layer === l)!;
-      return { layer: l, name: AUTO_LAYER_NAMES[l], owned: hasEternity(s, up.id), on: a.on, mode: a.mode, at: a.at.gt(0) ? format(a.at, n()) : '', resets: l !== 'stardust' };
+      return { layer: l, name: AUTO_LAYER_NAMES[l], owned: autoLevel(s, l) > 0, on: a.on, mode: a.mode, at: a.at.gt(0) ? format(a.at, n()) : '', resets: l !== 'stardust' };
     }),
   };
 }

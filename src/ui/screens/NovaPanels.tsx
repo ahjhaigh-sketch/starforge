@@ -3,6 +3,7 @@ import { useSnap } from '../../app/uiSnapshot';
 import { commands, sigilAware } from '../../app/commands';
 import { ascentOverview, type AscentDeck, ascentReport, automationReport, NODE_LEGEND, supernovaReport, treeReport } from '../../app/novaReports';
 import { useState } from 'react';
+import { layerAutoReport, type LayerAutoRow } from '../../app/autoReports';
 import { Button, cx, tint } from '../kit/Chunk';
 import { Icon } from '../kit/Icon';
 import { Panel } from '../kit/Panel';
@@ -94,11 +95,68 @@ export function NovaTreePanel() {
 const SPEND_LABELS: Record<number, string> = { 1: 'All', 0.5: 'Half', 0.1: 'A tenth' };
 
 /** Every auto-buyer you have earned, each with a switch and a spending limit. */
+/** 1.4.0: one layer's automation: how far it runs itself, its switch and its reset rule. */
+function LayerAutoCard({ r }: { r: LayerAutoRow }) {
+  const [at, setAt] = useState(r.at);
+  // milestones can set parts of a layer running before the layer itself does: those get the switch too
+  const live = r.level > 0 || r.running.length > 0;
+  return (
+    <div className={cx('layer-auto chunk', !live && 'locked')} style={tint(live ? '#2B1F6E' : '#24203F')} data-layer-auto={r.layer}>
+      <div className="layer-auto-head">
+        <b className="ol" style={{ color: r.color }}>
+          {r.name}
+        </b>
+        <span className={cx('layer-auto-level', r.level === 2 && 'full')}>{r.level === 2 ? 'Runs itself' : r.level === 1 ? 'Mostly runs itself' : live ? 'Partly runs itself' : 'Not yet'}</span>
+        {live && (
+          <Button size="sm" gloss={false} color={r.on ? 'var(--lime)' : '#5A5F8F'} onClick={() => commands.setEternityAuto(r.layer, { on: !r.on })} aria-pressed={r.on} aria-label={`${r.name} runs itself`}>
+            {r.on ? 'On' : 'Off'}
+          </Button>
+        )}
+      </div>
+      <small className="layer-auto-needs">{r.needs}</small>
+      {live && r.resets && (
+        <span className="layer-auto-rule" role="group" aria-label={`When ${r.name} resets by itself`}>
+          <button type="button" className="chunk pop" aria-pressed={r.mode === 'double'} onClick={() => commands.setEternityAuto(r.layer, { mode: 'double' })}>
+            When it doubles
+          </button>
+          <button type="button" className="chunk pop" aria-pressed={r.mode === 'amount'} onClick={() => commands.setEternityAuto(r.layer, { mode: 'amount', at: Number(at) || 0 })}>
+            At an amount
+          </button>
+          {r.mode === 'amount' && (
+            <input className="chunk" inputMode="decimal" value={at} placeholder="gain" aria-label={`${r.name} gain to reset at`} onChange={(e) => setAt(e.target.value)} onBlur={() => commands.setEternityAuto(r.layer, { mode: 'amount', at: Number(at) || 0 })} />
+          )}
+        </span>
+      )}
+      {r.running.length > 0 && <small className="layer-auto-list">Running: {r.running.join(', ')}</small>}
+      {live && r.waiting.length > 0 && <small className="layer-auto-list dim">{r.level === 0 ? 'Later' : 'Next layer up'}: {r.waiting.join(', ')}</small>}
+    </div>
+  );
+}
+
 export function AutomationPanel() {
   const rows = useReport('automation', automationReport, 300);
+  const layers = useReport('automation', layerAutoReport, 500);
   return (
     <Panel id="automation" title="Automation" color="#4A4F7A" size="wide">
-      <p>Auto-buyers come from Supernova milestones and lifetime Supernovas. Each buys as much as it can, once a second (faster with the Dreaming arm), and keeps working while you are away. Limit how much each may spend. Auto-Constants takes one step a minute, and waits a minute after you buy a constant yourself; Auto-Supernova goes as soon as a Supernova is ready (switch it off to save up a bigger one).</p>
+      <div className="auto-all-bar">
+        <p>
+          Every layer you pass runs itself: one layer on, its reset, tree, constants and main systems; two layers on, all of it, and its menus tuck away. Auto-buyers buy all they can at once, once a second, and keep working while you're away; none ever spends the safe tenth.
+        </p>
+        <Button color="var(--lime)" onClick={() => commands.autoAll()} data-testid="auto-all">
+          Auto all
+        </Button>
+      </div>
+      {layers && layers.length > 0 && (
+        <>
+          <h4 className="auto-head ol-sm">Layers that run themselves</h4>
+          <div className="layer-auto-grid">
+            {layers.map((r) => (
+              <LayerAutoCard key={r.layer} r={r} />
+            ))}
+          </div>
+        </>
+      )}
+      <h4 className="auto-head ol-sm">Auto-buyers</h4>
       <div className="auto-grid">
         {rows?.map((a) => (
           <div key={a.id} className={cx('auto-row chunk', !a.unlocked && 'locked')} style={tint(a.unlocked ? '#2B1F6E' : '#24203F')} data-auto={a.id}>

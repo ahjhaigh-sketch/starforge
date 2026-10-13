@@ -119,6 +119,7 @@ export function CrunchConfirmPanel() {
           </div>
           <p className="center">Chronons buy Eternity upgrades and Eternal Constants. The universe starts again in the Milky Way.</p>
           {r.warn && <p className="reset-warn" role="note">{r.warn}</p>}
+          {r.note && <p className="reset-note" role="note">{r.note}</p>}
           <div className="confirm-cols">
             <div className="well">
               <h4>Resets</h4>
@@ -158,7 +159,7 @@ export function CrunchConfirmPanel() {
 
 function AutoControls({ row }: { row: AutoRow }) {
   const [at, setAt] = useState('');
-  if (!row.owned) return <span className="auto-off">Buy its upgrade to automate</span>;
+  if (!row.owned) return <span className="auto-off">Runs itself once you're a layer past it</span>;
   return (
     <div className="et-auto-ctl">
       <Button size="sm" color={row.on ? 'var(--lime)' : '#5A5F8F'} onClick={() => commands.setEternityAuto(row.layer, { on: !row.on })} aria-pressed={row.on} data-et-auto={row.layer}>

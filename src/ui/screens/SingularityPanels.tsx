@@ -133,6 +133,7 @@ export function SingularityConfirmPanel() {
           </div>
           <p className="center">{r.currency}. It buys the Singularity Tree and Void Constants, and lifetime Dark Matter boosts all Essence.</p>
           {r.warn && <p className="reset-warn" role="note">{r.warn}</p>}
+          {r.note && <p className="reset-note" role="note">{r.note}</p>}
           <div className="confirm-cols">
             <div className="well">
               <h4>Resets</h4>

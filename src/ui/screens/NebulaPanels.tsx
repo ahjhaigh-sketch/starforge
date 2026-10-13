@@ -109,6 +109,7 @@ export function NebulaConfirmPanel() {
           </div>
           <p className="center">{r.currency}. It buys the Nebula Tree and Nebula Constants, and lifetime Essence boosts every shard.</p>
           {r.warn && <p className="reset-warn" role="note">{r.warn}</p>}
+          {r.note && <p className="reset-note" role="note">{r.note}</p>}
           <div className="confirm-cols">
             <div className="well">
               <h4>Resets</h4>

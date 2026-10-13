@@ -24,6 +24,7 @@ import './ui/multiverse.css';
 import './ui/phase20.css';
 import './ui/panelArt.css';
 import './ui/update120.css';
+import './ui/beyond.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

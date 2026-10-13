@@ -6,7 +6,7 @@ import { D, ONE, ZERO } from '../decimal';
 import { events } from '../events';
 import { onAnyReset } from '../layers';
 import { nextFloat, nextInt } from '../rng';
-import { cur, type GameState, spend } from '../state';
+import { cur, type GameState, spend, usable } from '../state';
 import { registerSources } from '../stats';
 
 /**
@@ -38,7 +38,7 @@ export function packRarity(s: GameState): number | null {
 const packCurve: CostCurve = { base: T.packBase, brackets: [{ from: 0, ratio: T.packGrowth }] };
 
 export function packPlan(s: GameState): PurchasePlan {
-  return planLimited(packCurve, s.tarot.packs, cur(s, 'essence'), s.settings.buyAmount, s.settings.customBuyAmount, s.tarot.packs + (CARDS.length - s.tarot.owned.length));
+  return planLimited(packCurve, s.tarot.packs, usable(s, 'essence'), s.settings.buyAmount, s.settings.customBuyAmount, s.tarot.packs + (CARDS.length - s.tarot.owned.length));
 }
 
 /** Opens packs with the buy amount. Returns the cards drawn, in order. */

@@ -31,7 +31,7 @@ function ready(seed = 3): GameState {
   s.mirror.depth = 11;
   s.singularityTree = { score: 1 };
   s.constants['void.horizon'] = 12;
-  gain(s, 'darkMatter', D('1.6e9'));
+  gain(s, 'darkMatter', D('1.6e13'));
   invalidateStats();
   return s;
 }
@@ -45,7 +45,7 @@ function clone(s: GameState): GameState {
 const labels = (s: GameState, id: string) => breakdown(s, id).map((l) => l.label);
 
 describe('Galactic Rebirth', () => {
-  it('1.3.0: needs the anti-star at Protostar (Mirror depth 11, not Black Hole stages), the Mirror Key and 1e8 Dark Matter this run', () => {
+  it('1.3.0: needs the anti-star at Protostar (Mirror depth 11, not Black Hole stages), the Mirror Key and (1.4.0) 1e12 Dark Matter this run', () => {
     const s = ready();
     expect(galacticReady(s)).toBe(true);
     s.mirror.depth = 10;
@@ -63,9 +63,9 @@ describe('Galactic Rebirth', () => {
 
   it('gives floor((DM / 1e8)^0.5) x Galaxy Core gain', () => {
     const s = ready();
-    const expected = Math.floor((1.6e9 / 1e8) ** 0.5 * stat(s, 'galaxyCoreGain').toNumber());
+    const expected = Math.floor((1.6e13 / 1e8) ** 0.5 * stat(s, 'galaxyCoreGain').toNumber());
     expect(galacticGain(s).toNumber()).toBe(expected);
-    expect(expected).toBe(4);
+    expect(expected).toBe(400);
   });
 
   it('resets the Singularity layer and keeps collections, challenges, wormholes and the key', () => {
@@ -77,8 +77,8 @@ describe('Galactic Rebirth', () => {
     s.runes.copies['dust.1'] = D(5);
     s.mirror.engines = { 'am.lantern': 30 };
     gain(s, 'antimatter', D(1e9));
-    expect(performReset(s, 'galactic')!.toNumber()).toBe(4);
-    expect(cur(s, 'galaxyCores').toNumber()).toBe(4);
+    expect(performReset(s, 'galactic')!.toNumber()).toBe(400);
+    expect(cur(s, 'galaxyCores').toNumber()).toBe(400);
     expect(cur(s, 'darkMatter').toNumber()).toBe(0);
     expect((s.totals.run.darkMatter ?? D(0)).toNumber()).toBe(0);
     expect(s.singularityTree).toEqual({});
@@ -110,7 +110,7 @@ describe('Galactic Rebirth', () => {
     const s = ready();
     performReset(s, 'galactic');
     const src = breakdown(s, 'darkMatterGain').find((l) => l.label === 'Galaxy Cores (lifetime)')!;
-    expect(src.value.toNumber()).toBeCloseTo(5 ** BALANCE.galactic.passivePow, 9);
+    expect(src.value.toNumber()).toBeCloseTo(401 ** BALANCE.galactic.passivePow, 9);
   });
 });
 
@@ -133,7 +133,7 @@ describe('galaxies', () => {
     const s = ready();
     performReset(s, 'galactic');
     s.galactic.galaxy = 'spiral';
-    gain(s, 'darkMatter', D(2e10));
+    gain(s, 'darkMatter', D(2e15));
     tick(s, 0.1);
     expect(s.galactic.cleared).toContain('spiral');
     expect(s.stats.galaxiesCleared).toBe(1);
@@ -221,14 +221,15 @@ describe('the Observatory', () => {
     expect(s.observatory.links).toHaveLength(maxLinks(s));
     const score = currentScore(s);
     const paid = recordConstellation(s);
-    expect(paid).toBe(Math.floor(score));
+    // 1.4.0: the first record on a sky also adds 5% to Star Charts for good, this one included
+    expect(paid).toBe(Math.floor(Math.floor(score) * 1.05));
     expect(cur(s, 'starCharts').toNumber()).toBe(paid);
     expect(recordConstellation(s)).toBe(0);
     // a new Galactic run brings a new sky
     const seed = s.observatory.seed;
     s.blackHole.mass = D(2e7);
     s.mirror.depth = 11;
-    gain(s, 'darkMatter', D(1e9));
+    gain(s, 'darkMatter', D(1e13));
     invalidateStats();
     performReset(s, 'galactic');
     expect(s.observatory.seed).not.toBe(seed);
@@ -251,7 +252,7 @@ describe('save version 16', () => {
 
   it('round-trips the galaxy, the trees and the Observatory', () => {
     const s = ready();
-    s.galactic = { galaxy: 'ring', next: 'dwarf', cleared: ['milkyway', 'spiral'], autoAt: D(500) };
+    s.galactic = { galaxy: 'ring', next: 'dwarf', cleared: ['milkyway', 'spiral'], autoAt: D(500), here: {}, explore: true };
     s.galacticTree = { 'gal.core': 1, 'gal.echo.0': 3 };
     s.observatory = { seed: 1234, links: [[0, 5], [2, 9]], best: 88.5 };
     s.starChart = { 'chart.root': 1 };

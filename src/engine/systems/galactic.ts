@@ -1,9 +1,9 @@
 import { BALANCE } from '../../content/balance';
 import { CONSTANTS } from '../../content/constants';
 import { GALACTIC_TREE, GALAXIES, GALAXY_BY_ID, type GalaxyDef, type GalaxyGoal } from '../../content/galactic';
-import { D, type Decimal, softcap, ZERO } from '../decimal';
+import { D, type Decimal, logSoftcap, softcap, unLogSoftcap, unSoftcap, ZERO } from '../decimal';
 import { events } from '../events';
-import { layer, milestoneReached, performReset, registerLayer } from '../layers';
+import { layer, milestoneReached, performReset, registerLayer, resetCeiling, unResetCeiling } from '../layers';
 import { gain, type GameState, gainPassive } from '../state';
 import { defineStat, invalidateStats, registerSources, stat, type StatSource } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
@@ -42,14 +42,19 @@ export const galacticTree = makeTree({
 export const runDarkMatter = (s: GameState): Decimal => s.totals.run.darkMatter ?? ZERO;
 
 /** The Dark Matter a Galactic Rebirth needs in its run. */
-export const darkMatterNeeded = (_s: GameState): Decimal => D(G.runDarkMatter);
+export const darkMatterNeeded = (_s: GameState): Decimal => D(G.need);
+/** What Galaxy Cores count from (gain = (DM / this)^0.5 x ...). */
+const coresFrom = D(G.runDarkMatter);
 
 export function galacticGain(s: GameState): Decimal {
   const dm = runDarkMatter(s);
   const need = darkMatterNeeded(s);
   if (dm.lt(need)) return ZERO;
-  // 1.3.0: softcapped above 10,000 a Galactic Rebirth
-  return softcap(dm.div(need).pow(G.gainPow).mul(stat(s, 'galaxyCoreGain')), G.softcapAt, G.softcapPow).floor();
+  // 1.3.0: softcapped above 10,000 a Galactic Rebirth; 1.4.0: logarithmic above a billion (the playtest's
+  // Dark Matter reached e62 and paid 9.4e18 Cores a rebirth, and 1% of that every second)
+  const raw = dm.div(coresFrom).pow(G.gainPow).mul(stat(s, 'galaxyCoreGain'));
+  // and the reset ceiling (BALANCE.resetCeiling)
+  return resetCeiling(s, 'galactic', logSoftcap(softcap(raw, G.softcapAt, G.softcapPow), G.logCapAt, G.logCapPow)).floor();
 }
 
 /** Each requirement on its own, for the reset bar and the panel: how far the anti-star has collapsed, the key, the Dark Matter. */
@@ -64,10 +69,9 @@ export function galacticReady(s: GameState): boolean {
 
 /** Dark Matter this run needed for one more Galaxy Core. */
 export function nextCoreAt(s: GameState): Decimal {
-  let target = galacticGain(s).add(1);
-  // undo the softcap first: above it, each Core needs (Cores / start)^(1 / power) times as much
-  if (target.gt(G.softcapAt)) target = D(G.softcapAt).mul(target.div(G.softcapAt).pow(1 / G.softcapPow));
-  return target.div(stat(s, 'galaxyCoreGain')).pow(1 / G.gainPow).mul(darkMatterNeeded(s));
+  // undo the softcaps first, the last one first
+  const target = unSoftcap(unLogSoftcap(unResetCeiling(s, 'galactic', galacticGain(s).add(1)), G.logCapAt, G.logCapPow), G.softcapAt, G.softcapPow);
+  return target.div(stat(s, 'galaxyCoreGain')).pow(1 / G.gainPow).mul(coresFrom);
 }
 
 // ---------- galaxies ----------
@@ -90,18 +94,50 @@ export function setNextGalaxy(s: GameState, id: string): boolean {
   return true;
 }
 
+/**
+ * 1.4.0: everything of a currency gained since you arrived in this galaxy, passive income included. Goals
+ * used run totals, which passive income never reaches (1.3.0), so a galaxy whose Dark Matter came from
+ * passive gains never counted it: the playtest's Spiral, Ring and Quasar Host stayed unexplored.
+ */
+export function gainedHere(s: GameState, currency: string): Decimal {
+  return s.galactic.here[currency] ?? ZERO;
+}
+
 /** Progress towards the goal of the galaxy you're in: [now, target] in the goal's own units. */
 export function goalProgress(s: GameState, goal: GalaxyGoal): { now: Decimal; target: Decimal } {
   switch (goal.kind) {
     case 'singularities':
       return { now: D(s.stats.singularities ?? 0), target: D(goal.n) };
     case 'darkMatter':
-      return { now: runDarkMatter(s), target: D(goal.amount) };
+      return { now: gainedHere(s, 'darkMatter').max(runDarkMatter(s)), target: D(goal.amount) };
     case 'mirrorDepth':
-      return { now: D(s.mirror.depth), target: D(goal.n) };
+      return { now: D(Math.max(s.mirror.depth, s.stats.mirrorDepthHere ?? 0)), target: D(goal.n) };
     case 'essence':
-      return { now: s.totals.run.essence ?? ZERO, target: D(goal.amount) };
+      return { now: gainedHere(s, 'essence').max(s.totals.run.essence ?? ZERO), target: D(goal.amount) };
   }
+}
+
+/** The galaxy explored next: the first you may pick that you haven't explored, or null. */
+export function firstUnexplored(s: GameState): GalaxyDef | null {
+  return GALAXIES.find((g) => !galaxyCleared(s, g.id) && galaxyAvailable(s, g.id)) ?? null;
+}
+
+/**
+ * 1.4.0, Auto-explore (on unless you switch it off on the Galaxy Map): once the galaxy you'd go to next
+ * is explored, the next Galactic Rebirth goes to the first one you haven't explored instead. The
+ * playtest's next galaxy stayed the Milky Way for ten rebirths.
+ */
+export function autoPickGalaxy(s: GameState): void {
+  if (!s.galactic.explore || !galaxyMapOpen(s) || !galaxyCleared(s, s.galactic.next)) return;
+  const g = firstUnexplored(s);
+  if (g) s.galactic.next = g.id;
+}
+
+/** Arrive in a galaxy: its goal counts from here (Galactic Rebirths, a Big Crunch, a Multiverse). */
+export function arriveIn(s: GameState, id: string): void {
+  s.galactic.galaxy = id;
+  s.galactic.here = {};
+  s.stats.mirrorDepthHere = 0;
 }
 
 export function galaxyGoalMet(s: GameState): boolean {
@@ -218,7 +254,11 @@ export function registerGalactic(): void {
       { at: 3, id: 'keepTree', text: 'Keep the Singularity Tree' },
       { at: BALANCE.passive.at.galactic!, id: 'passive', text: 'Gain 1% of your Galactic gain every second, without a Galactic Rebirth' },
       { at: 5, id: 'keepHole', text: 'Keep the Black Hole, the Prism Wheel banks and the Reactor' },
+      // 1.4.0: "if I'm at the end of Galactic, the start should be automated"
+      { at: 6, id: 'autoMirror', text: 'The Antimatter Mirror runs itself: collapses, upgrades and engines' },
       { at: 7, id: 'crunch', text: 'The Big Crunch stirs (explore 7 galaxies)' },
+      { at: 8, id: 'autoGalactic', text: 'Auto-Galactic Rebirth once the galaxy you are in is explored (on the double-or-peak rule)' },
+      { at: 9, id: 'autoBuild', text: 'Megastructures, colonies and Galactic Constants build themselves' },
       { at: 10, id: 'singularityFree', text: 'A Singularity resets nothing; 1/50 of its gain trickles in every second' },
     ],
     onReset: (s) => {
@@ -226,7 +266,8 @@ export function registerGalactic(): void {
       s.totals.run.darkMatter = ZERO;
       s.stats.galacticsAll = (s.stats.galacticsAll ?? 0) + 1;
       s.stats.galacticsBest = Math.max(s.stats.galacticsBest ?? 0, s.stats.galactics ?? 0);
-      if (galaxyAvailable(s, s.galactic.next)) s.galactic.galaxy = s.galactic.next;
+      autoPickGalaxy(s);
+      arriveIn(s, galaxyAvailable(s, s.galactic.next) ? s.galactic.next : s.galactic.galaxy);
     },
   });
 
@@ -236,12 +277,15 @@ export function registerGalactic(): void {
     tick: (s: GameState, dt: number, ctx: TickContext) => {
       // the galaxy's goal: met once, cleared for good
       const g = galaxyOf(s);
+      s.stats.mirrorDepthHere = Math.max(s.stats.mirrorDepthHere ?? 0, s.mirror.depth);
       if (!galaxyCleared(s, g.id) && (s.stats.galacticsAll ?? 0) > 0 && galaxyGoalMet(s)) {
         s.galactic.cleared.push(g.id);
         s.stats.galaxiesCleared = s.galactic.cleared.length;
+        s.stats.galaxiesClearedAll = (s.stats.galaxiesClearedAll ?? 0) + 1;
         invalidateStats();
         events.emit({ t: 'toast', title: `${g.name} explored`, body: `${g.rewardText}, for good.`, icon: 'galaxy', priority: true });
       }
+      autoPickGalaxy(s);
       // Milestone 2: a Singularity by itself once its gain reaches your number
       if (milestoneReached(s, 'galactic', 'autoSingularity') && s.galactic.autoAt.gt(0) && singularityReady(s) && singularityGain(s).gte(s.galactic.autoAt) && !(inTrial(s) && !trialGoalMet(s))) performReset(s, 'singularity');
       // Milestone 10: 1/50 of the Singularity gain trickles in every second, nothing reset

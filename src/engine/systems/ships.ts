@@ -8,7 +8,7 @@ import { D, type Decimal } from '../decimal';
 import { events } from '../events';
 import { drawHits } from '../odds';
 import { nextFloat, nextInt } from '../rng';
-import { cur, gain, type GameState, spend } from '../state';
+import { cur, gain, type GameState, spend, usable } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
 import { addSamples } from './codex';
@@ -68,7 +68,7 @@ function upgradeCurve(id: ShipUpgradeId): CostCurve {
 }
 
 export const shipUpgradePlan = (s: GameState, id: ShipUpgradeId): PurchasePlan =>
-  planLimited(upgradeCurve(id), shipLevel(s, id), cur(s, SHIP_UPGRADE_ALLOY[id]), s.settings.buyAmount, s.settings.customBuyAmount, Infinity);
+  planLimited(upgradeCurve(id), shipLevel(s, id), usable(s, SHIP_UPGRADE_ALLOY[id]), s.settings.buyAmount, s.settings.customBuyAmount, Infinity);
 
 export function buyShipUpgrade(s: GameState, id: ShipUpgradeId): boolean {
   if (!shipsOpen(s)) return false;

@@ -1,3 +1,4 @@
+import { manual } from './manual';
 import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { registerContent } from '../../src/content';
@@ -45,7 +46,7 @@ function ready(seed = 18): GameState {
   s.enginesEver = { mote: 5000 };
   for (const c of ['stardust', 'shards', 'essence', 'darkMatter', 'galaxyCores', 'chronons', 'echoDust']) gain(s, c, D(1e30));
   invalidateStats();
-  return s;
+  return manual(s);
 }
 
 function clone(s: GameState): GameState {
@@ -63,28 +64,30 @@ describe('the Multiverse', () => {
     expect(multiverseReady(s)).toBe(false);
   });
 
-  it('resets every earlier layer and keeps collections, challenges, medals, Mastery and Omni Constants', () => {
+  it('resets the three layers below it (1.4.0: never the Stardust, Supernova or Nebula layers) and keeps collections, challenges, medals, Mastery and Omni Constants', () => {
     const s = ready();
     s.constants['omni.gain'] = 1234;
     performReset(s, 'multiverse');
     expect(cur(s, 'sparks').toNumber()).toBe(6);
     expect(s.stats.multiversesAll).toBe(1);
     expect(s.stats.crunchesCycle).toBe(0);
-    for (const c of ['stardust', 'shards', 'essence', 'darkMatter', 'galaxyCores', 'chronons', 'echoDust']) expect(cur(s, c).toNumber()).toBe(0);
-    expect(s.totals.all.shards!.toNumber()).toBe(0);
-    expect(s.engines).toEqual({});
-    expect(s.tier).toBe(0);
-    expect(s.novaTree).toEqual({});
-    expect(s.nebulaTree).toEqual({});
+    for (const c of ['darkMatter', 'galaxyCores', 'chronons', 'echoDust']) expect(cur(s, c).toNumber()).toBe(0);
+    expect(s.totals.all.darkMatter!.toNumber()).toBe(0);
+    // the barrier: three layers down at most
+    for (const c of ['stardust', 'shards', 'essence']) expect(cur(s, c).toNumber()).toBe(1e30);
+    expect(s.engines).toEqual({ mote: 300 });
+    expect(s.tier).toBe(9);
+    expect(s.novaTree).toEqual({ root: 1 });
+    expect(s.nebulaTree).toEqual({ nroot: 1 });
     expect(s.singularityTree).toEqual({});
     expect(s.galacticTree).toEqual({});
     expect(s.singularity.key).toBe(false);
     expect(s.mirror.upgrades).toEqual([]);
     expect(s.megastructures).toEqual({});
     expect(s.eternity.upgrades).toEqual([]);
-    expect(s.constants['stellar.gravity']).toBe(0);
+    expect(s.constants['stellar.gravity']).toBe(50);
     expect(s.constants['et.entropy']).toBe(0);
-    expect(s.stats.supernovas).toBe(0);
+    expect(s.stats.supernovas).toBe(40);
     expect(s.stats.crunches).toBe(0);
     // kept
     expect(s.constants['omni.gain']).toBe(1234);
@@ -101,18 +104,22 @@ describe('the Multiverse', () => {
 
   it('Unbound keeps a whole layer, Remembered its milestones, Undying its Eternity automation', () => {
     const s = ready();
-    s.multiverse.tree = { 'mv.nebula.keep': 1, 'mv.supernova.milestones': 1, 'mv.galactic.auto': 1 };
+    s.multiverse.tree = { 'mv.singularity.keep': 1, 'mv.crunch.milestones': 1, 'mv.galactic.auto': 1 };
     gain(s, 'sparks', D(0));
     invalidateStats();
     performReset(s, 'multiverse');
-    expect(s.nebulaTree).toEqual({ nroot: 1 });
-    expect(cur(s, 'essence').toNumber()).toBe(1e30);
-    expect(s.stats.nebulas).toBe(12);
-    expect(s.novaTree).toEqual({});
-    expect(s.stats.supernovas).toBe(40);
-    expect(milestoneReached(s, 'supernova', 'autoAll')).toBe(true);
+    expect(s.singularityTree).toEqual({ score: 1 });
+    expect(cur(s, 'darkMatter').toNumber()).toBe(1e30);
+    expect(s.stats.singularities).toBe(20);
+    expect(s.galacticTree).toEqual({});
+    expect(s.stats.crunches).toBe(10);
     expect(s.eternity.upgrades).toEqual(['et.galaxy']);
-    expect(s.singularityTree).toEqual({});
+  });
+
+  it('1.4.0: the barrier layers\' Unbound and Remembered choices are boosts, since nothing resets those layers now', () => {
+    const head = SPARK_TREE.find((n) => n.id === 'mv.stardust.keep')!;
+    expect('stat' in head.effect && head.effect.stat).toBe('productionMult');
+    expect(head.desc).toContain('never resets');
   });
 
   it('every Spark choice can be bought in any order (114 choices, 0.2 Sparks each)', () => {
@@ -235,7 +242,7 @@ describe('the Multiverse', () => {
     s.stats.crunchesCycle = 0;
     s.multiverse.tree = { 'mv.crunch.auto': 1 };
     s.galactic.cleared = ['milkyway', 'spiral', 'elliptical', 'ring', 'dwarf', 'quasar', 'lenticular'];
-    s.totals.run.galaxyCores = D(1e6);
+    s.totals.run.galaxyCores = D(2e11);
     s.totals.run.chronons = D(0);
     invalidateStats();
     expect(crunchReady(s)).toBe(true);

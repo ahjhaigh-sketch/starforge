@@ -1,5 +1,5 @@
 import { BALANCE } from '../../content/balance';
-import { BIOME_BY_ID, COLONY_NAMES, COLONY_TYPE_BY_ID, COLONY_TYPES, HEXES, planetScore, RESEARCH_BY_ID, type BuildingId } from '../../content/galaxyBuild';
+import { BIOME_BY_ID, BIOMES, COLONY_NAMES, COLONY_TYPE_BY_ID, COLONY_TYPES, HEXES, planetScore, RESEARCH_BY_ID, type BuildingId } from '../../content/galaxyBuild';
 import { D, type Decimal, ZERO } from '../decimal';
 import { events } from '../events';
 import { type Colony, cur, gain, type GameState, spend } from '../state';
@@ -133,6 +133,43 @@ export function placeBiome(s: GameState, i: number, hex: number, biome: string):
   if (!spend(s, 'supply', D(B.biomeCost))) return false;
   c.grid[hex] = biome;
   return true;
+}
+
+/**
+ * 1.4.0: a strong layout for a planet: ocean and crystal forest in rings, then any single hex changed while that
+ * scores more. Deterministic: the same planet always gets the same layout.
+ */
+export function bestLayout(): string[] {
+  let grid: string[] = HEXES.map((h) => ((h.q + h.r) % 2 === 0 ? 'ocean' : 'forest'));
+  let score = planetScore(grid);
+  for (let pass = 0; pass < 8; pass++) {
+    let better = false;
+    for (let k = 0; k < grid.length; k++)
+      for (const b of BIOMES) {
+        if (grid[k] === b.id) continue;
+        const next = grid.map((x, j) => (j === k ? b.id : x));
+        const v = planetScore(next);
+        if (v > score) {
+          grid = next;
+          score = v;
+          better = true;
+        }
+      }
+    if (!better) break;
+  }
+  return grid;
+}
+
+/** Paints every hex of an unfinished planet that differs from the best layout (each hex costs its Supply). Returns hexes painted. */
+export function paintBestLayout(s: GameState, i: number): number {
+  const c = s.colonies.list[i];
+  if (!c || !terraOpen(s) || c.finished !== null) return 0;
+  const want = bestLayout();
+  let n = 0;
+  want.forEach((b, k) => {
+    if (c.grid[k] !== b && placeBiome(s, i, k, b)) n++;
+  });
+  return n;
 }
 
 export function finishPlanet(s: GameState, i: number): boolean {

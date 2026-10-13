@@ -1,3 +1,4 @@
+import { manual } from './manual';
 import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { registerContent } from '../../src/content';
@@ -33,7 +34,7 @@ function player(singularities = 4, seed = 7): GameState {
   gain(s, 'stardust', D('1e12'));
   for (let i = 0; i < 20; i++) buyEngine(s, 'mote', 1);
   invalidateStats();
-  return s;
+  return manual(s);
 }
 
 function clone(s: GameState): GameState {
@@ -313,12 +314,12 @@ describe('the Spire', () => {
 });
 
 describe('the Void Leviathans', () => {
-  it('HP is 1,000 x 6^k, x1.8 for each kill (1.3.0: was x2.5)', () => {
+  it('HP is 1,000 x 5^k, x1.6 for each kill (1.3.0: was 6^k and x2.5)', () => {
     const s = player();
     expect(leviathanHp(s, 0).toNumber()).toBe(1000);
-    expect(leviathanHp(s, 3).toNumber() / (1000 * 6 ** 3)).toBeCloseTo(1, 9);
+    expect(leviathanHp(s, 3).toNumber() / (1000 * 5 ** 3)).toBeCloseTo(1, 9);
     s.leviathans.kills.calf = 2;
-    expect(leviathanHp(s, 0).toNumber()).toBeCloseTo(1000 * 1.8 ** 2, 6);
+    expect(leviathanHp(s, 0).toNumber()).toBeCloseTo(1000 * 1.6 ** 2, 6);
   });
 
   it('a kill pays scales, opens the next one and moves the hunt on', () => {
@@ -326,7 +327,7 @@ describe('the Void Leviathans', () => {
     expect(leviathansUnlocked(s)).toBe(1);
     expect(chooseLeviathan(s, 1)).toBe(false);
     expect(damageLeviathan(s, D(999))).toBe(0);
-    expect(damageLeviathan(s, D(1))).toBe(1);
+    expect(damageLeviathan(s, D(1.001))).toBe(1);
     expect(killsOf(s, 0)).toBe(1);
     // 1.3.0: the first kill pays x10 scales
     expect(cur(s, 'scales').toNumber()).toBe(scalesFor(s, 0).toNumber() * 10);
@@ -335,7 +336,7 @@ describe('the Void Leviathans', () => {
     expect(s.stats.leviathansBeaten).toBe(1);
     // farming the first one again: kills counted in closed form
     expect(chooseLeviathan(s, 0)).toBe(true);
-    const pool = 1800 + 3240 + 5832 + 1;
+    const pool = 1600 + 2560 + 4096 + 1;
     expect(damageLeviathan(s, D(pool))).toBe(3);
     expect(killsOf(s, 0)).toBe(4);
   });

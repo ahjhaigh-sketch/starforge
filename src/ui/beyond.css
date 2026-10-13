@@ -1,0 +1,56 @@
+/* 1.4.0: beyond the Multiverse: the Hyperverse, Omniverse, Genesis and Apotheosis, and their systems */
+.beyond-chip { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.65rem; border-radius: 999px; font-weight: 700; --stroke: 2px; }
+.beyond-chip .icon { width: 1.2rem; height: 1.2rem; }
+.beyond-chip.lit { color: var(--ink); }
+.confirm-actions { display: flex; gap: 0.6rem; justify-content: flex-end; margin-top: 0.5rem; }
+
+/* the Tesseract */
+.tesseract-wrap { display: grid; grid-template-columns: minmax(12rem, 18rem) 1fr; gap: 1rem; align-items: start; }
+.tesseract-view { width: 100%; height: auto; }
+.tesseract-halo { fill: rgba(92, 242, 200, 0.07); stroke: rgba(92, 242, 200, 0.35); stroke-width: 1.5; }
+.tesseract-axes { display: flex; flex-direction: column; gap: 0.5rem; }
+.axis-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; padding: 0.5rem 0.65rem; border-radius: 12px; --stroke: 2px; }
+.axis-name { font-family: var(--font-display); font-weight: 400; font-size: 1.4rem; width: 1.6rem; text-align: center; text-shadow: var(--outline-sm); }
+.axis-fold { height: 2rem; padding: 0 0.7rem; border-radius: 9px; font-weight: 800; color: var(--ink); --stroke: 2px; }
+.axis-mult { flex: 1; min-width: 9rem; font-size: 0.85rem; }
+.axis-picker { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.axis-picker button { height: 1.9rem; padding: 0 0.6rem; border-radius: 8px; font-weight: 700; font-size: 0.78rem; color: var(--ink); --stroke: 2px; }
+.axis-picker button.on { outline: 2px solid #fff; }
+@media (max-width: 700px) { .tesseract-wrap { grid-template-columns: 1fr; } .tesseract-view { max-width: 15rem; margin: 0 auto; } }
+
+/* the Pantheon */
+.aspect-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr)); gap: 0.6rem; }
+.aspect-card { position: relative; display: flex; flex-direction: column; gap: 0.25rem; padding: 0.65rem 0.75rem; border-radius: 14px; --stroke: 2.5px; overflow: hidden; }
+.aspect-card:not(.awake) { opacity: 0.8; }
+.aspect-card b { font-family: var(--font-display); font-weight: 400; font-size: 1.1rem; }
+.aspect-card small { color: rgba(255, 255, 255, 0.75); font-style: italic; }
+.aspect-desc { font-size: 0.82rem; font-weight: 600; }
+.aspect-actions { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.aspect-sigil { position: absolute; right: -1.2rem; top: -1.2rem; width: 4.5rem; height: 4.5rem; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.25); pointer-events: none; }
+.aspect-card.ascendant { box-shadow: 0 0 0 3px #fff8, 0 0 18px #ffd86b88; }
+.aspect-card.ascendant .aspect-sigil { border-color: #fff; animation: aspect-glow 3s ease-in-out infinite; }
+@keyframes aspect-glow { 50% { transform: scale(1.12); opacity: 0.6; } }
+@media (prefers-reduced-motion: reduce) { .aspect-card.ascendant .aspect-sigil { animation: none; } }
+.reduced-motion .aspect-card.ascendant .aspect-sigil { animation: none; }
+.rite-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: 0.35rem; }
+.rite { padding: 0.35rem 0.5rem; border-radius: 9px; font-size: 0.76rem; font-weight: 700; --c: #2b2558; --stroke: 2px; color: var(--text-dim); text-align: center; }
+.rite.found { --c: #b08a1a; color: #fff; }
+
+/* the Laws */
+.law-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.law-row { display: grid; grid-template-columns: 7rem 1fr; gap: 0.25rem 0.8rem; align-items: center; padding: 0.55rem 0.75rem; border-radius: 12px; --stroke: 2px; }
+.law-row b.ol { font-family: var(--font-display); font-weight: 400; font-size: 1.15rem; grid-row: span 3; }
+.law-row small { color: var(--text-dim); font-weight: 600; }
+.law-dial { display: flex; align-items: center; gap: 0.4rem; }
+.law-track { display: flex; gap: 3px; }
+.law-track i { width: 0.9rem; height: 1.1rem; border-radius: 4px; background: rgba(255, 255, 255, 0.12); border: 1.5px solid #140b2e; }
+.law-track i.zero { width: 0.35rem; background: #fff6; }
+.law-value { min-width: 2rem; text-align: right; }
+@media (max-width: 600px) { .law-row { grid-template-columns: 1fr; } .law-row b.ol { grid-row: auto; } .law-track i { width: 0.6rem; } }
+
+/* Past Lives */
+.epilogue { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.6rem; font-size: 1.02rem; }
+.life-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 0.5rem; }
+.life-card { display: flex; align-items: center; flex-wrap: wrap; gap: 0.45rem; padding: 0.55rem 0.7rem; border-radius: 12px; --stroke: 2px; }
+.life-card b { flex: 1; font-family: var(--font-display); font-weight: 400; }
+.life-card.guide { box-shadow: 0 0 0 3px #fff6; }

@@ -126,7 +126,7 @@ export function bestNextLink(s: GameState): { a: number; b: number; gain: number
  * sky. Greedy from nothing, then swaps any drawn link for an undrawn one while that scores more.
  * Deterministic: the same sky always gets the same shape.
  */
-export function autoChartLinks(s: GameState): Link[] {
+export function autoChartLinks(s: GameState, refine = true): Link[] {
   const sky = skyOf(s);
   const max = maxLinks(s);
   const pairs: Link[] = [];
@@ -147,7 +147,7 @@ export function autoChartLinks(s: GameState): Link[] {
     if (!pick) break;
     links = [...links, pick];
   }
-  for (let pass = 0; pass < 4; pass++) {
+  for (let pass = 0; refine && pass < 4; pass++) {
     let better = false;
     let score = constellationScore(sky, links);
     for (let i = 0; i < links.length; i++)
@@ -167,18 +167,27 @@ export function autoChartLinks(s: GameState): Link[] {
 }
 
 /** Draws the Auto-draw shape in place of yours. */
-export function autoChart(s: GameState): boolean {
+export function autoChart(s: GameState, refine = true): boolean {
   if (!observatoryOpen(s)) return false;
-  s.observatory.links = autoChartLinks(s);
+  s.observatory.links = autoChartLinks(s, refine);
   return true;
 }
 
 /** Records the constellation: a better score than this sky's best pays the difference in Star Charts. */
+/** 1.4.0: Star Charts x(1 + 5% for every sky you've ever recorded a constellation on). */
+export const chartBonus = (s: GameState): number => 1 + BALANCE.galactic.skyBonus * (s.stats.skiesCharted ?? 0);
+
 export function recordConstellation(s: GameState): number {
   if (!observatoryOpen(s)) return 0;
   const score = currentScore(s);
-  const paid = Math.floor(score) - Math.floor(s.observatory.best);
-  if (paid <= 0) return 0;
+  const base = Math.floor(score) - Math.floor(s.observatory.best);
+  if (base <= 0) return 0;
+  // the first record on a sky counts it for good
+  if (s.stats.lastSkyCharted !== s.observatory.seed) {
+    s.stats.lastSkyCharted = s.observatory.seed;
+    s.stats.skiesCharted = (s.stats.skiesCharted ?? 0) + 1;
+  }
+  const paid = Math.floor(base * chartBonus(s));
   s.observatory.best = score;
   gain(s, 'starCharts', D(paid));
   s.stats.starScoreBest = Math.max(s.stats.starScoreBest ?? 0, Math.floor(score));

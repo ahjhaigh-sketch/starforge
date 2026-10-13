@@ -1,5 +1,6 @@
 import { BALANCE } from '../content/balance';
 import { MEGASTRUCTURES } from '../content/galaxyBuild';
+import { MIRACLES, RITES } from '../content/beyond';
 import { SIGILS } from '../content/sigils';
 import { LEVIATHANS, SPIRE_BANNERS, TRIALS } from '../content/challenges';
 import { PARTS } from '../content/shipParts';
@@ -331,6 +332,10 @@ function entries(id: string): Array<{ name: string; entries: IndexEntry[] }> {
       return [{ name: 'Hidden Sigils', entries: SIGILS.map((x) => ({ name: s.sigils.owned.includes(x.id) ? x.name : '???', color: '#C99A1E', found: s.sigils.owned.includes(x.id) })) }];
     case 'mega':
       return MEGASTRUCTURES.map((m) => ({ name: m.name, entries: Array.from({ length: 5 }, (_, i) => ({ name: `Stage ${i + 1}`, color: '#B08A1A', found: (s.megastructures[m.id] ?? 0) > i })) }));
+    case 'rites':
+      return [{ name: 'Rites of the Pantheon', entries: RITES.map((r) => ({ name: s.pantheon.rites.includes(r.id) ? r.name : '???', color: '#C99A1E', found: s.pantheon.rites.includes(r.id) })) }];
+    case 'miracles':
+      return [{ name: 'Miracles', entries: MIRACLES.map((m) => ({ name: s.lives.miracles.includes(m.id) ? m.name : '???', color: '#E8E0FF', found: s.lives.miracles.includes(m.id) })) }];
     default:
       return [];
   }

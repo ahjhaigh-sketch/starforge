@@ -34,9 +34,9 @@ export const ECHO_ENGINES: readonly EchoEngine[] = ECHO_NAMES.map(([id, name, co
 
 // ---------- Eternity upgrades ----------
 
-/** The layers Eternity automates, lowest first. */
-export const AUTO_LAYERS = ['stardust', 'supernova', 'nebula', 'singularity', 'galactic'] as const;
-export type AutoLayer = (typeof AUTO_LAYERS)[number];
+/** The layers that run themselves, lowest first (1.4.0: all ten below the top, content/layers). */
+export { AUTO_LAYERS, type AutoLayer } from './layers';
+import type { AutoLayer } from './layers';
 
 export interface EternityUpgrade {
   id: string;
@@ -50,11 +50,13 @@ export interface EternityUpgrade {
 }
 
 export const ETERNITY_UPGRADES: readonly EternityUpgrade[] = [
-  { id: 'et.forge', name: 'Eternal Forge', desc: 'Automates the Stardust layer: every engine, upgrade and Star Tier, and Stellar Constants, from the start of every run.', cost: ET.costs.forge!, layer: 'stardust' },
-  { id: 'et.nova', name: 'Eternal Nova', desc: 'Automates the Supernova layer: Supernovas by themselves, the Nova Tree and Nova Constants.', cost: ET.costs.nova!, layer: 'supernova' },
-  { id: 'et.mist', name: 'Eternal Mist', desc: 'Automates the Nebula layer: Nebulas by themselves, the Nebula Tree, Nebula Constants and auto-roll on every shrine.', cost: ET.costs.mist!, layer: 'nebula' },
-  { id: 'et.void', name: 'Eternal Void', desc: 'Automates the Singularity layer: Singularities by themselves, the Singularity Tree, Void Constants, the Black Hole, the Reactor and the Antimatter Mirror.', cost: ET.costs.void!, layer: 'singularity' },
-  { id: 'et.galaxy', name: 'Eternal Galaxy', desc: 'Automates the Galactic layer: Galactic Rebirths by themselves, the Galactic Tree, Galactic Constants, megastructures and colony buildings.', cost: ET.costs.galaxy!, layer: 'galactic' },
+  // 1.4.0: a layer runs itself once you're two layers past it, so these four are boosts now (the Big Crunch is
+  // layer five: the four below the Galactic layer already run themselves when Eternity opens)
+  { id: 'et.forge', name: 'Eternal Forge', desc: 'Stardust x1e30.', cost: ET.costs.forge!, effect: { stat: 'productionMult', op: 'mul', value: 1e30 } },
+  { id: 'et.nova', name: 'Eternal Nova', desc: 'Nova Shards x1e10.', cost: ET.costs.nova!, effect: { stat: 'shardGain', op: 'mul', value: 1e10 } },
+  { id: 'et.mist', name: 'Eternal Mist', desc: 'Essence x1e10.', cost: ET.costs.mist!, effect: { stat: 'essenceGain', op: 'mul', value: 1e10 } },
+  { id: 'et.void', name: 'Eternal Void', desc: 'Dark Matter x1e6.', cost: ET.costs.void!, effect: { stat: 'darkMatterGain', op: 'mul', value: 1e6 } },
+  { id: 'et.galaxy', name: 'Eternal Galaxy', desc: 'All of the Galactic layer runs itself now, Observatory, Star Chart and terraforming too (it would from the first Multiverse).', cost: ET.costs.galaxy!, layer: 'galactic' },
   { id: 'et.arrow', name: 'Arrow of Time', desc: 'Chronons x2.', cost: ET.costs.arrow!, effect: { stat: 'chrononGain', op: 'mul', value: 2 } },
   { id: 'et.echoes', name: 'Loud Echoes', desc: 'The Echo boards make x10.', cost: ET.costs.echoes!, effect: { stat: 'echoMult', op: 'mul', value: 10 } },
   { id: 'et.longnow', name: 'The Long Now', desc: 'The game runs 25% faster.', cost: ET.costs.longnow!, effect: { stat: 'gameSpeed', op: 'add', value: 0.25 } },
@@ -65,10 +67,4 @@ export const ETERNITY_UPGRADES: readonly EternityUpgrade[] = [
 export const ETERNITY_BY_ID: ReadonlyMap<string, EternityUpgrade> = new Map(ETERNITY_UPGRADES.map((u) => [u.id, u]));
 
 /** What each layer's automation resets on, in words. */
-export const AUTO_LAYER_NAMES: Record<AutoLayer, string> = {
-  stardust: 'Stardust',
-  supernova: 'Supernova',
-  nebula: 'Nebula',
-  singularity: 'Singularity',
-  galactic: 'Galactic Rebirth',
-};
+export { LAYER_NAMES as AUTO_LAYER_NAMES } from './layers';

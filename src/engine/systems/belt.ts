@@ -192,7 +192,7 @@ const nextDoubling = (level: number) => (Math.floor(level / 25) + 1) * 25;
 export function beltPlan(s: GameState, id: BeltUpgradeId): PurchasePlan {
   const level = beltLevel(s, id);
   const next = id === 'value' || id === 'xp' ? nextDoubling(level) : undefined;
-  return planLimited(beltCurve(id), level, cur(s, 'ore'), s.settings.buyAmount, s.settings.customBuyAmount, beltLimit(s, id), next);
+  return planLimited(beltCurve(id), level, usable(s, 'ore'), s.settings.buyAmount, s.settings.customBuyAmount, beltLimit(s, id), next);
 }
 
 /** From Belt Tier 4 upgrades no longer cost ore (you still need that much). */
@@ -262,8 +262,8 @@ const bitCurve: CostCurve = lateRamp({ base: DR.bitBase, brackets: [{ from: 0, r
 export const droneCost = (s: GameState) => priceAt(droneCurve, s.drill.drones);
 /** Drill bits are crafted at the Starforge from Iron alloy. */
 export const bitCost = (s: GameState) => priceAt(bitCurve, s.drill.bits);
-export const dronePlan = (s: GameState): PurchasePlan => planLimited(droneCurve, s.drill.drones, cur(s, 'ore'), s.settings.buyAmount, s.settings.customBuyAmount, Infinity);
-export const bitPlan = (s: GameState): PurchasePlan => planLimited(bitCurve, s.drill.bits, cur(s, 'alloy.iron'), s.settings.buyAmount, s.settings.customBuyAmount, Infinity);
+export const dronePlan = (s: GameState): PurchasePlan => planLimited(droneCurve, s.drill.drones, usable(s, 'ore'), s.settings.buyAmount, s.settings.customBuyAmount, Infinity);
+export const bitPlan = (s: GameState): PurchasePlan => planLimited(bitCurve, s.drill.bits, usable(s, 'alloy.iron'), s.settings.buyAmount, s.settings.customBuyAmount, Infinity);
 
 export function drillDps(s: GameState): Decimal {
   const layer = layerAt(s.drill.depth);

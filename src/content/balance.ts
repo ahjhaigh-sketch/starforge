@@ -507,6 +507,16 @@ export const BALANCE = {
    * amounts"); now a pile that size buys hundreds, while a run that buys a few hundred levels pays the same as before.
    */
   lateRamp: { from: 300, every: 100, mult: 1.5, steps: 60 },
+  /**
+   * 1.4.0, the reset ceiling: a layer's first reset can't pay more than about 10^capLog of its currency, however much
+   * was stacked up ("someone shouldn't be able to reset and then go to the next upgrade tree with quintillions ... make
+   * the first reset have its limit of say 100,000; to get near that limit you need to be extremely over"). Up to
+   * 10^(capLog - margin) a gain is untouched; above, its order of magnitude bends towards capLog: 1e6 pays about
+   * 16,000, 1e12 about 46,000, 1e24 about 68,000. Each reset of the layer before raises the ceiling's order of
+   * magnitude (and margin) x growth: 1e5, 3e7, 2e11, 8e16, 2e25 and so on, so the next tree opens slowly whatever you
+   * bring, and a few resets later the ceiling is out of the way.
+   */
+  resetCeiling: { capLog: 5, margin: 2, growth: 1.5 },
   /** Phase 12: the Singularity, the third reset (Math and balance: "Reset layers"). */
   singularity: {
     /**
@@ -516,6 +526,8 @@ export const BALANCE = {
      * at the first Singularity and about x3.6 for every 26 more orders of magnitude of Essence.
      */
     runEssence: 1e6,
+    /** 1.4.0: what a Singularity needs gathered in its run; the gain still counts from runEssence (e70 is typical when it opens). */
+    need: 1e40,
     gainBase: 1.05,
     /** Lifetime Dark Matter boosts Essence: x(1 + DM)^0.35. */
     passivePow: 0.35,
@@ -595,11 +607,12 @@ export const BALANCE = {
   },
   leviathans: {
     singularities: 4,
-    /** Leviathan k's hit points: 1,000 x 6^k, x2.5 for each time you've beaten it. */
+    /** Leviathan k's hit points: 1,000 x 5^k, x1.6 for each time you've beaten it. */
     hpBase: 1000,
-    hpPerBoss: 6,
-    /** 1.3.0: was 2.5; farming the first Leviathans for scales was the slow part of the playtest. */
-    hpPerKill: 1.8,
+    /** 1.4.0: was 6 ("Leviathans are also way too difficult to finish off the tree"). */
+    hpPerBoss: 5,
+    /** 1.3.0: was 2.5; farming the first Leviathans for scales was the slow part of the playtest. 1.4.0: was 1.8. */
+    hpPerKill: 1.6,
     /** Damage: (1 + log10(1 + Stardust a second))^2 a second from output, 25 a second per Wyrm on the team, (1 + log10(1 + tap value))^2 a tap. */
     outputPow: 2,
     perWyrm: 25,
@@ -609,9 +622,9 @@ export const BALANCE = {
     /** 1.3.0: the first kill of each Leviathan pays this many times its scales. */
     firstKillMult: 10,
     scalesGrowth: 2,
-    /** Scale Tree prices: 10 x 2.5^step. */
+    /** Scale Tree prices: 10 x 2.2^step (1.4.0: was 2.5). */
     treeBase: 10,
-    treeGrowth: 2.5,
+    treeGrowth: 2.2,
   },
   /** Phase 18: the Multiverse, the sixth and last reset (Math and balance: reset layers; UUT's Rift). */
   multiverse: {
@@ -629,6 +642,28 @@ export const BALANCE = {
      */
     omniGrowth: { gain: 10 ** 0.0002, luck: 10 ** 0.0001, speed: 10 ** 0.0002 } as Record<string, number>,
   },
+  /**
+   * 1.4.0: the four resets beyond the Multiverse (content/beyond.ts). Each needs `need` of the layer below's currency
+   * gained in its own run (Sparks for the Hyperverse, then Tesseracts, Aether and Origin Seeds) and pays
+   * floor((amount / need)^gainPow x its gain stat), under the reset ceiling like every layer. Each appears a few resets
+   * into the layer below, when that run holds about half of `need`. Lifetime amounts boost the layer below's gain:
+   * x(1 + amount)^glowPow.
+   */
+  beyond: {
+    need: { hyperverse: 60, omniverse: 40, genesis: 40, apotheosis: 40 } as Record<string, number>,
+    gainPow: 0.8,
+    glowPow: 0.25,
+    passiveAt: 4,
+    trickle: 1 / 50,
+    /** The Tesseract: an axis level costs base x growth^level Tesseracts; it multiplies its layer's gain by (1 + log10(1 + lifetime currency))^level, x resonance a neighbour in order. */
+    tesseract: { costBase: 1, costGrowth: 2, resonance: 1.5 },
+    /** The Pantheon: waking the n-th Aspect costs base x growth^n Aether; devotion level L costs devBase x devGrowth^L; 3 stand Ascendant, the rest give restShare; each Rite found adds ritePer to every Aspect. */
+    pantheon: { wakeBase: 1, wakeGrowth: 3, devBase: 1, devGrowth: 2.5, slots: 3, restShare: 0.1, ritePer: 0.02 },
+    /** The Laws: one point per doubling of lifetime Origin Seeds (plus one); a law turns at most maxStep either way; the other side gives back sidePow of a step; every law turned gives Origin Seeds x harmony. */
+    laws: { maxStep: 5, sidePow: 0.5, harmony: 2 },
+    /** Past Lives: the best `keep` are remembered; a Life's score is 20 x log10(1 + Origin Seeds that run); each point is +perScore to the four beyond gains, the guiding Life x guide. */
+    lives: { keep: 5, guide: 3, perScore: 0.01, scorePer: 20 },
+  },
   /** Phase 17: the Big Crunch, the fifth reset (Math and balance: reset layers). */
   crunch: {
     /**
@@ -640,11 +675,12 @@ export const BALANCE = {
     galaxies: 7,
     galaxiesStep: 2,
     /**
-     * Chronons = floor((log10(GC / 10) + 1)^1.5 x Chronon gain), GC = Galaxy Cores gained this Crunch run (at least 10).
-     * The plan divided by 1e6, which gives nothing: the simulator's first Crunch run gathers about 750 Cores (4 Chronons
-     * here; dividing by 100 gave 2, enough for one upgrade), and later runs thousands.
+     * Chronons = floor((log10(GC / need) + 1)^1.5 x Chronon gain), GC = Galaxy Cores gained this Crunch run (at least
+     * `need`). 1.4.0: need was 10, which every player passes thousands of times over long before the Big Crunch appears
+     * (the playtest had 3 trillion, "it should start at like 100 billion"); a requirement starts where the economy is
+     * when it appears.
      */
-    gainDiv: 10,
+    need: 1e11,
     gainPow: 1.5,
     /** Galaxy Cores x(1 + lifetime Chronons)^0.5. */
     passivePow: 0.5,
@@ -733,6 +769,8 @@ export const BALANCE = {
      */
     mirrorDepth: 11,
     runDarkMatter: 1e8,
+    /** 1.4.0: the Dark Matter a Galactic Rebirth needs this run; Galaxy Cores still count from runDarkMatter. */
+    need: 1e12,
     /**
      * Galaxy Cores = floor((DM / 1e8)^0.5) x Galaxy Core gain. The plan's ^0.25 gave 3 to 6 a run: 18 of 200 tree nodes
      * after four Galactic Rebirths (sim, Phase 15).
@@ -744,6 +782,13 @@ export const BALANCE = {
      */
     softcapAt: 1e4,
     softcapPow: 0.5,
+    /**
+     * 1.4.0: above this many in one Galactic Rebirth, Galaxy Cores grow with the logarithm: start x (1 + log10(x /
+     * start))^power. The playtest's run Dark Matter reached e62 (the Reactor alone gave x1e11) and a rebirth paid
+     * 9.4e18 Cores, 1% of it every second, quintillions within minutes; now it pays about a trillion.
+     */
+    logCapAt: 1e9,
+    logCapPow: 3,
     /** Dark Matter x(1 + lifetime Galaxy Cores)^0.3. */
     passivePow: 0.3,
     /** Galactic Tree: five arms of 38 nodes; node i on an arm costs 1 x 1.2^i Galaxy Cores; echoes x3 a level. */
@@ -760,6 +805,11 @@ export const BALANCE = {
     /** Stardust Chart node prices in Star Charts, by ring. */
     /** 1.3.0: halved (was 20, 60, 150, 400, 1,000, 2,500); the playtest found the Star Chart hard to level. */
     chartCosts: [10, 30, 75, 200, 500, 1250],
+    /** 1.4.0: the chart's three repeating nodes: first level, and x growth a level. */
+    chartEchoCost: 300,
+    chartEchoGrowth: 1.6,
+    /** 1.4.0: each new sky recorded (a Galactic run's constellation) gives this much more Star Charts for good. */
+    skyBonus: 0.05,
     /** Galactic Constants: Expansion makes cleared galaxies' rewards stronger, Arms makes the Galactic Tree's multipliers stronger. */
     expansionPer: 0.1,
     /**

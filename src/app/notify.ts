@@ -22,9 +22,9 @@ import { snapshotStore } from './uiSnapshot';
  * that matters more (a new tier, an unlock).
  */
 const MEDAL_BATCH_MS = 400;
-const CURRENCY_NAMES: Record<string, string> = { shards: 'Nova Shards', essence: 'Nebula Essence', darkMatter: 'Dark Matter', galaxyCores: 'Galaxy Cores', chronons: 'Chronons', sparks: 'Multiverse Sparks' };
+const CURRENCY_NAMES: Record<string, string> = { shards: 'Nova Shards', essence: 'Nebula Essence', darkMatter: 'Dark Matter', galaxyCores: 'Galaxy Cores', chronons: 'Chronons', sparks: 'Multiverse Sparks', tesseracts: 'Tesseracts', aether: 'Aether', originSeeds: 'Origin Seeds', divinity: 'Divinity' };
 /** Each layer's toast wears its currency's icon. */
-const CURRENCY_ICONS: Record<string, string> = { shards: 'shard', essence: 'nebula', darkMatter: 'darkmatter', galaxyCores: 'galaxy', chronons: 'chronon', sparks: 'spark' };
+const CURRENCY_ICONS: Record<string, string> = { shards: 'shard', essence: 'nebula', darkMatter: 'darkmatter', galaxyCores: 'galaxy', chronons: 'chronon', sparks: 'spark', tesseracts: 'tesseract', aether: 'aether', originSeeds: 'seed', divinity: 'divinity' };
 
 export function installNotifications(): void {
   let medals: string[] = [];

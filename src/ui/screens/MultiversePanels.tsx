@@ -55,7 +55,7 @@ export function MultiversePanel() {
     <Panel id="multiverse" title="Multiverse" color={VIOLET} size="wide">
       <div className="tree-head">
         <p>
-          The last reset. The point the universe fell into splits into many. Every layer from Stardust to the Big Crunch starts again, and you leave with Multiverse Sparks: {data.need} Big Crunches in a universe pay 6, and every choice costs 0.2. Spark choices can stop a layer resetting at all. Trials, the Spire, the Leviathans, every collection, relics, Mastery, your Level and medals stay.
+          The sixth reset. The point the universe fell into splits into many. The three layers below start again (the Singularity, Galactic and Big Crunch layers; since 1.4.0 a reset never reaches further down, so the Stardust, Supernova and Nebula layers stay, running themselves), and you leave with Multiverse Sparks: {data.need} Big Crunches in a universe pay 6, and every choice costs 0.2. Spark choices can stop a layer resetting at all. Trials, the Spire, the Leviathans, every collection, relics, Mastery, your Level and medals stay.
         </p>
         <SparkChip value={data.sparks} />
       </div>

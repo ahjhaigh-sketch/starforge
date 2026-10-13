@@ -1,7 +1,7 @@
 import { BALANCE } from '../../content/balance';
 import { CONSTANTS } from '../../content/constants';
 import { D, type Decimal, ZERO } from '../decimal';
-import { layer, milestoneReached, performReset, registerLayer } from '../layers';
+import { layer, milestoneReached, performReset, registerLayer, resetCeiling, unResetCeiling } from '../layers';
 import type { GameState } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
 import { registerSystem } from '../tick';
@@ -22,7 +22,8 @@ const N = BALANCE.nebula;
 export const runShards = (s: GameState): Decimal => s.totals.run.shards ?? ZERO;
 
 export function nebulaGain(s: GameState): Decimal {
-  const g = runShards(s).div(N.runShards).pow(N.gainPow).mul(stat(s, 'essenceGain')).floor();
+  // 1.4.0: the reset ceiling (BALANCE.resetCeiling)
+  const g = resetCeiling(s, 'nebula', runShards(s).div(N.runShards).pow(N.gainPow).mul(stat(s, 'essenceGain'))).floor();
   // 1.2.0: the first Nebula pays what your shards are worth too (at least 2), not a flat 2
   return (s.stats.nebulasAll ?? 0) === 0 ? g.max(N.firstGain) : g;
 }
@@ -33,7 +34,7 @@ export function nebulaReady(s: GameState): boolean {
 
 /** Shards this run needed for one more Essence. */
 export function nextEssenceAt(s: GameState): Decimal {
-  const next = nebulaGain(s).add(1);
+  const next = unResetCeiling(s, 'nebula', nebulaGain(s).add(1));
   return D(N.runShards).mul(next.div(stat(s, 'essenceGain')).pow(1 / N.gainPow));
 }
 

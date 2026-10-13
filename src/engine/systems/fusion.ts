@@ -3,7 +3,7 @@ import { planLimited, type PurchasePlan } from '../buy';
 import type { CostCurve } from '../cost';
 import { D } from '../decimal';
 import { events } from '../events';
-import { cur, type GameState, spend } from '../state';
+import { cur, type GameState, spend, usable } from '../state';
 import { registerSources } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
 
@@ -36,7 +36,7 @@ export function fusionCurve(id: FusionUpgradeId): CostCurve {
 const fusionLimit = (id: FusionUpgradeId) => (id === 'size' ? F.maxSize - F.baseSize : id === 'start' ? F.maxStart : id === 'speed' ? F.maxSpeed : Infinity);
 
 export function fusionPlan(s: GameState, id: FusionUpgradeId): PurchasePlan {
-  return planLimited(fusionCurve(id), fusionLevel(s, id), cur(s, 'shards'), s.settings.buyAmount, s.settings.customBuyAmount, fusionLimit(id));
+  return planLimited(fusionCurve(id), fusionLevel(s, id), usable(s, 'shards'), s.settings.buyAmount, s.settings.customBuyAmount, fusionLimit(id));
 }
 
 /** Lays the comets onto a board of the current size, in order (a bigger board keeps every comet). */

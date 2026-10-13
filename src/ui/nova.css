@@ -147,3 +147,22 @@
 .ascent-perk small { display: block; font-size: 0.68rem; }
 .ascent-perk.lit { border-style: solid; border-color: var(--lime); background: rgba(125, 255, 90, 0.12); }
 .ascent-perk.lit b { color: #fff; }
+
+/* 1.4.0: Auto all and the layers that run themselves */
+.auto-all-bar { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
+.auto-all-bar p { flex: 1 1 18rem; margin: 0; }
+.auto-head { margin: 0.7rem 0 0.2rem; font-family: var(--font-display); font-weight: 400; letter-spacing: 0.02em; }
+.layer-auto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: 0.55rem; padding: 0.3rem 0; }
+.layer-auto { display: flex; flex-direction: column; gap: 0.35rem; padding: 0.55rem 0.7rem; border-radius: 12px; --stroke: 2.5px; }
+.layer-auto.locked { opacity: 0.6; }
+.layer-auto-head { display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; }
+.layer-auto-head b { flex: 1; font-family: var(--font-display); font-weight: 400; font-size: 1.05rem; }
+.layer-auto-level { font-size: 0.72rem; font-weight: 800; padding: 0.1rem 0.45rem; border-radius: 999px; background: rgba(255, 255, 255, 0.12); }
+.layer-auto-level.full { background: var(--lime); color: var(--ink); }
+.layer-auto-needs { color: var(--text-dim); font-weight: 600; }
+.layer-auto-rule { display: flex; gap: 0.3rem; flex-wrap: wrap; align-items: center; }
+.layer-auto-rule button { --c: #5546b8; --stroke: 2px; height: 1.9rem; padding: 0 0.5rem; border-radius: 8px; font-weight: 700; font-size: 0.75rem; color: #fff; }
+.layer-auto-rule button[aria-pressed='true'] { --c: var(--cyan); color: var(--ink); }
+.layer-auto-rule input { width: 7rem; height: 1.9rem; border-radius: 8px; padding: 0 0.5rem; font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.layer-auto-list { font-size: 0.78rem; line-height: 1.35; }
+.layer-auto-list.dim { color: var(--text-dim); }

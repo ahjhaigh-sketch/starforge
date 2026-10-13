@@ -3,7 +3,7 @@ import { CONSTANTS } from '../../content/constants';
 import { SINGULARITY_TREE } from '../../content/singularityTree';
 import { D, type Decimal, ZERO } from '../decimal';
 import { events } from '../events';
-import { layer, milestoneReached, performReset, registerLayer } from '../layers';
+import { layer, milestoneReached, performReset, registerLayer, resetCeiling, unResetCeiling } from '../layers';
 import { cur, gain, type GameState, spend, gainPassive } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
@@ -46,17 +46,18 @@ export function buyKey(s: GameState): boolean {
 
 export function singularityGain(s: GameState): Decimal {
   const ne = runEssence(s);
-  if (ne.lt(S.runEssence)) return ZERO;
-  return D(S.gainBase).pow(ne.log10().toNumber() - 6).mul(stat(s, 'darkMatterGain')).floor();
+  if (ne.lt(S.need)) return ZERO;
+  // 1.4.0: the reset ceiling (BALANCE.resetCeiling): the playtest's first Singularity paid 52 billion
+  return resetCeiling(s, 'singularity', D(S.gainBase).pow(ne.log10().toNumber() - 6).mul(stat(s, 'darkMatterGain'))).floor();
 }
 
 export function singularityReady(s: GameState): boolean {
-  return s.singularity.key && runEssence(s).gte(S.runEssence) && singularityGain(s).gte(1);
+  return s.singularity.key && runEssence(s).gte(S.need) && singularityGain(s).gte(1);
 }
 
 /** Essence this run needed for one more Dark Matter. */
 export function nextDarkMatterAt(s: GameState): Decimal {
-  const next = singularityGain(s).add(1).div(stat(s, 'darkMatterGain'));
+  const next = unResetCeiling(s, 'singularity', singularityGain(s).add(1)).div(stat(s, 'darkMatterGain'));
   return D(10).pow(6 + Math.log(Math.max(1, next.toNumber())) / Math.log(S.gainBase));
 }
 

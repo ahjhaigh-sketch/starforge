@@ -241,6 +241,13 @@ const colorOf = (e: KitEffect): NodeColor => ('flag' in e ? (e.flag.startsWith('
  * depth is a ring further out, the eight outer choices share the arm's sector evenly, and every
  * fork sits in the middle of its children. Neighbours end up at least 100 units apart (a test checks).
  */
+/** 1.4.0: what the barrier layers' head and milestone choices give instead of keeping (text, effect). */
+const BARRIER_BOOSTS: Record<string, { head: [string, KitEffect]; milestones: [string, KitEffect] }> = {
+  stardust: { head: ['Stardust x1e50', mul('productionMult', 1e50)], milestones: ['Taps x1e30', mul('tapPower', 1e30)] },
+  supernova: { head: ['Nova Shards x1e30', mul('shardGain', 1e30)], milestones: ['Ore x1e10', mul('oreGain', 1e10)] },
+  nebula: { head: ['Essence x1e30', mul('essenceGain', 1e30)], milestones: ['Rune Luck x100', mul('runeLuck', 100)] },
+};
+
 const RING = { head: 150, fork: 310, inner: 480, outer: 820, echo: 950 };
 const OUTER_STEP = 7.5; // degrees between outer choices: 8 per 60-degree arm
 
@@ -271,8 +278,11 @@ function buildSparkTree(): SparkNode[] {
       });
     };
     const headId = `mv.${arm.key}.keep`;
-    push(headId, [`${arm.name} Unbound`, `The Multiverse no longer resets the ${arm.name} layer: ${arm.keeps}.`, flag(`keep.${arm.key}`)], at(centre, RING.head), null, { big: true });
-    [arm.milestones, arm.automation].forEach((spec, i) => {
+    // 1.4.0: the Multiverse never resets the three layers furthest down (the barrier), so their "keep" choices are boosts
+    const barrier = BARRIER_BOOSTS[arm.key];
+    push(headId, barrier ? [`${arm.name} Unbound`, `The Multiverse never resets the ${arm.name} layer now, so this is a boost: ${barrier.head[0]}.`, barrier.head[1]] : [`${arm.name} Unbound`, `The Multiverse no longer resets the ${arm.name} layer: ${arm.keeps}.`, flag(`keep.${arm.key}`)], at(centre, RING.head), null, { big: true });
+    const milestones: [string, string, KitEffect] = barrier ? [arm.milestones[0], `${barrier.milestones[0]} (its milestones are never reset now).`, barrier.milestones[1]] : arm.milestones;
+    [milestones, arm.automation].forEach((spec, i) => {
       const id1 = `mv.${arm.key}.${i === 0 ? 'milestones' : 'auto'}`;
       push(id1, spec, at(slot(i * 4, 4), RING.fork), headId);
       for (const j of [i * 2, i * 2 + 1]) {

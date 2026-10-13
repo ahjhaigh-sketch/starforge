@@ -550,7 +550,8 @@ async function openRail(page: Page, id: string): Promise<void> {
   await expect
     .poll(() =>
       page.evaluate((x) => {
-        const btn = [...document.querySelectorAll<HTMLButtonElement>(`[data-rail="${x}"]`)].find((b) => b.offsetParent !== null);
+        // 1.4.0: a locked button can show first (a reached layer lists everything in it): wait for it to unlock
+        const btn = [...document.querySelectorAll<HTMLButtonElement>(`[data-rail="${x}"]`)].find((b) => b.offsetParent !== null && !b.classList.contains('locked') && !b.classList.contains('hidden'));
         btn?.click();
         return !!btn;
       }, id),
@@ -866,6 +867,8 @@ test('the Nebula: from 30 Supernovas through the confirm screen; Essence arrives
   await expect.poll(() => st8(page)(() => (window as unknown as Sf8).sf.game.state.currencies.essence?.toNumber() ?? 0)).toBe(2);
   await expect.poll(() => st8(page)(() => (window as unknown as Sf8).sf.game.state.stats.supernovas)).toBe(0);
   await expect(page.locator('.hud .pill[aria-label="Nebula Essence"]')).toBeVisible();
+  // 1.4.0: from the first Nebula the Supernova layer runs itself (its tree would spend these shards): switch it off
+  await page.evaluate(() => (window as unknown as { sf: { commands: { devManual(): void } } }).sf.commands.devManual());
   // the rune shrines: roll once by hand at the Nova shrine (10 shards a rune). Not Stardust: from the
   // first Nebula the Supernova milestones stay, so auto-buyers spend Stardust on engines at once.
   await page.evaluate(() => (window as unknown as Sf8).sf.commands.devAdd('shards', 1000));
@@ -889,6 +892,8 @@ test('auto-roll spends exactly the price of every rune it rolls', async ({ page 
   await page.evaluate(() => {
     const { game, commands } = (window as unknown as Sf8).sf;
     game.state.stats.nebulasAll = 1;
+    // 1.4.0: from the first Nebula the Stardust layer runs itself (its auto-buyers would spend Stardust)
+    (commands as unknown as { devManual(): void }).devManual();
     commands.devAdd('stardust', 5e7);
   });
   await openRail(page, 'runes');
@@ -928,6 +933,8 @@ type Sf9 = {
 test('Rune Stars: a star takes exactly the copies it asks for; spare copies salvage into Rune Shards', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/?dev=1');
+  // 1.4.0: layers you've passed run themselves; this test is about one system, so automation stays off
+  await page.evaluate(() => (window as unknown as { sf: { commands: { devManual(): void } } }).sf.commands.devManual());
   await page.evaluate(() => {
     const { game } = (window as unknown as Sf9).sf;
     const s = game.state;
@@ -956,6 +963,8 @@ test('Rune Stars: a star takes exactly the copies it asks for; spare copies salv
 test('Celestial Auras: roll a die, wear an aura, and it shows in Stats', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/?dev=1');
+  // 1.4.0: layers you've passed run themselves; this test is about one system, so automation stays off
+  await page.evaluate(() => (window as unknown as { sf: { commands: { devManual(): void } } }).sf.commands.devManual());
   await page.evaluate(() => {
     const { game, commands } = (window as unknown as Sf9).sf;
     game.state.stats.nebulasAll = 4;
@@ -983,6 +992,8 @@ test('Celestial Auras: roll a die, wear an aura, and it shows in Stats', async (
 test('the Index: page bonuses grow with completion and show in Stats; Mutations opens at 3 Nebulas', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/?dev=1');
+  // 1.4.0: layers you've passed run themselves; this test is about one system, so automation stays off
+  await page.evaluate(() => (window as unknown as { sf: { commands: { devManual(): void } } }).sf.commands.devManual());
   await page.evaluate(() => {
     const s = (window as unknown as Sf9).sf.game.state;
     s.stats.nebulasAll = 3;
@@ -1022,6 +1033,8 @@ type Sf10 = {
 test('Void Wyrms: hatch an egg, then fusion takes exactly five', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/?dev=1');
+  // 1.4.0: layers you've passed run themselves; this test is about one system, so automation stays off
+  await page.evaluate(() => (window as unknown as { sf: { commands: { devManual(): void } } }).sf.commands.devManual());
   await page.evaluate(() => {
     const { game, commands } = (window as unknown as Sf10).sf;
     game.state.stats.nebulasAll = 3;
@@ -1053,6 +1066,8 @@ test('Void Wyrms: hatch an egg, then fusion takes exactly five', async ({ page }
 test('six Wyrms swim across the sky and the frame rate holds', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/?dev=1');
+  // 1.4.0: layers you've passed run themselves; this test is about one system, so automation stays off
+  await page.evaluate(() => (window as unknown as { sf: { commands: { devManual(): void } } }).sf.commands.devManual());
   const measure = () =>
     page.evaluate(async () => {
       const times: number[] = [];
@@ -1098,6 +1113,8 @@ test('six Wyrms swim across the sky and the frame rate holds', async ({ page }) 
 test('the Star Nursery: crossbreeding follows the table, and a planted seed ripens and harvests', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/?dev=1');
+  // 1.4.0: layers you've passed run themselves; this test is about one system, so automation stays off
+  await page.evaluate(() => (window as unknown as { sf: { commands: { devManual(): void } } }).sf.commands.devManual());
   await page.evaluate(() => {
     const { game, commands } = (window as unknown as Sf10).sf;
     game.state.stats.nebulasAll = 4;
@@ -1140,6 +1157,8 @@ type Sf11 = {
 test('Spectral Focus: focus a colour; its bonus steps up exactly at each order of magnitude', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/?dev=1');
+  // 1.4.0: layers you've passed run themselves; this test is about one system, so automation stays off
+  await page.evaluate(() => (window as unknown as { sf: { commands: { devManual(): void } } }).sf.commands.devManual());
   await page.evaluate(() => {
     const s = (window as unknown as Sf11).sf.game.state;
     s.stats.nebulasAll = 5;
@@ -1172,6 +1191,8 @@ test('Spectral Focus: focus a colour; its bonus steps up exactly at each order o
 test('Tarot of the Void: open a pack, and The Mirror copies left and disables right in the deck', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/?dev=1');
+  // 1.4.0: layers you've passed run themselves; this test is about one system, so automation stays off
+  await page.evaluate(() => (window as unknown as { sf: { commands: { devManual(): void } } }).sf.commands.devManual());
   await page.evaluate(() => {
     const { game, commands } = (window as unknown as Sf11).sf;
     game.state.stats.nebulasAll = 6;
@@ -1222,6 +1243,8 @@ type Sf12 = {
 test('the Singularity: buy the key with Embers, fall in, Dark Matter arrives and the Black Hole wakes', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/?dev=1');
+  // 1.4.0: layers you've passed run themselves; this test is about one system, so automation stays off
+  await page.evaluate(() => (window as unknown as { sf: { commands: { devManual(): void } } }).sf.commands.devManual());
   await page.evaluate(() => {
     const { game, commands } = (window as unknown as Sf12).sf;
     game.state.stats.nebulasAll = 8;
@@ -1253,6 +1276,8 @@ test('the Singularity: buy the key with Embers, fall in, Dark Matter arrives and
 test('the Prism Wheel: dragging and arrow keys move share between colours, and the total stays 80%', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/?dev=1');
+  // 1.4.0: layers you've passed run themselves; this test is about one system, so automation stays off
+  await page.evaluate(() => (window as unknown as { sf: { commands: { devManual(): void } } }).sf.commands.devManual());
   await page.evaluate(() => {
     const s = (window as unknown as Sf12).sf.game.state;
     s.stats.singularitiesAll = 1;
@@ -1305,6 +1330,8 @@ type Sf13 = {
 test('Trials: entering switches the debuff on and shows the chip; leaving removes both', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/?dev=1');
+  // 1.4.0: layers you've passed run themselves; this test is about one system, so automation stays off
+  await page.evaluate(() => (window as unknown as { sf: { commands: { devManual(): void } } }).sf.commands.devManual());
   await page.evaluate(() => {
     (window as unknown as Sf13).sf.game.state.stats.singularitiesAll = 2;
   });
@@ -1340,6 +1367,8 @@ test('Trials: entering switches the debuff on and shows the chip; leaving remove
 test('the Spire climbs while on, and the Leviathan hunt takes taps; scales buy the Scale Tree', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/?dev=1');
+  // 1.4.0: layers you've passed run themselves; this test is about one system, so automation stays off
+  await page.evaluate(() => (window as unknown as { sf: { commands: { devManual(): void } } }).sf.commands.devManual());
   await page.evaluate(() => {
     (window as unknown as Sf13).sf.game.state.stats.singularitiesAll = 4;
   });
@@ -1401,6 +1430,8 @@ type Sf14 = {
 test('the Antimatter Mirror: buy an engine with the buy amount, collapse, and the Antimatter pill shows', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/?dev=1');
+  // 1.4.0: layers you've passed run themselves; this test is about one system, so automation stays off
+  await page.evaluate(() => (window as unknown as { sf: { commands: { devManual(): void } } }).sf.commands.devManual());
   await page.evaluate(() => {
     const s = (window as unknown as Sf14).sf.game.state;
     s.stats.singularities = 8;
@@ -1426,6 +1457,8 @@ test('the Antimatter Mirror: buy an engine with the buy amount, collapse, and th
 test('the Wormhole Network: pick two systems, open a wormhole, and it shows in both breakdowns', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/?dev=1');
+  // 1.4.0: layers you've passed run themselves; this test is about one system, so automation stays off
+  await page.evaluate(() => (window as unknown as { sf: { commands: { devManual(): void } } }).sf.commands.devManual());
   await page.evaluate(() => {
     const { sf } = window as unknown as Sf14;
     sf.game.state.stats.singularitiesAll = 6;
@@ -1476,6 +1509,8 @@ type Sf15 = {
 test('Galactic Rebirth: pick a galaxy, go Galactic through the confirm screen, and the new sky and pill appear', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/?dev=1');
+  // 1.4.0: layers you've passed run themselves; this test is about one system, so automation stays off
+  await page.evaluate(() => (window as unknown as { sf: { commands: { devManual(): void } } }).sf.commands.devManual());
   await page.evaluate(() => {
     const { sf } = window as unknown as Sf15;
     const s = sf.game.state;
@@ -1487,7 +1522,8 @@ test('Galactic Rebirth: pick a galaxy, go Galactic through the confirm screen, a
     // 1.3.0: the anti-star at Protostar, not the Black Hole, opens the Galactic Rebirth
     s.mirror.depth = 11;
     s.blackHole.mass = new s.currencies.stardust!.constructor(2e7);
-    sf.commands.devAdd('darkMatter', 1.6e9);
+    // 1.4.0: a Galactic Rebirth needs 1e12 Dark Matter this run (Cores still count from 1e8)
+    sf.commands.devAdd('darkMatter', 1.6e13);
   });
   await openRail(page, 'galaxymap');
   const map = page.locator('[data-panel="galaxymap"]');
@@ -1502,7 +1538,7 @@ test('Galactic Rebirth: pick a galaxy, go Galactic through the confirm screen, a
   await confirm.getByRole('button', { name: 'Go Galactic' }).click();
   await expect.poll(() => page.evaluate(() => (window as unknown as Sf15).sf.game.state.stats.galacticsAll)).toBe(1);
   expect(await page.evaluate(() => (window as unknown as Sf15).sf.game.state.galactic.galaxy)).toBe('spiral');
-  expect(await page.evaluate(() => (window as unknown as Sf15).sf.game.state.currencies.galaxyCores!.toNumber())).toBe(4);
+  expect(await page.evaluate(() => (window as unknown as Sf15).sf.game.state.currencies.galaxyCores!.toNumber())).toBe(400);
   await expect(page.locator('.hud .pill[aria-label="Galaxy Cores"]')).toBeVisible();
   await expect(page.locator('.galaxy-tint')).toHaveCount(1);
   expect(errors).toEqual([]);
@@ -1511,6 +1547,8 @@ test('Galactic Rebirth: pick a galaxy, go Galactic through the confirm screen, a
 test('the 200-node Galactic Tree stays smooth to pan, and the Observatory draws and records a constellation', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/?dev=1');
+  // 1.4.0: layers you've passed run themselves; this test is about one system, so automation stays off
+  await page.evaluate(() => (window as unknown as { sf: { commands: { devManual(): void } } }).sf.commands.devManual());
   await page.evaluate(() => {
     const { sf } = window as unknown as Sf15;
     const s = sf.game.state;
@@ -1589,6 +1627,8 @@ type Sf16 = {
 test('Megastructures: build a stage and its reward shows in Stats; colonies found, built on and researched', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/?dev=1');
+  // 1.4.0: layers you've passed run themselves; this test is about one system, so automation stays off
+  await page.evaluate(() => (window as unknown as { sf: { commands: { devManual(): void } } }).sf.commands.devManual());
   await page.evaluate(() => {
     const { sf } = window as unknown as Sf16;
     const s = sf.game.state;
@@ -1628,6 +1668,8 @@ test('Megastructures: build a stage and its reward shows in Stats; colonies foun
 test('Terraforming: paint hexes, finish the planet, and its multiplier is locked in', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/?dev=1');
+  // 1.4.0: layers you've passed run themselves; this test is about one system, so automation stays off
+  await page.evaluate(() => (window as unknown as { sf: { commands: { devManual(): void } } }).sf.commands.devManual());
   await page.evaluate(() => {
     const { sf } = window as unknown as Sf16;
     const s = sf.game.state;
@@ -1685,7 +1727,7 @@ test('the Big Crunch: explore 7 galaxies, crunch through the confirm screen, the
     s.stats.galacticsBest = 9;
     s.galactic.cleared = ['milkyway', 'spiral', 'elliptical', 'ring', 'dwarf', 'quasar', 'lenticular'];
     s.galactic.galaxy = 'lenticular';
-    sf.commands.devAdd('galaxyCores', 20_000);
+    sf.commands.devAdd('galaxyCores', 2e11);
   });
   await expect(page.getByTestId('crunch')).toBeVisible();
   await page.getByTestId('crunch').click();
@@ -1707,6 +1749,8 @@ test('the Big Crunch: explore 7 galaxies, crunch through the confirm screen, the
 test('the Echo boards: tap the echo star, buy an echo engine; and the soundtrack can be changed in Settings', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/?dev=1');
+  // 1.4.0: layers you've passed run themselves; this test is about one system, so automation stays off
+  await page.evaluate(() => (window as unknown as { sf: { commands: { devManual(): void } } }).sf.commands.devManual());
   await page.evaluate(() => {
     const { sf } = window as unknown as Sf17;
     sf.game.state.stats.crunchesAll = 1;
@@ -1747,6 +1791,8 @@ const mv = (page: Page) => <T,>(fn: () => T) => page.evaluate(fn);
 test('the Multiverse: pick a rule in the Universe Forge, enter through the confirm screen, read the ending, then buy a Spark choice', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/?dev=1');
+  // 1.4.0: layers you've passed run themselves; this test is about one system, so automation stays off
+  await page.evaluate(() => (window as unknown as { sf: { commands: { devManual(): void } } }).sf.commands.devManual());
   await page.evaluate(() => {
     const s = (window as unknown as Sf18).sf.game.state;
     Object.assign(s.stats, { crunches: 10, crunchesAll: 10, crunchesBest: 10, crunchesCycle: 10 });
@@ -2006,6 +2052,8 @@ test('the Shipyard: buy parts once, fit them while docked, Best fit for a sector
 test('Planet Defense: place a turret, fight wave 1, watch the replay to a win, and clear a socket for a refund', async ({ page }, info) => {
   const errors = watchErrors(page);
   await page.goto('/?dev=1');
+  // 1.4.0: layers you've passed run themselves; this test is about one system, so automation stays off
+  await page.evaluate(() => (window as unknown as { sf: { commands: { devManual(): void } } }).sf.commands.devManual());
   await page.evaluate(() => {
     const { game, commands } = (window as unknown as Sf7).sf;
     game.state.stats.singularitiesAll = 3;
@@ -2114,5 +2162,53 @@ test('1.2.0: focus cards, All grades in the Starforge, the Wardrobe in Medals, U
   await settings.locator('[data-menu="ascent"]').getByRole('button', { name: 'Hide' }).click();
   await expect(settings.locator('[data-menu="ascent"]').getByRole('button', { name: 'Show' })).toBeVisible();
   await expect(page.locator('nav.rail [data-rail="ascent"]')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+// ---------- 1.4.0: layers that run themselves, layer sections and the layers beyond ----------
+
+type Sf140 = {
+  sf: {
+    D(n: number): unknown;
+    game: { state: { stats: Record<string, number>; currencies: Record<string, unknown>; totals: { run: Record<string, unknown> }; galactic: { explore: boolean } } };
+    commands: { devAdd(c: string, n: number): void };
+  };
+};
+
+test('1.4.0: the side is in layer sections with "Coming up"; Automation lists layers and Auto all; a Hyperverse opens the Tesseract', async ({ page }, info) => {
+  const errors = watchErrors(page);
+  await page.goto('/?dev=1');
+  await page.evaluate(() => {
+    const s = (window as unknown as Sf140).sf.game.state;
+    Object.assign(s.stats, { supernovas: 3, supernovasAll: 3, nebulasAll: 1, singularitiesAll: 1 });
+  });
+  // the Automation menu: a card per layer, and Auto all
+  await openRail(page, 'automation');
+  const auto = page.locator('[data-panel="automation"]');
+  await expect(auto.locator('[data-layer-auto="supernova"]')).toContainText('Runs itself');
+  await expect(auto.locator('[data-layer-auto="nebula"]')).toContainText('Mostly runs itself');
+  await auto.locator('[data-layer-auto="nebula"]').getByRole('button', { name: 'Nebula runs itself' }).click();
+  await auto.getByTestId('auto-all').click();
+  await expect(auto.locator('[data-layer-auto="nebula"]').getByRole('button', { name: 'Nebula runs itself' })).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.press('Escape');
+  // the layers beyond: 60 Sparks this Hyperverse run, a confirm, then the Tesseract
+  await page.evaluate(() => {
+    const { sf } = window as unknown as Sf140;
+    Object.assign(sf.game.state.stats, { galacticsAll: 3, crunchesAll: 3, multiversesAll: 8, multiverses: 8, multiversesBest: 8 });
+    sf.commands.devAdd('sparks', 60);
+  });
+  if (info.project.name === 'desktop') {
+    const coming = page.locator('.teaser-section.coming');
+    await expect(coming).toHaveCount(1);
+    await expect(coming).toContainText('Coming up');
+  }
+  await openRail(page, 'hyperverse');
+  const hyper = page.locator('[data-panel="hyperverse"]');
+  await hyper.getByTestId('go-hyperverse').click();
+  await hyper.getByTestId('confirm-hyperverse').click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as Sf140).sf.game.state.stats.hyperversesAll)).toBe(1);
+  await openRail(page, 'tesseract');
+  await expect(page.locator('[data-panel="tesseract"] .tesseract-view')).toBeVisible();
+  await expect(page.locator('[data-panel="tesseract"] [data-axis="W"]')).toBeVisible();
   expect(errors).toEqual([]);
 });
