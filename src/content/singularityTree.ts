@@ -12,7 +12,7 @@ import type { NodeColor } from './novaTree';
  * A ring node hangs off the nearest node of the ring inside it; four capstones each join two
  * outer-ring sectors; three echoes level up with no cap. IDs never change.
  */
-export type SingularityFlag = 'keepEssence' | 'startNebulas' | 'keepSpectral';
+export type SingularityFlag = 'keepEssence' | 'startNebulas' | 'keepSpectral' | 'autoNebulaConstants';
 
 const mul = (stat: string, value: number): KitEffect => ({ stat, op: 'mul', value });
 const add = (stat: string, value: number): KitEffect => ({ stat, op: 'add', value });
@@ -161,4 +161,13 @@ const ECHOES: KitNode[] = [
 
 const ROOT: KitNode = { id: 'score', name: 'Singular Point', desc: 'Where everything falls: Dark Matter x1.2.', group: 'root', parents: [], cost: 1, effect: mul('darkMatterGain', 1.2), color: 'mul', big: true, x: 0, y: 0 };
 
-export const SINGULARITY_TREE: readonly KitNode[] = [ROOT, ...rings, ...CAPS, ...ECHOES];
+/**
+ * 1.4.5: Nebula Constants buy themselves, all they can every second (between the first two rings, off the first
+ * node of the inner ring, so it comes early in the Singularity layer).
+ */
+const NEBULA_ENGINE: KitNode = (() => {
+  const a = -Math.PI / 2 + Math.PI / 8;
+  return { id: 'sing.nebulaEngine', name: 'Nebula Constant Engine', desc: 'Nebula Constants buy themselves: every level they can pay for, every second.', group: 'memory', parents: ['sing.1.1'], cost: price(4), effect: flag('autoNebulaConstants', 1), color: 'unlock', big: true, x: Math.round(Math.cos(a) * 390), y: Math.round(Math.sin(a) * 390) };
+})();
+
+export const SINGULARITY_TREE: readonly KitNode[] = [ROOT, ...rings, ...CAPS, ...ECHOES, NEBULA_ENGINE];

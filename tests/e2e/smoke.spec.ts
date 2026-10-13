@@ -1558,8 +1558,8 @@ test('the 200-node Galactic Tree stays smooth to pan, and the Observatory draws 
   await openRail(page, 'galactictree');
   const view = page.locator('[data-panel="galactictree"] .tree-view');
   await expect(view).toBeVisible();
-  // the tree's 200 nodes, and (every node owned) the Sigil of Pride that hides among them
-  await expect(page.locator('[data-panel="galactictree"] [data-node]:not([data-node^="sigil."])')).toHaveCount(200);
+  // the tree's 201 nodes (1.4.5: the Constant Engine joined), and (every node owned) the Sigil of Pride that hides among them
+  await expect(page.locator('[data-panel="galactictree"] [data-node]:not([data-node^="sigil."])')).toHaveCount(201);
   await expect(page.locator('[data-panel="galactictree"] [data-node="sigil.pride"]')).toHaveCount(1);
   const box = (await view.boundingBox())!;
   await page.evaluate(() => {

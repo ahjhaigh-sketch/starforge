@@ -157,9 +157,10 @@ describe('galaxies', () => {
 });
 
 describe('the Galactic Tree', () => {
-  it('has 200 nodes, every one reachable from the core', () => {
-    expect(GALACTIC_TREE).toHaveLength(200);
-    expect(new Set(GALACTIC_TREE.map((n) => n.id)).size).toBe(200);
+  it('has 201 nodes (1.4.5), every one reachable from the core', () => {
+    // 1.4.5: plus the Constant Engine
+    expect(GALACTIC_TREE).toHaveLength(201);
+    expect(new Set(GALACTIC_TREE.map((n) => n.id)).size).toBe(201);
     const seen = new Set(['gal.core']);
     let grew = true;
     while (grew) {
@@ -173,7 +174,7 @@ describe('the Galactic Tree', () => {
         }
       }
     }
-    expect(seen.size).toBe(200);
+    expect(seen.size).toBe(201);
   });
 
   it('is bought with Galaxy Cores, and Arms makes its multipliers stronger', () => {

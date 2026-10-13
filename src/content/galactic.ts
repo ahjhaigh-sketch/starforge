@@ -66,7 +66,7 @@ export const GALAXY_BY_ID: ReadonlyMap<string, GalaxyDef> = new Map(GALAXIES.map
 
 // ---------- the Galactic Tree ----------
 
-export type GalacticFlag = 'startSingularities' | 'keepDarkMatter';
+export type GalacticFlag = 'startSingularities' | 'keepDarkMatter' | 'autoConstants';
 
 const mul = (stat: string, value: number): KitEffect => ({ stat, op: 'mul', value });
 const add = (stat: string, value: number): KitEffect => ({ stat, op: 'add', value });
@@ -206,6 +206,14 @@ function buildTree(): KitNode[] {
     const py = mid.x / len;
     nodes.push({ id: `gal.echo.${k}`, name, desc, group: 'echo', parents: [mid.id], cost: price(Math.floor(PER_ARM / 2)), repeat: { growth: G.echoGrowth }, effect, color: 'mul', x: Math.round(mid.x + px * 110), y: Math.round(mid.y + py * 110) });
   });
+  // 1.4.5: every constant set buys itself, beside the fifth arm (the four echoes sit beside the other four)
+  {
+    const arm = ARMS[4]!;
+    const mid = nodes.find((n) => n.id === `gal.${arm.key}.${Math.floor(PER_ARM / 2)}`)!;
+    const len = Math.hypot(mid.x, mid.y);
+    const effect = flag('autoConstants', 1);
+    nodes.push({ id: 'gal.constantEngine', name: 'Constant Engine', desc: 'Every constant buys itself: Stellar, Nova, Nebula, Void and Galactic Constants, every level they can pay for, every second.', group: arm.key, parents: [mid.id], cost: price(Math.floor(PER_ARM / 2)), effect, color: colorOf(effect), big: true, x: Math.round(mid.x - (mid.y / len) * 110), y: Math.round(mid.y + (mid.x / len) * 110) });
+  }
   return nodes;
 }
 

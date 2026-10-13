@@ -252,9 +252,10 @@ describe('Luck Root, the Black Hole and the Reactor', () => {
     expect(breakdown(s, 'darkMatterGain').find((l) => l.label === 'Dark Matter Reactor')?.value.toNumber()).toBeCloseTo(1001 ** 0.15, 9);
   });
 
-  it('the Singularity Tree has 100 nodes; capstones need both parents', () => {
-    expect(SINGULARITY_TREE).toHaveLength(100);
-    expect(new Set(SINGULARITY_TREE.map((n) => n.id)).size).toBe(100);
+  it('the Singularity Tree has 101 nodes (1.4.5); capstones need both parents', () => {
+    // 1.4.5: plus the Nebula Constant Engine
+    expect(SINGULARITY_TREE).toHaveLength(101);
+    expect(new Set(SINGULARITY_TREE.map((n) => n.id)).size).toBe(101);
     const s = player();
     s.stats.singularitiesAll = 1;
     gain(s, 'darkMatter', D('1e30'));

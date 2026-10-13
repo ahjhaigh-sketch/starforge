@@ -190,10 +190,12 @@ const PERKS: Record<string, PerkDef[]> = {
   Singularity: [
     { name: 'Auto-Nebula', req: '2 Singularities', lit: (s) => milestoneReached(s, 'singularity', 'autoNebula') },
     { name: 'Passive Dark Matter (1% a second)', req: `${BALANCE.passive.at.singularity} Singularities`, lit: (s) => milestoneReached(s, 'singularity', 'passive') },
+    { name: 'Nebula Constants buy themselves', req: 'Nebula Constant Engine (Singularity Tree)', lit: (s) => (s.singularityTree['sing.nebulaEngine'] ?? 0) > 0 },
   ],
   Galactic: [
     { name: 'Auto-Singularity', req: '2 Galactic Rebirths', lit: (s) => milestoneReached(s, 'galactic', 'autoSingularity') },
     { name: 'Passive Galaxy Cores (1% a second)', req: `${BALANCE.passive.at.galactic} Galactic Rebirths`, lit: (s) => milestoneReached(s, 'galactic', 'passive') },
+    { name: 'Every constant buys itself', req: 'Constant Engine (Galactic Tree)', lit: (s) => (s.galacticTree['gal.constantEngine'] ?? 0) > 0 },
   ],
   'Big Crunch': [{ name: 'Passive Chronons (1% a second)', req: `${BALANCE.passive.at.crunch} Big Crunches`, lit: (s) => milestoneReached(s, 'crunch', 'passive') }],
 };

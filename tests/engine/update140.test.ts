@@ -320,3 +320,51 @@ describe('1.4.0: Leviathans, megastructures, terraforming and the Observatory', 
     expect(chartBonus(s)).toBeCloseTo(1 + 0.05 * (before + 1), 9);
   });
 });
+
+describe('1.4.5: constant engines in the Singularity and Galactic Trees', () => {
+  it('the Nebula Constant Engine buys Nebula Constants by itself, before the Nebula layer runs itself', async () => {
+    const { singularityTree } = await import('../../src/engine/systems/singularity');
+    const { CONSTANTS } = await import('../../src/content/constants');
+    const { constantOpen, level } = await import('../../src/engine/systems/constants');
+    const s = createInitialState(21, 21);
+    // one Singularity: the Nebula layer only mostly runs itself... switch its automation off to see the engine alone
+    Object.assign(s.stats, { supernovasAll: 300, nebulasAll: 20, nebulas: 20, singularitiesAll: 1 });
+    manual(s);
+    setLayerAuto(s, 'nebula', { on: true });
+    gain(s, 'essence', D('1e60'));
+    gain(s, 'darkMatter', D(1e9));
+    const neb = CONSTANTS.filter((c) => c.set === 'nebula' && constantOpen(s, c));
+    expect(neb.length).toBeGreaterThan(0);
+    s.stats.singularitiesAll = 1;
+    // nebula is one layer down (level 1): its constants run anyway; turn the layer's reach off by checking a level-0 set
+    const before = neb.map((c) => level(s, c.id));
+    const node = singularityTree.def.nodes.find((n) => n.id === 'sing.nebulaEngine')!;
+    expect(node.parents).toEqual(['sing.1.1']);
+    s.singularityTree = { score: 1, 'sing.1.1': 1, 'sing.nebulaEngine': 1 };
+    invalidateStats();
+    tick(s, 1.01);
+    expect(neb.some((c, i) => level(s, c.id) > before[i]!)).toBe(true);
+  });
+
+  it('the Constant Engine buys every set, even one whose layer does not run itself yet', async () => {
+    const { galacticTree } = await import('../../src/engine/systems/galactic');
+    const { CONSTANTS } = await import('../../src/content/constants');
+    const { constantOpen, level } = await import('../../src/engine/systems/constants');
+    const s = createInitialState(22, 22);
+    Object.assign(s.stats, { supernovasAll: 300, nebulasAll: 20, singularitiesAll: 30, galacticsAll: 1 });
+    manual(s);
+    for (const l of ['stardust', 'supernova', 'nebula', 'singularity', 'galactic'] as const) setLayerAuto(s, l, { on: true });
+    // the Galactic layer itself is level 0 here, so only the engine can buy Galactic Constants
+    expect(autoLevel(s, 'galactic')).toBe(0);
+    gain(s, 'galaxyCores', D(1e9));
+    const gal = CONSTANTS.filter((c) => c.set === 'galactic' && constantOpen(s, c));
+    expect(gal.length).toBeGreaterThan(0);
+    tick(s, 1.01);
+    expect(gal.every((c) => level(s, c.id) === 0)).toBe(true);
+    expect(galacticTree.def.nodes.some((n) => n.id === 'gal.constantEngine')).toBe(true);
+    s.galacticTree = { 'gal.constantEngine': 1 };
+    invalidateStats();
+    tick(s, 1.01);
+    expect(gal.some((c) => level(s, c.id) > 0)).toBe(true);
+  });
+});

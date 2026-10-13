@@ -8,6 +8,15 @@ export interface UpdateNote {
 
 export const UPDATES: readonly UpdateNote[] = [
   {
+    version: '1.4.5',
+    date: '13 October 2026',
+    title: 'Constant engines',
+    notes: [
+      'Nebula Constant Engine, a new Singularity Tree node beside the first ring: Nebula Constants buy every level they can afford by themselves, every second.',
+      "Constant Engine, a new Galactic Tree node beside the fifth arm: every constant (Stellar, Nova, Nebula, Void and Galactic) buys itself, every second. Both show in the Automation menu and follow each layer's switch.",
+    ],
+  },
+  {
     version: '1.4.0',
     date: '13 October 2026',
     title: 'Everything runs itself, and four more layers',

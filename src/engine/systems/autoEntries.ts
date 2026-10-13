@@ -31,7 +31,7 @@ import { ECHO_BOARD, echoesOpen } from './echoes';
 import { buyEternity, canBuyEternity, ruleSaysGo } from './eternity';
 import { buyForgeUpgrade, buyRelic, forgeOpen, setForgeOn } from './forge';
 import { buyAutoFuse, buyFusionUpgrade, fusionOpen } from './fusion';
-import { autoPickGalaxy, galacticGain, galacticReady, galaxyCleared, galaxyMapOpen, firstUnexplored } from './galactic';
+import { autoPickGalaxy, galacticGain, galacticReady, galacticTree, galaxyCleared, galaxyMapOpen, firstUnexplored } from './galactic';
 import { leviathansOpen, leviathansUnlocked, killsOf, chooseLeviathan, setFighting } from './leviathans';
 import { buildStage } from './megastructures';
 import { buyMirrorUpgrade, collapse, MIRROR_ENGINES, mirrorOpen } from './mirror';
@@ -39,7 +39,7 @@ import { multiverseGain, multiverseReady, sparkTree } from './multiverse';
 import { nebulaGain, nebulaReady } from './nebula';
 import { buyNurseryUpgrade, buySeeds, crossbreed, ensurePlots, harvestPlot, nurseryOpen, plant, plotProgress } from './nursery';
 import { autoChart, maxLinks, observatoryOpen, recordConstellation } from './observatory';
-import { buyKey, keyOnSale, singularityGain, singularityReady } from './singularity';
+import { buyKey, keyOnSale, singularityGain, singularityReady, singularityTree } from './singularity';
 import { setShrine, shrineOpen, shrineState } from './runes';
 import { buyShip, buyShipUpgrade, buyPart, fitBest, launch, partOwned, sectorOpen, shipsOpen } from './ships';
 import { buySpectral, colorOpen, energyOf, oom, setFocus, spectralOpen } from './spectral';
@@ -89,8 +89,16 @@ const tree = (s: GameState, id: string) => {
   if (shop) buyAllNodes(s, shop);
 };
 
+/**
+ * 1.4.5: the Constant Engine (Galactic Tree) runs every set, the Nebula Constant Engine (Singularity Tree) the Nebula
+ * set, before their layers would run them.
+ */
+const constantEngine = (s: GameState) => galacticTree.flag(s, 'autoConstants') > 0;
+const nebulaEngine = (s: GameState) => singularityTree.flag(s, 'autoNebulaConstants') > 0 || constantEngine(s);
+const SET_SOONER: Readonly<Record<string, (s: GameState) => boolean>> = { nebula: nebulaEngine, stellar: constantEngine, nova: constantEngine, void: constantEngine, galactic: constantEngine };
+
 const constantsEntry = (set: string, layer: Parameters<typeof registerLayerAuto>[0]['layer'], name: string) =>
-  ({ id: `constants.${set}`, name, layer, level: 1 as const, run: (s: GameState) => maxConstants(s, set) });
+  ({ id: `constants.${set}`, name, layer, level: 1 as const, sooner: SET_SOONER[set], run: (s: GameState) => maxConstants(s, set) });
 
 export function registerAutoEntries(): void {
   registerLayerAuto(
@@ -429,7 +437,7 @@ export function registerAutoEntries(): void {
       },
     },
     { id: 'galactictree', name: 'Galactic Tree', layer: 'galactic', level: 1, run: (s) => tree(s, 'galactictree') },
-    { ...constantsEntry('galactic', 'galactic', 'Galactic Constants'), sooner: autoBuild },
+    { ...constantsEntry('galactic', 'galactic', 'Galactic Constants'), sooner: (s: GameState) => autoBuild(s) || constantEngine(s) },
     { id: 'megastructures', name: 'Megastructures', layer: 'galactic', level: 1, sooner: autoBuild, run: (s) => MEGASTRUCTURES.forEach((m) => { while (buildStage(s, m.id)); }) },
     {
       id: 'colonies',
