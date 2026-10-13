@@ -1,3 +1,6 @@
+import { commands } from '../../app/commands';
+import { treeAutoState } from '../../app/autoReports';
+import { useReport } from '../kit/useReport';
 import { type KeyboardEvent, memo, type PointerEvent, useCallback, useEffect, useMemo, useRef, useState, type WheelEvent } from 'react';
 
 /**
@@ -34,6 +37,8 @@ export interface TreeViewProps {
   /** 1.2.0: buys every node you can afford, cheapest first; locked (with a hint) until earned. */
   onBuyAll?: () => void;
   bulkLocked?: string;
+  /** 1.5.0: the tree's auto-buyer switch beside Buy all (the panel it lives on, and the tree's id). */
+  auto?: { panel: string; tree: string };
 }
 
 interface View {
@@ -79,7 +84,18 @@ const NodeGlyph = memo(function NodeGlyph({ n, selected, match }: GlyphProps) {
   );
 }, sameGlyph);
 
-export function TreeView({ nodes, edges, onBuy, currencyLabel, legend, onBuyAll, bulkLocked }: TreeViewProps) {
+/** 1.5.0: a tree's auto-buyer, switchable right where you buy (it buys every node it can, once a second). */
+function TreeAutoButton({ panel, tree }: { panel: string; tree: string }) {
+  const a = useReport(panel, () => treeAutoState(tree), 400);
+  if (!a) return null;
+  return (
+    <button type="button" className="chunk pop tree-auto" aria-pressed={a.unlocked && a.on} disabled={!a.unlocked} onClick={() => commands.setAuto(`auto.${tree}`, { on: !a.on })} title={a.unlocked ? 'Buys every node it can, once a second' : `Auto-buy unlocks at ${a.req}`} data-testid="tree-auto">
+      {a.unlocked ? `Auto ${a.on ? 'on' : 'off'}` : 'Auto (locked)'}
+    </button>
+  );
+}
+
+export function TreeView({ nodes, edges, onBuy, currencyLabel, legend, onBuyAll, bulkLocked, auto }: TreeViewProps) {
   const host = useRef<HTMLDivElement>(null);
   const layer = useRef<SVGGElement>(null);
   const view = useRef<View>({ x: 0, y: 0, k: 0.6 });
@@ -366,6 +382,7 @@ export function TreeView({ nodes, edges, onBuy, currencyLabel, legend, onBuyAll,
             {bulkLocked ? 'Buy all (locked)' : 'Buy all'}
           </button>
         )}
+        {auto && <TreeAutoButton panel={auto.panel} tree={auto.tree} />}
         <button type="button" className="chunk pop" onClick={() => zoomAt(size.w / 2, size.h / 2, 1.25)} aria-label="Zoom in">
           +
         </button>

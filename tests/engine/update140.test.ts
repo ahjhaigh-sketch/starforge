@@ -14,7 +14,7 @@ import { createInitialState, cur, gain, gainPassive, SAVE_VERSION } from '../../
 import { invalidateStats, resetStatRegistry, stat } from '../../src/engine/stats';
 import { tick } from '../../src/engine/tick';
 import { autoAll } from '../../src/engine/systems/autoEntries';
-import { AUTO_BUYERS, autoSetting, autoUnlocked } from '../../src/engine/systems/automation';
+import { AUTO_BUYERS, autoSetting, autoUnlocked, setAuto } from '../../src/engine/systems/automation';
 import {
   aspectShare,
   axisMult,
@@ -366,5 +366,36 @@ describe('1.4.5: constant engines in the Singularity and Galactic Trees', () => 
     invalidateStats();
     tick(s, 1.01);
     expect(gal.some((c) => level(s, c.id) > 0)).toBe(true);
+  });
+});
+
+describe('1.5.0: the safe tenth never covers a whole currency; constants and trees buy themselves on the playtest save', () => {
+  it('on load, automation may spend nine tenths of the Essence, and the Nebula Tree and Nebula Constants buy themselves', async () => {
+    const { CONSTANTS } = await import('../../src/content/constants');
+    const { level } = await import('../../src/engine/systems/constants');
+    const { free } = await import('../../src/engine/state');
+    const s = playtest();
+    expect(free(s, 'essence').div(cur(s, 'essence')).toNumber()).toBeCloseTo(0.9, 6);
+    // automatic Supernovas reset the Stellar Constants now and then: count the best each reached
+    const best = new Map<string, number>();
+    for (let i = 0; i < 100; i++) {
+      tick(s, 0.05);
+      for (const c of CONSTANTS) best.set(c.id, Math.max(best.get(c.id) ?? 0, level(s, c.id)));
+    }
+    expect(Object.keys(s.nebulaTree).length).toBeGreaterThan(10);
+    const neb = CONSTANTS.filter((c) => c.set === 'nebula');
+    expect(neb.every((c) => level(s, c.id) > 0)).toBe(true);
+    expect(CONSTANTS.filter((c) => c.set === 'stellar').every((c) => (best.get(c.id) ?? 0) > 0)).toBe(true);
+  });
+
+  it('each constant set has its own switch: off, automation leaves it alone', async () => {
+    const { CONSTANTS } = await import('../../src/content/constants');
+    const { level } = await import('../../src/engine/systems/constants');
+    const s = playtest();
+    setAuto(s, 'auto.constants.nebula', { on: false });
+    const before = CONSTANTS.filter((c) => c.set === 'nebula').map((c) => level(s, c.id));
+    for (let i = 0; i < 100; i++) tick(s, 0.05);
+    // the Nebula layer may reset them, but nothing buys them back
+    expect(CONSTANTS.filter((c) => c.set === 'nebula').every((c, i) => level(s, c.id) <= before[i]!)).toBe(true);
   });
 });

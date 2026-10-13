@@ -155,3 +155,9 @@ kbd {
 @media (max-width: 600px) {
   .modal .set-row { grid-template-columns: 1fr; gap: 0.3rem; }
 }
+
+/* 1.5.0: a constant set's auto-buy switch */
+.const-auto { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 0.7rem; padding: 0.45rem 0.7rem; border-radius: 12px; --stroke: 2px; margin: 0.3rem 0 0.5rem; }
+.const-auto b { font-family: var(--font-display); font-weight: 400; }
+.const-auto small { flex: 1 1 14rem; color: var(--text-dim); font-weight: 600; }
+.tree-auto[aria-pressed='true'] { --c: var(--lime); color: var(--ink); }

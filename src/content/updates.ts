@@ -8,6 +8,16 @@ export interface UpdateNote {
 
 export const UPDATES: readonly UpdateNote[] = [
   {
+    version: '1.5.0',
+    date: '13 October 2026',
+    title: 'Constants and trees buy themselves',
+    notes: [
+      'Cosmic Constants, Nebula Constants (Belt Current, Rune Speed, Rune Bulk, Resonance, Drift and Bloom) and the Nebula Tree now really buy themselves. Automation could not touch any of your Essence after some resets, and Auto-Constants always arrived after the engine auto-buyers had spent all the Stardust.',
+      'Every Constants panel has a bar showing what buys that set by itself (Auto-Constants, the Nebula Constant Engine in the Singularity Tree or the Constant Engine in the Galactic Tree) with its own On and Off switch.',
+      'Every tree has an Auto switch beside Buy all, and the Automation menu has a Constants section listing every set.',
+    ],
+  },
+  {
     version: '1.4.5',
     date: '13 October 2026',
     title: 'Constant engines',

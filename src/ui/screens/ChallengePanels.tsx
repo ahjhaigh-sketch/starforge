@@ -372,7 +372,7 @@ export function ScaleTreePanel() {
           </span>
         )}
       </div>
-      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={sigilAware((id) => commands.buyScaleNode(id))} onBuyAll={() => commands.buyAllNodes('scaletree')} bulkLocked={treeBulk ? '' : 'Buy all opens at 5 Supernovas'} currencyLabel="scales" legend={NODE_LEGEND} />}
+      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={sigilAware((id) => commands.buyScaleNode(id))} onBuyAll={() => commands.buyAllNodes('scaletree')} auto={{ panel: 'scaletree', tree: 'scaletree' }} bulkLocked={treeBulk ? '' : 'Buy all opens at 5 Supernovas'} currencyLabel="scales" legend={NODE_LEGEND} />}
     </Panel>
   );
 }

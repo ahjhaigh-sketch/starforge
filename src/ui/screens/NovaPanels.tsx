@@ -3,7 +3,7 @@ import { useSnap } from '../../app/uiSnapshot';
 import { commands, sigilAware } from '../../app/commands';
 import { ascentOverview, type AscentDeck, ascentReport, automationReport, NODE_LEGEND, supernovaReport, treeReport } from '../../app/novaReports';
 import { useState } from 'react';
-import { layerAutoReport, type LayerAutoRow } from '../../app/autoReports';
+import { constantAutoReport, layerAutoReport, type LayerAutoRow } from '../../app/autoReports';
 import { Button, cx, tint } from '../kit/Chunk';
 import { Icon } from '../kit/Icon';
 import { Panel } from '../kit/Panel';
@@ -87,7 +87,7 @@ export function NovaTreePanel() {
           <span className="val ol num">{r?.shards}</span>
         </div>
       </div>
-      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={sigilAware((id) => commands.buyNode(id))} onBuyAll={() => commands.buyAllNodes('novatree')} bulkLocked={treeBulk ? '' : 'Buy all opens at 5 Supernovas'} currencyLabel="shards" legend={NODE_LEGEND} />}
+      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={sigilAware((id) => commands.buyNode(id))} onBuyAll={() => commands.buyAllNodes('novatree')} auto={{ panel: 'novatree', tree: 'novatree' }} bulkLocked={treeBulk ? '' : 'Buy all opens at 5 Supernovas'} currencyLabel="shards" legend={NODE_LEGEND} />}
     </Panel>
   );
 }
@@ -136,6 +136,7 @@ function LayerAutoCard({ r }: { r: LayerAutoRow }) {
 export function AutomationPanel() {
   const rows = useReport('automation', automationReport, 300);
   const layers = useReport('automation', layerAutoReport, 500);
+  const consts = useReport('automation', constantAutoReport, 500);
   return (
     <Panel id="automation" title="Automation" color="#4A4F7A" size="wide">
       <div className="auto-all-bar">
@@ -152,6 +153,24 @@ export function AutomationPanel() {
           <div className="layer-auto-grid">
             {layers.map((r) => (
               <LayerAutoCard key={r.layer} r={r} />
+            ))}
+          </div>
+        </>
+      )}
+      {consts && consts.length > 0 && (
+        <>
+          <h4 className="auto-head ol-sm">Constants</h4>
+          <div className="layer-auto-grid">
+            {consts.map((c) => (
+              <div key={c.set} className="layer-auto chunk" style={tint('#2B1F6E')} data-const-auto-row={c.set}>
+                <div className="layer-auto-head">
+                  <b className="ol">{c.name}</b>
+                  <Button size="sm" gloss={false} color={c.on ? 'var(--lime)' : '#5A5F8F'} onClick={() => commands.setConstantAuto(c.set, !c.on)} aria-pressed={c.on} aria-label={`${c.name} buy themselves`}>
+                    {c.on ? 'On' : 'Off'}
+                  </Button>
+                </div>
+                <small className="layer-auto-list">{c.why}</small>
+              </div>
             ))}
           </div>
         </>

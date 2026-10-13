@@ -1,4 +1,11 @@
 import { AUTO_LAYERS, type AutoLayer, LAYER_COLORS, LAYER_NAMES, layerIndex, LAYER_IDS } from '../content/layers';
+import { BALANCE } from '../content/balance';
+import { CONSTANT_SETS } from '../content/constants';
+import { AUTO_BUYERS, autoSetting, autoUnlocked } from '../engine/systems/automation';
+import { constantSetAuto } from '../engine/systems/constants';
+import { galacticTree } from '../engine/systems/galactic';
+import { singularityTree } from '../engine/systems/singularity';
+import { reqMet, reqText } from '../engine/systems/unlocks';
 import { autoLevel, entryRunning, layerAutoEntries, layerAutoSetting, reachedLayer } from '../engine/layerAuto';
 import { format } from '../ui/format';
 import { game } from './game';
@@ -48,4 +55,41 @@ export function layerAutoReport(): LayerAutoRow[] {
     rows.push({ layer, name: LAYER_NAMES[layer], color: LAYER_COLORS[layer], level, on: st.on, mode: st.mode, at: st.at.gt(0) ? format(st.at, s.settings.notation) : '', needs, running, waiting, resets: layer !== 'stardust' });
   }
   return rows;
+}
+
+/** 1.5.0: who buys a constant set by itself now, and its own switch (shown on every Constants panel and in Automation). */
+export interface ConstantAuto {
+  set: string;
+  name: string;
+  open: boolean;
+  on: boolean;
+  /** What is buying it ('' when nothing yet), or what would. */
+  why: string;
+}
+
+export function constantAutoState(set: string): ConstantAuto {
+  const s = game.state;
+  const def = CONSTANT_SETS.find((x) => x.id === set);
+  const on = constantSetAuto(s, set);
+  const who: string[] = [];
+  const ac = AUTO_BUYERS.find((a) => a.id === 'auto.constants')!;
+  if (autoUnlocked(s, ac) && autoSetting(s, ac.id).on) who.push('Auto-Constants');
+  const e = layerAutoEntries().find((x) => x.id === `constants.${set}`);
+  if (e && entryRunning(s, e)) who.push(set === 'nebula' && singularityTree.flag(s, 'autoNebulaConstants') > 0 ? 'the Nebula Constant Engine' : galacticTree.flag(s, 'autoConstants') > 0 ? 'the Constant Engine' : `the ${def?.name.replace(' Constants', '')} layer running itself`);
+  const why = !on
+    ? 'Switched off: only your own purchases buy these.'
+    : who.length
+      ? `Buying by itself: ${who.join(' and ')}.`
+      : `Not yet: Auto-Constants unlocks at ${BALANCE.automation.unlockAt.constants} lifetime Supernovas${set === 'nebula' ? '; the Nebula Constant Engine (Singularity Tree)' : ''}; the Constant Engine (Galactic Tree) runs every set.`;
+  return { set, name: def?.name ?? set, open: !!def && reqMet(s, def.req), on, why };
+}
+
+export const constantAutoReport = (): ConstantAuto[] => CONSTANT_SETS.map((x) => constantAutoState(x.id)).filter((x) => x.open);
+
+/** 1.5.0: a tree's auto-buyer, for the switch beside its Buy all. */
+export function treeAutoState(tree: string): { on: boolean; unlocked: boolean; req: string } {
+  const s = game.state;
+  const a = AUTO_BUYERS.find((x) => x.id === `auto.${tree}`);
+  if (!a) return { on: false, unlocked: false, req: '' };
+  return { on: autoSetting(s, a.id).on, unlocked: autoUnlocked(s, a), req: a.req ? reqText(a.req) : '' };
 }

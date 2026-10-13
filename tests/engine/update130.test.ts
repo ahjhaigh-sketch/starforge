@@ -50,10 +50,10 @@ describe('1.3.0: the safe tenth', () => {
     expect(automatedSpend('Test', () => spend(s, 'darkMatter', D(900)))).toBe(true);
     expect(cur(s, 'darkMatter').toNumber()).toBe(100);
     expect(automatedSpend('Test', () => spend(s, 'darkMatter', D(1)))).toBe(false);
-    // by hand: all of it, and the kept tenth is never more than what's left
+    // by hand: all of it, and (1.5.0) the kept tenth is never more than a tenth of what's left
     expect(spend(s, 'darkMatter', D(60))).toBe(true);
-    expect(keptOf(s, 'darkMatter').toNumber()).toBe(40);
-    expect(s.kept.darkMatter!.toNumber()).toBe(40);
+    expect(keptOf(s, 'darkMatter').toNumber()).toBe(4);
+    expect(s.kept.darkMatter!.toNumber()).toBe(4);
   });
 
   it('a currency emptied by a reset leaves no stale safe tenth behind', () => {

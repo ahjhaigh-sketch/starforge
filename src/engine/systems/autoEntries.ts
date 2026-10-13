@@ -24,7 +24,7 @@ import { stat } from '../stats';
 import { auraSlots, aurasOpen, bestAuras, polishAura } from './auras';
 import { bhOpen, bhStage, setDustShare, wheelOpen } from './blackhole';
 import { buildingCost, buyBuilding, buyPort, buyResearch, colonySlots, coloniesOpen, finishPlanet, foundColony, foundCost, hasResearch, maxRoutes, openRoute, paintBestLayout, terraOpen } from './colonies';
-import { constantCurve, constantOpen, level } from './constants';
+import { CONSTANT_SHARE, constantCurve, constantOpen, constantSetAuto, level } from './constants';
 import { crunchGain, crunchReady } from './crunch';
 import { defenseOpen, placeTurret, setDefenseAuto, autoOpen as defenseAutoOpen, buyTurretLevels } from './defense';
 import { ECHO_BOARD, echoesOpen } from './echoes';
@@ -73,10 +73,11 @@ const autoBuild = (s: GameState) => milestoneReached(s, 'galactic', 'autoBuild')
 
 /** Every open constant of a set, as many levels as it can pay for at once. */
 function maxConstants(s: GameState, set: string): void {
+  if (!constantSetAuto(s, set)) return;
   for (const c of CONSTANTS) {
     if (c.set !== set || !constantOpen(s, c)) continue;
     const L = level(s, c.id);
-    const plan = planPurchase(constantCurve(c), L, usable(s, c.currency), 'max', 0, D(1));
+    const plan = planPurchase(constantCurve(c), L, usable(s, c.currency).mul(CONSTANT_SHARE), 'max', 0, D(1));
     // worked out on what's usable, so spend() (which refuses past the safe tenth) takes it
     if (plan.count <= 0 || !plan.canAfford || !spend(s, c.currency, plan.cost)) continue;
     s.constants[c.id] = L + plan.count;
@@ -139,7 +140,6 @@ export function registerAutoEntries(): void {
       },
     },
     { id: 'novatree', name: 'Nova Tree', layer: 'supernova', level: 1, run: (s) => tree(s, 'novatree') },
-    constantsEntry('nova', 'supernova', 'Nova Constants'),
     {
       id: 'starforge',
       name: 'Starforge',

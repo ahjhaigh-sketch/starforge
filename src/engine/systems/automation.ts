@@ -108,14 +108,22 @@ export function setAuto(s: GameState, id: string, change: Partial<{ on: boolean;
  * Auto-buyers whose work is big (a planet or tree climb invalidates the stats) or that needn't be
  * quick: they act once a real second, not on every pass (found by the speed budgets).
  */
-const SLOW_KINDS: ReadonlySet<AutoBuyerDef['kind']> = new Set(['planets', 'belt', 'tree', 'constants', 'supernova']);
+const SLOW_KINDS: ReadonlySet<AutoBuyerDef['kind']> = new Set(['planets', 'belt', 'tree', 'supernova']);
 
 /** What each auto-buyer is called where automated spending is listed. */
 const sinkName = (a: AutoBuyerDef) => (a.kind === 'engine' ? `Auto-buyer: ${a.name}` : a.kind === 'tree' ? `${a.name} auto-buyer` : `Auto-${a.name.toLowerCase()}`);
 
+/**
+ * 1.5.0: Auto-Constants acts on every pass, before the engine auto-buyers (which spend everything they may four times
+ * a second; going after them, and once a second, it never found Stardust left and Auto-Supernova wiped what it had
+ * bought, so the playtest's Cosmic Constants never moved). Auto-Supernova goes before it.
+ */
+const FIRST: Readonly<Partial<Record<AutoBuyerDef['kind'], number>>> = { supernova: 2, constants: 1 };
+const RUN_ORDER: readonly AutoBuyerDef[] = [...AUTO_BUYERS].sort((a, b) => (FIRST[b.kind] ?? 0) - (FIRST[a.kind] ?? 0));
+
 /** One pass of every switched-on auto-buyer (with `slow`, the once-a-second ones too). */
 export function runAutomation(s: GameState, slow = true): void {
-  for (const a of AUTO_BUYERS) {
+  for (const a of RUN_ORDER) {
     if (!slow && SLOW_KINDS.has(a.kind)) continue;
     if (!autoUnlocked(s, a)) continue;
     const { on, spend } = autoSetting(s, a.id);

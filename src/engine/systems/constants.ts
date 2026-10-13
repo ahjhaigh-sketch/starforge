@@ -57,6 +57,12 @@ export function constantSetOpen(s: GameState, setId: string): boolean {
   return !!set && reqMet(s, set.req);
 }
 
+/** 1.5.0: the share of a currency constant automation may use (engines and trees buy with the same currency). */
+export const CONSTANT_SHARE = 0.5;
+
+/** 1.5.0: each constant set's own auto-buy switch (on every Constants panel and in Automation); on until you switch it off. */
+export const constantSetAuto = (s: GameState, set: string): boolean => s.auto[`auto.constants.${set}`]?.on ?? true;
+
 export function constantOpen(s: GameState, c: ConstantDef): boolean {
   return constantSetOpen(s, c.set) && (!c.req || reqMet(s, c.req));
 }
@@ -83,9 +89,10 @@ export function buyConstant(s: GameState, id: string, amount?: BuyAmount, auto =
  * gradual, it should be instant highest upgrade"). With Constant Flow (Nebula Tree) the spending limit is ignored.
  */
 export function autoConstants(s: GameState, share: number, flow = false): void {
-  const part = flow ? 1 : share;
+  // 1.5.0: half of each currency at most (the rest is for engines and trees), all of it with Constant Flow
+  const part = flow ? 1 : share * CONSTANT_SHARE;
   for (const c of CONSTANTS) {
-    if (!constantOpen(s, c)) continue;
+    if (!constantOpen(s, c) || !constantSetAuto(s, c.set)) continue;
     const L = level(s, c.id);
     const plan = planPurchase(constantCurve(c), L, usable(s, c.currency).mul(part), 'max', 0, D(1));
     if (plan.count <= 0 || !plan.canAfford || !spend(s, c.currency, plan.cost)) continue;

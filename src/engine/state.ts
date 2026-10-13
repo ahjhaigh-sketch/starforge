@@ -403,8 +403,12 @@ export function gain(s: GameState, currency: string, amount: Decimal): void {
   if (currency === 'darkMatter' || currency === 'essence') s.galactic.here[currency] = (s.galactic.here[currency] ?? D(0)).add(amount);
   // the safe tenth: a share of every gain is kept away from automation (never more than was held
   // before it, so a reset or a Belt Tier that emptied the currency leaves nothing stale behind)
+  // 1.5.0: and never more than a tenth of what was held, so a reset that kept part of a currency (or automation spending
+  // down to the floor) can't leave the whole of it "kept": the playtest's e983 Essence all was, and nothing paid in
+  // Essence could be bought by automation (the Nebula Tree, Nebula Constants)
   const k = s.kept[currency];
-  s.kept[currency] = (k ? (k.gt(have) ? have : k) : D(0)).add(amount.mul(BALANCE.automation.keepShare));
+  const cap = have.mul(BALANCE.automation.keepShare);
+  s.kept[currency] = (k ? (k.gt(cap) ? cap : k) : D(0)).add(amount.mul(BALANCE.automation.keepShare));
 }
 
 /**
@@ -454,6 +458,14 @@ export function withBuyMax<T>(s: GameState, fn: () => T): T {
     return fn();
   } finally {
     s.settings.buyAmount = was;
+  }
+}
+
+/** 1.5.0: every safe tenth back to at most a tenth of what you hold (on load and after each reset). */
+export function trimKept(s: GameState): void {
+  for (const [c, k] of Object.entries(s.kept)) {
+    const cap = (s.currencies[c] ?? D(0)).mul(BALANCE.automation.keepShare);
+    if (k.gt(cap)) s.kept[c] = cap;
   }
 }
 
@@ -516,7 +528,8 @@ export function spend(s: GameState, currency: string, amount: Decimal): boolean 
   const left = have.sub(amount);
   s.currencies[currency] = left;
   const k = s.kept[currency];
-  if (k?.gt(left)) s.kept[currency] = left;
+  const cap = left.mul(BALANCE.automation.keepShare);
+  if (k?.gt(cap)) s.kept[currency] = cap;
   return true;
 }
 

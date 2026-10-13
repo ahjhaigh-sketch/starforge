@@ -111,7 +111,7 @@ export function MultiversePanel() {
           <h4 className="section-h">Omni Constants</h4>
           <p className="mv-note">Each level adds a little to many things at once. They never double, so they climb for ever: a million levels is one purchase.</p>
           <BuyAmountControl compact />
-          <ConstantGrid cards={consts.cards} />
+          <ConstantGrid cards={consts.cards} auto={{ panel: 'multiverse', set: 'omni' }} />
         </>
       )}
     </Panel>

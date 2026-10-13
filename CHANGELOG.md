@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.0 (constants and trees really buy themselves)
+From the playtest: the Cosmic Constants never moved, the Nebula Constants and the Nebula Tree weren't bought by anything, and neither the Constants panels nor the Automation menu said what buys them.
+- **The safe tenth never covers a whole currency** (`state.ts`: `gain`, `spend` and the new `trimKept`, run after every reset and on load): the share kept from automation is at most a tenth of what is held. The playtest's e983 Essence was all "kept" after partial-keep resets, so nothing paid in Essence (the Nebula Tree, Nebula Constants) could be bought by automation.
+- **Auto-Constants acts on every automation pass, before the engine auto-buyers** and after Auto-Supernova (`automation.ts` run order): going after the engines, once a second, it never found Stardust left, and Auto-Supernova wiped what it had bought. Constants automation spends at most half of what it may, so the engines keep growing too.
+- **Every Constants panel has an automation bar** (Cosmic, Nebula, Void, Galactic, Eternal and Omni): what is buying the set now (Auto-Constants, the Nebula Constant Engine, the Constant Engine or the layer running itself) or what will, and its own On/Off switch (`auto.constants.<set>`).
+- **Every tree has an Auto switch beside Buy all** (Nova, Nebula, Singularity and Galactic Trees, the Star Chart and the Scale Tree), showing what unlocks it when it's locked.
+- **The Automation menu lists the constants** in a new Constants section, one switch per set, beside the auto-buyers and the layers.
+
 ## 1.4.5 (constant engines)
 - **Nebula Constant Engine** (Singularity Tree, off the first node of the inner ring): Nebula Constants buy themselves, every level they can pay for, every second, before the Nebula layer runs itself (flag `autoNebulaConstants`).
 - **Constant Engine** (Galactic Tree, beside the fifth arm): every constant set buys itself (Stellar, Nova, Nebula, Void and Galactic), before each layer would run it (flag `autoConstants`). Both use the constants automation (`systems/autoEntries`), so they show in the Automation menu, follow each layer's switch and never spend the safe tenth; the Ascent shows them as perks.

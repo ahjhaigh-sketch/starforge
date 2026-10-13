@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { constantAutoState } from '../../app/autoReports';
 import { commands } from '../../app/commands';
 import { type ConstantCard, constantsReport, masteryReport, orbitalsReport, questsReport } from '../../app/earlyReports';
 import { BuyAmountControl } from '../kit/BuyAmountControl';
@@ -15,14 +16,31 @@ export function ConstantsPanel() {
     <Panel id="constants" title="Cosmic Constants" color="#7B3FD6" size="wide">
       <p>No level cap. Each level costs more; every effect doubles every 25 levels (every 100 after Lv 1,000, every 1,000 after Lv 100,000).</p>
       <BuyAmountControl />
-      {r && <ConstantGrid cards={r.cards} />}
+      {r && <ConstantGrid cards={r.cards} auto={{ panel: 'constants', set: 'stellar' }} />}
     </Panel>
   );
 }
 
-/** Constant cards with buy buttons (the Stellar set here, the Nebula set on the Nebula panel). */
-export function ConstantGrid({ cards }: { cards: ConstantCard[] }) {
+/** 1.5.0: a constant set's auto-buy switch and what is buying it, at the top of its constants. */
+function ConstantAutoBar({ panel, set }: { panel: string; set: string }) {
+  const a = useReport(panel, () => constantAutoState(set), 400);
+  if (!a) return null;
   return (
+    <div className="const-auto chunk" style={tint('#1E2A5E')} data-const-auto={set}>
+      <b>Auto-buy</b>
+      <Button size="sm" gloss={false} color={a.on ? 'var(--lime)' : '#5A5F8F'} onClick={() => commands.setConstantAuto(set, !a.on)} aria-pressed={a.on} data-testid={`const-auto-${set}`}>
+        {a.on ? 'On' : 'Off'}
+      </Button>
+      <small>{a.why}</small>
+    </div>
+  );
+}
+
+/** Constant cards with buy buttons (the Stellar set here, the Nebula set on the Nebula panel). */
+export function ConstantGrid({ cards, auto }: { cards: ConstantCard[]; auto?: { panel: string; set: string } }) {
+  return (
+    <>
+    {auto && <ConstantAutoBar panel={auto.panel} set={auto.set} />}
     <div className="const-grid">
       {cards.map((c) => (
         <div key={c.id} className={cx('const-card chunk', !c.open && 'locked')} style={tint(c.open ? '#2B1F6E' : '#24203F')} data-constant={c.id}>
@@ -51,6 +69,7 @@ export function ConstantGrid({ cards }: { cards: ConstantCard[] }) {
         </div>
       ))}
     </div>
+    </>
   );
 }
 

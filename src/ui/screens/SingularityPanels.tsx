@@ -115,7 +115,7 @@ export function SingularityPanel() {
       </div>
       <h4 className="section-h">Void Constants</h4>
       <BuyAmountControl compact />
-      {consts && <ConstantGrid cards={consts.cards} />}
+      {consts && <ConstantGrid cards={consts.cards} auto={{ panel: 'singularity', set: 'void' }} />}
     </Panel>
   );
 }
@@ -178,7 +178,7 @@ export function SingularityTreePanel() {
         <p>Four rings round the accretion disk, each in four sectors: Mass (the Black Hole and game speed), Matter (Dark Matter and Essence), Fate (runes and Luck Root) and Memory (what a Singularity keeps). Only a Galactic Rebirth resets it, and from 3 Galactic Rebirths not even that.</p>
         {r && <DarkChip value={r.money} />}
       </div>
-      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={sigilAware((id) => commands.buySingularityNode(id))} onBuyAll={() => commands.buyAllNodes('singularitytree')} bulkLocked={treeBulk ? '' : 'Buy all opens at 5 Supernovas'} currencyLabel="Dark Matter" legend={NODE_LEGEND} />}
+      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={sigilAware((id) => commands.buySingularityNode(id))} onBuyAll={() => commands.buyAllNodes('singularitytree')} auto={{ panel: 'singularitytree', tree: 'singularitytree' }} bulkLocked={treeBulk ? '' : 'Buy all opens at 5 Supernovas'} currencyLabel="Dark Matter" legend={NODE_LEGEND} />}
     </Panel>
   );
 }

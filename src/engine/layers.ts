@@ -2,7 +2,7 @@ import { BALANCE } from '../content/balance';
 import { LAYER_COUNTERS } from '../content/layers';
 import { D, type Decimal } from './decimal';
 import { events } from './events';
-import { gain, type GameState } from './state';
+import { gain, type GameState, trimKept } from './state';
 import { invalidateStats, stat } from './stats';
 
 /**
@@ -186,6 +186,8 @@ export function performReset(s: GameState, id: string): Decimal | null {
   });
   s.lastResetAt[id] = s.playtime;
   def.onReset?.(s, before);
+  // 1.5.0: a reset that kept part of a currency leaves its safe tenth a tenth of what's left
+  trimKept(s);
   for (const h of resetHooks) h(s, id, before);
   // every stat depends on what was just reset: nothing may read a cached value from the old run
   invalidateStats();

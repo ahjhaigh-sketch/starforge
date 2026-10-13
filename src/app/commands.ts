@@ -854,6 +854,11 @@ export const commands = {
     done();
     return n;
   },
+  /** 1.5.0: a constant set's own auto-buy switch. */
+  setConstantAuto(set: string, on: boolean) {
+    setAuto(game.state, `auto.constants.${set}`, { on });
+    done();
+  },
   /** 1.4.0: the Galaxy Map's Auto-explore. */
   setAutoExplore(on: boolean) {
     game.state.galactic.explore = on;

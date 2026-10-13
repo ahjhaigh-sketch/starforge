@@ -99,7 +99,7 @@ export function BigCrunchPanel() {
         <>
           <h4 className="section-h">Eternal Constants</h4>
           <BuyAmountControl compact />
-          <ConstantGrid cards={consts.cards} />
+          <ConstantGrid cards={consts.cards} auto={{ panel: 'bigcrunch', set: 'eternal' }} />
         </>
       )}
     </Panel>

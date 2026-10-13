@@ -1,4 +1,4 @@
-import { createInitialState, type GameState, SAVE_VERSION } from '../state';
+import { createInitialState, type GameState, SAVE_VERSION, trimKept } from '../state';
 import { decodeEnvelope, encodeEnvelope, SaveFormatError } from './codec';
 import { migrate, NewerSaveError } from './migrations';
 import { validatePlainSave } from './schema';
@@ -54,6 +54,8 @@ export function importSave(code: string): { status: 'ok'; state: GameState; save
   const invalid = validatePlainSave(plain);
   if (invalid) throw new SaveFormatError(`That save failed checks (${invalid}).`);
   const state = mergeDefaults(createInitialState(env.t), fromPlain(plain));
+  // 1.5.0: every safe tenth at most a tenth of what's held (older saves could keep a whole currency from automation)
+  trimKept(state);
   const broken = findBrokenNumber(state);
   if (broken) throw new SaveFormatError(`That save has a broken number at ${broken}.`);
   return { status: 'ok', state, savedAt: env.t };

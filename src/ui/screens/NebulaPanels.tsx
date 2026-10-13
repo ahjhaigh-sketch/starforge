@@ -88,7 +88,7 @@ export function NebulaPanel() {
           </div>
           <h4 className="section-h">Nebula Constants</h4>
           <BuyAmountControl compact />
-          {consts && <ConstantGrid cards={consts.cards} />}
+          {consts && <ConstantGrid cards={consts.cards} auto={{ panel: 'nebula', set: 'nebula' }} />}
         </>
       )}
     </Panel>
@@ -154,7 +154,7 @@ export function NebulaTreePanel() {
         <p>Spend Nebula Essence on a drifting cloud of four wisps: Veil (runes), Bloom (Essence, shards and what a Nebula keeps), Drift (Stardust, taps, time away) and Lattice (the Belt, Starforge and ships). A Singularity resets it (from 3 Singularities it stays).</p>
         {r && <EssenceChip value={r.essence} />}
       </div>
-      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={sigilAware((id) => commands.buyNebulaNode(id))} onBuyAll={() => commands.buyAllNodes('nebulatree')} bulkLocked={treeBulk ? '' : 'Buy all opens at 5 Supernovas'} currencyLabel="Essence" legend={NODE_LEGEND} />}
+      {r && <TreeView nodes={r.nodes} edges={r.edges} onBuy={sigilAware((id) => commands.buyNebulaNode(id))} onBuyAll={() => commands.buyAllNodes('nebulatree')} auto={{ panel: 'nebulatree', tree: 'nebulatree' }} bulkLocked={treeBulk ? '' : 'Buy all opens at 5 Supernovas'} currencyLabel="Essence" legend={NODE_LEGEND} />}
     </Panel>
   );
 }
