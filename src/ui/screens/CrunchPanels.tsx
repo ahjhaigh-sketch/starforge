@@ -118,6 +118,7 @@ export function CrunchConfirmPanel() {
             <span className="num">+{r.gain}</span>
           </div>
           <p className="center">Chronons buy Eternity upgrades and Eternal Constants. The universe starts again in the Milky Way.</p>
+          {r.warn && <p className="reset-warn" role="note">{r.warn}</p>}
           <div className="confirm-cols">
             <div className="well">
               <h4>Resets</h4>

@@ -43,6 +43,7 @@ function ready(seed = 7): GameState {
   s.starChart = { 'chart.root': 1 };
   s.wormholes.links = [{ from: 'ore', to: 'darkmatter', share: 0.5 }];
   s.mirror.upgrades = ['mu.spark', 'mu.key'];
+  s.mirror.depth = 11;
   s.blackHole.mass = D(2e7);
   gain(s, 'galaxyCores', D(20_000));
   gain(s, 'darkMatter', D(1e12));
@@ -365,7 +366,8 @@ describe('Eternity', () => {
     c.eternity.upgrades = [...auto];
     c.stats.nebulas = 8;
     c.stats.nebulasAll = 8;
-    gain(c, 'embers', D(BALANCE.singularity.keyEmbers));
+    // (1.3.0: automation never spends the safe tenth, so the key needs a little over its price)
+    gain(c, 'embers', D(BALANCE.singularity.keyEmbers).div(0.85));
     gain(c, 'essence', D('1e94'));
     tick(c, 1.01);
     expect(c.singularity.key).toBe(true);

@@ -779,6 +779,7 @@ it('balance simulation', async () => {
       const explored = GL.galaxyCleared(s, s.galactic.galaxy) || skipped.has(s.galactic.galaxy);
       if ((s.stats.galacticsAll ?? 0) === 0 || (explored && (g.gte(life.div(2)) || s.playtime - galacticStart > 3600)) || s.playtime - galacticStart > 3 * 3600) {
         galacticLengths.push(s.playtime - galacticStart);
+        if (process.env.SIM_DEBUG_GAINS) console.log(`[gain] ${hms(s.playtime)} Galactic ${(s.stats.galacticsAll ?? 0) + 1}: +${fmt(g)} Galaxy Cores from run Dark Matter ${fmt(GL.runDarkMatter(s))} after ${hms(s.playtime - galacticStart)}`);
         if (process.env.SIM_DEBUG_MAG) {
           const lg = (c: string) => cur(s, c).add(1).log10().toNumber().toFixed(0);
           console.log(`[mag] Galactic ${(s.stats.galacticsAll ?? 0) + 1}: ${['stardust', 'shards', 'essence', 'darkMatter', 'galaxyCores', 'antimatter', 'embers', 'ore', 'scales', 'alloy.iron', 'alloy.gold'].map((c) => `${c} e${lg(c)}`).join(', ')}, run essence e${(s.totals.run.essence ?? D(0)).add(1).log10().toNumber().toFixed(0)}`);
@@ -809,6 +810,7 @@ it('balance simulation', async () => {
       const countGoal = (s.stats.galacticsAll ?? 0) > 0 && !GL.galaxyCleared(s, s.galactic.galaxy) && GL.galaxyOf(s).goal.kind === 'singularities';
       if ((s.stats.singularitiesAll ?? 0) === 0 || countGoal || g.gte(life) || s.playtime - singularityStart > 3600) {
         singularityLengths.push(s.playtime - singularityStart);
+        if (process.env.SIM_DEBUG_GAINS) console.log(`[gain] ${hms(s.playtime)} Singularity ${(s.stats.singularitiesAll ?? 0) + 1}: +${fmt(g)} Dark Matter from run Essence ${fmt(SG.runEssence(s))} after ${hms(s.playtime - singularityStart)}`);
         if (process.env.SIM_DEBUG_P13) console.log(`[p13] Singularity ${(s.stats.singularitiesAll ?? 0) + 1}: log10 SPS ${stat(s, 'stardustPerSec').add(1).log10().toNumber().toFixed(1)}, log10 run Stardust ${(s.totals.run.stardust ?? D(0)).add(1).log10().toNumber().toFixed(1)}, log10 tap ${stat(s, 'tapPower').add(1).log10().toNumber().toFixed(1)}, supernovas ${s.stats.supernovasAll ?? 0}`);
         performReset(s, 'singularity');
         singularityStart = s.playtime;
@@ -831,6 +833,7 @@ it('balance simulation', async () => {
       const lifetime = ((s.stats.singularitiesAll ?? 0) > 0 ? s.totals.run.essence : s.totals.all.essence) ?? D(0);
       if ((s.stats.nebulasAll ?? 0) === 0 || g.gte(lifetime) || s.playtime - nebulaStart > 6 * 3600) {
         nebulaLengths.push(s.playtime - nebulaStart);
+        if (process.env.SIM_DEBUG_GAINS) console.log(`[gain] ${hms(s.playtime)} Nebula ${(s.stats.nebulasAll ?? 0) + 1}: +${fmt(g)} Essence after ${hms(s.playtime - nebulaStart)}`);
         performReset(s, 'nebula');
         nebulaStart = s.playtime;
         runStart = s.playtime;

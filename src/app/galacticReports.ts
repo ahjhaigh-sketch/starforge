@@ -4,7 +4,7 @@ import { layer, milestoneReached, resetsDone } from '../engine/layers';
 import { cur } from '../engine/state';
 import { stat } from '../engine/stats';
 import { darkMatterNeeded, galacticGain, galacticReady, galacticReqs, galaxyAvailable, galaxyCleared, galaxyMapOpen, galaxyOf, goalProgress, nextCoreAt } from '../engine/systems/galactic';
-import { constellationScore, currentScore, linkScore, loopsOf, maxLinks, observatoryOpen, skyOf } from '../engine/systems/observatory';
+import { autoChartLinks, bestNextLink, constellationScore, currentScore, linkScore, loopsOf, maxLinks, observatoryOpen, skyOf } from '../engine/systems/observatory';
 import { format, formatMult } from '../ui/format';
 import { game } from './game';
 
@@ -17,7 +17,8 @@ export interface GalacticReport {
   ready: boolean;
   gain: string;
   next: string;
-  stages: number;
+  depth: number;
+  depthNeed: number;
   key: boolean;
   dm: string;
   dmNeed: string;
@@ -40,7 +41,8 @@ export function galacticReport(): GalacticReport {
     ready: galacticReady(s),
     gain: format(galacticGain(s), n()),
     next: format(nextCoreAt(s), n()),
-    stages: r.stages,
+    depth: r.depth,
+    depthNeed: G.mirrorDepth,
     key: r.key,
     dm: format(r.dm, n()),
     dmNeed: format(darkMatterNeeded(s), n()),
@@ -114,6 +116,9 @@ export interface ObservatoryReport {
   charts: string;
   /** Star Charts a record would pay now. */
   pays: number;
+  /** 1.3.0: the best link to draw next (the Hint), and what Auto-draw would score. */
+  hint: { a: number; b: number; gain: string } | null;
+  autoScore: string;
 }
 
 export function observatoryReport(): ObservatoryReport {
@@ -131,7 +136,20 @@ export function observatoryReport(): ObservatoryReport {
     max: maxLinks(s),
     charts: format(cur(s, 'starCharts'), n()),
     pays: Math.max(0, Math.floor(score) - Math.floor(s.observatory.best)),
+    hint: (() => {
+      const h = bestNextLink(s);
+      return h ? { a: h.a, b: h.b, gain: h.gain.toFixed(1) } : null;
+    })(),
+    autoScore: autoScoreOf(s.observatory.seed, maxLinks(s)),
   };
+}
+
+/** Auto-draw's score for a sky, worked out once per sky and link count. */
+let autoCache: { key: string; score: string } | null = null;
+function autoScoreOf(seed: number, links: number): string {
+  const key = `${seed}:${links}`;
+  if (autoCache?.key !== key) autoCache = { key, score: constellationScore(skyOf(game.state), autoChartLinks(game.state)).toFixed(1) };
+  return autoCache.score;
 }
 
 /** For tests and tooltips: a shape's score without drawing it. */

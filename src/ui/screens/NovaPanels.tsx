@@ -215,6 +215,19 @@ export function AscentPanel() {
                 </button>
               ))}
             </div>
+            {st.perks.length > 0 && (
+              <div className="ascent-perks" aria-label={`${st.stage} perks`}>
+                {st.perks.map((p) => (
+                  <span key={p.name} className={cx('ascent-perk', p.lit && 'lit')} title={p.req}>
+                    <Icon name={p.lit ? 'auto' : 'lock'} />
+                    <span>
+                      <b>{p.name}</b>
+                      {!p.lit && <small>{p.req}</small>}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            )}
           </section>
         ))}
       </div>

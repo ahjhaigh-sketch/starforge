@@ -22,7 +22,7 @@ export const RARITIES: readonly RarityDef[] = [
   { id: 'void', name: 'Void', oneIn: 100_000, mult: 10_000, color: '#3A2470', glow: '#9B7CFF' },
 ];
 
-export type BeltUpgradeId = 'value' | 'amount' | 'growth' | 'beam' | 'xp';
+export type BeltUpgradeId = 'value' | 'amount' | 'growth' | 'beam' | 'xp' | 'luck';
 
 export interface BeltUpgradeDef {
   id: BeltUpgradeId;
@@ -37,6 +37,8 @@ export const BELT_UPGRADES: readonly BeltUpgradeDef[] = [
   { id: 'growth', name: 'Growth', desc: 'Asteroids drift in 10% faster.', icon: 'comet' },
   { id: 'beam', name: 'Beam', desc: 'A wider tractor beam (+10 px).', icon: 'orbit' },
   { id: 'xp', name: 'XP', desc: 'More Starsmith XP from every asteroid.', icon: 'level' },
+  // 1.3.0: more for the Belt
+  { id: 'luck', name: 'Lucky Rocks', desc: 'Rarer asteroids drift in 5% more often (up to 40 levels).', icon: 'dice' },
 ];
 
 /** What each Belt Tier unlocks on top of x2 ore and XP. */

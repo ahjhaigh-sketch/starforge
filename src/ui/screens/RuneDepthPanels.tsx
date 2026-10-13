@@ -5,6 +5,7 @@ import { formatCount } from '../format';
 import { BuyAmountControl } from '../kit/BuyAmountControl';
 import { Button, cx, tint } from '../kit/Chunk';
 import { Icon } from '../kit/Icon';
+import { HowTo } from '../kit/HowTo';
 import { Panel } from '../kit/Panel';
 import { ProgressBar } from '../kit/ProgressBar';
 import { useReport } from '../kit/useReport';
@@ -44,6 +45,25 @@ export function StarringPanel() {
         <Locked what="Rune Starring" req={data.req} />
       ) : (
         <>
+          <HowTo
+            label="What Rune Stars do"
+            steps={[
+              <>
+                <b>Earn a star</b> for a shrine by giving the copies of one rune its altar asks for. Only those copies go.
+              </>,
+              <>
+                <b>Each star</b> makes every rune at that shrine 20% stronger (5 stars: twice as strong).
+              </>,
+              <>
+                <b>Two stars</b> reveal the shrine's hidden rune, which then comes 10 times as often.
+              </>,
+            ]}
+          />
+          <div className="center-row">
+            <Button size="sm" color="var(--gold)" onClick={() => setNote(((n) => (n > 0 ? `${n} new star${n === 1 ? '' : 's'}` : 'No shrine can earn a star yet'))(commands.starAll()))} data-testid="star-all">
+              Star every shrine that can
+            </Button>
+          </div>
           <div className="shrine-tabs" role="tablist" aria-label="Shrines">
             {data.tabs.map((t) => (
               <button key={t.id} type="button" role="tab" aria-selected={t.id === shrine} className={cx('shrine-tab chunk pop', t.id === shrine && 'on', !t.open && 'locked')} style={tint(t.id === shrine ? t.color : '#2B1F6E')} onClick={() => setShrine(t.id)} data-star-shrine={t.id}>
@@ -196,6 +216,37 @@ export function AurasPanel() {
               </div>
             )}
           </div>
+          <HowTo
+            label="How Celestial Auras work"
+            steps={[
+              <>
+                <b>Roll</b> Aura Dice (one for every {data.every} runes rolled) to find auras, rarest last.
+              </>,
+              <>
+                <b>Wear</b> up to {data.slots} at once{data.nextSlot ? ` (${data.nextSlot})` : ''}. {data.familyRule}
+              </>,
+              <>
+                <b>Polish</b> an aura with its own copies: each rank adds +30% to its boost, and costs far more than the last.
+              </>,
+            ]}
+          />
+          <div className="aura-worn">
+            {data.worn.map((w) => (
+              <div key={w.slot} className={cx('aura-slot well', !w.id && 'empty')} style={tint(w.color)} data-aura-slot={w.slot}>
+                <small className="slot-no">Slot {w.slot + 1}</small>
+                <b>{w.name}</b>
+                <small>{w.effects}</small>
+                {w.id && (
+                  <Button size="sm" color="#5A5F8F" onClick={() => commands.wearAura(null, w.slot)}>
+                    Take off
+                  </Button>
+                )}
+              </div>
+            ))}
+            <Button color="var(--gold)" onClick={() => commands.bestAuras()} data-testid="best-auras">
+              Best auras
+            </Button>
+          </div>
           <div className="aura-grid">
             {data.auras.map((a) => (
               <div key={a.id} className={cx('aura-tile', a.found && 'found', a.equipped && 'worn')} style={tint(a.color)} data-aura={a.id}>
@@ -204,9 +255,27 @@ export function AurasPanel() {
                 <small className="num">{a.odds}</small>
                 <small>{a.effects}</small>
                 {a.found && (
-                  <Button size="sm" color={a.equipped ? 'var(--lime)' : '#4C3BC4'} onClick={() => commands.equipAura(a.equipped ? null : a.id)} aria-pressed={a.equipped}>
-                    {a.equipped ? 'Worn' : 'Wear'}
-                  </Button>
+                  <small className="aura-meta">
+                    <span style={{ color: a.familyColor }}>{a.family}</span> · {a.copies} copies · Polish {a.rank}/{a.rankMax}
+                  </small>
+                )}
+                {a.found && (
+                  <div className="slot-btns">
+                    {a.equipped ? (
+                      <Button size="sm" color="var(--lime)" onClick={() => commands.wearAura(null, Math.max(0, a.slot))} aria-pressed>
+                        Worn
+                      </Button>
+                    ) : (
+                      data.worn.map((w) => (
+                        <Button key={w.slot} size="sm" color="#4C3BC4" onClick={() => commands.wearAura(a.id, w.slot)} aria-label={`Wear ${a.name} in slot ${w.slot + 1}`}>
+                          {data.worn.length > 1 ? `Slot ${w.slot + 1}` : 'Wear'}
+                        </Button>
+                      ))
+                    )}
+                    <Button size="sm" color={a.canPolish ? 'var(--magenta)' : '#5A5F8F'} disabled={!a.canPolish} onClick={() => commands.polishAura(a.id)} aria-label={`Polish ${a.name} for ${a.polishCost} copies`}>
+                      {a.rank >= a.rankMax ? 'Polished' : <>Polish <span className="num">{a.polishCost}</span></>}
+                    </Button>
+                  </div>
                 )}
               </div>
             ))}

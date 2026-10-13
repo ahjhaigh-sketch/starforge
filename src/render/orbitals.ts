@@ -28,8 +28,10 @@ const RING_SQUASH = 0.32;
 /** Moonlet textures are MOON_TEX px with radius MOON_R. */
 const MOON_TEX = 32;
 const MOON_R = 11;
-/** Levels at which a planet gains its first, second and third moonlet. */
-const MOONLET_LEVELS = [10, 25, 50] as const;
+/** Levels at which a planet gains each moonlet (1.3.0: five, the last two at 100 and 250). */
+const MOONLET_LEVELS = [10, 25, 50, 100, 250] as const;
+/** 1.3.0: from this level a little station orbits the planet too. */
+const STATION_LEVEL = 150;
 const LOOKS = 4;
 
 // ---------- deterministic noise (cosmetic only: the same seed always paints the same planet) ----------
@@ -926,6 +928,12 @@ interface PlanetView {
   moonBack: Container;
   moonFront: Container;
   moons: Moonlet[];
+  /** 1.3.0: the surface (and its night glow) turn slowly; the atmosphere breathes. */
+  spinners: Sprite[];
+  spin: number;
+  halo: Sprite;
+  haloAlpha: number;
+  phase: number;
 }
 
 function moonletCount(level: number): number {
@@ -964,10 +972,12 @@ function buildPlanet(ring: number, slot: number, type: string, level: number): P
   body.rotation = tilt;
   const shadow = centred(sh.shadow);
   root.addChild(body, shadow);
+  const spinners: Sprite[] = [body];
   if (tex.glow) {
     const glow = centred(tex.glow);
     glow.rotation = tilt;
     root.addChild(glow);
+    spinners.push(glow);
   }
   const rim = centred(sh.rim);
   root.addChild(rim);
@@ -979,18 +989,41 @@ function buildPlanet(ring: number, slot: number, type: string, level: number): P
   root.addChild(moonFront);
 
   const moons: Moonlet[] = [];
+  // faint orbit lines behind the planet, one per moonlet (1.3.0)
+  const paths = new Graphics();
+  moonBack.addChild(paths);
   for (let i = 0; i < moonletCount(level); i++) {
     const sprite = centred(sh.moons[(i + slot) % sh.moons.length]!);
     sprite.scale.set((BR * between(rand, 0.17, 0.24)) / MOON_R);
-    moons.push({
+    const m = {
       sprite,
       dist: BR * (1.85 + i * 0.45),
       speed: between(rand, 0.6, 1.1) * (i % 2 ? -1 : 1) / (1 + i * 0.4),
       phase: rand() * TAU,
       tilt: tilt + between(rand, -0.3, 0.3),
-    });
+    };
+    moons.push(m);
+    const pts: number[] = [];
+    for (let k = 0; k <= 48; k++) {
+      const t = (k / 48) * TAU;
+      const ox = Math.cos(t) * m.dist;
+      const oy = Math.sin(t) * m.dist * 0.34;
+      pts.push(ox * Math.cos(m.tilt) - oy * Math.sin(m.tilt), ox * Math.sin(m.tilt) + oy * Math.cos(m.tilt));
+    }
+    paths.poly(pts).stroke({ width: 2, color: 0xe8e0ff, alpha: 0.16 });
   }
-  return { ring, slot, level, root, shadow, rim, moonBack, moonFront, moons };
+  // a little station: a hub with two solar wings, on the widest orbit (1.3.0)
+  if (level >= STATION_LEVEL) {
+    const st = new Graphics();
+    st.rect(-9, -2, 18, 4).fill({ color: 0x8c97c2 });
+    st.rect(-22, -6, 11, 12).fill({ color: 0x2b7fd0 }).stroke({ width: 2, color: 0x140b2e });
+    st.rect(11, -6, 11, 12).fill({ color: 0x2b7fd0 }).stroke({ width: 2, color: 0x140b2e });
+    st.circle(0, 0, 6).fill({ color: 0xe8e0ff }).stroke({ width: 2, color: 0x140b2e });
+    const holder = new Container();
+    holder.addChild(st);
+    moons.push({ sprite: holder as unknown as Sprite, dist: BR * (1.85 + moonletCount(level) * 0.45 + 0.2), speed: 0.35 * (slot % 2 ? 1 : -1), phase: rand() * TAU, tilt: tilt * 0.5 });
+  }
+  return { ring, slot, level, root, shadow, rim, moonBack, moonFront, moons, spinners, spin: type === 'gas' ? 0 : between(rand, 0.04, 0.12) * (rand() < 0.5 ? -1 : 1), halo, haloAlpha: tex.look.atmosphereAlpha, phase: rand() * TAU };
 }
 
 export class OrbitalsView {
@@ -1059,6 +1092,11 @@ export class OrbitalsView {
       p.shadow.rotation = light;
       p.rim.rotation = light;
       p.shadow.alpha = 0.62 + 0.3 * depth;
+      // 1.3.0: the surface turns, the atmosphere breathes
+      if (!still) {
+        for (const sp of p.spinners) sp.rotation += p.spin * dt;
+        p.halo.alpha = p.haloAlpha * (0.85 + 0.15 * Math.sin(this.time * 0.9 + p.phase));
+      }
       for (const m of p.moons) {
         const t = m.phase + this.time * m.speed;
         const ox = Math.cos(t) * m.dist;

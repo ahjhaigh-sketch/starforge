@@ -142,7 +142,7 @@ describe('Celestial Auras', () => {
     s.auras.copies['aura.crown'] = D(1);
     expect(equipAura(s, 'aura.crown')).toBe(true);
     invalidateStats();
-    const line = breakdown(s, 'productionMult').find((l) => l.label === 'Celestial Aura');
+    const line = breakdown(s, 'productionMult').find((l) => l.label === 'Celestial Auras');
     expect(line?.value.toNumber()).toBe(6);
     expect(AURA_BY_ID.get('aura.crown')!.effects.find((e) => e.stat === 'runeLuck')!.mul).toBe(4);
     expect(equipAura(s, 'aura.throne')).toBe(false);

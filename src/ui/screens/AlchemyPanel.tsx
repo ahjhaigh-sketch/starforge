@@ -48,7 +48,7 @@ export function AlchemyPanel() {
       ) : (
         <>
           <p className="mv-note">
-            Put three ingredients in the cauldron. A mix that matches a recipe makes an elixir and writes the recipe in your book; any other mix makes Murky Sludge and a hint. Each dose takes a twentieth of what you hold.
+            Put three ingredients in the cauldron. A mix that matches a recipe makes an elixir and writes the recipe in your book; any other mix makes Murky Sludge and a hint. Each dose takes a twentieth of what you hold. Stuck? Press Hint on a recipe in the book to see one of its ingredients.
           </p>
           <div className="alc-cols">
             <div className="well alc-cauldron">
@@ -104,12 +104,26 @@ export function AlchemyPanel() {
                   <b>{rec.name}</b>
                   <span>{rec.desc}</span>
                   {rec.known && <small>{rec.mix.join(' + ')}</small>}
+                  {!rec.known && rec.hintText && <small className="alc-hint">{rec.hintText}</small>}
                   {rec.known && (
                     <small className="alc-batch">
                       x{rec.batch} takes {rec.batchCost}
                     </small>
                   )}
                 </div>
+                {!rec.known && (
+                  <div className="alc-actions">
+                    {rec.hintMix.length === 3 ? (
+                      <Button size="sm" color={TEAL} onClick={() => setSlots(rec.hintMix)} data-hint-fill={rec.id}>
+                        Put it in the cauldron
+                      </Button>
+                    ) : (
+                      <Button size="sm" color="#2E9C78" onClick={() => commands.hintRecipe(rec.id)} data-hint={rec.id}>
+                        Hint
+                      </Button>
+                    )}
+                  </div>
+                )}
                 {rec.known && (
                   <div className="alc-actions">
                     <span className="num alc-shelf">x{rec.shelf}</span>

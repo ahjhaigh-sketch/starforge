@@ -1,7 +1,7 @@
 import { NEBULA_TREE } from '../../content/nebulaTree';
 import { NOVA_TREE } from '../../content/novaTree';
 import type { Decimal } from '../decimal';
-import { cur, type GameState } from '../state';
+import { cur, type GameState, usable } from '../state';
 import { galacticTree } from './galactic';
 import { scaleTree } from './leviathans';
 import { canBuyNebulaNode, buyNebulaNode, nebulaNodeCost } from './nebulaTree';
@@ -55,10 +55,10 @@ const MAX_PER_PASS = 2000;
  * started with. Returns how many it bought.
  */
 export function buyAllNodes(s: GameState, shop: TreeShop, share = 1): number {
-  const keep = cur(s, shop.currency).mul(1 - share);
+  const keep = usable(s, shop.currency).mul(1 - share);
   let bought = 0;
   for (; bought < MAX_PER_PASS; bought++) {
-    const left = cur(s, shop.currency).sub(keep);
+    const left = usable(s, shop.currency).sub(keep);
     let best: { id: string; cost: Decimal } | null = null;
     for (const n of shop.buyable(s)) if (n.cost.lte(left) && (!best || n.cost.lt(best.cost))) best = n;
     if (!best || !shop.buy(s, best.id)) break;
@@ -68,10 +68,10 @@ export function buyAllNodes(s: GameState, shop: TreeShop, share = 1): number {
 
 /** Buys every Stardust upgrade it can, cheapest first. */
 export function buyAllUpgrades(s: GameState, share = 1): number {
-  const keep = cur(s, 'stardust').mul(1 - share);
+  const keep = usable(s, 'stardust').mul(1 - share);
   let bought = 0;
   for (const u of availableUpgrades(s)) {
-    if (cur(s, 'stardust').sub(keep).lt(u.cost)) break; // cheapest first: the rest cost more
+    if (usable(s, 'stardust').sub(keep).lt(u.cost)) break; // cheapest first: the rest cost more
     if (buyUpgrade(s, u.id)) bought++;
   }
   return bought;

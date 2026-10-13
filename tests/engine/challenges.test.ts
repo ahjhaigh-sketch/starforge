@@ -313,12 +313,12 @@ describe('the Spire', () => {
 });
 
 describe('the Void Leviathans', () => {
-  it('HP is 1,000 x 6^k, x2.5 for each kill', () => {
+  it('HP is 1,000 x 6^k, x1.8 for each kill (1.3.0: was x2.5)', () => {
     const s = player();
     expect(leviathanHp(s, 0).toNumber()).toBe(1000);
     expect(leviathanHp(s, 3).toNumber() / (1000 * 6 ** 3)).toBeCloseTo(1, 9);
     s.leviathans.kills.calf = 2;
-    expect(leviathanHp(s, 0).toNumber()).toBeCloseTo(1000 * 2.5 ** 2, 6);
+    expect(leviathanHp(s, 0).toNumber()).toBeCloseTo(1000 * 1.8 ** 2, 6);
   });
 
   it('a kill pays scales, opens the next one and moves the hunt on', () => {
@@ -328,13 +328,14 @@ describe('the Void Leviathans', () => {
     expect(damageLeviathan(s, D(999))).toBe(0);
     expect(damageLeviathan(s, D(1))).toBe(1);
     expect(killsOf(s, 0)).toBe(1);
-    expect(cur(s, 'scales').toNumber()).toBe(scalesFor(s, 0).toNumber());
+    // 1.3.0: the first kill pays x10 scales
+    expect(cur(s, 'scales').toNumber()).toBe(scalesFor(s, 0).toNumber() * 10);
     expect(s.leviathans.current).toBe(1);
     expect(leviathansUnlocked(s)).toBe(2);
     expect(s.stats.leviathansBeaten).toBe(1);
     // farming the first one again: kills counted in closed form
     expect(chooseLeviathan(s, 0)).toBe(true);
-    const pool = 2500 + 6250 + 15625 + 1;
+    const pool = 1800 + 3240 + 5832 + 1;
     expect(damageLeviathan(s, D(pool))).toBe(3);
     expect(killsOf(s, 0)).toBe(4);
   });

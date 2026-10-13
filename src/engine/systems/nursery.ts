@@ -146,6 +146,16 @@ export function crossbreed(s: GameState, a: string, b: string): string | null {
   return child;
 }
 
+/** 1.3.0: the Garden bonus, x(1 + the species you've grown, weighted by tier) on Essence. */
+export function gardenBonus(s: GameState): Decimal {
+  let v = 1;
+  for (const id of s.nursery.found) {
+    const sp = STAR_BY_ID.get(id);
+    if (sp) v += N.garden[sp.tier - 1] ?? 0;
+  }
+  return D(v);
+}
+
 export function registerNursery(): void {
   defineStat({ id: 'nurseryGrowth', label: 'Nursery growth speed', base: () => D(1) });
   defineStat({ id: 'nurseryYield', label: 'Nursery yield', base: () => D(1) });
@@ -154,6 +164,7 @@ export function registerNursery(): void {
   registerSources(
     { id: 'nursery.growth', stat: 'nurseryGrowth', op: 'mul', label: 'Warm clouds', value: (s) => D(growthEach).pow(nurseryLevel(s, 'growth')), active: (s) => nurseryLevel(s, 'growth') > 0 },
     { id: 'nursery.yield', stat: 'nurseryYield', op: 'mul', label: 'Rich dust', value: (s) => D(yieldEach).pow(nurseryLevel(s, 'yield')), active: (s) => nurseryLevel(s, 'yield') > 0 },
+    { id: 'nursery.garden', stat: 'essenceGain', op: 'mul', label: 'Star Nursery (species grown)', value: gardenBonus, active: (s) => s.nursery.found.length > 0 },
   );
   registerSystem({
     id: 'nursery',

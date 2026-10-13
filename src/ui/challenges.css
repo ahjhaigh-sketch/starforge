@@ -88,3 +88,12 @@
   .spire-tower { max-width: 18rem; margin: 0 auto; width: 100%; }
   .challenge-hud { top: 0.3rem; left: 50%; transform: translateX(-50%); width: min(24rem, 92%); }
 }
+
+/* 1.3.0: the Spire's bonus up front, and what each banner does */
+.spire-bonus { display: flex; flex-direction: column; gap: 0.35rem; padding: 0.7rem 0.9rem; margin-bottom: 0.7rem; }
+.spire-bonus-h { font-family: var(--font-display); font-weight: 400; font-size: 1.05rem; color: #fff; text-shadow: var(--outline-sm); }
+.spire-bonus-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.spire-bonus-cell { flex: 1 1 7rem; display: flex; flex-direction: column; align-items: center; padding: 0.4rem; border-radius: 12px; background: rgba(0, 0, 0, 0.25); }
+.spire-bonus-cell b { font-size: 1.35rem; color: var(--gold); }
+.spire-bonus small { color: var(--text-dim); }
+.banner-tile small { display: block; font-size: 0.72rem; color: var(--text-dim); }

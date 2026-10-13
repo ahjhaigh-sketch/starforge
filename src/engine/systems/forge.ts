@@ -1,7 +1,7 @@
 import { BALANCE } from '../../content/balance';
 import { type ForgeUpgradeId, type GradeDef, GRADE_BY_ID, GRADES, type GradeId, RELIC_BY_ID, RELICS, type RelicDef } from '../../content/forge';
 import { planLimited, type PurchasePlan } from '../buy';
-import type { CostCurve } from '../cost';
+import { type CostCurve, lateRamp } from '../cost';
 import { D, Decimal, ONE, ZERO } from '../decimal';
 import { events } from '../events';
 import { cur, gain, type GameState, spend } from '../state';
@@ -24,14 +24,14 @@ export function forgeCurve(id: ForgeUpgradeId): CostCurve {
   let c = upgradeCurves.get(id);
   if (!c) {
     const u = F.upgrades[id];
-    c = { base: u.base, brackets: [{ from: 0, ratio: u.growth }] };
+    c = lateRamp({ base: u.base, brackets: [{ from: 0, ratio: u.growth }] });
     upgradeCurves.set(id, c);
   }
   return c;
 }
 
 /** Highest level an upgrade can reach (crucibles stop at six). */
-const forgeLimit = (id: ForgeUpgradeId) => (id === 'crucibles' ? F.maxCrucibles - 1 : Infinity);
+const forgeLimit = (id: ForgeUpgradeId) => (id === 'crucibles' ? F.maxCrucibles - 1 : id === 'purity' ? F.purityMax : Infinity);
 
 export const crucibles = (s: GameState) => 1 + forgeLevel(s, 'crucibles');
 /** Batches per smelt: Bulk smelting adds one a level. */
@@ -265,6 +265,7 @@ export function registerForge(): void {
   defineStat({ id: 'relicSlots', label: 'Relic slots', base: () => D(R.slots) });
   registerSources(
     { id: 'forge.speed', stat: 'forgeSpeed', op: 'mul', label: 'Mag-Belt speed', value: (s) => D(F.speedPerLevel).pow(forgeLevel(s, 'speed')), active: (s) => forgeLevel(s, 'speed') > 0 },
+    { id: 'forge.purity', stat: 'alloyGain', op: 'mul', label: 'Purity', value: (s) => D(F.purityPerLevel).pow(forgeLevel(s, 'purity')), active: (s) => forgeLevel(s, 'purity') > 0 },
     ...GRADES.map((g) => ({
       id: `forge.collector.${g.id}`,
       stat: `alloyGain.${g.id}`,

@@ -4,7 +4,7 @@ import { planPurchase, type PurchasePlan } from '../buy';
 import type { CostCurve } from '../cost';
 import { D, type Decimal } from '../decimal';
 import { events } from '../events';
-import { cur, type BuyAmount, type GameState, spend } from '../state';
+import { cur, type BuyAmount, type GameState, spend, usable } from '../state';
 import { defineStat, registerSources } from '../stats';
 import { reqMet } from './unlocks';
 
@@ -79,9 +79,9 @@ export function buyConstant(s: GameState, id: string, amount?: BuyAmount, auto =
   return true;
 }
 
-/** Seconds of play until Auto-Constants next steps (0: now). */
-export function autoConstantsIn(s: GameState): number {
-  const every = BALANCE.automation.constantsEvery;
+/** Seconds of play until Auto-Constants next steps (0: now). With Constant Flow (Nebula Tree) it acts every second. */
+export function autoConstantsIn(s: GameState, flow = false): number {
+  const every = flow ? 1 : BALANCE.automation.constantsEvery;
   const last = Math.max(s.stats.constantsAuto ?? -every, s.stats.constantsByHand ?? -every);
   return Math.max(0, last + every - s.playtime);
 }
@@ -91,13 +91,13 @@ export function autoConstantsIn(s: GameState): number {
  * its share of that constant's currency pays for it. Not instant: a jump a minute, and it waits a
  * minute after you buy one yourself, so your own choices come first.
  */
-export function autoConstants(s: GameState, share: number): void {
-  if (autoConstantsIn(s) > 0) return;
+export function autoConstants(s: GameState, share: number, flow = false): void {
+  if (autoConstantsIn(s, flow) > 0) return;
   s.stats.constantsAuto = s.playtime;
   for (const c of CONSTANTS) {
     if (!constantOpen(s, c)) continue;
     const plan = constantPlan(s, c, 'next');
-    if (plan.count <= 0 || plan.cost.gt(cur(s, c.currency).mul(share))) continue;
+    if (plan.count <= 0 || plan.cost.gt(usable(s, c.currency).mul(share))) continue;
     buyConstant(s, c.id, 'next', true);
   }
 }

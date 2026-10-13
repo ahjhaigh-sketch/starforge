@@ -9,10 +9,11 @@ import { colorOf, type NodeColor } from './novaTree';
  * - Bloom: Essence and shards, and what a Nebula keeps.
  * - Drift: Stardust, taps and time away.
  * - Lattice: the Belt, the Starforge, ships and fusion.
- * Four capstones join neighbouring wisps, and seven repeatable echoes have no level cap.
+ * Four capstones join neighbouring wisps, and seven repeatable echoes have no level cap. 1.3.0 adds
+ * Constant Flow beside the root.
  * IDs never change once released.
  */
-export type NebulaFlag = 'keepShards' | 'startNovas' | 'keepNovaCore';
+export type NebulaFlag = 'keepShards' | 'startNovas' | 'keepNovaCore' | 'constantFlow';
 
 export type NebulaEffect = { stat: string; op: 'add' | 'mul' | 'pow'; value: number } | { flag: NebulaFlag; value: number };
 
@@ -230,5 +231,13 @@ const ECHOES: NebulaNode[] = [
 
 const ROOT: NebulaNode = { id: 'nroot', name: 'First Mist', desc: 'The cloud remembers: Stardust x2.', wisp: 'root', parents: [], cost: 1, effect: mul('productionMult', 2), color: 'mul', x: 0, y: 0 };
 
-export const NEBULA_TREE: readonly NebulaNode[] = [ROOT, ...wisps, ...CAPS, ...ECHOES];
+/**
+ * 1.3.0: Constant Flow, straight off the root between the Veil and the Lattice (the playtest asked for constant
+ * automation in the Nebula Tree). Auto-Constants then steps every constant to its next doubling every second instead
+ * of once a minute (which a run of Supernovas a minute apart held at level 50). Still a step at a time: buying the
+ * most it could afford turned e546 Essence into 1,300 Drift levels in one second.
+ */
+const FLOW: NebulaNode = { id: 'nflow.constants', name: 'Constant Flow', desc: 'Auto-Constants steps every constant to its next doubling every second, not once a minute.', wisp: 'root', parents: ['nroot'], cost: Math.round(stepCost(BALANCE.nebula.flowStep) * 100) / 100, effect: flag('constantFlow', 1), color: 'unlock', x: 0, y: -175 };
+
+export const NEBULA_TREE: readonly NebulaNode[] = [ROOT, ...wisps, ...CAPS, ...ECHOES, FLOW];
 export const NEBULA_NODE: ReadonlyMap<string, NebulaNode> = new Map(NEBULA_TREE.map((n) => [n.id, n]));

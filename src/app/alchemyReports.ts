@@ -1,7 +1,7 @@
 import { INGREDIENT_BY_ID, INGREDIENTS, mixKey, RECIPE_BY_MIX, RECIPES } from '../content/alchemy';
 import { BALANCE } from '../content/balance';
 import { cur } from '../engine/state';
-import { alchemyOpen, dose, elixirLeft, maxBrews, mixCost } from '../engine/systems/alchemy';
+import { alchemyOpen, dose, elixirLeft, hintsOf, maxBrews, mixCost } from '../engine/systems/alchemy';
 import { format, formatTime } from '../ui/format';
 import { game } from './game';
 
@@ -33,6 +33,10 @@ export interface RecipeRow {
   batch: number;
   batchCost: string;
   canBatch: boolean;
+  /** 1.3.0: ingredients shown by Hint, the hint line, and the full mix once every ingredient is shown. */
+  hints: number;
+  hintText: string;
+  hintMix: string[];
 }
 
 /** The buy amount as a number of brews (Max: as many as you can pay for; Next: one). */
@@ -69,13 +73,17 @@ export function alchemyReport(slots: readonly string[]): {
       const left = elixirLeft(s, r.id);
       const max = known ? maxBrews(s, r.id) : 0;
       const batch = batchSize(max);
+      const hints = known ? r.mix.length : hintsOf(s, r.id);
       return {
         id: r.id,
         known,
         name: known ? r.name : '???',
-        desc: known ? r.desc : 'Not found yet',
+        desc: known || hints > 0 ? r.desc : 'Not found yet',
         color: r.color,
         mix: known ? r.mix.map((id) => INGREDIENT_BY_ID.get(id)!.name) : [],
+        hints,
+        hintText: known ? '' : hints === 0 ? '' : `Needs ${r.mix.map((id, i) => (i < hints ? INGREDIENT_BY_ID.get(id)!.name : '?')).join(' + ')}`,
+        hintMix: !known && hints >= r.mix.length ? r.mix.slice() : [],
         shelf: s.alchemy.shelf[r.id] ?? 0,
         left: left > 0 ? formatTime(left) : '',
         max,

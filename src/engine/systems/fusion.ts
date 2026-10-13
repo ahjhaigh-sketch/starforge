@@ -106,10 +106,24 @@ export function autoFuse(s: GameState): number {
   return n;
 }
 
-/** Comets arrive in empty cells, spread around the board rather than filling it in order. */
+/** True when three comets of one level are on the board (a fusion is possible). */
+export function canFuseAny(s: GameState): boolean {
+  const counts = new Map<number, number>();
+  for (const x of s.fusion.board) if (x > 0 && (counts.set(x, (counts.get(x) ?? 0) + 1), counts.get(x)! >= 3)) return true;
+  return false;
+}
+
+/**
+ * Comets arrive in empty cells, spread around the board rather than filling it in order. 1.3.0: a
+ * full board where no three comets match was stuck for good (the playtest's board held two of every
+ * level from 6 to 16, plus a 2 and two 1s). Now the arriving comet fuses straight into two of its own
+ * level, or else takes the place of the lowest comet below its level; only a board at its very top
+ * (nothing below the arriving level, fewer than two of it) lets it fade.
+ */
 function spawn(s: GameState): boolean {
   const b = s.fusion.board;
   const start = (s.fusion.spawned * 7) % b.length;
+  let lowest = -1;
   for (let k = 0; k < b.length; k++) {
     const i = (start + k) % b.length;
     if (b[i] === 0) {
@@ -118,8 +132,21 @@ function spawn(s: GameState): boolean {
       noteBest(s, b[i]!);
       return true;
     }
+    if (lowest < 0 || b[i]! < b[lowest]!) lowest = i;
   }
-  return false;
+  if (lowest < 0 || canFuseAny(s)) return false;
+  const level = spawnLevel(s);
+  const same = b.reduce<number[]>((a, x, i) => (x === level ? [...a, i] : a), []);
+  if (same.length >= 2) {
+    // the arriving comet is the third: those two become one of the next level, and it may cascade
+    b[same[1]!] = 0;
+    b[same[0]!] = level + 1;
+    s.stats.fusions = (s.stats.fusions ?? 0) + 1;
+    noteBest(s, level + 1);
+  } else if (b[lowest]! < level) b[lowest] = level;
+  else return false;
+  s.fusion.spawned++;
+  return true;
 }
 
 /** x1.25 a level of the best comet ever fused. */

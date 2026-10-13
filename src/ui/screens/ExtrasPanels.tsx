@@ -8,6 +8,7 @@ import type { ShipUpgradeId } from '../../engine/systems/ships';
 import { BuyAmountControl } from '../kit/BuyAmountControl';
 import { Button, cx, tint } from '../kit/Chunk';
 import { Icon } from '../kit/Icon';
+import { HowTo } from '../kit/HowTo';
 import { Panel } from '../kit/Panel';
 import { ProgressBar } from '../kit/ProgressBar';
 import { useReport } from '../kit/useReport';
@@ -242,6 +243,20 @@ export function ShipsPanel() {
   const [tab, setTab] = useState<'fleet' | 'yard'>('fleet');
   return (
     <Panel id="expeditions" title="Starship Expeditions" color="#2B7FD0" size="wide">
+      <HowTo
+        label="How starships work"
+        steps={[
+          <>
+            <b>Send</b> a ship to a sector. It flies there and back by itself (Auto keeps it going).
+          </>,
+          <>
+            <b>Each trip</b> brings ore and the alloy of its sector (farther sectors pay more an hour), and now and then a rare find: a relic level or star seeds.
+          </>,
+          <>
+            <b>Fit parts</b> in the Shipyard: a matching hull doubles loot in its sectors; engines and pods trade speed for loot. Best fit picks for you.
+          </>,
+        ]}
+      />
       <div className="forge-tabs" role="tablist" aria-label="Starships">
         {(
           [

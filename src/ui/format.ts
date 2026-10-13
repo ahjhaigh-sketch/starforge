@@ -87,6 +87,8 @@ export function formatCount(n: number, notation: Notation = 'suffix'): string {
 /** Durations: "45s", "3m 20s", "2h 13m", "4d 6h". */
 export function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds)) return '∞';
+  // 1.3.0: past a thousand years, days as a number (the playtest read "1.38e+41d 23h")
+  if (seconds >= 1000 * 365 * 86400) return `${format(seconds / 86400)} days`;
   const s = Math.max(0, Math.floor(seconds));
   const d = Math.floor(s / 86400);
   const h = Math.floor((s % 86400) / 3600);

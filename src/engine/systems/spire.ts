@@ -55,6 +55,9 @@ export function damageSpire(s: GameState, amount: Decimal): number {
   return n;
 }
 
+/** 1.3.0: what a banner multiplies by while it flies: 1 + its rate x your best floor. */
+export const bannerMult = (s: GameState, id: string): Decimal => D(1 + (P.bannerRates[id] ?? 0) * (s.stats.spireBest ?? 0));
+
 export function setClimbing(s: GameState, on: boolean): void {
   if (!spireOpen(s)) return;
   s.spire.climbing = on;
@@ -92,6 +95,10 @@ export function registerSpire(): void {
       });
     }
   }
+  // 1.3.0: the flown banner's boost, by your best floor
+  for (const b of SPIRE_BANNERS)
+    for (const statId of b.stats)
+      registerSources({ id: `spire.banner.${b.id}.${statId}`, stat: statId, op: 'mul', label: `${b.name} (Spire)`, value: (s) => bannerMult(s, b.id), active: (s) => s.spire.banner === b.id && (s.stats.spireBest ?? 0) > 0 });
   registerSystem({
     id: 'spire',
     order: 64,

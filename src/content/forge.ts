@@ -25,12 +25,14 @@ export const GRADES: readonly GradeDef[] = [
 export type GradeId = GradeDef['id'];
 export const GRADE_BY_ID: ReadonlyMap<string, GradeDef> = new Map(GRADES.map((g) => [g.id, g]));
 
-export type ForgeUpgradeId = 'speed' | 'bulk' | 'crucibles';
+export type ForgeUpgradeId = 'speed' | 'bulk' | 'crucibles' | 'purity';
 
 export const FORGE_UPGRADES: ReadonlyArray<{ id: ForgeUpgradeId; name: string; desc: string; icon: string }> = [
   { id: 'speed', name: 'Mag-Belt speed', desc: 'Batches smelt 10% faster.', icon: 'turbine' },
   { id: 'bulk', name: 'Bulk smelting', desc: 'One more batch of ore (and alloy) per smelt.', icon: 'bellows' },
   { id: 'crucibles', name: 'Crucibles', desc: 'Capacity: smelt one more batch at the same time.', icon: 'foundry' },
+  // 1.3.0: more for the Starforge
+  { id: 'purity', name: 'Purity', desc: 'Every batch gives 8% more alloy (up to 50 levels).', icon: 'ingot' },
 ];
 
 /**

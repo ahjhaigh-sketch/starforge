@@ -22,11 +22,12 @@ import { buyPart, buyShip, buyShipUpgrade, fitBest, fitPart, launch, recallShip,
 import { buyNebulaNode } from '../engine/systems/nebulaTree';
 import { rollOnce, type RollResult, setShrine } from '../engine/systems/runes';
 import { craftRune, salvage, starUp } from '../engine/systems/starring';
-import { type AuraRoll, equipAura, rollAuras } from '../engine/systems/auras';
-import { buyEggs, equipWyrm, fuseWyrms, type HatchResult, trainWyrm, unequipWyrm } from '../engine/systems/wyrms';
+import { SHRINES } from '../content/runes';
+import { type AuraRoll, bestAuras, equipAura, polishAura, rollAuras, wearAura } from '../engine/systems/auras';
+import { bestTeam, buyEggs, equipWyrm, fuseAll, fuseWyrms, type HatchResult, trainWyrm, unequipWyrm } from '../engine/systems/wyrms';
 import { buyNurseryUpgrade, buySeeds, crossbreed, harvestPlot, plant, uprootPlot } from '../engine/systems/nursery';
 import { buySpectral, setFocus } from '../engine/systems/spectral';
-import { openPacks, placeCard, removeCard } from '../engine/systems/tarot';
+import { bestDeck, openPacks, placeCard, removeCard } from '../engine/systems/tarot';
 import { buyKey, singularityTree } from '../engine/systems/singularity';
 import { feedDarkMatter, feedReactor, moveBoundary, setDustShare, setShare } from '../engine/systems/blackhole';
 import { autoTrialsOpen, completeTrial, enterTrial, exitTrial } from '../engine/systems/trials';
@@ -35,15 +36,15 @@ import { chooseLeviathan, scaleTree, setFighting } from '../engine/systems/levia
 import { buyMirrorUpgrade, collapse, MIRROR_ENGINES, nextPriceStep } from '../engine/systems/mirror';
 import { closeLink, openLink, setLinkShare } from '../engine/systems/wormholes';
 import { galacticTree, setNextGalaxy } from '../engine/systems/galactic';
-import { clearLinks, recordConstellation, starChart, toggleLink } from '../engine/systems/observatory';
+import { autoChart, clearLinks, recordConstellation, starChart, toggleLink } from '../engine/systems/observatory';
 import { buildStage } from '../engine/systems/megastructures';
 import { buyBuilding, buyPort, buyResearch, closeRoute, finishPlanet, foundColony, openRoute, placeBiome } from '../engine/systems/colonies';
 import type { BuildingId } from '../content/galaxyBuild';
 import type { AutoLayer } from '../content/crunch';
 import { ECHO_BOARD, echoTap } from '../engine/systems/echoes';
 import { buyEternity, setEternityAuto } from '../engine/systems/eternity';
-import { brew, type BrewResult, drink } from '../engine/systems/alchemy';
-import { summonWeather } from '../engine/systems/weather';
+import { brew, drink, hintRecipe, type BrewResult } from '../engine/systems/alchemy';
+import { setAutoWeather, summonWeather } from '../engine/systems/weather';
 import { buySigil, toggleSigil } from '../engine/systems/sigils';
 import { buyAllNodes, buyAllUpgrades, TREE_SHOP_BY_ID, treeBulkOpen, upgradeBulkOpen } from '../engine/systems/treeShop';
 import { buyTurretLevels, clearSocket, fightWave, placeTurret, setDefenseAuto } from '../engine/systems/defense';
@@ -348,6 +349,14 @@ export const commands = {
     done();
   },
   /** Rune Starring: sacrifices exactly the copies the shrine's next star asks for. */
+  /** 1.3.0: every shrine that can earn a star does, as often as it can. Returns the stars earned. */
+  starAll(): number {
+    let n = 0;
+    for (const sh of SHRINES) while (starUp(game.state, sh.id)) n++;
+    invalidateStats();
+    done();
+    return n;
+  },
   starUp(shrine: string): boolean {
     const ok = starUp(game.state, shrine);
     done();
@@ -372,6 +381,24 @@ export const commands = {
     game.state.auras.auto = on;
     done();
   },
+  /** 1.3.0: a second and third aura slot, Polish ranks, and the strongest set. */
+  wearAura(id: string | null, slot: number): boolean {
+    const ok = wearAura(game.state, id, slot);
+    invalidateStats();
+    done();
+    return ok;
+  },
+  polishAura(id: string): boolean {
+    const ok = polishAura(game.state, id);
+    invalidateStats();
+    done();
+    return ok;
+  },
+  bestAuras() {
+    bestAuras(game.state);
+    invalidateStats();
+    done();
+  },
   equipAura(id: string | null): boolean {
     const ok = equipAura(game.state, id);
     done();
@@ -382,6 +409,16 @@ export const commands = {
     const r = buyEggs(game.state);
     done();
     return r;
+  },
+  /** 1.3.0: fuse every stack that can, and wear the strongest team. */
+  fuseAllWyrms(): number {
+    const n = fuseAll(game.state);
+    done();
+    return n;
+  },
+  bestWyrmTeam() {
+    bestTeam(game.state);
+    done();
   },
   fuseWyrms(key: string): boolean {
     const ok = fuseWyrms(game.state, key);
@@ -567,6 +604,12 @@ export const commands = {
     clearLinks(game.state);
     done();
   },
+  /** 1.3.0: the Observatory draws a strong shape for you. */
+  autoChart(): boolean {
+    const ok = autoChart(game.state);
+    done();
+    return ok;
+  },
   recordConstellation(): number {
     const paid = recordConstellation(game.state);
     done();
@@ -643,6 +686,12 @@ export const commands = {
     const ok = placeCard(game.state, id, slot);
     done();
     return ok;
+  },
+  /** 1.3.0: the strongest deck from the cards you own. */
+  dealBestDeck() {
+    bestDeck(game.state);
+    invalidateStats();
+    done();
   },
   removeCard(slot: number) {
     removeCard(game.state, slot);
@@ -765,12 +814,23 @@ export const commands = {
     done();
     return r;
   },
+  /** 1.3.0: one more ingredient of an unfound recipe. */
+  hintRecipe(id: string): boolean {
+    const ok = hintRecipe(game.state, id);
+    done();
+    return ok;
+  },
   drink(id: string): boolean {
     const ok = drink(game.state, id);
     done();
     return ok;
   },
   /** Space Weather: spend a Weather Beacon charge on the weather you choose, while the sky is clear. */
+  /** 1.3.0: the weather the beacon summons by itself ('' for off). */
+  setAutoWeather(kind: string) {
+    setAutoWeather(game.state, kind || null);
+    done();
+  },
   summonWeather(kind: string): boolean {
     const ok = summonWeather(game.state, kind);
     done();

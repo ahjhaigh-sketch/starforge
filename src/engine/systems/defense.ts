@@ -1,7 +1,7 @@
 import { BALANCE } from '../../content/balance';
 import { TURRET_BY_ID, TURRETS } from '../../content/defense';
 import { planLimited, type PurchasePlan } from '../buy';
-import type { CostCurve } from '../cost';
+import { type CostCurve, lateRamp } from '../cost';
 import { D, type Decimal } from '../decimal';
 import { events } from '../events';
 import { cur, gain, type GameState, spend } from '../state';
@@ -53,7 +53,7 @@ const curves = new Map<string, CostCurve>();
 function levelCurve(kind: string): CostCurve {
   let c = curves.get(kind);
   if (!c) {
-    c = { base: TURRET_BY_ID.get(kind)!.levelCost, brackets: [{ from: 0, ratio: DF.levelGrowth }] };
+    c = lateRamp({ base: TURRET_BY_ID.get(kind)!.levelCost, brackets: [{ from: 0, ratio: DF.levelGrowth }] });
     curves.set(kind, c);
   }
   return c;

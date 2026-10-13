@@ -3,7 +3,7 @@ import { RUNE_RARITIES, runesOf, SHRINE_BY_ID, SHRINES, type RuneDef, type Shrin
 import { D, Decimal, ONE, ZERO } from '../decimal';
 import { events } from '../events';
 import { nextPoisson } from '../rng';
-import { cur, type GameState, type ShrineState, spend } from '../state';
+import { automatedSpend, type GameState, type ShrineState, spend, usable } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
 import { registerSystem, type TickContext, upkeepDue } from '../tick';
 import { earnDice } from './auras';
@@ -124,8 +124,8 @@ export function rollRunes(s: GameState, shrineId: string, runes: Decimal, keepAl
   return { runes, hits, best };
 }
 
-/** How many runes the currency covers right now. */
-export const affordable = (s: GameState, sh: ShrineDef): Decimal => cur(s, sh.currency).div(runePrice(s, sh)).floor();
+/** How many runes the currency covers right now (inside automation, without the safe tenth). */
+export const affordable = (s: GameState, sh: ShrineDef): Decimal => usable(s, sh.currency).div(runePrice(s, sh)).floor();
 
 /** One roll by hand: \`bulk\` runes (or as many as you can pay for). */
 export function rollOnce(s: GameState, shrineId: string): RollResult | null {
@@ -156,9 +156,17 @@ export function worthChasing(s: GameState, shrineId: string): RuneDef | null {
   );
 }
 
-/** Auto-roll for dt seconds: as many runes as your speed allows and your currency covers. */
+/**
+ * Auto-roll for dt seconds: as many runes as your speed allows and your currency covers, never
+ * touching the safe tenth (1.3.0: the playtest's Void shrine spent every Dark Matter ever earned).
+ */
 export function autoRoll(s: GameState, shrineId: string, dt: number): Decimal {
   const sh = SHRINE_BY_ID.get(shrineId)!;
+  return automatedSpend(`${sh.name} auto-roll`, () => autoRollPaid(s, sh, dt));
+}
+
+function autoRollPaid(s: GameState, sh: ShrineDef, dt: number): Decimal {
+  const shrineId = sh.id;
   const st = shrineState(s, shrineId);
   const want = runesPerSecond(s, shrineId).mul(dt).add(st.acc);
   const whole = want.floor();

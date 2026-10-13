@@ -5,6 +5,7 @@ import { CARD_BY_ID } from '../../content/nebulaExtras';
 import { BuyAmountControl } from '../kit/BuyAmountControl';
 import { Button, cx, tint } from '../kit/Chunk';
 import { Icon } from '../kit/Icon';
+import { HowTo } from '../kit/HowTo';
 import { Panel } from '../kit/Panel';
 import { useReport } from '../kit/useReport';
 
@@ -116,6 +117,20 @@ export function TarotPanel() {
             </span>
             <span>{data.packFrom}</span>
           </div>
+          <HowTo
+            label="How Tarot of the Void works"
+            steps={[
+              <>
+                <b>Open packs</b> with Essence. Each gives a card you don't have yet, commons first.
+              </>,
+              <>
+                <b>Deal cards</b> into your deck. Only cards in the deck do anything ({data.slots} slots now).
+              </>,
+              <>
+                <b>Order matters</b> for the special cards: read each card. Stuck? Deal best deck builds a strong one for you.
+              </>,
+            ]}
+          />
           <div className="pack-row">
             <BuyAmountControl compact />
             <Button
@@ -137,6 +152,14 @@ export function TarotPanel() {
                 {drawn.length > 8 && <span className="drawn-card">+{drawn.length - 8} more</span>}
               </div>
             )}
+          </div>
+          <div className="deck-total well">
+            <span>
+              Your deck gives: <b className="num">{data.deckTotal}</b>
+            </span>
+            <Button size="sm" color="var(--gold)" onClick={() => commands.dealBestDeck()} data-testid="best-deck">
+              Deal best deck
+            </Button>
           </div>
           <h4 className="section-h">Deck {pick ? '· pick a slot for it' : ''}</h4>
           <div className="deck" role="list" aria-label="Your deck, left to right">

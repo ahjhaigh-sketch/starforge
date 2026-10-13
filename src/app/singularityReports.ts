@@ -118,6 +118,9 @@ export interface ReactorReport {
   count: string;
   cost: string;
   can: boolean;
+  /** 1.3.0: Dark Matter gain after feeding this click, and how it carries through resets. */
+  after: string;
+  keeps: string;
 }
 
 export function reactorReport(): ReactorReport {
@@ -132,5 +135,7 @@ export function reactorReport(): ReactorReport {
     count: format(plan.count, n()),
     cost: format(plan.cost, n()),
     can: plan.canAfford,
+    after: formatMult(s.reactor.charge.add(plan.count).add(1).pow(BALANCE.blackHole.reactorPow * reactorPower(s)), n()),
+    keeps: milestoneReached(s, 'galactic', 'keepHole') ? 'Charge is kept through Galactic Rebirths (Galactic milestone 5).' : 'Charge stays through Singularities; a Galactic Rebirth empties it (until Galactic milestone 5).',
   };
 }

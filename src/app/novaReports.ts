@@ -1,9 +1,10 @@
+import { BALANCE } from '../content/balance';
 import { NOVA_TREE, type NodeColor } from '../content/novaTree';
 import { menuHidden } from './menus';
 import { withSigil } from './sigilReports';
 import { SYSTEMS } from '../content/systems';
-import { layer, resetPreview, resetsDone } from '../engine/layers';
-import { cur } from '../engine/state';
+import { layer, milestoneReached, resetPreview, resetsDone } from '../engine/layers';
+import { cur, type GameState } from '../engine/state';
 import { AUTO_BUYERS, autoSetting, autoUnlocked } from '../engine/systems/automation';
 import { canBuyNode, nodeCost, nodeLevel, nodeReachable, ownsNode, treeOpen } from '../engine/systems/novaTree';
 import { runSeconds, supernovaReady } from '../engine/systems/supernova';
@@ -142,15 +143,57 @@ export interface AscentDeck {
   tucked: boolean;
 }
 
+/** 1.3.0: a perk on the Ascent (automation and passive gains), lit once earned. */
+export interface AscentPerk {
+  name: string;
+  lit: boolean;
+  req: string;
+}
+
 export interface AscentStage {
   stage: string;
   decks: AscentDeck[];
+  perks: AscentPerk[];
   /** Systems open in this stage, of how many. */
   lit: number;
   total: number;
   /** The furthest stage you've reached. */
   here: boolean;
 }
+
+/** 1.3.0: perks shown under each stage (the playtest asked for the Ascent to show everything new). */
+interface PerkDef {
+  name: string;
+  req: string;
+  lit: (s: GameState) => boolean;
+}
+const autoOn = (id: string) => (s: GameState) => {
+  const a = AUTO_BUYERS.find((x) => x.id === id);
+  return !!a && autoUnlocked(s, a);
+};
+const PERKS: Record<string, PerkDef[]> = {
+  Supernova: [
+    { name: 'Engine auto-buyers', req: '5 Supernovas in a run', lit: (s) => milestoneReached(s, 'supernova', 'auto5') },
+    { name: 'Auto-Supernova', req: `${BALANCE.automation.unlockAt.supernova} Supernovas`, lit: autoOn('auto.supernova') },
+    { name: 'Passive shards (1% a second)', req: '20 Supernovas in a run', lit: (s) => milestoneReached(s, 'supernova', 'passive') },
+    { name: 'Auto-Constants', req: `${BALANCE.automation.unlockAt.constants} Supernovas`, lit: autoOn('auto.constants') },
+    { name: 'The safe tenth', req: 'Always: automation never spends the last 10% of what you earn', lit: () => true },
+  ],
+  Nebula: [
+    { name: 'Auto-Supernova at a gain', req: '2 Nebulas', lit: (s) => milestoneReached(s, 'nebula', 'autoNova') },
+    { name: 'Passive Essence (1% a second)', req: `${BALANCE.passive.at.nebula} Nebulas`, lit: (s) => milestoneReached(s, 'nebula', 'passive') },
+    { name: 'Constant Flow', req: 'A Nebula Tree node beside the root', lit: (s) => (s.nebulaTree['nflow.constants'] ?? 0) > 0 },
+  ],
+  Singularity: [
+    { name: 'Auto-Nebula', req: '2 Singularities', lit: (s) => milestoneReached(s, 'singularity', 'autoNebula') },
+    { name: 'Passive Dark Matter (1% a second)', req: `${BALANCE.passive.at.singularity} Singularities`, lit: (s) => milestoneReached(s, 'singularity', 'passive') },
+  ],
+  Galactic: [
+    { name: 'Auto-Singularity', req: '2 Galactic Rebirths', lit: (s) => milestoneReached(s, 'galactic', 'autoSingularity') },
+    { name: 'Passive Galaxy Cores (1% a second)', req: `${BALANCE.passive.at.galactic} Galactic Rebirths`, lit: (s) => milestoneReached(s, 'galactic', 'passive') },
+  ],
+  'Big Crunch': [{ name: 'Passive Chronons (1% a second)', req: `${BALANCE.passive.at.crunch} Big Crunches`, lit: (s) => milestoneReached(s, 'crunch', 'passive') }],
+};
 
 const STAGES: Array<{ name: string; ids: string[] }> = [
   { name: 'Protostar', ids: ['ascent', 'upgrades', 'medals', 'stats'] },
@@ -181,6 +224,7 @@ export function ascentReport(): AscentStage[] {
     lit: 0,
     total: 0,
     here: false,
+    perks: (PERKS[st.name] ?? []).map((p) => ({ name: p.name, lit: p.lit(s), req: p.req })),
     decks: st.ids.flatMap((id): AscentDeck[] => {
       const x = SYSTEMS.find((y) => y.id === id);
       if (!x) return [];

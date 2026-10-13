@@ -1,3 +1,4 @@
+import { BALANCE } from '../content/balance';
 import { D, type Decimal, type DecimalSource, maxAffordable, sumGeometric, ZERO } from './decimal';
 
 /**
@@ -15,6 +16,19 @@ export interface Bracket {
 export interface CostCurve {
   base: DecimalSource;
   brackets: readonly Bracket[];
+}
+
+/**
+ * 1.3.0: the same curve with the late ramp (BALANCE.lateRamp): from level `from`, every `every` levels the
+ * ratio of the last bracket is multiplied by `mult` again. Bulk cost and Max stay closed-form (a bracket each).
+ */
+export function lateRamp(curve: CostCurve): CostCurve {
+  const R = BALANCE.lateRamp;
+  const last = curve.brackets[curve.brackets.length - 1]!;
+  if (last.from >= R.from) return curve;
+  const extra: Bracket[] = [];
+  for (let k = 1; k <= R.steps; k++) extra.push({ from: R.from + (k - 1) * R.every, ratio: D(last.ratio).mul(D(R.mult).pow(k)) });
+  return { base: curve.base, brackets: [...curve.brackets, ...extra] };
 }
 
 /** Price of the item bought at level `n` (0 = the first one). */

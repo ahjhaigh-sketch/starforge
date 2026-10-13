@@ -8,7 +8,7 @@ import { create } from 'zustand';
 interface TipState {
   key: string | null;
   rect: DOMRect | null;
-  side: 'right' | 'left' | 'above';
+  side: 'right' | 'left' | 'above' | 'below';
   title: string;
   body: ReactNode;
   show: (key: string, el: Element, side: TipState['side'], title: string, body: ReactNode) => void;
@@ -55,7 +55,7 @@ export function FloatTipHost() {
     const h = ref.current.offsetHeight;
     const gap = 12;
     let left = side === 'right' ? rect.right + gap : side === 'left' ? rect.left - w - gap : rect.left + rect.width / 2 - w / 2;
-    let top = side === 'above' ? rect.top - h - gap : rect.top + rect.height / 2 - h / 2;
+    let top = side === 'above' ? rect.top - h - gap : side === 'below' ? rect.bottom + gap : rect.top + rect.height / 2 - h / 2;
     left = Math.max(8, Math.min(window.innerWidth - w - 8, left));
     top = Math.max(8, Math.min(window.innerHeight - h - 8, top));
     setPos({ left, top });

@@ -10,9 +10,10 @@ import { events } from '../events';
 import { milestoneReached, performReset } from '../layers';
 import { autoBelt } from './belt';
 import { autoConstants } from './constants';
+import { nebulaFlag } from './nebulaTree';
 import { supernovaGain, supernovaReady } from './supernova';
 import { goalMet, inTrial } from './trials';
-import { cur, type GameState } from '../state';
+import { automatedSpend, type GameState, usable } from '../state';
 import { defineStat, stat } from '../stats';
 import { registerSystem, upkeepDue } from '../tick';
 import { automating } from './eternity';
@@ -98,6 +99,9 @@ export function setAuto(s: GameState, id: string, change: Partial<{ on: boolean;
  */
 const SLOW_KINDS: ReadonlySet<AutoBuyerDef['kind']> = new Set(['planets', 'belt', 'tree', 'constants', 'supernova']);
 
+/** What each auto-buyer is called where automated spending is listed. */
+const sinkName = (a: AutoBuyerDef) => (a.kind === 'engine' ? `Auto-buyer: ${a.name}` : a.kind === 'tree' ? `${a.name} auto-buyer` : `Auto-${a.name.toLowerCase()}`);
+
 /** One pass of every switched-on auto-buyer (with `slow`, the once-a-second ones too). */
 export function runAutomation(s: GameState, slow = true): void {
   for (const a of AUTO_BUYERS) {
@@ -105,13 +109,20 @@ export function runAutomation(s: GameState, slow = true): void {
     if (!autoUnlocked(s, a)) continue;
     const { on, spend } = autoSetting(s, a.id);
     if (!on) continue;
-    const budget = cur(s, 'stardust').mul(spend);
+    // 1.3.0: automation never spends the safe tenth (see automatedSpend)
+    automatedSpend(sinkName(a), () => runOne(s, a, spend));
+  }
+}
+
+function runOne(s: GameState, a: AutoBuyerDef, spend: number): void {
+  {
+    const budget = usable(s, 'stardust').mul(spend);
     if (a.kind === 'evolve') {
       const cost = nextTierCost(s);
       if (cost && budget.gte(cost)) evolve(s);
     } else if (a.kind === 'engine' && a.engine) {
       const index = ENGINES.findIndex((e) => e.id === a.engine);
-      if (!engineRevealed(s, index)) continue;
+      if (!engineRevealed(s, index)) return;
       const n = maxBuy(engineCurve(a.engine), owned(s, a.engine), budget.div(stat(s, 'engineCostMult')));
       if (n > 0) buyEngine(s, a.engine, n);
     } else if (a.kind === 'planets') {
@@ -124,13 +135,13 @@ export function runAutomation(s: GameState, slow = true): void {
     } else if (a.kind === 'belt') {
       autoBelt(s, spend);
     } else if (a.kind === 'constants') {
-      autoConstants(s, spend);
+      autoConstants(s, spend, nebulaFlag(s, 'constantFlow') > 0);
     } else if (a.kind === 'tree' && a.tree) {
       const shop = TREE_SHOP_BY_ID.get(a.tree);
       if (shop) buyAllNodes(s, shop, spend);
     } else if (a.kind === 'upgrades') {
       for (const u of availableUpgrades(s)) {
-        if (D(u.cost).gt(cur(s, 'stardust').mul(spend))) break; // cheapest first
+        if (D(u.cost).gt(usable(s, 'stardust').mul(spend))) break; // cheapest first
         buyUpgrade(s, u.id);
       }
     }

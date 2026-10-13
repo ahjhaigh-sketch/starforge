@@ -19,6 +19,9 @@ function rockTexture(rarity: number): Texture {
   const c = document.createElement('canvas');
   c.width = c.height = s;
   const ctx = c.getContext('2d')!;
+  // cosmetic noise: the same rarity always paints the same rock
+  let seed = 977 + rarity * 131;
+  const rnd = () => ((seed = (Math.imul(seed, 1103515245) + 12345) >>> 0) / 4294967296);
   if (r.glow) {
     const g = ctx.createRadialGradient(s / 2, s / 2, s * 0.2, s / 2, s / 2, s / 2);
     g.addColorStop(0, `${r.glow}cc`);
@@ -26,34 +29,78 @@ function rockTexture(rarity: number): Texture {
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, s, s);
   }
-  // a lumpy rock: a circle with a wobbling edge
-  ctx.beginPath();
-  for (let i = 0; i <= 12; i++) {
-    const a = (i / 12) * Math.PI * 2;
-    const rr = s * 0.27 * (1 + 0.12 * Math.sin(i * 2.7 + rarity));
+  // 1.3.0: an irregular rock (several wobbles at once), lit from the upper left, with grain,
+  // craters with lit rims, and facets on the crystal grades
+  const rock = new Path2D();
+  const p1 = rnd() * 6;
+  const p2 = rnd() * 6;
+  for (let i = 0; i <= 24; i++) {
+    const a = (i / 24) * Math.PI * 2;
+    const rr = s * 0.28 * (1 + 0.1 * Math.sin(a * 3 + p1) + 0.06 * Math.sin(a * 7 + p2) + 0.04 * (rnd() - 0.5));
     const x = s / 2 + Math.cos(a) * rr;
-    const y = s / 2 + Math.sin(a) * rr;
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
+    const y = s / 2 + Math.sin(a) * rr * 0.9;
+    if (i === 0) rock.moveTo(x, y);
+    else rock.lineTo(x, y);
   }
-  ctx.closePath();
+  rock.closePath();
+  const lit = ctx.createRadialGradient(s * 0.38, s * 0.34, s * 0.03, s / 2, s / 2, s * 0.34);
+  lit.addColorStop(0, '#FFFFFF');
+  lit.addColorStop(0.25, r.color);
+  lit.addColorStop(1, '#140B2E');
   ctx.fillStyle = r.color;
-  ctx.fill();
-  ctx.lineWidth = s * 0.06;
+  ctx.fill(rock);
+  ctx.save();
+  ctx.clip(rock);
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle = lit;
+  ctx.fillRect(0, 0, s, s);
+  ctx.globalAlpha = 1;
+  // grain
+  for (let i = 0; i < 70; i++) {
+    ctx.fillStyle = rnd() < 0.5 ? 'rgba(20,11,46,0.18)' : 'rgba(255,255,255,0.14)';
+    ctx.fillRect(s * 0.2 + rnd() * s * 0.6, s * 0.2 + rnd() * s * 0.6, 1.5, 1.5);
+  }
+  // craters: a dark bowl with a light lower rim
+  for (let i = 0; i < 3; i++) {
+    const x = s * (0.36 + rnd() * 0.3);
+    const y = s * (0.38 + rnd() * 0.26);
+    const rr = s * (0.035 + rnd() * 0.035);
+    ctx.beginPath();
+    ctx.arc(x, y, rr, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(20,11,46,0.32)';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x, y, rr, 0.1 * Math.PI, 0.9 * Math.PI);
+    ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+  // the crystal grades grow facets
+  if (r.glow) {
+    for (let i = 0; i < 4; i++) {
+      const x = s * (0.34 + rnd() * 0.32);
+      const y = s * (0.32 + rnd() * 0.3);
+      const k = s * (0.04 + rnd() * 0.03);
+      ctx.beginPath();
+      ctx.moveTo(x, y - k * 1.6);
+      ctx.lineTo(x + k, y);
+      ctx.lineTo(x, y + k * 0.8);
+      ctx.lineTo(x - k, y);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.fill();
+      ctx.strokeStyle = r.glow;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+  ctx.lineWidth = s * 0.055;
   ctx.strokeStyle = '#140B2E';
   ctx.lineJoin = 'round';
-  ctx.stroke();
-  ctx.fillStyle = 'rgba(20,11,46,0.25)';
-  for (const [x, y, rr] of [
-    [0.42, 0.45, 0.05],
-    [0.58, 0.58, 0.04],
-  ] as const) {
-    ctx.beginPath();
-    ctx.arc(s * x, s * y, s * rr, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  ctx.stroke(rock);
   ctx.beginPath();
-  ctx.ellipse(s * 0.42, s * 0.36, s * 0.08, s * 0.04, -0.6, 0, Math.PI * 2);
+  ctx.ellipse(s * 0.4, s * 0.34, s * 0.07, s * 0.03, -0.6, 0, Math.PI * 2);
   ctx.fillStyle = 'rgba(255,255,255,0.7)';
   ctx.fill();
   t = Texture.from(c);

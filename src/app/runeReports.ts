@@ -3,7 +3,7 @@ import { withSigil } from './sigilReports';
 import { NEBULA_TREE } from '../content/nebulaTree';
 import { RUNE_RARITIES, RUNE_STAT_WORDS, runesOf, SHRINE_BY_ID, SHRINES, type RuneDef } from '../content/runes';
 import { D, type Decimal } from '../engine/decimal';
-import { layer, milestoneReached, resetPreview, resetsDone } from '../engine/layers';
+import { bestGainLog, layer, milestoneReached, resetPreview, resetsDone, weakReset } from '../engine/layers';
 import { cur } from '../engine/state';
 import { stat } from '../engine/stats';
 import { nebulaGain, nebulaReady, nextEssenceAt, runShards } from '../engine/systems/nebula';
@@ -63,7 +63,17 @@ export interface LayerConfirm {
   ready: boolean;
   resets: string[];
   kept: Array<{ label: string; why: string }>;
+  /** 1.3.0: a warning when this reset pays under 1% of the layer's best ('' when it doesn't). */
+  warn: string;
 }
+
+/** What raises each layer's gain, for the weak-reset warning. */
+const BUILD_UP: Record<string, string> = {
+  nebula: 'Do more Supernovas first: shards gathered this Nebula run set the Essence.',
+  singularity: 'Do a Nebula or two first: Essence gathered this Singularity run sets the Dark Matter.',
+  galactic: 'Go Singularity a few more times first: Dark Matter gained this Galactic run sets the Galaxy Cores.',
+  crunch: 'More Galactic Rebirths this Crunch run gather more Galaxy Cores, and Cores set the Chronons.',
+};
 
 /** The confirm screen for any layer, straight from the reset function's own preview. */
 export function layerConfirm(id: string): LayerConfirm | null {
@@ -71,7 +81,9 @@ export function layerConfirm(id: string): LayerConfirm | null {
   const def = layer(id);
   const p = resetPreview(s, id);
   if (!def || !p) return null;
-  return { name: def.name, action: def.action, gain: (def.currency === 'sparks' ? formatFifths : format)(p.gain, n()), currency: def.currency === 'essence' ? 'Nebula Essence' : def.currency, ready: def.ready(s), resets: p.resets, kept: p.kept };
+  const best = bestGainLog(s, id);
+  const warn = weakReset(s, id, p.gain) && best !== null ? `This pays far less than your best ${def.name} (about +${format(D(10).pow(Math.min(best, 9e15)), n())}). ${BUILD_UP[id] ?? ''}` : '';
+  return { name: def.name, action: def.action, gain: (def.currency === 'sparks' ? formatFifths : format)(p.gain, n()), currency: def.currency === 'essence' ? 'Nebula Essence' : def.currency, ready: def.ready(s), resets: p.resets, kept: p.kept, warn };
 }
 
 export function nebulaTreeReport(): { open: boolean; essence: string; nodes: TreeNodeView[]; edges: Array<[string, string]> } {

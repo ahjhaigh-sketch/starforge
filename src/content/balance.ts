@@ -8,6 +8,8 @@ export const BALANCE = {
     baseEfficiency: 0.5,
     /** Relics and the tree can't push time away past full value. */
     maxEfficiency: 1,
+    /** 1.3.0: time away counts up to a year at most (the playtest's cap read 1.4e41 days). */
+    maxCapSeconds: 365 * 86400,
   },
   tap: {
     base: 1,
@@ -43,6 +45,11 @@ export const BALANCE = {
     mult: 2,
   },
   comets: {
+    /**
+     * 1.3.0: comet buffs last at most this many times their base length. The Herald Horn relic multiplies the length
+     * a level with no end, and the playtest's buffs read "7.9e79 s": a Frenzy that never ends.
+     */
+    maxBuffLength: 50,
     /** From Red Dwarf (tier index 1). One every 60 to 120 s, divided by the comet rate. */
     tier: 1,
     minGap: 60,
@@ -149,7 +156,11 @@ export const BALANCE = {
       growth: { base: 100, growth: 1.75 },
       beam: { base: 1e4, growth: 4 },
       xp: { base: 1000, growth: 1.3 },
+      /** 1.3.0: Lucky Rocks, asteroid luck x1.05 a level, up to luckMax levels. */
+      luck: { base: 5e4, growth: 2 },
     },
+    luckPerLevel: 1.05,
+    luckMax: 40,
   },
   drill: {
     /** Deep Core Drilling opens at 5 Supernovas. Core HP = 100 x 8^depth. */
@@ -185,7 +196,11 @@ export const BALANCE = {
       speed: { base: 200, growth: 1.45 },
       bulk: { base: 500, growth: 1.6 },
       crucibles: { base: 2500, growth: 4 },
+      /** 1.3.0: Purity, alloy x1.08 a level, up to purityMax levels. */
+      purity: { base: 1e4, growth: 2.2 },
     },
+    purityPerLevel: 1.08,
+    purityMax: 50,
     /** One crucible to start, up to six. */
     maxCrucibles: 6,
     /** How much newly mined common ore the hopper may take: all, half (the default) or a tenth. */
@@ -267,7 +282,8 @@ export const BALANCE = {
     quickBurnSeconds: 900,
   },
   /** Cost growth per level of each Stellar Constant (between 1.05 and 2, Math and balance tab). */
-  constants: { gravity: 1.3, light: 1.3, heat: 1.35, orbit: 1.35, runeSpeed: 1.8, runeBulk: 1.6, resonance: 2, drift: 1.9, bloom: 1.7, mass: 1.5, spin: 1.8, horizon: 1.6, charge: 1.7, expansion: 1.6, arms: 1.8, halo: 1.7, lattice: 1.9, entropy: 2, recursion: 1.8 },
+  /** 1.3.0 adds forge 1.4, core 1.45 (Stellar) and current 1.9 (Nebula). */
+  constants: { forge: 1.4, core: 1.45, current: 1.9, gravity: 1.3, light: 1.3, heat: 1.35, orbit: 1.35, runeSpeed: 1.8, runeBulk: 1.6, resonance: 2, drift: 1.9, bloom: 1.7, mass: 1.5, spin: 1.8, horizon: 1.6, charge: 1.7, expansion: 1.6, arms: 1.8, halo: 1.7, lattice: 1.9, entropy: 2, recursion: 1.8 },
   novaTree: {
     /** Node price along an arm: armBase x armGrowth^depth (depth 0 to 22). */
     armBase: 3,
@@ -284,6 +300,15 @@ export const BALANCE = {
     unlockAt: { novatree: 5, planets: 5, supernova: 10, belt: 15, constants: 20 },
     /** Auto-Constants steps every constant to its next doubling once this many seconds of play, and waits this long after you buy one yourself. */
     constantsEvery: 60,
+    /**
+     * 1.3.0, the safe tenth: this share of everything you earn is kept away from automation (auto-buyers,
+     * auto-roll, Eternity, the Prism Wheel). The playtest's Void shrine auto-roll spent every Dark Matter ever
+     * earned (2.1e17), so nothing was left for the Singularity Tree, the Black Hole or megastructures.
+     * Your own purchases may still spend it.
+     */
+    keepShare: 0.1,
+    /** Seconds of automated spending each currency's "where it went" line covers. */
+    spendWindow: 10,
   },
   fusion: {
     /** Comet Fusion opens at 6 Supernovas: a 3x3 board growing to 5x5, a comet every 12 s. */
@@ -350,6 +375,8 @@ export const BALANCE = {
     passivePow: 0.4,
     /** Milestone 10: Supernova resets nothing and 1/50 of its gain trickles in every second. */
     trickle: 1 / 50,
+    /** 1.3.0: Constant Flow (Auto-Constants every second instead of once a minute) costs a wisp node this many steps out. */
+    flowStep: 4,
     /** Nebula Tree nodes cost Essence: 1 x 2.6^depth along each wisp. */
     treeBase: 1,
     treeGrowth: 2.6,
@@ -403,6 +430,17 @@ export const BALANCE = {
       /** Boosts from +5% to +500%. */
       minBoost: 0.05,
       maxBoost: 5,
+      /**
+       * 1.3.0 (the playtest: "auras are too simple"). Wear more at once: a second slot at this many auras found, a
+       * third at the next.
+       */
+      slotsAt: [10, 20],
+      /** Polish: rank r costs 10^((r + 1)^2) copies of that aura (10, 10,000, a billion...) and adds +30% to its boost. */
+      polishMax: 10,
+      polishEach: 0.3,
+      /** Families: wearing two auras of one family adds +25% to both their boosts, three +60%. */
+      familyTwo: 0.25,
+      familyThree: 0.6,
     },
     /** [id, name, what it counts as, base odds 1 in N, colour]. Mutation Luck divides the odds, never better than 1 in 2. */
     mutations: [
@@ -441,6 +479,34 @@ export const BALANCE = {
     /** A Wyrm on the team catches a comet this long after it appears. */
     catchSeconds: 2.5,
   },
+  /**
+   * 1.3.0: passive gains. From a milestone of the layer itself, this share of that layer's reset gain arrives every
+   * second without resetting (Supernova milestone 20 has done this for shards since Phase 4). The playtest asked for
+   * it ("it just passively gains in the background, so you don't need to do it"). A layer's "resets nothing"
+   * trickle (1/50 a second) takes over once earned. The milestone counts: Nebulas, Singularities, Galactic
+   * Rebirths, Big Crunches.
+   */
+  passive: {
+    share: 0.01,
+    at: { nebula: 9, singularity: 15, galactic: 4, crunch: 4 } as Record<string, number>,
+  },
+  /**
+   * 1.3.0: the Recommended card (one of the side's focus cards) and the weak-reset warning. A reset that pays under
+   * 1/10^weakOoM of the layer's best gets a warning on its confirm screen and the card, and the card is worked out
+   * at most once every this many real seconds (it looks at every tree).
+   */
+  recommend: {
+    weakOoM: 2,
+    every: 2,
+  },
+  /**
+   * 1.3.0, the late ramp: systems bought with an older currency (Belt and Starforge upgrades, Deep Core drones and
+   * bits, turret levels, ship upgrades, Spectral upgrades, Wyrm eggs and training) cost as before up to `from`
+   * levels; after that each `every` levels the price growth is `mult` times steeper (up to `steps` times). The
+   * playtest reached new systems holding e368 alloy, and Max bought ~2,000 levels at once ("it lets you do insane
+   * amounts"); now a pile that size buys hundreds, while a run that buys a few hundred levels pays the same as before.
+   */
+  lateRamp: { from: 300, every: 100, mult: 1.5, steps: 60 },
   /** Phase 12: the Singularity, the third reset (Math and balance: "Reset layers"). */
   singularity: {
     /**
@@ -521,19 +587,27 @@ export const BALANCE = {
     /** Damage a second = (1 + log10(1 + Stardust a second)) x Spire power. */
     /** Every floor: Stardust x1.02, shards and Essence x1.01; every tenth floor a banner. */
     perFloor: { productionMult: 1.02, shardGain: 1.01, essenceGain: 1.01 } as Record<string, number>,
+    /**
+     * 1.3.0: a flown banner gives x(1 + rate x best floor) to what it names: big ones for the big currencies, small
+     * ones for the late, small currencies (floor 80: Ember x5, Deep x1.4, Aurora x1.16).
+     */
+    bannerRates: { ember: 0.05, tide: 0.04, moss: 0.04, dusk: 0.01, gold: 0.05, rose: 0.03, frost: 0.005, blood: 0.05, deep: 0.005, void: 0.02, aurora: 0.002, crown: 0.06 } as Record<string, number>,
   },
   leviathans: {
     singularities: 4,
     /** Leviathan k's hit points: 1,000 x 6^k, x2.5 for each time you've beaten it. */
     hpBase: 1000,
     hpPerBoss: 6,
-    hpPerKill: 2.5,
+    /** 1.3.0: was 2.5; farming the first Leviathans for scales was the slow part of the playtest. */
+    hpPerKill: 1.8,
     /** Damage: (1 + log10(1 + Stardust a second))^2 a second from output, 25 a second per Wyrm on the team, (1 + log10(1 + tap value))^2 a tap. */
     outputPow: 2,
     perWyrm: 25,
     tapPow: 2,
     /** Scales for beating Leviathan k: 5 x 2^k. */
     scalesBase: 5,
+    /** 1.3.0: the first kill of each Leviathan pays this many times its scales. */
+    firstKillMult: 10,
     scalesGrowth: 2,
     /** Scale Tree prices: 10 x 2.5^step. */
     treeBase: 10,
@@ -652,13 +726,24 @@ export const BALANCE = {
   },
   /** Phase 15: Galactic Rebirth, the fourth reset (Math and balance: reset layers). */
   galactic: {
-    /** Needs all 8 Black Hole stages, the Mirror Key and this much Dark Matter gained in the Galactic run. */
+    /**
+     * Needs the anti-star collapsed all the way to a Protostar (Mirror depth 11), the Mirror Key and this much Dark Matter
+     * gained in the Galactic run. 1.3.0: it needed all 8 Black Hole stages, which the playtest found far too hard while
+     * automation ate the Dark Matter that feeds the Black Hole.
+     */
+    mirrorDepth: 11,
     runDarkMatter: 1e8,
     /**
      * Galaxy Cores = floor((DM / 1e8)^0.5) x Galaxy Core gain. The plan's ^0.25 gave 3 to 6 a run: 18 of 200 tree nodes
      * after four Galactic Rebirths (sim, Phase 15).
      */
     gainPow: 0.5,
+    /**
+     * 1.3.0: above this many Galaxy Cores in one Galactic Rebirth, the rest count at this power. The playtest's run Dark
+     * Matter reached e29 once passive gains flowed, which would pay 5.8e10 Cores at once (the first paid 45,000).
+     */
+    softcapAt: 1e4,
+    softcapPow: 0.5,
     /** Dark Matter x(1 + lifetime Galaxy Cores)^0.3. */
     passivePow: 0.3,
     /** Galactic Tree: five arms of 38 nodes; node i on an arm costs 1 x 1.2^i Galaxy Cores; echoes x3 a level. */
@@ -673,7 +758,8 @@ export const BALANCE = {
     links: 8,
     loopBonus: 0.25,
     /** Stardust Chart node prices in Star Charts, by ring. */
-    chartCosts: [20, 60, 150, 400, 1000, 2500],
+    /** 1.3.0: halved (was 20, 60, 150, 400, 1,000, 2,500); the playtest found the Star Chart hard to level. */
+    chartCosts: [10, 30, 75, 200, 500, 1250],
     /** Galactic Constants: Expansion makes cleared galaxies' rewards stronger, Arms makes the Galactic Tree's multipliers stronger. */
     expansionPer: 0.1,
     /**
@@ -763,6 +849,11 @@ export const BALANCE = {
   /** Phase 10: the Star Nursery. */
   nursery: {
     nebulas: 4,
+    /**
+     * 1.3.0, the Garden bonus: every species you've grown adds this much to an Essence multiplier, by tier (base,
+     * cross, cross of crosses): x7.75 with all 25. It gives the collection a point beyond its early Essence.
+     */
+    garden: [0.05, 0.15, 0.5],
     /** Plots: 3, plus one a level of the Plots upgrade (up to 12). */
     plots: 3,
     maxPlots: 12,
@@ -942,5 +1033,9 @@ export const BALANCE = {
     windShips: 2,
     windBelt: 2,
     storm: 3,
+    /** 1.3.0, the Almanac: every this many times a kind of weather has rolled in, its boost is this much stronger, up to the cap. */
+    almanacEvery: 10,
+    almanacStep: 0.02,
+    almanacCap: 0.5,
   },
 } as const;

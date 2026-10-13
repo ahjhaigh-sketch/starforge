@@ -4,7 +4,7 @@ import { D } from '../engine/decimal';
 import { cur } from '../engine/state';
 import { stat } from '../engine/stats';
 import { fighting, killsOf, leviathanDps, leviathanHp, leviathansOpen, leviathansUnlocked, scalesFor, tapDamage } from '../engine/systems/leviathans';
-import { bannersUnlocked, floorHp, gimmickOf, spireDps, spireOpen, climbing } from '../engine/systems/spire';
+import { bannerMult, bannersUnlocked, climbing, floorHp, gimmickOf, spireDps, spireOpen } from '../engine/systems/spire';
 import { attemptLevel, autoTrialsOpen, fusionScore, goalMet, inFusion, inTrial, totalTrialLevels, trialGoal, trialLevel, trialsOpen } from '../engine/systems/trials';
 import { format, formatMult, formatRate, formatTime } from '../ui/format';
 import { game } from './game';
@@ -107,7 +107,11 @@ export interface SpireReport {
   gimmickText: string;
   next: string;
   rewards: string;
-  banners: Array<{ id: string; name: string; color: string; at: number; unlocked: boolean; flown: boolean }>;
+  /** 1.3.0: the floors' boosts one by one, and what one more floor adds. */
+  bonus: Array<{ what: string; value: string }>;
+  nextBonus: string;
+  flown: string;
+  banners: Array<{ id: string; name: string; color: string; at: number; unlocked: boolean; flown: boolean; does: string }>;
 }
 
 export function spireReport(): SpireReport {
@@ -134,7 +138,14 @@ export function spireReport(): SpireReport {
     gimmickText: g.debuffText(1),
     next: gimmickOf(f + 1).name,
     rewards: `Stardust ${formatMult(D(per.productionMult ?? 1).pow(f), n())}, shards ${formatMult(D(per.shardGain ?? 1).pow(f), n())}, Essence ${formatMult(D(per.essenceGain ?? 1).pow(f), n())}`,
-    banners: SPIRE_BANNERS.map((b, i) => ({ ...b, at: (i + 1) * 10, unlocked: i < got, flown: s.spire.banner === b.id })),
+    bonus: [
+      { what: 'Stardust', value: formatMult(D(per.productionMult ?? 1).pow(f), n()) },
+      { what: 'Nova Shards', value: formatMult(D(per.shardGain ?? 1).pow(f), n()) },
+      { what: 'Essence', value: formatMult(D(per.essenceGain ?? 1).pow(f), n()) },
+    ],
+    nextBonus: `Each floor: Stardust x${per.productionMult}, shards and Essence x${per.shardGain}, for good.`,
+    flown: ((b) => (b ? `${b.name}: ${formatMult(bannerMult(s, b.id), n())} ${b.what}` : 'No banner flying: pick one below.'))(SPIRE_BANNERS.find((b) => b.id === s.spire.banner)),
+    banners: SPIRE_BANNERS.map((b, i) => ({ id: b.id, name: b.name, color: b.color, at: (i + 1) * 10, unlocked: i < got, flown: s.spire.banner === b.id, does: `${formatMult(bannerMult(s, b.id), n())} ${b.what}` })),
   };
 }
 

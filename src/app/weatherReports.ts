@@ -1,8 +1,8 @@
 import { BALANCE } from '../content/balance';
 import { WEATHERS } from '../content/weather';
 import { reqText } from '../engine/systems/unlocks';
-import { beaconProgress, weatherKindOpen, weatherLeft, weatherNow, weatherOpen } from '../engine/systems/weather';
-import { formatTime } from '../ui/format';
+import { almanacBonus, beaconProgress, weatherKindOpen, weatherLeft, weatherNow, weatherOpen, weatherSeen } from '../engine/systems/weather';
+import { formatCount, formatTime } from '../ui/format';
 import { game } from './game';
 
 /** Read-outs for Space Weather. */
@@ -16,6 +16,8 @@ export interface WeatherKindRow {
   open: boolean;
   req: string;
   canSummon: boolean;
+  seen: string;
+  bonus: string;
 }
 
 export function weatherReport(): {
@@ -31,6 +33,11 @@ export function weatherReport(): {
   perCharge: number;
   summonFor: string;
   kinds: WeatherKindRow[];
+  /** 1.3.0: the forecast bar (0 to 1: through the weather now, or towards the next), auto-summon, and the Almanac's rule. */
+  bar: number;
+  barText: string;
+  auto: string;
+  almanac: string;
 } {
   const s = game.state;
   const sky = weatherNow(s);
@@ -48,7 +55,11 @@ export function weatherReport(): {
     summonFor: formatTime(W.summonSeconds),
     kinds: WEATHERS.map((k) => {
       const open = weatherKindOpen(s, k.id);
-      return { id: k.id, name: k.name, desc: k.desc, color: k.color, open, req: reqText(k.req), canSummon: open && clear && s.weather.charges >= 1 };
+      return { id: k.id, name: k.name, desc: k.desc, color: k.color, open, req: reqText(k.req), canSummon: open && clear && s.weather.charges >= 1, seen: formatCount(weatherSeen(s, k.id), s.settings.notation), bonus: `+${Math.round(almanacBonus(s, k.id) * 100)}%` };
     }),
+    bar: def ? Math.max(0, Math.min(1, weatherLeft(s) / Math.max(1, s.weather.summoned ? W.summonSeconds : W.lastMax))) : s.weather.next > s.playtime ? Math.max(0, Math.min(1, 1 - (s.weather.next - s.playtime) / W.gapMax)) : 1,
+    barText: def ? `${def.name}: ${formatTime(weatherLeft(s))} left` : s.weather.next > s.playtime ? `Next weather within ${formatTime(s.weather.next - s.playtime)}` : 'Weather is on its way',
+    auto: s.weather.auto ?? '',
+    almanac: `Every ${W.almanacEvery} times a weather rolls in, its boost grows ${Math.round(W.almanacStep * 100)}% stronger (up to +${Math.round(W.almanacCap * 100)}%).`,
   };
 }

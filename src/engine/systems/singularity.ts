@@ -4,11 +4,11 @@ import { SINGULARITY_TREE } from '../../content/singularityTree';
 import { D, type Decimal, ZERO } from '../decimal';
 import { events } from '../events';
 import { layer, milestoneReached, performReset, registerLayer } from '../layers';
-import { cur, gain, type GameState, spend } from '../state';
+import { cur, gain, type GameState, spend, gainPassive } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
 import { makeTree } from '../treeKit';
-import { nebulaGain, nebulaReady } from './nebula';
+import { nebulaGain, nebulaReady, runShards } from './nebula';
 import { goalMet, inTrial } from './trials';
 
 /**
@@ -138,6 +138,7 @@ export function registerSingularity(): void {
       { at: 5, id: 'reactor', text: 'The Dark Matter Reactor opens' },
       { at: 8, id: 'mirror', text: 'The Antimatter Mirror appears' },
       { at: 10, id: 'nebulaFree', text: 'A Nebula resets nothing; 1/50 of its gain trickles in every second' },
+      { at: BALANCE.passive.at.singularity!, id: 'passive', text: 'Gain 1% of your Singularity gain every second, without going Singularity' },
     ],
     onReset: (s) => {
       // from 10 Galactic Rebirths a Singularity keeps everything, but this run's Essence still starts over
@@ -155,6 +156,8 @@ export function registerSingularity(): void {
       if (milestoneReached(s, 'singularity', 'autoNebula') && s.singularity.autoAt.gt(0) && nebulaReady(s) && nebulaGain(s).gte(s.singularity.autoAt) && !(inTrial(s) && !goalMet(s))) performReset(s, 'nebula');
       // Milestone 10: 1/50 of the Nebula gain trickles in every second, nothing reset
       if (nebulaFree(s) && nebulaReady(s)) gain(s, 'essence', nebulaGain(s).mul(S.trickle * dt * ctx.gainScale));
+      // 1.3.0, Nebula milestone 6: 1% of the Nebula gain a second, needing only the shards (not the 30 Supernovas)
+      else if (milestoneReached(s, 'nebula', 'passive') && runShards(s).gte(BALANCE.nebula.runShards)) gainPassive(s, 'essence', nebulaGain(s).mul(BALANCE.passive.share * dt * ctx.gainScale));
     },
   });
 }

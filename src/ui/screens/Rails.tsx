@@ -145,14 +145,15 @@ export function FocusCards() {
         <button
           key={c.id}
           type="button"
-          className={cx('focus-card chunk gloss pop', c.kind)}
-          style={tint(c.kind === 'new' ? c.color : '#2B2558')}
+          className={cx('focus-card chunk gloss pop', c.kind === 'tip' ? 'recommended' : c.kind)}
+          style={tint(c.kind === 'next' ? '#2B2558' : c.color)}
           onClick={() => {
+            if (c.kind === 'tip' && c.panel) return open(c.panel);
             if (c.kind !== 'new') return;
             commands.markSeen(c.id);
             open(c.id);
           }}
-          aria-label={c.kind === 'new' ? `Just unlocked: ${c.name}. Open it.` : `Next: ${c.name}. ${c.req}, ${c.pct}% there.`}
+          aria-label={c.kind === 'new' ? `Just unlocked: ${c.name}. Open it.` : c.kind === 'tip' ? `Recommended: ${c.name}. ${c.blurb}` : `Next: ${c.name}. ${c.req}, ${c.pct}% there.`}
           data-focus-card={c.id}
         >
           {c.kind === 'new' && <span className="focus-glow" aria-hidden="true" />}
@@ -160,11 +161,13 @@ export function FocusCards() {
             <Icon name={c.icon} />
           </span>
           <span className="focus-text">
-            <small className="focus-kind ol-sm">{c.kind === 'new' ? 'Just unlocked' : 'Next up'}</small>
+            <small className="focus-kind ol-sm">{c.kind === 'new' ? 'Just unlocked' : c.kind === 'tip' ? 'Recommended' : 'Next up'}</small>
             <b className="ol">{c.name}</b>
             <span className="focus-blurb">{c.blurb}</span>
             {c.kind === 'new' ? (
               <span className="focus-go ol-sm">Open it</span>
+            ) : c.kind === 'tip' ? (
+              <span className="focus-go ol-sm">Show me</span>
             ) : (
               <span className="focus-req">
                 <span className="focus-bar">

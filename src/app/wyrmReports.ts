@@ -4,7 +4,9 @@ import { MUTATION_BY_ID } from '../content/runeDepth';
 import { RUNE_STAT_WORDS } from '../content/runes';
 import { parseWyrmKey, WYRM_BY_ID, WYRM_FORMS, WYRM_SPECIES } from '../content/wyrms';
 import { cur } from '../engine/state';
-import { crossCost, growSeconds, nurseryLevel, nurseryOpen, plotCount, plotProgress, seedPlan, seedsOf, stageOf, upgradePlan } from '../engine/systems/nursery';
+import { crossCost, gardenBonus, growSeconds, nurseryLevel, nurseryOpen, plotCount, plotProgress, seedPlan, seedsOf, stageOf, upgradePlan } from '../engine/systems/nursery';
+import { D } from '../engine/decimal';
+import { stat } from '../engine/stats';
 import { boostOfKey, eggPlan, embersOfKey, embersPerSecond, speciesEffLog, stackLevel, stackOf, teamSlots, trainPlan, wyrmsOpen } from '../engine/systems/wyrms';
 import { format, formatMult, formatCount, formatTime } from '../ui/format';
 import { game } from './game';
@@ -162,12 +164,15 @@ export interface NurseryReport {
   essence: string;
   plots: PlotRow[];
   maxPlots: number;
-  seeds: Array<{ id: string; name: string; color: string; tier: number; count: number; base: boolean }>;
+  seeds: Array<{ id: string; name: string; color: string; tier: number; count: number; base: boolean; grow: string; value: string }>;
+  /** 1.3.0: the Garden bonus and what one more species of each tier adds. */
+  garden: string;
+  gardenNext: string;
   seedCount: string;
   seedCost: string;
   canSeed: boolean;
   upgrades: Array<{ id: string; name: string; desc: string; level: number; max: number; count: number; cost: string; can: boolean }>;
-  recipes: Array<{ child: string; name: string; color: string; parents: string; known: boolean; grown: boolean; cost: string }>;
+  recipes: Array<{ child: string; name: string; color: string; parents: string; known: boolean; grown: boolean; cost: string; a: string; b: string; can: boolean; have: string }>;
   found: number;
   total: number;
   tending: boolean;
@@ -187,10 +192,21 @@ export function nurseryReport(): NurseryReport {
       if (!p || !sp2) return { i, empty: true, name: 'Empty plot', color: '#3A3466', stage: '', progress: 0, ripe: false, eta: '' };
       const prog = plotProgress(s, i);
       const left = Math.max(0, growSeconds(s, sp2) * (1 - prog));
-      return { i, empty: false, name: sp2.name, color: sp2.color, stage: stageOf(prog), progress: prog, ripe: prog >= 1, eta: prog >= 1 ? 'Ripe' : formatTime(left) };
+      return { i, empty: false, name: sp2.name, color: sp2.color, stage: stageOf(prog), progress: prog, ripe: prog >= 1, eta: prog >= 1 ? 'Ripe' : left < 1 ? 'under a second' : formatTime(left) };
     }),
     maxPlots: BALANCE.nursery.maxPlots,
-    seeds: STAR_SPECIES.filter((x) => seedsOf(s, x.id) > 0 || BASE_SEEDS.includes(x.id)).map((x) => ({ id: x.id, name: x.name, color: x.color, tier: x.tier, count: seedsOf(s, x.id), base: BASE_SEEDS.includes(x.id) })),
+    seeds: STAR_SPECIES.filter((x) => seedsOf(s, x.id) > 0 || BASE_SEEDS.includes(x.id)).map((x) => ({
+      id: x.id,
+      name: x.name,
+      color: x.color,
+      tier: x.tier,
+      count: seedsOf(s, x.id),
+      base: BASE_SEEDS.includes(x.id),
+      grow: formatTime(growSeconds(s, x)),
+      value: format(D(x.value).mul(stat(s, 'nurseryYield')), n()),
+    })),
+    garden: formatMult(gardenBonus(s), n()),
+    gardenNext: BALANCE.nursery.garden.map((g, i) => `+${g} for a tier ${i + 1}`).join(', '),
     seedCount: format(sp.count, n()),
     seedCost: format(sp.cost, n()),
     canSeed: sp.canAfford,
@@ -201,14 +217,19 @@ export function nurseryReport(): NurseryReport {
     recipes: CROSSBREEDS.map(([a, b, c]) => {
       const sc = STAR_BY_ID.get(c)!;
       const seen = known(a) && known(b);
+      // 1.3.0: every cross shows its parents (guessing pairs was the confusing part), and crosses from here
       return {
         child: c,
-        name: known(c) ? sc.name : '???',
+        name: sc.name,
         color: sc.color,
-        parents: seen ? `${STAR_BY_ID.get(a)!.name} + ${STAR_BY_ID.get(b)!.name}` : 'Grow more species to learn this cross',
+        parents: `${STAR_BY_ID.get(a)!.name} + ${STAR_BY_ID.get(b)!.name}`,
         known: seen,
         grown: s.nursery.found.includes(c),
         cost: format(crossCost(c), n()),
+        a,
+        b,
+        can: seedsOf(s, a) >= 1 && seedsOf(s, b) >= 1 && cur(s, 'essence').gte(crossCost(c)),
+        have: `${formatCount(seedsOf(s, a), n())} + ${formatCount(seedsOf(s, b), n())} seeds`,
       };
     }),
     found: s.nursery.found.length,

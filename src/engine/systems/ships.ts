@@ -3,7 +3,7 @@ import { ELEMENTS } from '../../content/elements';
 import { SECTOR_BY_ID, type SectorDef } from '../../content/extras';
 import { GRADE_BY_ID } from '../../content/forge';
 import { planLimited, type PurchasePlan } from '../buy';
-import type { CostCurve } from '../cost';
+import { type CostCurve, lateRamp } from '../cost';
 import { D, type Decimal } from '../decimal';
 import { events } from '../events';
 import { drawHits } from '../odds';
@@ -61,7 +61,7 @@ function upgradeCurve(id: ShipUpgradeId): CostCurve {
   let c = curves.get(id);
   if (!c) {
     const u = S.upgrades[id];
-    c = { base: u.base, brackets: [{ from: 0, ratio: u.growth }] };
+    c = lateRamp({ base: u.base, brackets: [{ from: 0, ratio: u.growth }] });
     curves.set(id, c);
   }
   return c;

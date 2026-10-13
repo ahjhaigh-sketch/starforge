@@ -94,6 +94,16 @@ export const AURAS: readonly AuraDef[] = AURA_NAMES.map(([id, name, color], i) =
 
 export const AURA_BY_ID: ReadonlyMap<string, AuraDef> = new Map(AURAS.map((a) => [a.id, a]));
 
+/** 1.3.0: the five aura families, six auras each (every fifth aura, so each family runs from common to rare). */
+export const AURA_FAMILIES = [
+  { id: 'flame', name: 'Flame', color: '#FF7A2E' },
+  { id: 'frost', name: 'Frost', color: '#9FE7FF' },
+  { id: 'light', name: 'Light', color: '#FFE08A' },
+  { id: 'void', name: 'Void', color: '#6E5CC4' },
+  { id: 'cosmos', name: 'Cosmos', color: '#7DFF5A' },
+] as const;
+export const auraFamily = (id: string) => AURA_FAMILIES[Math.max(0, AURAS.findIndex((a) => a.id === id)) % AURA_FAMILIES.length]!;
+
 // ---------- Mutations ----------
 
 export interface MutationDef {
@@ -141,6 +151,16 @@ export const INDEX_PAGES: readonly IndexPage[] = [
   { id: 'species', name: 'Star species', icon: 'nursery', stat: 'essenceGain', per: 1.5, built: true, req: { kind: 'count', stat: 'nurseryHarvests', count: 1, noun: 'nursery harvest' } },
   { id: 'cards', name: 'Tarot cards', icon: 'card', stat: 'shardGain', per: 1.5, built: true, req: { kind: 'count', stat: 'cardsDrawn', count: 1, noun: 'Tarot card' } },
   { id: 'galaxies', name: 'Galaxies', icon: 'galaxy', stat: 'galaxyCoreGain', per: 1.1, built: true, req: { kind: 'count', stat: 'galacticsAll', count: 1, noun: 'Galactic Rebirth' } },
+  // 1.3.0: the rest of the game (the playtest: "it should be an index for the entire game")
+  { id: 'engines', name: 'Engines', icon: 'mote', stat: 'productionMult', per: 1.5, built: true, req: { kind: 'count', stat: 'nebulasAll', count: 1, noun: 'Nebula' } },
+  { id: 'tiers', name: 'Star tiers', icon: 'giant', stat: 'tapPower', per: 1.5, built: true, req: { kind: 'count', stat: 'nebulasAll', count: 1, noun: 'Nebula' } },
+  { id: 'recipes', name: 'Elixirs', icon: 'alchemy', stat: 'oreGain', per: 1.25, built: true, req: { kind: 'count', stat: 'recipesFound', count: 1, noun: 'recipe found' } },
+  { id: 'parts', name: 'Ship parts', icon: 'ship', stat: 'shipLoot', per: 1.25, built: true, req: { kind: 'count', stat: 'singularitiesAll', count: 1, noun: 'Singularity' } },
+  { id: 'trials', name: 'Trials', icon: 'trial', stat: 'shardGain', per: 1.25, built: true, req: { kind: 'count', stat: 'trialsDone', count: 1, noun: 'Trial done' } },
+  { id: 'leviathans', name: 'Leviathans', icon: 'leviathan', stat: 'scaleGain', per: 1.25, built: true, req: { kind: 'count', stat: 'leviathanKills', count: 1, noun: 'Leviathan kill' } },
+  { id: 'banners', name: 'Spire banners', icon: 'spire', stat: 'spirePower', per: 1.25, built: true, req: { kind: 'count', stat: 'spireBest', count: 10, noun: 'Spire floor' } },
+  { id: 'sigils', name: 'Sigils', icon: 'sigil', stat: 'essenceGain', per: 1.25, built: true, req: { kind: 'count', stat: 'sigils', count: 1, noun: 'sigil' } },
+  { id: 'mega', name: 'Megastructures', icon: 'mega', stat: 'darkMatterGain', per: 1.05, built: true, req: { kind: 'count', stat: 'megaStages', count: 1, noun: 'megastructure stage' } },
 ];
 
 export const INDEX_PAGE_BY_ID: ReadonlyMap<string, IndexPage> = new Map(INDEX_PAGES.map((p) => [p.id, p]));

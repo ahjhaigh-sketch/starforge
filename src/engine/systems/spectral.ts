@@ -1,7 +1,7 @@
 import { BALANCE } from '../../content/balance';
 import { SPECTRAL, SPECTRAL_BY_ID } from '../../content/nebulaExtras';
 import { planLimited, type PurchasePlan } from '../buy';
-import type { CostCurve } from '../cost';
+import { type CostCurve, lateRamp } from '../cost';
 import { D, type Decimal, ZERO } from '../decimal';
 import { cur, type GameState, spend } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
@@ -58,7 +58,7 @@ export function setFocus(s: GameState, id: string | null): boolean {
 
 function curve(id: 'lens' | 'afterglow'): CostCurve {
   const [base, growth] = SP[id];
-  return { base, brackets: [{ from: 0, ratio: growth }] };
+  return lateRamp({ base, brackets: [{ from: 0, ratio: growth }] });
 }
 
 export function spectralPlan(s: GameState, id: 'lens' | 'afterglow'): PurchasePlan {

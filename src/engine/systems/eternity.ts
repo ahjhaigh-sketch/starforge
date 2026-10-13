@@ -12,7 +12,7 @@ import { maxBuy } from '../cost';
 import { D, type Decimal, ZERO } from '../decimal';
 import { events } from '../events';
 import { milestoneReached, onAnyReset, performReset } from '../layers';
-import { cur, type GameState, spend } from '../state';
+import { automatedSpend, cur, free, type GameState, spend, usable } from '../state';
 import { invalidateStats, registerSources, stat } from '../stats';
 import { registerSystem, type TickContext, upkeepDue } from '../tick';
 import type { Tree } from '../treeKit';
@@ -134,7 +134,7 @@ type Budget = Map<string, Decimal>;
 const budgetOf = (s: GameState, b: Budget, currency: string): Decimal => {
   let v = b.get(currency);
   if (!v) {
-    v = cur(s, currency).mul(ET.constantShare);
+    v = usable(s, currency).mul(ET.constantShare);
     b.set(currency, v);
   }
   return v;
@@ -229,11 +229,11 @@ function autoGalactic(s: GameState, b: Budget): void {
   buyTree(s, kitTree(s, galacticTree), b);
   for (const m of MEGASTRUCTURES) while (buildStage(s, m.id));
   if (coloniesOpen(s)) {
-    const supply = cur(s, 'supply');
+    const supply = usable(s, 'supply');
     for (const r of RESEARCH) if (!hasResearch(s, r.id) && D(r.cost).lte(supply.mul(0.5))) buyResearch(s, r.id);
     s.colonies.list.forEach((c, i) => {
-      for (const { id } of BUILDINGS) for (let k = 0; k < 10 && buildingCost(c, id).lte(cur(s, 'supply').mul(0.25)); k++) buyBuilding(s, i, id);
-      if (!c.port && cur(s, 'supply').gte(BALANCE.galaxyBuild.portCost * 2)) buyPort(s, i);
+      for (const { id } of BUILDINGS) for (let k = 0; k < 10 && buildingCost(c, id).lte(usable(s, 'supply').mul(0.25)); k++) buyBuilding(s, i, id);
+      if (!c.port && usable(s, 'supply').gte(BALANCE.galaxyBuild.portCost * 2)) buyPort(s, i);
     });
     for (let a = 0; a < s.colonies.list.length && s.colonies.routes.length < maxRoutes(s); a++) {
       for (let c = a + 1; c < s.colonies.list.length; c++) openRoute(s, a, c);
@@ -255,7 +255,7 @@ function autoSingularity(s: GameState, b: Budget): void {
     for (let k = ANTIMATTER_ENGINES.length - 1; k >= 0; k--) {
       const e = ANTIMATTER_ENGINES[k]!;
       if (!MIRROR_ENGINES.revealed(s, k)) continue;
-      const n = maxBuy(MIRROR_ENGINES.curve(e.id), MIRROR_ENGINES.owned(s, e.id), cur(s, 'antimatter').div(stat(s, 'amCostMult')));
+      const n = maxBuy(MIRROR_ENGINES.curve(e.id), MIRROR_ENGINES.owned(s, e.id), usable(s, 'antimatter').div(stat(s, 'amCostMult')));
       if (n > 0) MIRROR_ENGINES.buy(s, e.id, n);
     }
   }
@@ -283,11 +283,12 @@ function autoSupernova(s: GameState, b: Budget): void {
 export function runEternity(s: GameState): void {
   const b: Budget = new Map();
   events.automated(() => {
-    if (automating(s, 'galactic')) autoGalactic(s, b);
-    if (automating(s, 'singularity')) autoSingularity(s, b);
-    if (automating(s, 'nebula')) autoNebula(s, b);
-    if (automating(s, 'supernova')) autoSupernova(s, b);
-    if (automating(s, 'stardust')) buyConstantsOf(s, 'stellar', b);
+    // 1.3.0: Eternity never spends the safe tenth either
+    if (automating(s, 'galactic')) automatedSpend('Eternity: Galactic', () => autoGalactic(s, b));
+    if (automating(s, 'singularity')) automatedSpend('Eternity: Singularity', () => autoSingularity(s, b));
+    if (automating(s, 'nebula')) automatedSpend('Eternity: Nebula', () => autoNebula(s, b));
+    if (automating(s, 'supernova')) automatedSpend('Eternity: Supernova', () => autoSupernova(s, b));
+    if (automating(s, 'stardust')) automatedSpend('Eternity: Stardust', () => buyConstantsOf(s, 'stellar', b));
   });
 }
 
@@ -308,8 +309,10 @@ export function registerEternity(): void {
   // Eternal Void: a tenth of each Singularity's Dark Matter charges the Reactor
   onAnyReset((s, layerId, before) => {
     if (layerId !== 'singularity' || !automating(s, 'singularity') || !reactorOpen(s) || before.gained.lte(0)) return;
-    const feed = before.gained.mul(0.1).floor().min(cur(s, 'darkMatter'));
-    if (feed.gte(1) && spend(s, 'darkMatter', feed)) s.reactor.charge = s.reactor.charge.add(feed);
+    automatedSpend('Eternal Void (Reactor)', () => {
+      const feed = before.gained.mul(0.1).floor().min(free(s, 'darkMatter').floor());
+      if (feed.gte(1) && spend(s, 'darkMatter', feed)) s.reactor.charge = s.reactor.charge.add(feed);
+    });
   });
   registerSystem({
     id: 'eternity',

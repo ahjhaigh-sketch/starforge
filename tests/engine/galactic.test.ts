@@ -45,12 +45,14 @@ function clone(s: GameState): GameState {
 const labels = (s: GameState, id: string) => breakdown(s, id).map((l) => l.label);
 
 describe('Galactic Rebirth', () => {
-  it('needs all 8 Black Hole stages, the Mirror Key and 1e8 Dark Matter this run', () => {
+  it('1.3.0: needs the anti-star at Protostar (Mirror depth 11, not Black Hole stages), the Mirror Key and 1e8 Dark Matter this run', () => {
     const s = ready();
     expect(galacticReady(s)).toBe(true);
-    s.blackHole.mass = D(5e6);
+    s.mirror.depth = 10;
     expect(galacticReady(s)).toBe(false);
-    s.blackHole.mass = D(2e7);
+    s.mirror.depth = 11;
+    s.blackHole.mass = D(0);
+    expect(galacticReady(s)).toBe(true);
     s.mirror.upgrades = ['mu.spark'];
     expect(galacticReady(s)).toBe(false);
     s.mirror.upgrades = ['mu.key'];
@@ -225,6 +227,7 @@ describe('the Observatory', () => {
     // a new Galactic run brings a new sky
     const seed = s.observatory.seed;
     s.blackHole.mass = D(2e7);
+    s.mirror.depth = 11;
     gain(s, 'darkMatter', D(1e9));
     invalidateStats();
     performReset(s, 'galactic');

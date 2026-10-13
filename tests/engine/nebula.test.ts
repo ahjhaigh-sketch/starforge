@@ -303,10 +303,10 @@ describe('the Nebula', () => {
 });
 
 describe('the Nebula Tree and Nebula Constants', () => {
-  it('has 100 nodes with unique ids, every parent real', () => {
-    expect(NEBULA_TREE).toHaveLength(100);
+  it('has 101 nodes with unique ids (1.3.0: Constant Flow joins the 100), every parent real', () => {
+    expect(NEBULA_TREE).toHaveLength(101);
     const ids = new Set(NEBULA_TREE.map((n) => n.id));
-    expect(ids.size).toBe(100);
+    expect(ids.size).toBe(101);
     for (const n of NEBULA_TREE) for (const p of n.parents) expect(ids.has(p)).toBe(true);
   });
 

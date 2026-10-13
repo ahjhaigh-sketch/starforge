@@ -4,7 +4,7 @@ import { planLimited, type PurchasePlan } from '../buy';
 import { bulkCost, type CostCurve } from '../cost';
 import { D, type Decimal, ZERO } from '../decimal';
 import { events } from '../events';
-import { cur, type GameState, spend } from '../state';
+import { cur, type GameState, spend, usable } from '../state';
 import { registerSources, stat } from '../stats';
 
 /**
@@ -124,8 +124,8 @@ const AUTO_STEPS_PER_PASS = 4;
  */
 export function autoPlanets(s: GameState, share: number): void {
   if (!orbitalsOpen(s)) return;
-  const keep = cur(s, 'stardust').mul(1 - share);
-  const left = () => cur(s, 'stardust').sub(keep);
+  const keep = usable(s, 'stardust').mul(1 - share);
+  const left = () => usable(s, 'stardust').sub(keep);
   for (let r = 0; r < ORBITALS.rings.length; r++) {
     if (!ringOpen(s, r)) continue;
     for (let i = 0; i < ORBITALS.rings[r]!.slots; i++) {

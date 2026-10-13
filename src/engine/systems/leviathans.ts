@@ -16,7 +16,7 @@ import { tapRules, tapValue } from './stardust';
  * - While you fight, damage comes from three places, all x Leviathan damage:
  *   output (1 + log10(1 + Stardust a second))^2 a second, every Wyrm on the team 25 a second,
  *   and each tap (1 + log10(1 + tap value))^2.
- * - A kill pays 5 x 2^k scales x scale gain; the first kill of each one opens the next. Kills are
+ * - A kill pays 5 x 2^k scales x scale gain (x10 for the first kill, 1.3.0); the first kill of each one opens the next. Kills are
  *   counted in closed form, so a long absence is one calculation.
  * - Scales buy the Scale Tree (made with the one tree engine, like the Singularity Tree).
  */
@@ -72,7 +72,8 @@ export function damageLeviathan(s: GameState, amount: Decimal): number {
   const first = owned === 0;
   s.leviathans.kills[L0.id] = owned + n;
   s.leviathans.damage = first ? ZERO : pool.sub(bulkCost(curve, owned, n)).max(0);
-  gain(s, 'scales', scalesFor(s, k).mul(n));
+  // 1.3.0: the first kill of each pays x10 scales, so the Scale Tree gets going
+  gain(s, 'scales', scalesFor(s, k).mul(first ? n - 1 + L.firstKillMult : n));
   s.stats.leviathanKills = (s.stats.leviathanKills ?? 0) + n;
   s.stats.leviathansBeaten = Math.max(s.stats.leviathansBeaten ?? 0, k + 1);
   invalidateStats();

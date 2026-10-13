@@ -56,15 +56,15 @@ export function Hud() {
   const sparksVisible = useSnap((s) => s.sparksVisible);
   return (
     <header className="hud">
-      <CurrencyPill icon="stardust" label="Stardust" value={dustValue} rate={dustRate} onPoke={() => commands.poke('pill')} />
-      {shardsVisible && <CurrencyPill icon="shard" label="Nova Shards" color="#5A2A8C" value={shardValue} />}
-      {essenceVisible && <CurrencyPill icon="nebula" label="Nebula Essence" color="#1E6F88" value={essenceValue} />}
-      {darkMatterVisible && <CurrencyPill icon="darkmatter" label="Dark Matter" color="#3A2470" value={darkMatterValue} />}
-      {antimatterVisible && <CurrencyPill icon="antimatter" label="Antimatter" color="#2A6F8F" value={antimatterValue} />}
-      {coresVisible && <CurrencyPill icon="galaxy" label="Galaxy Cores" color="#3F7A12" value={coresValue} />}
-      {chrononsVisible && <CurrencyPill icon="chronon" label="Chronons" color="#9A4A12" value={chrononValue} />}
+      <CurrencyPill icon="stardust" label="Stardust" currency="stardust" value={dustValue} rate={dustRate} onPoke={() => commands.poke('pill')} />
+      {shardsVisible && <CurrencyPill icon="shard" label="Nova Shards" currency="shards" color="#5A2A8C" value={shardValue} />}
+      {essenceVisible && <CurrencyPill icon="nebula" label="Nebula Essence" currency="essence" color="#1E6F88" value={essenceValue} />}
+      {darkMatterVisible && <CurrencyPill icon="darkmatter" label="Dark Matter" currency="darkMatter" color="#3A2470" value={darkMatterValue} />}
+      {antimatterVisible && <CurrencyPill icon="antimatter" label="Antimatter" currency="antimatter" color="#2A6F8F" value={antimatterValue} />}
+      {coresVisible && <CurrencyPill icon="galaxy" label="Galaxy Cores" currency="galaxyCores" color="#3F7A12" value={coresValue} />}
+      {chrononsVisible && <CurrencyPill icon="chronon" label="Chronons" currency="chronons" color="#9A4A12" value={chrononValue} />}
       {sparksVisible && <CurrencyPill icon="spark" label="Multiverse Sparks" color="#5A2A8C" value={sparkValue} className="pill-rainbow" />}
-      {oreVisible && <CurrencyPill icon="belt" label="Ore" color="#3B4370" value={oreValue} />}
+      {oreVisible && <CurrencyPill icon="belt" label="Ore" currency="ore" color="#3B4370" value={oreValue} />}
       <div className="tag-pill chunk tier-pill" style={tint('var(--panel)')} title={`Star Tier ${tierIndex + 1} of 12`} onClick={() => commands.poke('tier')}>
         <span className="tier-dot" style={{ background: tierColor, color: tierColor }} />
         <span className="ol-sm">

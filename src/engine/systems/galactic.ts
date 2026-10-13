@@ -1,21 +1,21 @@
 import { BALANCE } from '../../content/balance';
 import { CONSTANTS } from '../../content/constants';
 import { GALACTIC_TREE, GALAXIES, GALAXY_BY_ID, type GalaxyDef, type GalaxyGoal } from '../../content/galactic';
-import { D, type Decimal, ZERO } from '../decimal';
+import { D, type Decimal, softcap, ZERO } from '../decimal';
 import { events } from '../events';
 import { layer, milestoneReached, performReset, registerLayer } from '../layers';
-import { gain, type GameState } from '../state';
+import { gain, type GameState, gainPassive } from '../state';
 import { defineStat, invalidateStats, registerSources, stat, type StatSource } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
 import { makeTree } from '../treeKit';
-import { bhStage } from './blackhole';
 import { mirrorKey } from './mirror';
 import { singularityGain, singularityReady } from './singularity';
 import { goalMet as trialGoalMet, inTrial } from './trials';
 
 /**
  * Galactic Rebirth: the fourth reset (Game design: "Galactic Rebirth, Big Crunch and Multiverse").
- * - Needs all 8 Black Hole stages, the Mirror Key and 1e8 Dark Matter gained this Galactic run.
+ * - Needs the anti-star at Protostar (Mirror depth 11; 1.3.0, it was all 8 Black Hole stages), the
+ *   Mirror Key and 1e8 Dark Matter gained this Galactic run.
  *   Gives floor((DM / 1e8)^0.5) x Galaxy Core gain. Lifetime Galaxy Cores give Dark Matter
  *   x(1 + GC)^0.3.
  * - Resets the Singularity layer: Dark Matter, the Singularity Tree, Void Constants, the Black
@@ -48,23 +48,26 @@ export function galacticGain(s: GameState): Decimal {
   const dm = runDarkMatter(s);
   const need = darkMatterNeeded(s);
   if (dm.lt(need)) return ZERO;
-  return dm.div(need).pow(G.gainPow).mul(stat(s, 'galaxyCoreGain')).floor();
+  // 1.3.0: softcapped above 10,000 a Galactic Rebirth
+  return softcap(dm.div(need).pow(G.gainPow).mul(stat(s, 'galaxyCoreGain')), G.softcapAt, G.softcapPow).floor();
 }
 
-/** Each requirement on its own, for the reset bar and the panel. */
-export function galacticReqs(s: GameState): { stages: number; key: boolean; dm: Decimal } {
-  return { stages: bhStage(s), key: mirrorKey(s), dm: runDarkMatter(s) };
+/** Each requirement on its own, for the reset bar and the panel: how far the anti-star has collapsed, the key, the Dark Matter. */
+export function galacticReqs(s: GameState): { depth: number; key: boolean; dm: Decimal } {
+  return { depth: s.mirror.depth, key: mirrorKey(s), dm: runDarkMatter(s) };
 }
 
 export function galacticReady(s: GameState): boolean {
   const r = galacticReqs(s);
-  return r.stages >= 8 && r.key && r.dm.gte(darkMatterNeeded(s)) && galacticGain(s).gte(1);
+  return r.depth >= G.mirrorDepth && r.key && r.dm.gte(darkMatterNeeded(s)) && galacticGain(s).gte(1);
 }
 
 /** Dark Matter this run needed for one more Galaxy Core. */
 export function nextCoreAt(s: GameState): Decimal {
-  const next = galacticGain(s).add(1).div(stat(s, 'galaxyCoreGain'));
-  return next.pow(1 / G.gainPow).mul(darkMatterNeeded(s));
+  let target = galacticGain(s).add(1);
+  // undo the softcap first: above it, each Core needs (Cores / start)^(1 / power) times as much
+  if (target.gt(G.softcapAt)) target = D(G.softcapAt).mul(target.div(G.softcapAt).pow(1 / G.softcapPow));
+  return target.div(stat(s, 'galaxyCoreGain')).pow(1 / G.gainPow).mul(darkMatterNeeded(s));
 }
 
 // ---------- galaxies ----------
@@ -213,6 +216,7 @@ export function registerGalactic(): void {
       { at: 1, id: 'keepSingularity', text: 'Keep your Singularity milestones' },
       { at: 2, id: 'autoSingularity', text: 'Auto-Singularity when its gain reaches a number you set' },
       { at: 3, id: 'keepTree', text: 'Keep the Singularity Tree' },
+      { at: BALANCE.passive.at.galactic!, id: 'passive', text: 'Gain 1% of your Galactic gain every second, without a Galactic Rebirth' },
       { at: 5, id: 'keepHole', text: 'Keep the Black Hole, the Prism Wheel banks and the Reactor' },
       { at: 7, id: 'crunch', text: 'The Big Crunch stirs (explore 7 galaxies)' },
       { at: 10, id: 'singularityFree', text: 'A Singularity resets nothing; 1/50 of its gain trickles in every second' },
@@ -242,6 +246,8 @@ export function registerGalactic(): void {
       if (milestoneReached(s, 'galactic', 'autoSingularity') && s.galactic.autoAt.gt(0) && singularityReady(s) && singularityGain(s).gte(s.galactic.autoAt) && !(inTrial(s) && !trialGoalMet(s))) performReset(s, 'singularity');
       // Milestone 10: 1/50 of the Singularity gain trickles in every second, nothing reset
       if (singularityFree(s) && singularityReady(s)) gain(s, 'darkMatter', singularityGain(s).mul(BALANCE.singularity.trickle * dt * ctx.gainScale));
+      // 1.3.0, Singularity milestone 15: 1% of the Singularity gain a second
+      else if (milestoneReached(s, 'singularity', 'passive') && singularityReady(s)) gainPassive(s, 'darkMatter', singularityGain(s).mul(BALANCE.passive.share * dt * ctx.gainScale));
     },
   });
 }

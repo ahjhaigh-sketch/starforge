@@ -116,6 +116,8 @@ export const HUD_PARTS: ReadonlyArray<{ id: string; name: string }> = [
   { id: 'attune', name: 'Attunement chips' },
   { id: 'tier', name: 'Tier pill' },
   { id: 'save', name: 'Saved note' },
+  // 1.3.0: the engines' machines circling the star
+  { id: 'machines', name: 'Engine machines round the star' },
 ];
 
 export function toggleHud(s: GameState, id: string): void {

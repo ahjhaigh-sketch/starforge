@@ -4,7 +4,7 @@ import { BALANCE } from '../content/balance';
 import type { ShipDesign } from '../content/shipParts';
 
 /** Bump with every change to the save's shape, and add a migration + an old-save fixture test. */
-export const SAVE_VERSION = 21;
+export const SAVE_VERSION = 22;
 /** A new Fusion board is 3 x 3 (BALANCE.fusion.baseSize). */
 const BALANCE_FUSION_CELLS = 9;
 
@@ -117,6 +117,8 @@ export interface GameState {
   lastResetAt: Record<string, number>;
   /** Nova Tree nodes owned, by ID, with their level (repeatable nodes go past 1). */
   novaTree: Record<string, number>;
+  /** 1.3.0: the safe tenth of each currency, which automation may never spend (BALANCE.automation.keepShare). */
+  kept: Record<string, Decimal>;
   /** Auto-buyer switches and how much of your Stardust each may spend (1, 0.5, 0.1). */
   auto: Record<string, { on: boolean; spend: number }>;
   /** The Asteroid Belt: upgrade levels, Belt Tier, and the asteroids in the field (ids and rarities). */
@@ -172,7 +174,15 @@ export interface GameState {
   /** Constellation Runes: each shrine's settings and progress, copies of every rune, the rune stream. */
   runes: { shrines: Record<string, ShrineState>; copies: Record<string, Decimal>; rng: RngState; stars: Record<string, number> };
   /** Celestial Auras: copies found, the one equipped, auto-rolling dice, and their own stream. */
-  auras: { copies: Record<string, Decimal>; equipped: string | null; auto: boolean; rng: RngState };
+  auras: {
+    copies: Record<string, Decimal>;
+    equipped: string | null;
+    auto: boolean;
+    rng: RngState;
+    /** 1.3.0: auras worn in the second and third slots, and each aura's Polish rank. */
+    more: string[];
+    ranks: Record<string, number>;
+  };
   /** Mutations: mutated copies of each rune by mutation, asteroids harvested by rarity.mutation, their own stream. */
   mutations: { runes: Record<string, Record<string, Decimal>>; asteroids: Record<string, number>; others: Record<string, number>; rng: RngState };
   /** Void Wyrms: stacks of identical Wyrms ("species|form|mutation"), stack levels, the team, eggs hatched, variants found. */
@@ -217,13 +227,14 @@ export interface GameState {
   /** Phase 20: the Wardrobe's choices (what's unlocked is worked out from medals and stats, never stored). */
   cosmetics: { skin: string; trail: string; background: string; burst: string; theme: string };
   /** Phase 20.2: Starlight Alchemy: recipes found, mixes tried, elixirs on the shelf, and when each boost ends (play time). */
-  alchemy: { known: string[]; tried: string[]; shelf: Record<string, number>; active: Record<string, number> };
+  alchemy: { known: string[]; tried: string[]; shelf: Record<string, number>; active: Record<string, number> ; hints?: Record<string, number> };
   /**
    * Phase 20.3: Space Weather: the weather now (null: clear) and when it ends, when the next natural
    * one rolls in (0: not scheduled yet), whether this one came from a beacon, beacon charges, the
    * comets already counted toward charges, charges ever spent, and the weather's own random stream.
    */
-  weather: { kind: string | null; until: number; next: number; summoned: boolean; charges: number; counted: number; spent: number; rng: RngState };
+  /** 1.3.0: `auto` is the weather the beacon summons by itself when a charge is ready and the sky is clear (null: off). */
+  weather: { kind: string | null; until: number; next: number; summoned: boolean; charges: number; counted: number; spent: number; rng: RngState; auto?: string | null };
   /**
    * Phase 20.5: Planet Defense: the turret in each socket ('' empty), each kind's level, the best wave
    * won, the wave auto-defend last fought, whether it's on, the battles' seed, auto-defend's unspent
@@ -318,6 +329,7 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     quests: [],
     lastResetAt: {},
     novaTree: {},
+    kept: {},
     auto: {},
     belt: { upgrades: {}, tier: 0, field: [], nextId: 1, spawnAcc: 0, droneAcc: 0, oreThisTier: D(0), rng: seedRng(seed ^ 0x5eed_be17) },
     drill: { depth: 0, damage: D(0), drones: 0, bits: 0, mastery: {} },
@@ -332,7 +344,7 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
     nebulaTree: {},
     nebula: { autoAt: D(0) },
     runes: { shrines: {}, copies: {}, rng: seedRng(seed ^ 0x7b3f_d611), stars: {} },
-    auras: { copies: {}, equipped: null, auto: false, rng: seedRng(seed ^ 0x0a4a_51d3) },
+    auras: { copies: {}, equipped: null, auto: false, rng: seedRng(seed ^ 0x0a4a_51d3), more: [], ranks: {} },
     mutations: { runes: {}, asteroids: {}, others: {}, rng: seedRng(seed ^ 0x3d7a_7e05) },
     wyrms: { stacks: {}, levels: {}, team: [], eggs: 0, found: [], catchAcc: 0, rng: seedRng(seed ^ 0x77c3_9a01) },
     nursery: { plots: [], seeds: {}, upgrades: {}, found: [], rng: seedRng(seed ^ 0x5eed_0b10) },
@@ -370,16 +382,115 @@ export function createInitialState(now: number = Date.now(), seed: number = now)
 /** Adds an amount of a currency, counting it toward this-run and all-time totals. */
 export function gain(s: GameState, currency: string, amount: Decimal): void {
   if (amount.lte(0)) return;
-  s.currencies[currency] = (s.currencies[currency] ?? D(0)).add(amount);
+  const have = s.currencies[currency] ?? D(0);
+  s.currencies[currency] = have.add(amount);
   s.totals.run[currency] = (s.totals.run[currency] ?? D(0)).add(amount);
   s.totals.all[currency] = (s.totals.all[currency] ?? D(0)).add(amount);
+  // the safe tenth: a share of every gain is kept away from automation (never more than was held
+  // before it, so a reset or a Belt Tier that emptied the currency leaves nothing stale behind)
+  const k = s.kept[currency];
+  s.kept[currency] = (k ? (k.gt(have) ? have : k) : D(0)).add(amount.mul(BALANCE.automation.keepShare));
 }
 
-/** Spends if affordable; returns whether it did. */
+/**
+ * 1.3.0: a passive gain (a share of a layer's reset gain each second, without resetting). It is yours to
+ * spend and counts in lifetime totals, but not in this run's total: the next layer's gain and the
+ * galaxies' goals are measured on run totals, and passive income counted there made every reset come
+ * round far sooner (the simulator's first Big Crunch came at 1 h 23 min instead of 8 h).
+ */
+export function gainPassive(s: GameState, currency: string, amount: Decimal): void {
+  if (amount.lte(0)) return;
+  const run = s.totals.run[currency];
+  gain(s, currency, amount);
+  if (run) s.totals.run[currency] = run;
+  else delete s.totals.run[currency];
+}
+
+// ---------- 1.3.0: the safe tenth, and where automated spending went ----------
+
+/** Inside automation (auto-buyers, auto-roll, Eternity, the Prism Wheel): the name of what is spending. */
+let sink: string | null = null;
+
+/** Automated spending by currency and by what spent it, over the current and the last window (not saved). */
+interface SpendLog {
+  start: number;
+  now: Map<string, Map<string, Decimal>>;
+  last: Map<string, Map<string, Decimal>>;
+  lastSpan: number;
+}
+const spendLogs = new WeakMap<GameState, SpendLog>();
+
+/** Runs `fn` as automation named `name`: its spending can't touch the safe tenth, and is logged under that name. */
+export function automatedSpend<T>(name: string, fn: () => T): T {
+  const outer = sink;
+  sink = name;
+  try {
+    return fn();
+  } finally {
+    sink = outer;
+  }
+}
+
+/** True inside automatedSpend. */
+export const spendingAutomatically = () => sink !== null;
+
+/** The safe tenth of a currency right now (never more than you have). */
+export function keptOf(s: GameState, currency: string): Decimal {
+  const k = s.kept[currency];
+  if (!k) return D(0);
+  const have = s.currencies[currency] ?? D(0);
+  return k.gt(have) ? have : k;
+}
+
+/** What automation may spend: everything above the safe tenth. */
+export function free(s: GameState, currency: string): Decimal {
+  return (s.currencies[currency] ?? D(0)).sub(keptOf(s, currency));
+}
+
+/** What a purchase may use: inside automation everything above the safe tenth, otherwise all of it. */
+export function usable(s: GameState, currency: string): Decimal {
+  return sink !== null ? free(s, currency) : (s.currencies[currency] ?? D(0));
+}
+
+function logSpend(s: GameState, currency: string, amount: Decimal): void {
+  let log = spendLogs.get(s);
+  if (!log) spendLogs.set(s, (log = { start: s.playtime, now: new Map(), last: new Map(), lastSpan: 0 }));
+  if (s.playtime - log.start >= BALANCE.automation.spendWindow || s.playtime < log.start) {
+    log.last = log.now;
+    log.lastSpan = Math.max(1, s.playtime - log.start);
+    log.now = new Map();
+    log.start = s.playtime;
+  }
+  const byName = log.now.get(currency) ?? new Map<string, Decimal>();
+  byName.set(sink!, (byName.get(sink!) ?? D(0)).add(amount));
+  log.now.set(currency, byName);
+}
+
+/** Automated spending of a currency a second over the last full window, biggest first. */
+export function recentSpending(s: GameState, currency: string): Array<{ name: string; perSecond: Decimal }> {
+  const log = spendLogs.get(s);
+  const byName = log?.last.get(currency);
+  if (!log || !byName) return [];
+  return [...byName.entries()].map(([name, total]) => ({ name, perSecond: total.div(log.lastSpan) })).sort((a, b) => b.perSecond.cmp(a.perSecond));
+}
+
+/**
+ * Spends if affordable; returns whether it did. Inside automation the safe tenth is off limits; your
+ * own purchases may spend it, and then the safe tenth is never more than what's left.
+ */
 export function spend(s: GameState, currency: string, amount: Decimal): boolean {
   const have = s.currencies[currency] ?? D(0);
+  if (sink !== null) {
+    if (free(s, currency).lt(amount)) return false;
+    s.currencies[currency] = have.sub(amount);
+    if (amount.gt(0)) logSpend(s, currency, amount);
+    return true;
+  }
   if (have.lt(amount)) return false;
-  s.currencies[currency] = have.sub(amount);
+  const left = have.sub(amount);
+  s.currencies[currency] = left;
+  const k = s.kept[currency];
+  if (k?.gt(left)) s.kept[currency] = left;
   return true;
 }
 

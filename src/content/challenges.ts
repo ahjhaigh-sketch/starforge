@@ -120,19 +120,24 @@ export const SCALE_TREE: readonly KitNode[] = SCALE_SPECS.map(([id, name, desc, 
 // ---------- the Spire ----------
 
 /** A banner for every tenth floor (cosmetic: it flies over the Spire and your star). */
-export const SPIRE_BANNERS: ReadonlyArray<{ id: string; name: string; color: string }> = [
-  { id: 'ember', name: 'Ember Pennant', color: '#FF8A3D' },
-  { id: 'tide', name: 'Tide Pennant', color: '#2EE6FF' },
-  { id: 'moss', name: 'Moss Pennant', color: '#5FD39B' },
-  { id: 'dusk', name: 'Dusk Pennant', color: '#B06BFF' },
-  { id: 'gold', name: 'Gold Pennant', color: '#FFC83D' },
-  { id: 'rose', name: 'Rose Pennant', color: '#FF7AE0' },
-  { id: 'frost', name: 'Frost Pennant', color: '#E8E0FF' },
-  { id: 'blood', name: 'Blood Pennant', color: '#FF5640' },
-  { id: 'deep', name: 'Deep Pennant', color: '#4FB6FF' },
-  { id: 'void', name: 'Void Pennant', color: '#3A2470' },
-  { id: 'aurora', name: 'Aurora Pennant', color: '#9FE7FF' },
-  { id: 'crown', name: 'Crown of the Spire', color: '#FF4FC1' },
+/**
+ * The Spire's banners, one every tenth floor. 1.3.0: a flown banner boosts something, by 1 + its rate x your best
+ * floor (they were only pennants; the playtest couldn't tell what the Spire gave). One flies at a time. The rates
+ * live in BALANCE.spire.bannerRates by banner ID.
+ */
+export const SPIRE_BANNERS: ReadonlyArray<{ id: string; name: string; color: string; stats: readonly string[]; what: string }> = [
+  { id: 'ember', name: 'Ember Pennant', color: '#FF8A3D', stats: ['productionMult'], what: 'Stardust' },
+  { id: 'tide', name: 'Tide Pennant', color: '#2EE6FF', stats: ['shardGain'], what: 'Nova Shards' },
+  { id: 'moss', name: 'Moss Pennant', color: '#5FD39B', stats: ['oreGain', 'alloyGain'], what: 'ore and alloy' },
+  { id: 'dusk', name: 'Dusk Pennant', color: '#B06BFF', stats: ['runeLuck'], what: 'rune luck' },
+  { id: 'gold', name: 'Gold Pennant', color: '#FFC83D', stats: ['tapPower'], what: 'taps' },
+  { id: 'rose', name: 'Rose Pennant', color: '#FF7AE0', stats: ['essenceGain'], what: 'Essence' },
+  { id: 'frost', name: 'Frost Pennant', color: '#E8E0FF', stats: ['cometRate'], what: 'comet rate' },
+  { id: 'blood', name: 'Blood Pennant', color: '#FF5640', stats: ['leviathanDamage'], what: 'Leviathan damage' },
+  { id: 'deep', name: 'Deep Pennant', color: '#4FB6FF', stats: ['darkMatterGain'], what: 'Dark Matter' },
+  { id: 'void', name: 'Void Pennant', color: '#3A2470', stats: ['antimatterMult'], what: 'Antimatter' },
+  { id: 'aurora', name: 'Aurora Pennant', color: '#9FE7FF', stats: ['galaxyCoreGain'], what: 'Galaxy Cores' },
+  { id: 'crown', name: 'Crown of the Spire', color: '#FF4FC1', stats: ['productionMult', 'shardGain', 'essenceGain'], what: 'Stardust, shards and Essence' },
 ];
 
 /** Each Spire floor plays one Trial's level-1 debuff while you climb it (never Fast Nova). */

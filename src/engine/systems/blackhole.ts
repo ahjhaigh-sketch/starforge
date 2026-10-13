@@ -1,9 +1,9 @@
 import { BALANCE } from '../../content/balance';
 import { planFlat, type FlatPlan } from '../buy';
-import { D, type Decimal, ONE, ZERO } from '../decimal';
+import { D, Decimal, ONE, ZERO } from '../decimal';
 import { events } from '../events';
 import { onAnyReset } from '../layers';
-import { cur, type GameState, spend } from '../state';
+import { automatedSpend, cur, free, type GameState, spend } from '../state';
 import { registerSources, stat } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
 
@@ -172,8 +172,10 @@ export function registerBlackHole(): void {
   onAnyReset((s, layerId, before) => {
     if (layerId !== 'singularity' || !s.wheel.on || !wheelOpen(s) || before.gained.lte(0)) return;
     const shares = normalizeShares(s.wheel.shares);
-    const diverted = before.gained.mul(B.wheelLimit);
-    s.currencies.darkMatter = cur(s, 'darkMatter').sub(diverted).max(0);
+    // 1.3.0: the wheel takes its 80% but never the safe tenth
+    const diverted = Decimal.min(before.gained.mul(B.wheelLimit), free(s, 'darkMatter').max(0));
+    if (diverted.lte(0)) return;
+    automatedSpend('Prism Wheel', () => spend(s, 'darkMatter', diverted));
     WHEEL.forEach((w, i) => {
       s.wheel.banks[w.id] = wheelBank(s, w.id).add(diverted.mul(shares[i]! / B.wheelLimit));
     });

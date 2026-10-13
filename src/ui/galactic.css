@@ -52,3 +52,9 @@
 @media (max-width: 900px) {
   .obs-cols { grid-template-columns: 1fr; }
 }
+
+/* 1.3.0: the Observatory's hint: the best next link, dashed and breathing */
+.obs-hint { stroke: var(--lime); stroke-width: 3; stroke-dasharray: 10 8; stroke-linecap: round; opacity: 0.9; animation: obs-hint 1.6s ease-in-out infinite; pointer-events: none; }
+@keyframes obs-hint { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .obs-hint { animation: none; } }
+.reduced-motion .obs-hint { animation: none; }

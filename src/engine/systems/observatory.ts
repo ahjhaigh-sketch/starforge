@@ -103,6 +103,76 @@ export function clearLinks(s: GameState): void {
   s.observatory.links = [];
 }
 
+type Link = [number, number];
+
+/** The link that would raise the score most if drawn next, and by how much (null when the shape is full or nothing helps). */
+export function bestNextLink(s: GameState): { a: number; b: number; gain: number } | null {
+  const links = s.observatory.links as Link[];
+  if (links.length >= maxLinks(s)) return null;
+  const sky = skyOf(s);
+  const now = constellationScore(sky, links);
+  let best: { a: number; b: number; gain: number } | null = null;
+  for (let a = 0; a < sky.length; a++)
+    for (let b = a + 1; b < sky.length; b++) {
+      if (links.some(([x, y]) => x === a && y === b)) continue;
+      const gain = constellationScore(sky, [...links, [a, b]]) - now;
+      if (gain > 0 && (!best || gain > best.gain)) best = { a, b, gain };
+    }
+  return best;
+}
+
+/**
+ * 1.3.0 Auto-draw (the playtest found the sky puzzle far too hard): a strong constellation for this
+ * sky. Greedy from nothing, then swaps any drawn link for an undrawn one while that scores more.
+ * Deterministic: the same sky always gets the same shape.
+ */
+export function autoChartLinks(s: GameState): Link[] {
+  const sky = skyOf(s);
+  const max = maxLinks(s);
+  const pairs: Link[] = [];
+  for (let a = 0; a < sky.length; a++) for (let b = a + 1; b < sky.length; b++) pairs.push([a, b]);
+  const has = (ls: Link[], [a, b]: Link) => ls.some(([x, y]) => x === a && y === b);
+  let links: Link[] = [];
+  while (links.length < max) {
+    let pick: Link | null = null;
+    let top = constellationScore(sky, links);
+    for (const p of pairs) {
+      if (has(links, p)) continue;
+      const v = constellationScore(sky, [...links, p]);
+      if (v > top) {
+        top = v;
+        pick = p;
+      }
+    }
+    if (!pick) break;
+    links = [...links, pick];
+  }
+  for (let pass = 0; pass < 4; pass++) {
+    let better = false;
+    let score = constellationScore(sky, links);
+    for (let i = 0; i < links.length; i++)
+      for (const p of pairs) {
+        if (has(links, p)) continue;
+        const tryLinks = links.map((l, k) => (k === i ? p : l));
+        const v = constellationScore(sky, tryLinks);
+        if (v > score + 1e-9) {
+          links = tryLinks;
+          score = v;
+          better = true;
+        }
+      }
+    if (!better) break;
+  }
+  return links;
+}
+
+/** Draws the Auto-draw shape in place of yours. */
+export function autoChart(s: GameState): boolean {
+  if (!observatoryOpen(s)) return false;
+  s.observatory.links = autoChartLinks(s);
+  return true;
+}
+
 /** Records the constellation: a better score than this sky's best pays the difference in Star Charts. */
 export function recordConstellation(s: GameState): number {
   if (!observatoryOpen(s)) return 0;

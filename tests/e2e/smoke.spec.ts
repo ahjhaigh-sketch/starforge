@@ -1039,6 +1039,8 @@ test('Void Wyrms: hatch an egg, then fusion takes exactly five', async ({ page }
     const D = s.currencies.essence!.constructor;
     s.wyrms.stacks['wyrm.cinderwisp|0|'] = new D(7);
   });
+  // 1.3.0: the stacks have their own page
+  await panel.locator('[data-wyrm-tab="stacks"]').click();
   await panel.locator('[data-fuse="wyrm.cinderwisp|0|"]').click();
   const after = await page.evaluate(() => {
     const st = (window as unknown as Sf10).sf.game.state.wyrms.stacks as Record<string, { toNumber(): number }>;
@@ -1105,11 +1107,12 @@ test('the Star Nursery: crossbreeding follows the table, and a planted seed ripe
   });
   await openRail(page, 'nursery');
   const panel = page.locator('[data-panel="nursery"]');
-  await panel.getByTestId('cross-a').selectOption('star.ember');
-  await panel.getByTestId('cross-b').selectOption('star.sol');
-  await expect(panel.getByTestId('cross-preview')).toContainText('Flare Star');
-  await panel.getByTestId('cross').click();
+  // 1.3.0: every cross is in the Crossbreed book, with its own button
+  await panel.locator('[data-nursery-tab="book"]').click();
+  await expect(panel.locator('[data-recipe="star.flare"]')).toContainText('Ember Dwarf + Sol Star');
+  await panel.locator('[data-cross="star.flare"]').click();
   expect(await page.evaluate(() => (window as unknown as Sf10).sf.game.state.nursery.seeds)).toEqual({ 'star.ember': 1, 'star.sol': 1, 'star.flare': 1 });
+  await panel.locator('[data-nursery-tab="plots"]').click();
   await panel.locator('[data-plant="0"]').click();
   await page.evaluate(() => (window as unknown as Sf10).sf.commands.devWarp(40));
   await panel.locator('[data-harvest="0"]').click();
@@ -1459,7 +1462,7 @@ type Sf15 = {
       state: {
         stats: Record<string, number>;
         blackHole: { mass: unknown };
-        mirror: { upgrades: string[] };
+        mirror: { upgrades: string[]; depth: number };
         galactic: { galaxy: string; next: string };
         galacticTree: Record<string, number>;
         observatory: { links: Array<[number, number]> };
@@ -1481,6 +1484,8 @@ test('Galactic Rebirth: pick a galaxy, go Galactic through the confirm screen, a
     s.stats.singularitiesBest = 14;
     s.stats.mirrorKey = 1;
     s.mirror.upgrades = ['mu.key'];
+    // 1.3.0: the anti-star at Protostar, not the Black Hole, opens the Galactic Rebirth
+    s.mirror.depth = 11;
     s.blackHole.mass = new s.currencies.stardust!.constructor(2e7);
     sf.commands.devAdd('darkMatter', 1.6e9);
   });

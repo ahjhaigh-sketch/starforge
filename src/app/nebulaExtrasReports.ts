@@ -113,6 +113,8 @@ export interface TarotReport {
   nextSlot: string;
   gamble: string;
   deck: DeckSlot[];
+  /** 1.3.0: everything the deck gives together, as one line. */
+  deckTotal: string;
   rarities: Array<{ name: string; color: string; cards: Array<{ id: string; name: string; owned: boolean; text: string; inDeck: boolean }> }>;
 }
 
@@ -135,6 +137,7 @@ export function tarotReport(): TarotReport {
     slots: deckSlots(s),
     nextSlot: next ? `Slot ${deckSlots(s) + 1} at ${next} cards` : '',
     gamble: s.tarot.gamble === 1 ? 'not rolled yet' : `x${s.tarot.gamble}`,
+    deckTotal: effectText(resolveDeck(s).flatMap((v) => v.effects.map((e) => ({ ...e, v: e.op === 'mul' ? e.v ** v.counts : e.v * v.counts }))), 1) || 'Nothing yet: put cards in the deck.',
     deck: resolveDeck(s).map((v, slot) => ({
       slot,
       id: v.card?.id ?? '',

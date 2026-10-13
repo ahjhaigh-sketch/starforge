@@ -55,7 +55,9 @@ export function GalacticPanel() {
         <div className="well nebula-run">
           <h4>This Galactic run</h4>
           <ul className="milestones gal-checks">
-            <Check ok={data.stages >= 8}>Black Hole at stage 8 ({data.stages}/8)</Check>
+            <Check ok={data.depth >= data.depthNeed}>
+              The anti-star collapsed to a Protostar ({data.depth}/{data.depthNeed})
+            </Check>
             <Check ok={data.key}>The Mirror Key</Check>
             <Check ok={data.dmMet}>
               Dark Matter this run <b className="num">{data.dm}</b> / {data.dmNeed}
@@ -125,6 +127,7 @@ export function GalacticConfirmPanel() {
             <span className="num">+{r.gain}</span>
           </div>
           <p className="center">Galaxy Cores buy the Galactic Tree and Galactic Constants. You will restart in {g?.nextGalaxy ?? 'the Milky Way'}.</p>
+          {r.warn && <p className="reset-warn" role="note">{r.warn}</p>}
           <div className="confirm-cols">
             <div className="well">
               <h4>Resets</h4>
@@ -234,6 +237,7 @@ export function ObservatoryPanel() {
   const r = useReport('observatory', observatoryReport, 150);
   const open = useUi((s) => s.open);
   const [sel, setSel] = useState<number | null>(null);
+  const [showHint, setShowHint] = useState(false);
   const data = r ?? observatoryReport();
   const pick = (i: number) => {
     if (sel === null) setSel(i);
@@ -261,7 +265,7 @@ export function ObservatoryPanel() {
       ) : (
         <>
           <div className="tree-head">
-            <p>A new sky every Galactic run. Pick a star, then another, to draw a link (pick a linked pair again to erase it). Long links between heavy, near stars score most, and every closed shape adds 25%. Record a better constellation for Star Charts.</p>
+            <p>A new sky every Galactic run. Pick a star, then another, to draw a link (pick a linked pair again to erase it). Long links between heavy, near stars score most, and every closed shape adds 25%. Record a better constellation for Star Charts. Stuck? Hint shows the best next link; Auto-draw draws a strong shape for you.</p>
             <CoreChip value={data.charts} icon="telescope" />
           </div>
           <div className="obs-cols">
@@ -271,6 +275,9 @@ export function ObservatoryPanel() {
                 const b = data.stars[l.b]!;
                 return <line key={`${l.a}-${l.b}`} className="obs-link" x1={a.x * W} y1={a.y * H} x2={b.x * W} y2={b.y * H} />;
               })}
+              {showHint && data.hint && (
+                <line className="obs-hint" x1={data.stars[data.hint.a]!.x * W} y1={data.stars[data.hint.a]!.y * H} x2={data.stars[data.hint.b]!.x * W} y2={data.stars[data.hint.b]!.y * H} />
+              )}
               {data.stars.map((st) => (
                 <g
                   key={st.i}
@@ -300,6 +307,15 @@ export function ObservatoryPanel() {
                 <Button color={data.pays > 0 ? '#5B45C2' : '#5A5F8F'} disabled={data.pays <= 0} onClick={() => commands.recordConstellation()} data-testid="obs-record">
                   {data.pays > 0 ? `Record: +${data.pays} Star Charts` : 'Beat your best to record'}
                 </Button>
+                <div className="center-row">
+                  <Button size="sm" color="#2E9C78" onClick={() => setShowHint((v) => !v)} aria-pressed={showHint} data-testid="obs-hint">
+                    {showHint ? 'Hide hint' : 'Hint'}
+                  </Button>
+                  <Button size="sm" color="#B08A1A" onClick={() => commands.autoChart()} data-testid="obs-auto">
+                    Auto-draw ({data.autoScore})
+                  </Button>
+                </div>
+                {showHint && <small>{data.hint ? `Link star ${data.hint.a + 1} to star ${data.hint.b + 1}: +${data.hint.gain}` : 'No link would add more: record it, or erase one to try another.'}</small>}
                 <div className="center-row">
                   <Button size="sm" color="#5A5F8F" onClick={() => commands.clearStarLinks()}>
                     Clear

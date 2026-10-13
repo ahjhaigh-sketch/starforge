@@ -1,3 +1,4 @@
+import { BALANCE } from '../content/balance';
 import { D, type Decimal } from './decimal';
 import { events } from './events';
 import { gain, type GameState } from './state';
@@ -112,6 +113,21 @@ export function onBeforeReset(fn: (s: GameState, layerId: string) => void): void
   beforeHooks.push(fn);
 }
 
+/** 1.3.0: log10 of the best gain a layer's reset has paid (kept in stats as a plain number), or null before the first. */
+export function bestGainLog(s: GameState, id: string): number | null {
+  const v = s.stats[`bestGain.${id}`];
+  return typeof v === 'number' ? v : null;
+}
+
+/**
+ * 1.3.0: true when this reset would pay under 1% of the layer's best (the playtest's first Singularity
+ * paid 52 billion Dark Matter and the next ones about 1,000, because they ran on passive Essence alone).
+ */
+export function weakReset(s: GameState, id: string, gain: Decimal): boolean {
+  const best = bestGainLog(s, id);
+  return best !== null && best >= 2 && gain.add(1).log10().toNumber() < best - BALANCE.recommend.weakOoM;
+}
+
 /** The one reset function. Returns the gain, or null if the layer isn't ready. */
 export function performReset(s: GameState, id: string): Decimal | null {
   const def = layers.get(id);
@@ -125,6 +141,7 @@ export function performReset(s: GameState, id: string): Decimal | null {
   const before: ResetBefore = { tier: s.tier, runStardust: s.totals.run.stardust ?? D(0), gained: amount, rateLog: sps?.gt(0) ? sps.log10().toNumber() : 0 };
   gain(s, def.currency, amount);
   s.stats[def.counter] = resetsDone(s, def) + 1;
+  if (amount.gt(0)) s.stats[`bestGain.${id}`] = Math.max(bestGainLog(s, id) ?? 0, amount.add(1).log10().toNumber());
   def.parts.forEach((p, i) => {
     if (!keep[i]) p.reset(s);
   });

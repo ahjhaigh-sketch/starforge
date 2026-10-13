@@ -140,3 +140,7 @@ html[data-bg-glow] body { background: radial-gradient(60% 50% at 18% 22%, var(--
 .store-head .store-size + .store-size { margin-left: 0.35rem; }
 .store-min-line { margin: 0; font-weight: 700; font-size: 0.85rem; color: var(--text-dim); }
 .store-min-line b { color: var(--lime); }
+
+/* 1.3.0: the Recommended card */
+.focus-card.recommended .focus-kind { color: var(--lime); }
+.focus-card.recommended .focus-blurb { color: rgba(255, 255, 255, 0.92); }

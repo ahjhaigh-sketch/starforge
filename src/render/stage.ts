@@ -15,6 +15,7 @@ import { WeatherSky } from './weather';
 import { BlackHoleView } from './blackhole';
 import { LeviathanView } from './leviathan';
 import { MegaView } from './megastructures';
+import { EngineOrbits } from './engineOrbit';
 import { BH_STAGES } from '../engine/systems/blackhole';
 
 /**
@@ -30,6 +31,7 @@ let wyrms: WyrmSky | null = null;
 let hole: BlackHoleView | null = null;
 let whale: LeviathanView | null = null;
 let mega: MegaView | null = null;
+let machines: EngineOrbits | null = null;
 let megaSpec = '';
 let weather: WeatherSky | null = null;
 let holeMass = 0;
@@ -147,8 +149,10 @@ export async function initRender(): Promise<boolean> {
   hole = new BlackHoleView();
   // the Black Hole sits behind everything at the star: orbits and the star are in front of it
   mega = new MegaView();
-  // a solar flare glows behind the star; an eclipse's shadow crosses in front of it
-  mid.addChild(hole.mesh, mega.root, orbitals.behind, weather.glow, star.root, weather.shadow, orbitals.infront);
+  machines = new EngineOrbits();
+  // a solar flare glows behind the star; an eclipse's shadow crosses in front of it; the engines'
+  // machines (1.3.0) pass behind the star on the far side of their band
+  mid.addChild(hole.mesh, mega.root, orbitals.behind, machines.behind, weather.glow, star.root, mega.front, weather.shadow, machines.infront, orbitals.infront);
   initParticles(fx);
 
   const apply = () => {
@@ -157,6 +161,7 @@ export async function initRender(): Promise<boolean> {
     flashScale = s.reduceFlashing ? 0.35 : 1;
     setParticlesEnabled(!still);
     star!.setMotes(s.moteCount);
+    machines!.set(s.hiddenHud.includes('machines') ? '' : s.orbitEngines);
     orbitals!.set(s.planets, s.ringsOpen);
     star!.setTier(s.tierIndex, false);
     setNebulaClouds(s.nebulasAll);
@@ -269,6 +274,7 @@ export async function initRender(): Promise<boolean> {
       star.update(dt, r.left + r.width / 2, r.top + r.height / 2, r.width, still);
       hole?.update(dt, r.left + r.width / 2, r.top + r.height / 2, star.lastRadius, holeMass, still);
       mega?.update(dt, r.left + r.width / 2, r.top + r.height / 2, star.lastRadius, still);
+      machines?.update(dt, r.left + r.width / 2, r.top + r.height / 2, star.lastRadius, still);
       orbitals?.update(dt, r.left + r.width / 2, r.top + r.height / 2, star.lastRadius, still);
     }
     weather?.update(dt, width, height, r && r.width > 0 ? { x: r.left + r.width / 2, y: r.top + r.height / 2, r: star.lastRadius } : null, still, flashScale);

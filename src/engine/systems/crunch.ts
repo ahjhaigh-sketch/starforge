@@ -3,7 +3,7 @@ import { CONSTANTS } from '../../content/constants';
 import { GALAXIES } from '../../content/galactic';
 import { D, type Decimal, ZERO } from '../decimal';
 import { layer, milestoneReached, registerLayer } from '../layers';
-import { cur, gain, type GameState } from '../state';
+import { cur, gain, type GameState, gainPassive } from '../state';
 import { registerSources, stat } from '../stats';
 import { registerSystem, type TickContext } from '../tick';
 import { hasEternity } from './eternity';
@@ -120,6 +120,7 @@ export function registerCrunch(): void {
       { at: 1, id: 'keepGalactic', text: 'Keep your Galactic milestones; the Echo boards and Eternity open' },
       { at: 2, id: 'echoAuto', text: 'Echo Supernovas and Echo Nebulas go off by themselves' },
       { at: 3, id: 'keepGalacticTree', text: 'Keep the Galactic Tree' },
+      { at: BALANCE.passive.at.crunch!, id: 'passive', text: 'Gain 1% of your Big Crunch gain every second, without a Big Crunch' },
       { at: 5, id: 'keepGalacticConstants', text: 'Keep Galactic Constants' },
       { at: 8, id: 'multiverse', text: 'The Multiverse stirs (10 Big Crunches)' },
       { at: 10, id: 'galacticFree', text: 'A Galactic Rebirth resets nothing; 1/50 of its gain trickles in every second' },
@@ -138,6 +139,10 @@ export function registerCrunch(): void {
     tick: (s: GameState, dt: number, ctx: TickContext) => {
       // Milestone 10: 1/50 of the Galactic gain trickles in every second, nothing reset
       if (galacticFree(s) && galacticReady(s)) gain(s, 'galaxyCores', galacticGain(s).mul(C.trickle * dt * ctx.gainScale));
+      // 1.3.0, Galactic milestone 4: 1% of the Galactic gain a second
+      else if (milestoneReached(s, 'galactic', 'passive') && galacticReady(s)) gainPassive(s, 'galaxyCores', galacticGain(s).mul(BALANCE.passive.share * dt * ctx.gainScale));
+      // 1.3.0, Big Crunch milestone 4: 1% of the Big Crunch gain a second
+      if (milestoneReached(s, 'crunch', 'passive') && crunchReady(s)) gainPassive(s, 'chronons', crunchGain(s).mul(BALANCE.passive.share * dt * ctx.gainScale));
     },
   });
 }

@@ -66,6 +66,7 @@ describe('Megastructures', () => {
     expect(labels(s, 'gameSpeed')).toContain('Stellar Engine (megastructure)');
     // a Galactic Rebirth (which resets the most) leaves them all
     s.blackHole.mass = D(2e7);
+    s.mirror.depth = 11;
     s.mirror.upgrades = ['mu.key'];
     s.totals.run.darkMatter = D(1e9);
     invalidateStats();

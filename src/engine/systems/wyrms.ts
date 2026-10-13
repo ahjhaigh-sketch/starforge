@@ -2,7 +2,7 @@ import { BALANCE } from '../../content/balance';
 import { parseWyrmKey, WYRM_BY_ID, WYRM_FORMS, WYRM_SPECIES, wyrmKey, type WyrmSpecies } from '../../content/wyrms';
 import { MUTATION_BY_ID } from '../../content/runeDepth';
 import { planLimited, type PurchasePlan } from '../buy';
-import type { CostCurve } from '../cost';
+import { type CostCurve, lateRamp } from '../cost';
 import { D, type Decimal, ONE, ZERO } from '../decimal';
 import { events } from '../events';
 import { drawHits, effLog10 } from '../odds';
@@ -36,7 +36,7 @@ export function teamSlots(s: GameState): number {
   return W.slots + W.slotHatches.filter((n) => (s.stats.wyrmsHatched ?? 0) >= n).length;
 }
 
-const eggCurve: CostCurve = { base: W.eggBase, brackets: [{ from: 0, ratio: W.eggGrowth }] };
+const eggCurve: CostCurve = lateRamp({ base: W.eggBase, brackets: [{ from: 0, ratio: W.eggGrowth }] });
 export const eggPlan = (s: GameState): PurchasePlan => planLimited(eggCurve, s.wyrms.eggs, cur(s, 'essence'), s.settings.buyAmount, s.settings.customBuyAmount, Infinity);
 
 /** log10 of the effective odds of a species: rune odds at the square root of your luck. */
@@ -124,7 +124,37 @@ export function unequipWyrm(s: GameState, key: string): void {
   s.wyrms.team = s.wyrms.team.filter((k) => k !== key);
 }
 
-const trainCurve: CostCurve = { base: W.trainBase, brackets: [{ from: 0, ratio: W.trainGrowth }] };
+/**
+ * 1.3.0 Fuse all: every stack of five or more fuses as far as it can, lowest forms first (so a fresh
+ * Golden can go on to Rainbow in the same click). Returns the fusions made.
+ */
+export function fuseAll(s: GameState): number {
+  let made = 0;
+  for (let form = 0; form < WYRM_FORMS.length - 1; form++)
+    for (const key of Object.keys(s.wyrms.stacks)) {
+      if (parseWyrmKey(key).form !== form) continue;
+      // five at a time, in one step: the stack's fusions, as a count
+      const n = Math.floor(stackOf(s, key).div(W.fuse).min(1e15).toNumber());
+      if (n < 1) continue;
+      const { species, mut } = parseWyrmKey(key);
+      s.wyrms.stacks[key] = stackOf(s, key).sub(D(n).mul(W.fuse));
+      addWyrms(s, wyrmKey(species, form + 1, mut), D(n));
+      if (stackOf(s, key).lte(0)) s.wyrms.team = s.wyrms.team.filter((k) => k !== key);
+      s.stats.wyrmFusions = (s.stats.wyrmFusions ?? 0) + n;
+      made += n;
+    }
+  return made;
+}
+
+/** 1.3.0 Best team: the strongest stacks you own, as many as there are slots. */
+export function bestTeam(s: GameState): void {
+  s.wyrms.team = Object.keys(s.wyrms.stacks)
+    .filter((k) => stackOf(s, k).gte(1))
+    .sort((a, b) => boostOfKey(s, b).cmp(boostOfKey(s, a)) || a.localeCompare(b))
+    .slice(0, teamSlots(s));
+}
+
+const trainCurve: CostCurve = lateRamp({ base: W.trainBase, brackets: [{ from: 0, ratio: W.trainGrowth }] });
 
 /** Levels for a stack: Iron alloy, with Wyrm XP making every alloy count for more. */
 export function trainPlan(s: GameState, key: string): PurchasePlan {

@@ -95,7 +95,7 @@ export function catchComet(s: GameState): CatchResult | null {
 export function registerComets(): void {
   const c = BALANCE.comets;
   defineStat({ id: 'cometRate', label: 'Comet rate', base: () => D(1) });
-  defineStat({ id: 'buffDuration', label: 'Comet buff length', base: () => D(1) });
+  defineStat({ id: 'buffDuration', label: 'Comet buff length', base: () => D(1), softcaps: [{ label: 'Longest a buff can last', start: () => D(c.maxBuffLength), power: 0 }] });
   defineStat({ id: 'luckyMult', label: 'Lucky comet size', base: () => D(1) });
   defineStat({ id: 'wishChance', label: 'Wish comet chance', base: () => D(0.01) });
   defineStat({ id: 'frenzyMult', label: 'Frenzy multiplier', base: () => D(c.frenzy.mult) });
@@ -111,6 +111,11 @@ export function registerComets(): void {
     tick: (s: GameState, _dt: number, ctx: TickContext) => {
       // expired buffs are dropped so the save stays small
       for (const k of BUFF_KINDS) if (s.buffs[k] !== undefined && !buffActive(s, k)) delete s.buffs[k];
+      // 1.3.0: a buff from before the length cap (the playtest had 7.9e79 s left) ends where the cap says
+      for (const k of BUFF_KINDS) {
+        const most = s.playtime + c[k].seconds * c.maxBuffLength;
+        if ((s.buffs[k] ?? 0) > most) s.buffs[k] = most;
+      }
       if (s.tier < c.tier || s.playtime < s.comet.nextAt) return;
       s.comet.nextAt = s.playtime + nextGap(s);
       // Comets need a click, so none appear during any catch-up; the schedule just moves on.

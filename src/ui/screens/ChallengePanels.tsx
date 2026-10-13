@@ -7,6 +7,7 @@ import { useSnap } from '../../app/uiSnapshot';
 import { scaleTree } from '../../engine/systems/leviathans';
 import { Button, cx, tint } from '../kit/Chunk';
 import { Icon } from '../kit/Icon';
+import { HowTo } from '../kit/HowTo';
 import { Panel } from '../kit/Panel';
 import { ProgressBar } from '../kit/ProgressBar';
 import { useReport } from '../kit/useReport';
@@ -206,6 +207,34 @@ export function SpirePanel() {
       {!data.open ? (
         <Locked what="The Spire" req="opens at 3 Singularities" />
       ) : (
+        <>
+        <HowTo
+          label="How the Spire works"
+          steps={[
+            <>
+              <b>Climb</b>: while it's on, you damage floors by yourself, offline too.
+            </>,
+            <>
+              <b>Each floor</b> plays one Trial's handicap while you're on it, so climbing costs a little production.
+            </>,
+            <>
+              <b>Every floor cleared</b> boosts Stardust, shards and Essence for good; every tenth floor earns a banner to fly.
+            </>,
+          ]}
+        />
+        <div className="spire-bonus well" aria-label="What the Spire gives you">
+          <b className="spire-bonus-h">Your Spire bonus ({data.floor} floors)</b>
+          <div className="spire-bonus-row">
+            {data.bonus.map((x) => (
+              <span key={x.what} className="spire-bonus-cell">
+                <b className="num">{x.value}</b>
+                <small>{x.what}</small>
+              </span>
+            ))}
+          </div>
+          <small>{data.nextBonus}</small>
+          <small>Flying: {data.flown}</small>
+        </div>
         <div className="spire-cols">
           <div className="spire-tower" aria-label={`Floor ${data.floor}`}>
             {[3, 2, 1].map((d) => (
@@ -256,11 +285,13 @@ export function SpirePanel() {
                 >
                   <span className="pennant" aria-hidden="true" />
                   <span>{b.unlocked ? b.name : `Floor ${b.at}`}</span>
+                  <small>{b.does}</small>
                 </button>
               ))}
             </div>
           </div>
         </div>
+        </>
       )}
     </Panel>
   );

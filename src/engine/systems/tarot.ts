@@ -147,6 +147,64 @@ export function deckValue(s: GameState, statId: string, op: 'mul' | 'add') {
   return v;
 }
 
+/** 1.3.0: a deck's worth as one number: the orders of magnitude of all its multipliers, plus offline hours a little. */
+export function deckScore(s: GameState): number {
+  let total = 0;
+  for (const slot of resolveDeck(s))
+    for (const e of slot.effects) total += e.op === 'mul' ? Math.log10(Math.max(1e-9, e.v)) * slot.counts : (e.v / 3600) * 0.01 * slot.counts;
+  return total;
+}
+
+/**
+ * 1.3.0 Deal best deck (the playtest found Tarot confusing): a strong deck from the cards you own, by
+ * the deck score. The best single cards first, then every slot tries every card (and empty) and every
+ * pair of slots swaps, while that scores more. Deterministic, and only a few thousand deck checks.
+ */
+export function bestDeck(s: GameState): void {
+  if (!tarotOpen(s)) return;
+  const n = deckSlots(s);
+  const owned = [...s.tarot.owned];
+  const solo = (id: string) => {
+    s.tarot.deck = [id, ...new Array<null>(n - 1).fill(null)];
+    return deckScore(s);
+  };
+  const ranked = owned.map((id) => ({ id, v: solo(id) })).sort((a, b) => b.v - a.v || a.id.localeCompare(b.id));
+  let deck: Array<string | null> = Array.from({ length: n }, (_, i) => ranked[i]?.id ?? null);
+  const scoreOf = (d: Array<string | null>) => {
+    s.tarot.deck = d;
+    return deckScore(s);
+  };
+  let best = scoreOf(deck);
+  for (let pass = 0; pass < 6; pass++) {
+    let better = false;
+    for (let i = 0; i < n; i++)
+      for (const id of [null, ...owned]) {
+        if (id !== null && deck.includes(id)) continue;
+        const d = deck.map((x, k) => (k === i ? id : x));
+        const v = scoreOf(d);
+        if (v > best + 1e-9) {
+          deck = d;
+          best = v;
+          better = true;
+        }
+      }
+    for (let i = 0; i < n; i++)
+      for (let j = i + 1; j < n; j++) {
+        const d = [...deck];
+        [d[i], d[j]] = [d[j]!, d[i]!];
+        const v = scoreOf(d);
+        if (v > best + 1e-9) {
+          deck = d;
+          best = v;
+          better = true;
+        }
+      }
+    if (!better) break;
+  }
+  s.tarot.deck = deck;
+  if (deck.some((id) => id && CARD_BY_ID.get(id)?.rule === 'gambler') && s.tarot.gamble === 1) rollGamble(s);
+}
+
 export function registerTarot(): void {
   const stats = new Set<string>(['essenceGain', 'runeBulk', 'shardGain', 'tapPower']);
   for (const c of CARDS) for (const e of c.effects) if (e.op === 'mul') stats.add(e.stat);

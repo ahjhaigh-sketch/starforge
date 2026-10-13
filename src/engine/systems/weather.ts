@@ -52,6 +52,8 @@ function begin(s: GameState, kind: string, at: number, seconds: number, summoned
   w.until = at + seconds;
   w.summoned = summoned;
   s.stats.weathers = (s.stats.weathers ?? 0) + 1;
+  // 1.3.0: the Almanac counts each kind
+  s.stats[`weatherSeen.${kind}`] = (s.stats[`weatherSeen.${kind}`] ?? 0) + 1;
   invalidateStats();
   // still in the sky now (a long catch-up step can pass a whole weather)
   if (w.until > s.playtime) {
@@ -100,6 +102,17 @@ export function summonWeather(s: GameState, kind: string): boolean {
   return true;
 }
 
+/** 1.3.0: times a kind of weather has rolled in, and how much stronger the Almanac makes it (0 to 0.5). */
+export const weatherSeen = (s: GameState, id: string) => s.stats[`weatherSeen.${id}`] ?? 0;
+export const almanacBonus = (s: GameState, id: string) => Math.min(W.almanacCap, Math.floor(weatherSeen(s, id) / W.almanacEvery) * W.almanacStep);
+
+/** 1.3.0: the weather the beacon summons by itself (null: off). */
+export function setAutoWeather(s: GameState, kind: string | null): boolean {
+  if (kind !== null && !WEATHER_BY_ID.has(kind)) return false;
+  s.weather.auto = kind;
+  return true;
+}
+
 export function registerWeather(): void {
   registerSources(
     ...WEATHERS.flatMap((k) =>
@@ -108,7 +121,8 @@ export function registerWeather(): void {
         stat: e.stat,
         op: 'mul' as const,
         label: `${k.name} (weather)`,
-        value: () => D(e.value),
+        // a boost below 1 (a cost cut) shrinks further; above 1 it grows (the Almanac)
+        value: (s: GameState) => D(e.value >= 1 ? 1 + (e.value - 1) * (1 + almanacBonus(s, k.id)) : e.value ** (1 + almanacBonus(s, k.id))),
         active: (s: GameState) => weatherNow(s) === k.id,
       })),
     ),
@@ -117,6 +131,11 @@ export function registerWeather(): void {
     id: 'weather',
     // before the comets, so a Meteor Shower's first comet is scheduled on the tick it starts
     order: 45,
-    tick: (s: GameState, _dt: number, ctx: TickContext) => advanceWeather(s, !ctx.catchUp),
+    tick: (s: GameState, _dt: number, ctx: TickContext) => {
+      advanceWeather(s, !ctx.catchUp);
+      // 1.3.0 auto-summon: a ready charge brings your favourite weather (not during a catch-up: it's your choice live)
+      const fav = s.weather.auto;
+      if (fav && !ctx.catchUp && !weatherNow(s) && s.weather.charges >= 1 && weatherKindOpen(s, fav)) summonWeather(s, fav);
+    },
   });
 }

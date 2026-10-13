@@ -95,6 +95,17 @@ export function brew(s: GameState, mix: readonly string[], count = 1): BrewResul
   return { kind: 'sludge', hint, again };
 }
 
+/** 1.3.0: ingredients of an unfound recipe shown by Hint (0 to 3; alchemy was hard to work out by sludge alone). */
+export const hintsOf = (s: GameState, id: string) => s.alchemy.hints?.[id] ?? 0;
+
+/** Shows one more ingredient of a recipe you haven't found (the first hint also says what it does). */
+export function hintRecipe(s: GameState, id: string): boolean {
+  const r = RECIPE_BY_ID.get(id);
+  if (!alchemyOpen(s) || !r || s.alchemy.known.includes(id) || hintsOf(s, id) >= r.mix.length) return false;
+  s.alchemy.hints = { ...(s.alchemy.hints ?? {}), [id]: hintsOf(s, id) + 1 };
+  return true;
+}
+
 /** Seconds of boost left on an elixir. */
 export const elixirLeft = (s: GameState, id: string) => Math.max(0, (s.alchemy.active[id] ?? 0) - s.playtime);
 

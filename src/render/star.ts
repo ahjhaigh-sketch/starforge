@@ -597,6 +597,8 @@ export class StarCore {
       show.visible = true;
       show.position.set(x, y);
       show.scale.set(moteSize * (inFront ? 1.1 : 0.9));
+      // the sparks twirl as they go (1.3.0)
+      show.rotation = ang * 1.5;
     }
   }
 }

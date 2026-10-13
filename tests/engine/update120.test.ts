@@ -59,7 +59,7 @@ describe('1.2.0: save version 21, the Merchant, auto-planets, buy all', () => {
     const { tick } = await import('../../src/engine/tick');
     const { state } = importSave(readFileSync('tests/fixtures/save-v20.txt', 'utf8').trim());
     expect(state.version).toBe(SAVE_VERSION);
-    expect(SAVE_VERSION).toBe(21);
+    expect(SAVE_VERSION).toBeGreaterThanOrEqual(21);
     expect(state.merchant.deals).toEqual([]);
     expect(state.merchant.nextShip).toBe(0);
     expect(state.stats.supernovasAll).toBe(12);

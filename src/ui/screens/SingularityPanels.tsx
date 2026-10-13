@@ -10,6 +10,7 @@ import { singularityTree } from '../../engine/systems/singularity';
 import { BuyAmountControl } from '../kit/BuyAmountControl';
 import { Button, cx, tint } from '../kit/Chunk';
 import { Icon } from '../kit/Icon';
+import { HowTo } from '../kit/HowTo';
 import { Panel } from '../kit/Panel';
 import { ProgressBar } from '../kit/ProgressBar';
 import { useReport } from '../kit/useReport';
@@ -131,6 +132,7 @@ export function SingularityConfirmPanel() {
             <span className="num">+{r.gain}</span>
           </div>
           <p className="center">{r.currency}. It buys the Singularity Tree and Void Constants, and lifetime Dark Matter boosts all Essence.</p>
+          {r.warn && <p className="reset-warn" role="note">{r.warn}</p>}
           <div className="confirm-cols">
             <div className="well">
               <h4>Resets</h4>
@@ -377,11 +379,28 @@ export function ReactorPanel() {
           <p className="center">
             Charge <b className="num">{data.charge}</b> · Dark Matter gain <b className="num">{data.mult}</b> · strength <b className="num">{data.power}</b>
           </p>
-          <p className="altar-fine center">Dark Matter fed in becomes charge for good; every Singularity after gives more. Feed now, or spend it on the tree?</p>
+          <HowTo
+            label="How the Reactor works"
+            steps={[
+              <>
+                <b>Feed</b> it Dark Matter. What you feed becomes charge.
+              </>,
+              <>
+                <b>Charge</b> multiplies every Dark Matter you gain after (each Singularity, passive gain, Void asteroids).
+              </>,
+              <>
+                <b>Choose</b>: Dark Matter fed here can't buy the Singularity Tree, so feed what you can spare.
+              </>,
+            ]}
+          />
+          <p className="altar-fine center">{data.keeps}</p>
           <BuyAmountControl compact />
           <Button size="lg" color={data.can ? 'var(--red)' : '#5A5F8F'} disabled={!data.can} onClick={() => commands.feedReactor()} data-testid="feed-reactor">
             Feed {data.count} Dark Matter
           </Button>
+          <p className="center reactor-preview">
+            Dark Matter gain <b className="num">{data.mult}</b> → <b className="num">{data.after}</b> after this feed
+          </p>
         </div>
       )}
     </Panel>

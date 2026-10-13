@@ -2,12 +2,12 @@ import { BALANCE } from '../../content/balance';
 import { BELT_UPGRADES, type BeltUpgradeId, DEPTH_LAYERS, RARITIES } from '../../content/belt';
 import { GRADES } from '../../content/forge';
 import { planLimited, type PurchasePlan } from '../buy';
-import { bulkCost, type CostCurve, priceAt } from '../cost';
+import { bulkCost, type CostCurve, priceAt, lateRamp } from '../cost';
 import { D, type Decimal, ZERO } from '../decimal';
 import { events } from '../events';
 import { drawHits } from '../odds';
 import { nextFloat } from '../rng';
-import { cur, gain, type GameState, spend } from '../state';
+import { cur, gain, type GameState, spend, usable } from '../state';
 import { defineStat, registerSources, stat } from '../stats';
 import { pacedDt, registerSystem, type TickContext } from '../tick';
 import { asteroidMutMult, drawAsteroidMutations, recordAsteroidMutation, rollAsteroidMutation } from './mutations';
@@ -29,7 +29,7 @@ export function beltCurve(id: BeltUpgradeId): CostCurve {
   let c = curves.get(id);
   if (!c) {
     const u = B.upgrades[id];
-    c = { base: u.base, brackets: [{ from: 0, ratio: u.growth }] };
+    c = lateRamp({ base: u.base, brackets: [{ from: 0, ratio: u.growth }] });
     curves.set(id, c);
   }
   return c;
@@ -179,6 +179,7 @@ export function beltUpgradeCost(s: GameState, id: BeltUpgradeId, count = 1): Dec
 /** Highest level an upgrade can reach: the beam stops at 8 levels, the field at 400 asteroids. */
 export function beltLimit(s: GameState, id: BeltUpgradeId): number {
   if (id === 'beam') return B.beamMaxLevel;
+  if (id === 'luck') return B.luckMax;
   if (id === 'amount') return beltLevel(s, id) + Math.max(0, B.maxCap - Math.floor(stat(s, 'beltCap').toNumber()));
   return Infinity;
 }
@@ -216,7 +217,7 @@ export function autoBelt(s: GameState, share: number): void {
   if (!beltOpen(s)) return;
   for (const u of BELT_UPGRADES) {
     const level = beltLevel(s, u.id);
-    const plan = planLimited(beltCurve(u.id), level, cur(s, 'ore').mul(share), 'max', 0, beltLimit(s, u.id));
+    const plan = planLimited(beltCurve(u.id), level, usable(s, 'ore').mul(share), 'max', 0, beltLimit(s, u.id));
     if (plan.count <= 0 || !plan.canAfford) continue;
     if (!freeUpgrades(s) && !spend(s, 'ore', plan.cost)) continue;
     s.belt.upgrades[u.id] = level + plan.count;
@@ -256,8 +257,8 @@ export const coreHp = (depth: number): Decimal => D(DR.hpBase).mul(D(DR.hpGrowth
 /** Mastery level of an ore from how many cores of that layer you have broken. */
 export const oreMastery = (s: GameState, ore: string) => Math.floor(Math.sqrt(s.drill.mastery[ore] ?? 0));
 
-const droneCurve: CostCurve = { base: DR.droneBase, brackets: [{ from: 0, ratio: DR.droneGrowth }] };
-const bitCurve: CostCurve = { base: DR.bitBase, brackets: [{ from: 0, ratio: DR.bitGrowth }] };
+const droneCurve: CostCurve = lateRamp({ base: DR.droneBase, brackets: [{ from: 0, ratio: DR.droneGrowth }] });
+const bitCurve: CostCurve = lateRamp({ base: DR.bitBase, brackets: [{ from: 0, ratio: DR.bitGrowth }] });
 export const droneCost = (s: GameState) => priceAt(droneCurve, s.drill.drones);
 /** Drill bits are crafted at the Starforge from Iron alloy. */
 export const bitCost = (s: GameState) => priceAt(bitCurve, s.drill.bits);
@@ -335,6 +336,7 @@ export function registerBelt(): void {
     { id: 'belt.amount', stat: 'beltCap', op: 'add', label: 'Amount upgrade', value: (s) => D(beltLevel(s, 'amount')) },
     { id: 'belt.growth', stat: 'beltSpawn', op: 'add', label: 'Growth upgrade', value: (s) => D(B.growthPerLevel * beltLevel(s, 'growth')) },
     { id: 'belt.beam', stat: 'beamRadius', op: 'add', label: 'Beam upgrade', value: (s) => D(B.beamPerLevel * beltLevel(s, 'beam')) },
+    { id: 'belt.luck', stat: 'beltLuck', op: 'mul', label: 'Lucky Rocks', value: (s) => D(B.luckPerLevel).pow(beltLevel(s, 'luck')), active: (s) => beltLevel(s, 'luck') > 0 },
   );
 
   registerSystem({

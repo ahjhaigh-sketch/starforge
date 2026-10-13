@@ -1,6 +1,7 @@
 import { useStore } from 'zustand';
 import { createStore } from 'zustand/vanilla';
 import { BALANCE } from '../content/balance';
+import { recommend } from './recommend';
 import { ENGINES } from '../content/engines';
 import { SYSTEMS, type SystemDef } from '../content/systems';
 import { TIERS } from '../content/tiers';
@@ -131,9 +132,12 @@ export interface FocusCard {
   icon: string;
   color: string;
   blurb: string;
-  kind: 'new' | 'next';
+  /** 1.3.0: 'tip' is the Recommended card (its blurb is the advice, req is unused). */
+  kind: 'new' | 'next' | 'tip';
   req: string;
   pct: number;
+  /** The panel a click opens (the system itself for 'new'). */
+  panel?: string;
 }
 
 export interface Snapshot {
@@ -192,6 +196,8 @@ export interface Snapshot {
   chaosEffect: string;
   chaosLeft: string;
   moteCount: number;
+  /** 1.3.0: the engines you own after the Spark Motes, "catcher|moonmill|...", for the machines that orbit the star. */
+  orbitEngines: string;
   combo: number;
   comboMult: string;
   engineRows: EngineRow[];
@@ -388,7 +394,7 @@ function buffChips(s: GameState, prev: BuffChip[] | undefined): BuffChip[] {
   if (w) chips.push({ kind: 'weather', label: `${w.name}: ${w.chip}`, secs: formatTime(weatherLeft(s)), color: w.color, icon: 'weather' });
   for (const k of BUFF_KINDS) {
     const left = buffLeft(s, k);
-    if (left > 0) chips.push({ kind: k, label: BUFF_LABELS[k]!, secs: `${Math.ceil(left)}s` });
+    if (left > 0) chips.push({ kind: k, label: BUFF_LABELS[k]!, secs: left < 60 ? `${Math.ceil(left)}s` : formatTime(left) });
   }
   for (const r of RECIPES) {
     const left = elixirLeft(s, r.id);
@@ -463,16 +469,30 @@ function railItems(s: GameState, rail: 'left' | 'right', prev: RailItem[] | unde
   return stableList(prev, items.filter((x) => !off(x)));
 }
 
-/** A just-unlocked system you haven't opened, then the next one or two you're closest to. */
+/** The Recommended card, worked out at most once a real second (it looks at every tree). */
+let tipCache: { at: number; card: FocusCard | null } = { at: -Infinity, card: null };
+function tipCard(s: GameState): FocusCard | null {
+  const now = performance.now();
+  if (now - tipCache.at < BALANCE.recommend.every * 1000) return tipCache.card;
+  const r = recommend(s);
+  tipCache = { at: now, card: r ? { id: `tip.${r.id}`, name: r.title, icon: r.icon, color: r.color, blurb: r.text, kind: 'tip', req: '', pct: 0, panel: r.panel } : null };
+  return tipCache.card;
+}
+
+/**
+ * A just-unlocked system you haven't opened, then (1.3.0) the Recommended card, then the next one or
+ * two systems you're closest to (one fewer for each card above).
+ */
 function focusCards(s: GameState, right: RailItem[], prev: FocusCard[] | undefined): FocusCard[] {
   const card = (x: RailItem, kind: FocusCard['kind']): FocusCard => ({ id: x.id, name: x.name, icon: x.icon, color: x.color, blurb: x.blurb, kind, req: x.req, pct: x.pct });
   const fresh = right.filter((x) => x.state === 'new').slice(-1).map((x) => card(x, 'new'));
+  const tip = tipCard(s);
   const next = right
     .filter((x) => x.state === 'locked')
     .sort((a, b) => b.pct - a.pct)
-    .slice(0, fresh.length ? 1 : 2)
+    .slice(0, Math.max(0, 2 - fresh.length - (tip ? 1 : 0)) || 1)
     .map((x) => card(x, 'next'));
-  return stableList(prev, [...fresh, ...next]);
+  return stableList(prev, [...fresh, ...(tip ? [tip] : []), ...next]);
 }
 
 export function buildSnapshot(prev?: Snapshot): Snapshot {
@@ -563,6 +583,9 @@ export function buildSnapshot(prev?: Snapshot): Snapshot {
     chaosEffect: hud.chaos,
     chaosLeft: hud.chaosLeft,
     moteCount: owned(s, 'mote'),
+    orbitEngines: ENGINES.filter((e) => e.id !== 'mote' && owned(s, e.id) > 0)
+      .map((e) => e.id)
+      .join('|'),
     combo: Math.floor(combo),
     comboMult: comboX > 1 ? formatMult(comboX, n) : '',
     engineRows: rows,
@@ -635,11 +658,12 @@ function galacticBar(s: GameState, n: Notation) {
   const ready = galacticReady(s);
   const r = galacticReqs(s);
   const need = darkMatterNeeded(s);
-  const steps = [Math.min(1, r.stages / 8), r.key ? 1 : 0, Math.min(1, r.dm.add(1).log10().toNumber() / need.log10().toNumber())];
+  const depthNeed = BALANCE.galactic.mirrorDepth;
+  const steps = [Math.min(1, r.depth / depthNeed), r.key ? 1 : 0, Math.min(1, r.dm.add(1).log10().toNumber() / need.log10().toNumber())];
   const req = ready
     ? 'Ready'
-    : r.stages < 8
-      ? `Bring the Black Hole to stage 8 (${r.stages}/8)`
+    : r.depth < depthNeed
+      ? `Collapse the anti-star to a Protostar in the Mirror (${r.depth}/${depthNeed})`
       : !r.key
         ? 'Find the Mirror Key in the Antimatter Mirror'
         : `Gain ${format(need, n)} Dark Matter this Galactic run (${format(r.dm, n)})`;

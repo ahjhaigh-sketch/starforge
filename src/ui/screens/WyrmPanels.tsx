@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { commands } from '../../app/commands';
 import { nurseryReport, wyrmsReport } from '../../app/wyrmReports';
-import { crossOf, STAR_BY_ID } from '../../content/nursery';
+import { STAR_BY_ID } from '../../content/nursery';
 import { BuyAmountControl } from '../kit/BuyAmountControl';
 import { Button, cx, tint } from '../kit/Chunk';
 import { Icon } from '../kit/Icon';
+import { HowTo } from '../kit/HowTo';
 import { Panel } from '../kit/Panel';
 import { ProgressBar } from '../kit/ProgressBar';
 import { useReport } from '../kit/useReport';
@@ -32,6 +33,9 @@ export function WyrmsPanel() {
   const r = useReport('wyrms', wyrmsReport, 200);
   const data = r ?? wyrmsReport();
   const [hatch, setHatch] = useState<Hatch | null>(null);
+  // 1.3.0: three tabs instead of one long page (the playtest: "it's just a very long page")
+  const [tab, setTab] = useState<'team' | 'stacks' | 'bestiary'>('team');
+  const [fuseNote, setFuseNote] = useState('');
   const buy = () => {
     const res = commands.buyEggs();
     if (!res) return;
@@ -56,6 +60,34 @@ export function WyrmsPanel() {
               <b className="num">{data.hatched}</b> hatched · <b className="num">{data.found}</b>/{data.total} variants found
             </span>
           </div>
+          <HowTo
+            label="How Void Wyrms work"
+            steps={[
+              <>
+                <b>Hatch</b> eggs with Essence. Rarer species boost more.
+              </>,
+              <>
+                <b>Wear</b> up to {data.maxSlots} on your team (6 in the end). Each boosts one thing, breathes Embers and catches comets.
+              </>,
+              <>
+                <b>Fuse</b> 5 identical Wyrms into the next form (Golden x3, then Rainbow x10), and <b>train</b> levels with Iron alloy (+10% a level).
+              </>,
+            ]}
+          />
+          <div className="forge-tabs" role="tablist" aria-label="Void Wyrm pages">
+            {(
+              [
+                ['team', 'Hatch and team'],
+                ['stacks', `Your Wyrms (${data.stacks.length})`],
+                ['bestiary', `Bestiary (${data.found}/${data.total})`],
+              ] as const
+            ).map(([id, label]) => (
+              <button key={id} type="button" role="tab" aria-selected={tab === id} className={cx('forge-tab chunk pop', tab === id && 'on')} style={tint(tab === id ? '#2E9C78' : '#2B1F6E')} onClick={() => setTab(id)} data-wyrm-tab={id}>
+                {label}
+              </button>
+            ))}
+          </div>
+          {tab === 'team' && (
           <div className="wyrm-cols">
             <section className="well hatchery" aria-label="Hatchery">
               <h4 className="section-h">Hatchery</h4>
@@ -126,10 +158,20 @@ export function WyrmsPanel() {
                   );
                 })}
               </div>
+              <div className="center-row">
+                <Button size="sm" color="#4C3BC4" onClick={() => commands.bestWyrmTeam()} data-testid="best-team">
+                  Best team
+                </Button>
+                <Button size="sm" color="var(--magenta)" onClick={() => setFuseNote(((n) => (n > 0 ? `${n} fusions made` : 'Nothing has five yet'))(commands.fuseAllWyrms()))} data-testid="fuse-all">
+                  Fuse all
+                </Button>
+              </div>
+              {fuseNote && <small className="altar-fine">{fuseNote}</small>}
               <small className="altar-fine">Team Wyrms breathe Embers, swim across the sky and snap up comets. Embers feed the Wyrm Shrine; the key to the Singularity will cost Embers too.</small>
             </section>
           </div>
-          <h4 className="section-h">Your Wyrms</h4>
+          )}
+          {tab === 'stacks' && (
           <div className="stack-list">
             {data.stacks.length === 0 && <p className="altar-fine">Hatch an egg to meet your first Wyrm.</p>}
             {data.stacks.map((w) => (
@@ -157,7 +199,8 @@ export function WyrmsPanel() {
               </div>
             ))}
           </div>
-          <h4 className="section-h">Bestiary</h4>
+          )}
+          {tab === 'bestiary' && (
           <div className="bestiary">
             {data.bestiary.map((b) => (
               <div key={b.id} className={cx('beast', b.name !== '???' && 'found')} style={tint(b.color)}>
@@ -173,6 +216,7 @@ export function WyrmsPanel() {
               </div>
             ))}
           </div>
+          )}
         </>
       )}
     </Panel>
@@ -187,10 +231,9 @@ export function NurseryPanel() {
   const data = r ?? nurseryReport();
   const owned = data.seeds.filter((x) => x.count > 0);
   const [pick, setPick] = useState<Record<number, string>>({});
-  const [a, setA] = useState('');
-  const [b, setB] = useState('');
   const [note, setNote] = useState('');
-  const child = a && b && a !== b ? crossOf(a, b) : null;
+  // 1.3.0: plots, seeds and the crossbreed book on their own pages, with a "how it works" strip
+  const [tab, setTab] = useState<'plots' | 'seeds' | 'book'>('plots');
   return (
     <Panel id="nursery" title="Star Nursery" color="#C23FA0" size="wide">
       {!data.open ? (
@@ -205,136 +248,156 @@ export function NurseryPanel() {
             <span>
               <b className="num">{data.plots.length}</b>/{data.maxPlots} plots · <b className="num">{data.found}</b>/{data.total} species grown
             </span>
-            <span>{data.tending ? 'Tending: ripe stars harvest and replant themselves.' : 'Harvest ripe stars by hand, or buy Tending.'}</span>
+            <span>
+              Garden bonus: <b className="num">{data.garden}</b> Essence
+            </span>
           </div>
-          <div className="plot-grid">
-            {data.plots.map((p) => (
-              <div key={p.i} className={cx('plot', p.empty && 'empty', p.ripe && 'ripe')} style={tint(p.color)} data-plot={p.i}>
-                <span className="cloud" aria-hidden="true">
-                  {!p.empty && <span className="baby-star" style={{ ['--g' as string]: String(0.25 + 0.75 * p.progress) }} />}
-                </span>
-                {p.empty ? (
-                  <>
-                    <select value={pick[p.i] ?? owned[0]?.id ?? ''} onChange={(e) => setPick({ ...pick, [p.i]: e.target.value })} aria-label={`Seed for plot ${p.i + 1}`}>
-                      {owned.length === 0 && <option value="">No seeds</option>}
-                      {owned.map((x) => (
-                        <option key={x.id} value={x.id}>
-                          {x.name} ({x.count})
-                        </option>
-                      ))}
-                    </select>
-                    <Button size="sm" color={owned.length ? 'var(--lime)' : '#5A5F8F'} disabled={!owned.length} onClick={() => commands.plant(p.i, pick[p.i] ?? owned[0]!.id)} data-plant={p.i}>
-                      Plant
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <b>{p.name}</b>
-                    <small>
-                      {p.stage} · {p.eta}
-                    </small>
-                    <ProgressBar value={p.progress} color={p.color} label={`${p.name} growth`} />
-                    <div className="slot-btns">
-                      {p.ripe && !data.tending && (
-                        <Button size="sm" color="var(--gold)" onClick={() => commands.harvestPlot(p.i)} data-harvest={p.i}>
-                          Harvest
-                        </Button>
-                      )}
-                      <Button size="sm" color="#5A5F8F" onClick={() => commands.uprootPlot(p.i)} data-uproot={p.i} aria-label={`Pull up the ${p.name} and get its seed back`}>
-                        Pull up
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </div>
+          <HowTo
+            label="How the Star Nursery works"
+            steps={[
+              <>
+                <b>Plant</b> a seed in a plot. It grows Seed, Cloud, Protostar, Young star, Bright star.
+              </>,
+              <>
+                <b>Harvest</b> a Bright star for Essence and its seed back, often with a spare. {data.tending ? 'Tending does this for you.' : 'Tending (an upgrade) does it for you.'}
+              </>,
+              <>
+                <b>Cross</b> two species in the Crossbreed book to get a new one. Every new species grown raises the Garden bonus for good.
+              </>,
+            ]}
+          />
+          <div className="forge-tabs" role="tablist" aria-label="Star Nursery pages">
+            {(
+              [
+                ['plots', 'Plots'],
+                ['seeds', 'Seeds and upgrades'],
+                ['book', `Crossbreed book (${data.found}/${data.total})`],
+              ] as const
+            ).map(([id, label]) => (
+              <button key={id} type="button" role="tab" aria-selected={tab === id} className={cx('forge-tab chunk pop', tab === id && 'on')} style={tint(tab === id ? '#C23FA0' : '#2B1F6E')} onClick={() => setTab(id)} data-nursery-tab={id}>
+                {label}
+              </button>
             ))}
           </div>
-          <div className="nursery-cols">
-            <section className="well" aria-label="Seeds">
-              <h4 className="section-h">Seeds</h4>
-              <BuyAmountControl compact />
-              <div className="seed-list">
-                {data.seeds.map((x) => (
-                  <div key={x.id} className="seed-row" style={tint(x.color)} data-seed={x.id}>
-                    <span className="seed-dot" aria-hidden="true" />
-                    <span className="rune-name">
-                      <b>{x.name}</b>
-                      <small className="num">
-                        {x.count} seed{x.count === 1 ? '' : 's'}
-                      </small>
-                    </span>
-                    {x.base && (
-                      <Button size="sm" color={data.canSeed ? 'var(--lime)' : '#5A5F8F'} disabled={!data.canSeed} onClick={() => commands.buySeeds(x.id)} aria-label={`Buy ${data.seedCount} ${x.name} seeds for ${data.seedCost} Essence`}>
-                        x{data.seedCount} <span className="num">{data.seedCost}</span>
+          {tab === 'plots' && (
+            <div className="plot-grid">
+              {data.plots.map((p) => (
+                <div key={p.i} className={cx('plot', p.empty && 'empty', p.ripe && 'ripe')} style={tint(p.color)} data-plot={p.i}>
+                  <span className="cloud" aria-hidden="true">
+                    {!p.empty && <span className="baby-star" style={{ ['--g' as string]: String(0.25 + 0.75 * p.progress) }} />}
+                  </span>
+                  {p.empty ? (
+                    <>
+                      <select value={pick[p.i] ?? owned[0]?.id ?? ''} onChange={(e) => setPick({ ...pick, [p.i]: e.target.value })} aria-label={`Seed for plot ${p.i + 1}`}>
+                        {owned.length === 0 && <option value="">No seeds: buy some on Seeds</option>}
+                        {owned.map((x) => (
+                          <option key={x.id} value={x.id}>
+                            {x.name} ({x.count})
+                          </option>
+                        ))}
+                      </select>
+                      <Button size="sm" color={owned.length ? 'var(--lime)' : '#5A5F8F'} disabled={!owned.length} onClick={() => commands.plant(p.i, pick[p.i] ?? owned[0]!.id)} data-plant={p.i}>
+                        Plant
                       </Button>
-                    )}
+                    </>
+                  ) : (
+                    <>
+                      <b>{p.name}</b>
+                      <small>
+                        {p.stage} · {p.eta}
+                      </small>
+                      <ProgressBar value={p.progress} color={p.color} label={`${p.name} growth`} />
+                      <div className="slot-btns">
+                        {p.ripe && !data.tending && (
+                          <Button size="sm" color="var(--gold)" onClick={() => commands.harvestPlot(p.i)} data-harvest={p.i}>
+                            Harvest
+                          </Button>
+                        )}
+                        <Button size="sm" color="#5A5F8F" onClick={() => commands.uprootPlot(p.i)} data-uproot={p.i} aria-label={`Pull up the ${p.name} and get its seed back`}>
+                          Pull up
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {tab === 'seeds' && (
+            <div className="nursery-cols">
+              <section className="well" aria-label="Seeds">
+                <h4 className="section-h">Seeds</h4>
+                <BuyAmountControl compact />
+                <div className="seed-list">
+                  {data.seeds.map((x) => (
+                    <div key={x.id} className="seed-row" style={tint(x.color)} data-seed={x.id}>
+                      <span className="seed-dot" aria-hidden="true" />
+                      <span className="rune-name">
+                        <b>{x.name}</b>
+                        <small className="num">
+                          {x.count} seed{x.count === 1 ? '' : 's'} · ripe in {x.grow} · {x.value} Essence a harvest
+                        </small>
+                      </span>
+                      {x.base && (
+                        <Button size="sm" color={data.canSeed ? 'var(--lime)' : '#5A5F8F'} disabled={!data.canSeed} onClick={() => commands.buySeeds(x.id)} aria-label={`Buy ${data.seedCount} ${x.name} seeds for ${data.seedCost} Essence`}>
+                          x{data.seedCount} <span className="num">{data.seedCost}</span>
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <small className="altar-fine">The five base seeds are for sale; every other species comes from the Crossbreed book.</small>
+              </section>
+              <section className="well" aria-label="Upgrades">
+                <h4 className="section-h">Upgrades</h4>
+                {data.upgrades.map((u) => (
+                  <div key={u.id} className="seed-row" data-nursery-up={u.id}>
+                    <span className="rune-name">
+                      <b>
+                        {u.name} {Number.isFinite(u.max) ? `${u.level}/${u.max}` : `Lv ${u.level}`}
+                      </b>
+                      <small>{u.desc}</small>
+                    </span>
+                    <Button size="sm" color={u.can ? 'var(--lime)' : '#5A5F8F'} disabled={!u.can} onClick={() => commands.buyNurseryUpgrade(u.id)}>
+                      {u.level >= u.max ? 'Max' : <>+{u.count} <span className="num">{u.cost}</span></>}
+                    </Button>
+                  </div>
+                ))}
+              </section>
+            </div>
+          )}
+          {tab === 'book' && (
+            <>
+              <p className="altar-fine">
+                Each cross uses one seed of each parent and some Essence, and gives one seed of the new species. Garden bonus now {data.garden} ({data.gardenNext} species grown).
+              </p>
+              {note && <p className="altar-fine">{note}</p>}
+              <div className="recipe-book">
+                {data.recipes.map((x) => (
+                  <div key={x.child} className={cx('recipe', x.grown && 'found', !x.known && 'unknown')} style={tint(x.color)} data-recipe={x.child}>
+                    <b>{x.name}</b>
+                    <small>{x.parents}</small>
+                    <small className="num">
+                      {x.have} · {x.cost} Essence
+                    </small>
+                    {x.grown && <small className="grown">Grown</small>}
+                    <Button
+                      size="sm"
+                      color={x.can ? 'var(--magenta)' : '#5A5F8F'}
+                      disabled={!x.can}
+                      onClick={() => {
+                        const got = commands.crossbreed(x.a, x.b);
+                        setNote(got ? `+1 ${STAR_BY_ID.get(got)?.name} seed. Plant it on Plots.` : 'Not enough seeds or Essence.');
+                      }}
+                      data-cross={x.child}
+                    >
+                      Cross
+                    </Button>
                   </div>
                 ))}
               </div>
-            </section>
-            <section className="well" aria-label="Crossbreed">
-              <h4 className="section-h">Crossbreed</h4>
-              <div className="cross-pick">
-                <select value={a} onChange={(e) => setA(e.target.value)} aria-label="First seed" data-testid="cross-a">
-                  <option value="">First seed</option>
-                  {owned.map((x) => (
-                    <option key={x.id} value={x.id}>
-                      {x.name}
-                    </option>
-                  ))}
-                </select>
-                <span className="cross-x">+</span>
-                <select value={b} onChange={(e) => setB(e.target.value)} aria-label="Second seed" data-testid="cross-b">
-                  <option value="">Second seed</option>
-                  {owned.map((x) => (
-                    <option key={x.id} value={x.id}>
-                      {x.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <p className="altar-fine" data-testid="cross-preview">
-                {!a || !b ? 'Pick two different seeds.' : child ? `Makes a ${STAR_BY_ID.get(child)?.name} seed.` : "These two don't cross."}
-              </p>
-              <Button
-                color={child ? 'var(--magenta)' : '#5A5F8F'}
-                disabled={!child}
-                onClick={() => {
-                  const got = commands.crossbreed(a, b);
-                  setNote(got ? `+1 ${STAR_BY_ID.get(got)?.name} seed` : 'Not enough seeds or Essence.');
-                }}
-                data-testid="cross"
-              >
-                Cross
-              </Button>
-              {note && <small className="altar-fine">{note}</small>}
-              <h4 className="section-h">Upgrades</h4>
-              {data.upgrades.map((u) => (
-                <div key={u.id} className="seed-row" data-nursery-up={u.id}>
-                  <span className="rune-name">
-                    <b>
-                      {u.name} {Number.isFinite(u.max) ? `${u.level}/${u.max}` : `Lv ${u.level}`}
-                    </b>
-                    <small>{u.desc}</small>
-                  </span>
-                  <Button size="sm" color={u.can ? 'var(--lime)' : '#5A5F8F'} disabled={!u.can} onClick={() => commands.buyNurseryUpgrade(u.id)}>
-                    {u.level >= u.max ? 'Max' : <>+{u.count} <span className="num">{u.cost}</span></>}
-                  </Button>
-                </div>
-              ))}
-            </section>
-          </div>
-          <h4 className="section-h">Crossbreed book</h4>
-          <div className="recipe-book">
-            {data.recipes.map((x) => (
-              <div key={x.child} className={cx('recipe', x.grown && 'found', !x.known && 'unknown')} style={tint(x.color)}>
-                <b>{x.name}</b>
-                <small>{x.parents}</small>
-                {x.known && <small className="num">{x.cost} Essence</small>}
-                {x.grown && <small className="grown">Grown</small>}
-              </div>
-            ))}
-          </div>
+            </>
+          )}
         </>
       )}
     </Panel>

@@ -14,6 +14,13 @@ import { reqMet } from './unlocks';
 import { WYRM_FORMS, WYRM_SPECIES } from '../../content/wyrms';
 import { STAR_SPECIES } from '../../content/nursery';
 import { CARDS } from '../../content/nebulaExtras';
+import { ENGINES } from '../../content/engines';
+import { TIERS } from '../../content/tiers';
+import { RECIPES } from '../../content/alchemy';
+import { PARTS } from '../../content/shipParts';
+import { LEVIATHANS, SPIRE_BANNERS, TRIALS } from '../../content/challenges';
+import { SIGILS } from '../../content/sigils';
+import { MEGASTRUCTURES } from '../../content/galaxyBuild';
 
 /**
  * The Index (Game design: "Across the whole game"): a collection book of every rune, aura,
@@ -50,6 +57,24 @@ export function pageCount(s: GameState, id: string): { found: number; total: num
       return { found: s.tarot.owned.length, total: CARDS.length };
     case 'galaxies':
       return { found: s.galactic.cleared.length, total: GALAXIES.length };
+    case 'engines':
+      return { found: ENGINES.filter((e) => (s.enginesEver[e.id] ?? 0) > 0 || (s.engines[e.id] ?? 0) > 0).length, total: ENGINES.length };
+    case 'tiers':
+      return { found: Math.min(TIERS.length, Math.max(s.tier, s.stats.bestTier ?? 0) + 1), total: TIERS.length };
+    case 'recipes':
+      return { found: s.alchemy.known.length, total: RECIPES.length };
+    case 'parts':
+      return { found: s.ships.parts.length, total: PARTS.length };
+    case 'trials':
+      return { found: TRIALS.filter((t) => (s.trials.levels[t.id] ?? 0) > 0 || (t.id === 'fast' && s.trials.fastBest >= 0)).length, total: TRIALS.length };
+    case 'leviathans':
+      return { found: LEVIATHANS.filter((l) => (s.leviathans.kills[l.id] ?? 0) > 0).length, total: LEVIATHANS.length };
+    case 'banners':
+      return { found: Math.min(SPIRE_BANNERS.length, Math.floor((s.stats.spireBest ?? 0) / 10)), total: SPIRE_BANNERS.length };
+    case 'sigils':
+      return { found: s.sigils.owned.length, total: SIGILS.length };
+    case 'mega':
+      return { found: MEGASTRUCTURES.reduce((t, m) => t + Math.min(5, s.megastructures[m.id] ?? 0), 0), total: MEGASTRUCTURES.length * 5 };
     default:
       return { found: 0, total: 0 };
   }

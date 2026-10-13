@@ -214,6 +214,21 @@ const GAIN_LABELS: Record<string, string> = {
   shards: 'Nova Shards',
   ore: 'Ore',
   xp: 'Starsmith XP',
+  // 1.3.0: every other currency a catch-up can bring (the playtest's read "essence")
+  essence: 'Nebula Essence',
+  darkMatter: 'Dark Matter',
+  antimatter: 'Antimatter',
+  galaxyCores: 'Galaxy Cores',
+  chronons: 'Chronons',
+  embers: 'Embers',
+  scales: 'Scales',
+  runeShards: 'Rune Shards',
+  auraDice: 'Aura Dice',
+  supply: 'Supply',
+  starCharts: 'Star Charts',
+  echoDust: 'Echo Dust',
+  echoShards: 'Echo Shards',
+  echoEssence: 'Echo Essence',
   ...Object.fromEntries(GRADES.flatMap((g) => [[g.alloy, `${g.name} alloy`], ...(g.id === 'iron' ? [] : [[g.ore, `${g.name} ore`]])])),
 };
 

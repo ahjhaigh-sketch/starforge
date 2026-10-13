@@ -117,6 +117,7 @@ export function registerNebula(): void {
       { at: 3, id: 'wyrms', text: 'Void Wyrms arrive' },
       { at: 5, id: 'keepTree', text: 'Keep the Nova Tree' },
       { at: 8, id: 'singularity', text: 'The Singularity appears: buy the Event Horizon key with Embers' },
+      { at: BALANCE.passive.at.nebula!, id: 'passive', text: 'Gain 1% of your Nebula gain every second, without going Nebula' },
       { at: 10, id: 'novaFree', text: 'Supernova resets nothing; 1/50 of its gain trickles in every second' },
     ],
     // a Singularity keeps Nebula milestones from its first one (Singularity milestone 1)

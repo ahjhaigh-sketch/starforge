@@ -1,13 +1,24 @@
 import { BALANCE } from '../content/balance';
+import { MEGASTRUCTURES } from '../content/galaxyBuild';
+import { SIGILS } from '../content/sigils';
+import { LEVIATHANS, SPIRE_BANNERS, TRIALS } from '../content/challenges';
+import { PARTS } from '../content/shipParts';
+import { RECIPES } from '../content/alchemy';
+import { TIERS } from '../content/tiers';
+import { ENGINES } from '../content/engines';
+import { GALAXIES } from '../content/galactic';
+import { CARDS, CARD_RARITIES } from '../content/nebulaExtras';
+import { STAR_SPECIES } from '../content/nursery';
+import { WYRM_FORMS, WYRM_SPECIES } from '../content/wyrms';
 import { RARITIES } from '../content/belt';
 import { ELEMENTS } from '../content/elements';
 import { RELICS } from '../content/forge';
 import { RUNE_RARITIES, RUNE_STAT_WORDS, RUNES, runesOf, SHRINE_BY_ID, SHRINES } from '../content/runes';
-import { AURAS, INDEX_PAGES, MUTATIONS, STAR_RANKS } from '../content/runeDepth';
+import { AURAS, INDEX_PAGES, MUTATIONS, STAR_RANKS, auraFamily } from '../content/runeDepth';
 import { D } from '../engine/decimal';
 import { cur } from '../engine/state';
 import { stat } from '../engine/stats';
-import { auraCopies, auraEffLog, aurasOpen, dicePlan } from '../engine/systems/auras';
+import { auraCopies, auraEffLog, auraMult, auraRank, auraSlots, aurasOpen, dicePlan, polishCost, wornAuras } from '../engine/systems/auras';
 import { pageCount, pageMilestones, pageOpen } from '../engine/systems/collection';
 import { mutEffLog, mutationsOpen } from '../engine/systems/mutations';
 import { copies, runeLevel, shrineOpen } from '../engine/systems/runes';
@@ -125,6 +136,14 @@ export interface AuraRow {
   found: boolean;
   effects: string;
   equipped: boolean;
+  /** 1.3.0: its slot (-1 when not worn), Polish rank and next price, and its family. */
+  slot: number;
+  rank: number;
+  rankMax: number;
+  polishCost: string;
+  canPolish: boolean;
+  family: string;
+  familyColor: string;
 }
 
 export interface AurasReport {
@@ -140,6 +159,11 @@ export interface AurasReport {
   found: number;
   total: number;
   auras: AuraRow[];
+  /** 1.3.0: slots, what's worn in each, and the families' rule. */
+  slots: number;
+  nextSlot: string;
+  worn: Array<{ slot: number; id: string; name: string; color: string; effects: string }>;
+  familyRule: string;
 }
 
 export function aurasReport(): AurasReport {
@@ -154,7 +178,18 @@ export function aurasReport(): AurasReport {
     can: plan.canAfford,
     auto: s.auras.auto,
     luck: `${formatMult(stat(s, 'auraLuck'), n())}`,
-    equipped: AURAS.find((a) => a.id === s.auras.equipped)?.name ?? 'None',
+    equipped: wornAuras(s).map((a) => a.name).join(', ') || 'None',
+    slots: auraSlots(s),
+    nextSlot: ((found) => {
+      const at = RD.auras.slotsAt.find((x) => found < x);
+      return at ? `Slot ${auraSlots(s) + 1} at ${at} auras found` : '';
+    })(AURAS.filter((a) => auraCopies(s, a.id).gt(0)).length),
+    worn: Array.from({ length: auraSlots(s) }, (_, slot) => {
+      const id = slot === 0 ? s.auras.equipped : (s.auras.more ?? [])[slot - 1];
+      const a = id ? AURAS.find((x) => x.id === id && auraCopies(s, x.id).gt(0)) : undefined;
+      return { slot, id: a?.id ?? '', name: a?.name ?? 'Empty', color: a?.color ?? '#2B1F6E', effects: a ? a.effects.map((e) => `${pct(auraMult(s, a, e.stat) - 1)} ${word(e.stat)}`).join(' · ') : 'Wear an aura below' };
+    }),
+    familyRule: `Families: two worn from one family give both +${Math.round(RD.auras.familyTwo * 100)}%, three +${Math.round(RD.auras.familyThree * 100)}%.`,
     found: AURAS.filter((a) => auraCopies(s, a.id).gt(0)).length,
     total: AURAS.length,
     auras: AURAS.map((a) => {
@@ -166,8 +201,15 @@ export function aurasReport(): AurasReport {
         odds: oddsText(auraEffLog(s, a)),
         copies: format(auraCopies(s, a.id), n()),
         found,
-        effects: found ? a.effects.map((e) => `${pct(e.mul - 1)} ${word(e.stat)}`).join(' · ') : 'Roll to find out',
-        equipped: s.auras.equipped === a.id,
+        effects: found ? a.effects.map((e) => `${pct((e.mul - 1) * (1 + RD.auras.polishEach * auraRank(s, a.id)))} ${word(e.stat)}`).join(' · ') : 'Roll to find out',
+        equipped: wornAuras(s).some((w) => w.id === a.id),
+        slot: [s.auras.equipped, ...(s.auras.more ?? [])].indexOf(a.id),
+        rank: auraRank(s, a.id),
+        rankMax: RD.auras.polishMax,
+        polishCost: format(polishCost(auraRank(s, a.id)), n()),
+        canPolish: found && auraRank(s, a.id) < RD.auras.polishMax && auraCopies(s, a.id).gte(polishCost(auraRank(s, a.id))),
+        family: auraFamily(a.id).name,
+        familyColor: auraFamily(a.id).color,
       };
     }),
   };
@@ -245,8 +287,50 @@ function entries(id: string): Array<{ name: string; entries: IndexEntry[] }> {
             return { name: `${sh.name.replace(' Shrine', '')} runes ${k}/${runesOf(sh.id).length}`, color: m.color, found: k > 0 };
           }),
           ...RARITIES.map((r) => ({ name: `${r.name} asteroid`, color: m.color, found: (s.mutations.asteroids[`${r.id}.${m.id}`] ?? 0) > 0 })),
+          // 1.3.0: Wyrms and Nursery stars mutate too
+          ((k) => ({ name: `Void Wyrms ${k}/${WYRM_SPECIES.length}`, color: m.color, found: k > 0 }))(WYRM_SPECIES.filter((w) => (s.mutations.others[`wyrm.${w.id}.${m.id}`] ?? 0) > 0).length),
+          ((k) => ({ name: `Nursery stars ${k}/${STAR_SPECIES.length}`, color: m.color, found: k > 0 }))(STAR_SPECIES.filter((x) => (s.mutations.others[`nursery.${x.id}.${m.id}`] ?? 0) > 0).length),
         ],
       }));
+    // 1.3.0: these pages listed nothing before
+    case 'wyrms':
+      return WYRM_FORMS.map((f, i) => ({
+        name: `${f.name} Wyrms`,
+        entries: WYRM_SPECIES.map((w) => {
+          const found = s.wyrms.found.includes(`${w.id}|${i}`);
+          return { name: found ? w.name : '???', color: w.color, found };
+        }),
+      }));
+    case 'species':
+      return [1, 2, 3].map((tier) => ({
+        name: tier === 1 ? 'Base seeds' : tier === 2 ? 'Crosses' : 'Crosses of crosses',
+        entries: STAR_SPECIES.filter((x) => x.tier === tier).map((x) => ({ name: s.nursery.found.includes(x.id) ? x.name : '???', color: x.color, found: s.nursery.found.includes(x.id) })),
+      }));
+    case 'cards':
+      return CARD_RARITIES.map((r, i) => ({
+        name: r.name,
+        entries: CARDS.filter((c) => c.rarity === i).map((c) => ({ name: s.tarot.owned.includes(c.id) ? c.name : '???', color: r.color, found: s.tarot.owned.includes(c.id) })),
+      }));
+    case 'galaxies':
+      return [{ name: 'The Galaxy Map', entries: GALAXIES.map((g) => ({ name: s.galactic.cleared.includes(g.id) ? g.name : s.galactic.galaxy === g.id ? `${g.name} (here)` : '???', color: g.color, found: s.galactic.cleared.includes(g.id) })) }];
+    case 'engines':
+      return [{ name: 'Engines', entries: ENGINES.map((e) => ({ name: e.name, color: '#FFC83D', found: (s.enginesEver[e.id] ?? 0) > 0 || (s.engines[e.id] ?? 0) > 0 })) }];
+    case 'tiers':
+      return [{ name: 'Star tiers', entries: TIERS.map((t, i) => ({ name: i <= Math.max(s.tier, s.stats.bestTier ?? 0) ? t.name : '???', color: t.color, found: i <= Math.max(s.tier, s.stats.bestTier ?? 0) })) }];
+    case 'recipes':
+      return [{ name: 'Elixirs', entries: RECIPES.map((r) => ({ name: s.alchemy.known.includes(r.id) ? r.name : '???', color: r.color, found: s.alchemy.known.includes(r.id) })) }];
+    case 'parts':
+      return [{ name: 'Ship parts', entries: PARTS.map((p) => ({ name: p.name, color: '#8C97C2', found: s.ships.parts.includes(p.id) })) }];
+    case 'trials':
+      return [{ name: 'Trials', entries: TRIALS.map((t) => ({ name: t.name, color: '#FF7A2E', found: (s.trials.levels[t.id] ?? 0) > 0 || (t.id === 'fast' && s.trials.fastBest >= 0) })) }];
+    case 'leviathans':
+      return [{ name: 'Void Leviathans', entries: LEVIATHANS.map((l) => ({ name: (s.leviathans.kills[l.id] ?? 0) > 0 ? l.name : '???', color: l.color, found: (s.leviathans.kills[l.id] ?? 0) > 0 })) }];
+    case 'banners':
+      return [{ name: 'Spire banners', entries: SPIRE_BANNERS.map((b, i) => ({ name: i < Math.floor((s.stats.spireBest ?? 0) / 10) ? b.name : `Floor ${(i + 1) * 10}`, color: b.color, found: i < Math.floor((s.stats.spireBest ?? 0) / 10) })) }];
+    case 'sigils':
+      return [{ name: 'Hidden Sigils', entries: SIGILS.map((x) => ({ name: s.sigils.owned.includes(x.id) ? x.name : '???', color: '#C99A1E', found: s.sigils.owned.includes(x.id) })) }];
+    case 'mega':
+      return MEGASTRUCTURES.map((m) => ({ name: m.name, entries: Array.from({ length: 5 }, (_, i) => ({ name: `Stage ${i + 1}`, color: '#B08A1A', found: (s.megastructures[m.id] ?? 0) > i })) }));
     default:
       return [];
   }

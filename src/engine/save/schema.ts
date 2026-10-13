@@ -23,6 +23,7 @@ export const plainSaveSchema = z.looseObject({
   rng: z.tuple([finite, finite, finite, finite]),
   currencies: decRecord,
   totals: z.looseObject({ run: decRecord, all: decRecord }),
+  kept: decRecord.optional(),
   stats: z.record(z.string(), finite),
   tier: count.optional(),
   engines: z.record(z.string(), count).optional(),

@@ -1,3 +1,4 @@
+import { D } from '../decimal';
 import { seedRng } from '../rng';
 import { SAVE_VERSION } from '../state';
 
@@ -9,6 +10,9 @@ export class NewerSaveError extends Error {
 }
 
 type PlainSave = Record<string, unknown>;
+
+/** A tenth of a saved Decimal (its "D:" digits), as saved digits. */
+const tenthOf = (digits: string): string => D(digits).mul(0.1).toString();
 
 /**
  * Forward-only migrations, keyed by the version they produce. Never edit one after release;
@@ -107,6 +111,17 @@ const migrations: Record<number, (d: PlainSave) => void> = {
       m.deals = [];
       m.nextShip = 0;
     }
+  },
+  // 22 (1.3.0): the safe tenth. Automation may never spend a tenth of what you earn; an old save starts
+  // with a tenth of what it holds kept safe. (Comet Fusion's stuck boards and the Galactic requirement
+  // need nothing moved.)
+  22: (d) => {
+    const kept: Record<string, string> = {};
+    for (const [c, v] of Object.entries((d.currencies ?? {}) as Record<string, string>)) {
+      const n = typeof v === 'string' ? v.slice(2) : '';
+      if (n && n !== '0' && !n.startsWith('-')) kept[c] = `D:${tenthOf(n)}`;
+    }
+    d.kept = kept;
   },
 };
 

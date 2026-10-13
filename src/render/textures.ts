@@ -32,19 +32,34 @@ export function textures() {
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, s, s);
     }),
-    /** A Spark Mote: cream ball, ink outline, one white highlight (the chunky look). */
+    /** A Spark Mote (1.3.0: a glowing four-point spark with a hot core, not a plain ball). */
     mote: canvasTexture(64, (ctx, s) => {
-      const r = s * 0.36;
+      const c = s / 2;
+      const glow = ctx.createRadialGradient(c, c, 0, c, c, c);
+      glow.addColorStop(0, 'rgba(255,243,176,0.9)');
+      glow.addColorStop(0.35, 'rgba(255,200,61,0.35)');
+      glow.addColorStop(1, 'rgba(255,200,61,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, s, s);
       ctx.beginPath();
-      ctx.arc(s / 2, s / 2, r, 0, Math.PI * 2);
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2 - Math.PI / 2;
+        const r = i % 2 === 0 ? s * 0.42 : s * 0.13;
+        const x = c + Math.cos(a) * r;
+        const y = c + Math.sin(a) * r;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
       ctx.fillStyle = '#FFF3B0';
       ctx.fill();
-      ctx.lineWidth = s * 0.11;
+      ctx.lineWidth = s * 0.06;
       ctx.strokeStyle = '#140B2E';
+      ctx.lineJoin = 'round';
       ctx.stroke();
       ctx.beginPath();
-      ctx.ellipse(s * 0.42, s * 0.4, r * 0.38, r * 0.22, -0.6, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.arc(c, c, s * 0.1, 0, Math.PI * 2);
+      ctx.fillStyle = '#FFFFFF';
       ctx.fill();
     }),
   };
